@@ -1,8 +1,21 @@
 .DS_Store
 .vscode
-*test*
-*Test*
+*.swp
+*.log
+*.db
+*.pdf
+logs/*
+*venv*
 out
+obj
+outs
+objs
+.env
+playground/
+*libft/*
+parser_tests
+*.conf
+Webserv
 webserv
 
 # Created by https://www.toptal.com/developers/gitignore/api/c
@@ -64,3 +77,41 @@ dkms.conf
 
 # End of https://www.toptal.com/developers/gitignore/api/c
 
+# Created by https://www.toptal.com/developers/gitignore/api/c++
+# Edit at https://www.toptal.com/developers/gitignore?templates=c++
+
+### C++ ###
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# End of https://www.toptal.com/developers/gitignore/api/c++
