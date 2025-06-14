@@ -200,7 +200,7 @@ make help
 
 - [Tetsuro Ando](https://github.com/tetsuroando)
 - [Tomoki Sato](https://github.com/tomsato42)
-- [Wata](https://github.com/melswonder)
+- [Hiro Watanabe](https://github.com/melswonder)
 
 ## Acknowledgement
 
