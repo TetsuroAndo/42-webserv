@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/25 11:10:58 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/30 17:19:30 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/07/01 07:42:16 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,6 +129,7 @@ void ServerConfig::parseServerLine(const std::string &line) {
     else if (directive == "server_name") {
         std::string server_name;
         iss >> server_name;
+        server_name = ft_trimsemicolon(server_name);
         _server_name = server_name;
     }
     else if (directive == "client_max_body_size") {
@@ -152,6 +153,7 @@ void ServerConfig::parseServerLine(const std::string &line) {
         int status_code;
         std::string path;
         iss >> status_code >> path;
+        path = ft_trimsemicolon(path);
         addErrorPage(status_code, path);
     }
 }
@@ -160,10 +162,11 @@ void ServerConfig::parseLocationLine(const std::string &line, LocationConfig &lo
     std::istringstream iss(line);
     std::string directive;
     iss >> directive;
-    
+
     if (directive == "root") {
         std::string root;
         iss >> root;
+        root = ft_trimsemicolon(root);
         location.setRoot(root);
     }
     else if (directive == "index") {

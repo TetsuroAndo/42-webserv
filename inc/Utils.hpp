@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/30 16:35:40 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/30 17:11:00 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/07/01 07:41:59 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,4 +36,14 @@ std::string &ft_rtrim(std::string &s) {
 std::string ft_trim(const std::string &s) {
     std::string copy = s;
     return ft_ltrim(ft_rtrim(copy));
+}
+
+//末尾のセミコロン排除
+std::string ft_trimsemicolon(const std::string &s){
+    std::string copy = s;
+    if(!copy.empty() && copy[copy.length() - 1] == ';'){
+        copy = copy.substr(0, copy.length() - 1);
+        copy = ft_rtrim(copy);
+    }
+    return (copy);
 }
