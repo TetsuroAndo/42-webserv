@@ -52,6 +52,7 @@ bool Server::init(const std::string& host, int port)
         std::cerr << "Error: socket() failed\n";
         return false;
     }
+    
 
     // SO_REUSEADDR オプションを設定
     int opt = 1;
