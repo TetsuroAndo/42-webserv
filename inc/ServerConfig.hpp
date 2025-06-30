@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/30 14:28:13 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/30 14:28:17 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/06/30 17:20:44 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,7 @@ private:
 public:
     ServerConfig();
     ~ServerConfig();
-    void readFile(const std::string &filePath);
-    // void init();
+
 //setter
     void setHost(const std::string &host);
     void setPort(int port);
@@ -58,4 +57,10 @@ public:
     long getClientMaxBodySize() const;
     const std::map<int, std::string> &getErrorPages() const;
     const std::vector<LocationConfig> &getLocations() const;
+
+//parse
+    static std::vector<ServerConfig> parseConfigFile(const std::string &filePath);
+    void parseServerLine(const std::string &line);
+    void parseLocationLine(const std::string &line, LocationConfig &location);
+
 };
