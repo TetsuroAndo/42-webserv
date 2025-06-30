@@ -6,13 +6,14 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/30 16:35:40 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/07/01 07:41:59 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/07/01 07:45:26 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include <algorithm>
 #include <cctype>
+#include <string>
 
 struct NotSpace {
     bool operator()(char c) const {
