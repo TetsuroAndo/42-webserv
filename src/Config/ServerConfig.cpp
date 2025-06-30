@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/25 11:10:58 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/07/01 07:42:16 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/07/01 07:51:17 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,10 +38,15 @@ std::vector<ServerConfig> ServerConfig::parseConfigFile(const std::string &fileP
     LocationConfig currentLocation;
 
     while (std::getline(ifs, line)) {
+        
         // コメントと空白スキップ
-        if (line.empty() || line[0] == '#') continue;
+        size_t comment_pos = line.find('#');
+        if (comment_pos != std::string::npos) {
+            line = line.substr(0, comment_pos);
+        }
         
         line = ft_trim(line);
+        
         if (line.empty()) continue;
 
         // server {が存在するかどうか
