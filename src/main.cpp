@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/25 11:10:43 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/27 10:35:43 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/06/30 15:16:23 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 			throw std::invalid_argument("usage: ./webserv <config.file>");
 		}
 		Webserv webserv(argv[1]);
-		webserv.run();
+		// webserv.run();
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
 	}

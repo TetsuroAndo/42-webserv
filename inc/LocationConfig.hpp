@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/27 13:21:47 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/27 17:49:01 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/06/30 14:04:13 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,29 +15,40 @@
 #include <string>
 #include <vector>
 
-class CgiConfig
+/// @brief CGIのスクリプトの拡張子と実行するバイナリパス
+///
+/// @param ext CGI スクリプトのファイル拡張子 (例: ".py", ".php")
+/// @param bin CGI スクリプトを実行するためのバイナリパス (例: "/usr/bin/python3", "/usr/bin/php-cgi")
+struct CgiConfig
 {
-public: 
-    std::string ext; // CGI スクリプトのファイル拡張子 (例: ".py", ".php")
-    std::string bin; // CGI スクリプトを実行するためのバイナリパス (例: "/usr/bin/python3", "/usr/bin/php-cgi")
+    std::string ext;
+    std::string bin;
 };
 
+/// @brief このクラスは、ウェブサーバーの特定のURLパスに対する振る舞いを詳細に定義するための設定を保持するクラスです。これは、NGINX の設定ファイルにおける location ブロックに相当するものです。
+///
+/// @param _path      この設定が適用されるURLパス (例: "/", "/api", "/images")
+/// @param _type      ロケーションのタイプ (例: "default", "redirect", "cgi") - カスタム実装に依存
+/// @param _root      このロケーションで提供されるファイルのルートディレクトリパス (例: "./html")
+/// @param _index     ディレクトリリクエスト時に探すインデックスファイル名のリスト (例: "index.html", "index.htm")
+/// @param _autoindex ディレクトリリストの自動生成を有効にするか (true/false)
+/// @param _methods   このロケーションで許可されるHTTPメソッドのリスト (例: "GET", "POST", "DELETE")
+/// @param _cgi       このロケーションでCGIを実行するための設定リスト
+/// @param _redirect  このロケーションへのリクエストを転送する先のURL (HTTPリダイレクト用)
 class LocationConfig
 {
 private:
-   std::string                 _path;       // この設定が適用されるURLパス (例: "/", "/api", "/images")
-    std::string                 _type;      // ロケーションのタイプ (例: "default", "redirect", "cgi") - カスタム実装に依存
-    std::string                 _root;      // このロケーションで提供されるファイルのルートディレクトリパス (例: "./html")
-    std::vector<std::string>    _index;     // ディレクトリリクエスト時に探すインデックスファイル名のリスト (例: "index.html", "index.htm")
-    bool                        _autoindex; // ディレクトリリストの自動生成を有効にするか (true/false)
-    std::vector<std::string>    _methods;   // このロケーションで許可されるHTTPメソッドのリスト (例: "GET", "POST", "DELETE")
-    std::vector<CgiConfig>      _cgi;       // このロケーションでCGIを実行するための設定リスト
-    std::string                 _redirect;  // このロケーションへのリクエストを転送する先のURL (HTTPリダイレクト用)
-
+   std::string                 _path;
+    std::string                 _type;
+    std::string                 _root;
+    std::vector<std::string>    _index;
+    bool                        _autoindex;
+    std::vector<std::string>    _methods;
+    std::vector<CgiConfig>      _cgi;
+    std::string                 _redirect;
 public:
 	LocationConfig();
 	~LocationConfig();
-
 //setter
 	void setPath(const std::string &path);
 	void setType(const std::string &type);
