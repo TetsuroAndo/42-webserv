@@ -1,26 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
+/*   Webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/25 11:10:43 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/30 15:16:23 by hirwatan         ###   ########.fr       */
+/*   Created: 2025/06/05 04:10:11 by teando            #+#    #+#             */
+/*   Updated: 2025/06/30 15:16:05 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../inc/Webserv.hpp"
-#include <iostream>
+#pragma once
+#include "ServerConfig.hpp"
 
-int main(int argc, char *argv[]) {
-	try {
-		if (argc != 2) {
-			throw std::invalid_argument("usage: ./webserv <config.file>");
-		}
-		Webserv webserv(argv[1]);
-		// webserv.run();
-	} catch (const std::exception &e) {
-		std::cerr << e.what() << std::endl;
-	}
-}
+class Webserv
+{
+    private:
+        ServerConfig    _serverconfig;
+    public:
+        Webserv(const std::string &filePath);
+        ~Webserv();
+        // void run();
+};
+

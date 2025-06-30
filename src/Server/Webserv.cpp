@@ -1,12 +1,21 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   webserv.hpp                                        :+:      :+:    :+:   */
+/*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
+/*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/05 04:10:11 by teando            #+#    #+#             */
-/*   Updated: 2025/06/05 04:10:22 by teando           ###   ########.fr       */
+/*   Created: 2025/06/25 11:10:53 by hirwatan          #+#    #+#             */
+/*   Updated: 2025/06/30 15:17:42 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "../inc/Webserv.hpp"
+#include <iostream>
+
+Webserv ::Webserv(const std::string &filePath) {
+	_serverconfig.readFile(filePath);
+}
+
+Webserv::~Webserv() {}
+// void Webserv::run(){}
