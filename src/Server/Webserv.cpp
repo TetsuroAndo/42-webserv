@@ -6,7 +6,7 @@
 /*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/25 11:10:53 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/30 17:22:58 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/07/01 09:05:33 by hirwatan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,9 @@
 #include <iostream>
 
 Webserv::Webserv(const std::string &filePath) {
+    if (filePath.length() < 5 || filePath.substr(filePath.length() - 5) != ".conf") {
+        throw std::runtime_error("エラー： 有効な拡張子ではありません -> " + filePath);
+    }
     _serverconfigs = ServerConfig::parseConfigFile(filePath);
     printConfigs();
 }
