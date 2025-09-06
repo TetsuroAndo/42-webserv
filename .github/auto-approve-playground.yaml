@@ -1,0 +1,40 @@
+name: Auto-approve Playground Changes
+
+# PRが作成/更新された際にワークフローを開始
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    # PRを承認するために必要な権限
+    permissions:
+      pull-requests: write
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 変更されたファイルのパスをフィルタリング
+      #    Playgroundディレクトリ以外のファイルが変更された場合 'other_changes' が 'true' になる
+      - name: Check for non-Playground changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            other_changes:
+              - '!Playground/**' # Playground以外のパスにマッチするパターン
+
+      # 3. Playgroundの変更のみの場合に自動承認を実行
+      #    'other_changes' が 'true' でない場合（＝Playgroundの変更しかない場合）のみ、このステップが実行される
+      - name: Auto-approve
+        if: steps.filter.outputs.other_changes != 'true'
+        run: gh pr review --approve "$PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}

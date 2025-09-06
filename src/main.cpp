@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/25 11:10:43 by hirwatan          #+#    #+#             */
-/*   Updated: 2025/06/30 15:16:23 by hirwatan         ###   ########.fr       */
+/*   Updated: 2025/09/06 11:28:22 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 int main(int argc, char *argv[]) {
 	try {
 		if (argc != 2) {
-			throw std::invalid_argument("usage: ./webserv <config.file>");
+			throw std::invalid_argument("Usage: ./webserv <config.file>");
 		}
 		Webserv webserv(argv[1]);
 		// webserv.run();
