@@ -4,7 +4,7 @@ SRCS = main.cpp ../decodeURI.cpp ../encodeURI.cpp ../decodeURIComponent.cpp ../e
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -pedantic
+CXXFLAGS = -Wall -Wextra -Werror -Iuri.hpp
 
 all: $(NAME)
 

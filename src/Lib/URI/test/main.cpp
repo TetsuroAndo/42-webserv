@@ -1,26 +1,28 @@
-#include "../uri.h"
+#include "../uri.hpp"
 #include <iostream>
 
+#include <iterator>
+
 int main(int ac, char **av) {
-	if (ac != 3)
+	if (ac != 2)
 		return 1;
-	if (std::string(av[1]) == "encodeURI") {
-		std::string str = av[2];
-		std::string encoded = ::encodeURI(str);
-		std::cout << encoded << std::endl;
-	} else if (std::string(av[1]) == "decodeURI") {
-		std::string str = av[2];
-		std::string decoded = ::decodeURI(str);
-		std::cout << decoded << std::endl;
-	} else if (std::string(av[1]) == "encodeURIComponent") {
-		std::string str = av[2];
-		std::string encoded = ::encodeURIComponent(str);
-		std::cout << encoded << std::endl;
-	} else if (std::string(av[1]) == "decodeURIComponent") {
-		std::string str = av[2];
-		std::string decoded = ::decodeURIComponent(str);
-		std::cout << decoded << std::endl;
-	} else
+	std::string mode(av[1]);
+	// 重複している行を削除し、正しい構文で書き直す
+	std::string input((std::istreambuf_iterator<char>(std::cin)),
+					  std::istreambuf_iterator<char>());
+
+	std::string out;
+	if (mode == "encodeURI") {
+		out = URI::encodeURI(input);
+	} else if (mode == "decodeURI") {
+		out = URI::decodeURI(input);
+	} else if (mode == "encodeURIComponent") {
+		out = URI::encodeURIComponent(input);
+	} else if (mode == "decodeURIComponent") {
+		out = URI::decodeURIComponent(input);
+	} else {
 		return 1;
+	}
+	std::cout << out;
 	return 0;
 }

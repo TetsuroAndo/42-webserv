@@ -1,9 +1,9 @@
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 
 function runCpp(mode, input) {
   try {
-    // C++バイナリを実行
-    return execSync(`./uri_test ${mode} '${input}'`).toString().trim();
+    // stdin に Buffer で渡す
+    return execFileSync("./uri_test", [mode], { input: Buffer.from(input, "utf8"), encoding: "utf8" }).trim();
   } catch (e) {
     return null;
   }
@@ -56,7 +56,7 @@ const testCases = [
   "control\u0000\u0001\u0002", // 制御文字
   "surrogate pair: \uD83D\uDE00", // サロゲートペア（絵文字）
   "percent%25sign", // パーセント記号
-  "space and tab\t", // スペースとタブ
+  "space and\ttab", // スペースとタブ
   "newline\ncarriage\rreturn", // 改行・復帰
 ];
 

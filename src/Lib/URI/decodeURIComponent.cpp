@@ -1,7 +1,8 @@
-#include <cctype>  // std::isalnum
-#include <iomanip> // std::hex, std::setw, std::setfill
+#include "uri.hpp"
+#include <cctype>
+#include <iomanip>
 #include <iostream>
-#include <sstream> // std::ostringstream
+#include <sstream>
 
 /**
  * @brief URLデコードを行う
@@ -9,7 +10,7 @@
  * @param str デコード対象の文字列
  * @return std::string デコード後の文字列 (UTF-8)
  */
-std::string decodeURIComponent(const std::string &str) {
+std::string URI::decodeURIComponent(const std::string &str) {
 	std::ostringstream decoded;
 
 	for (std::size_t i = 0; i < str.length(); ++i) {
