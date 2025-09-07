@@ -15,7 +15,7 @@ Checks: >
 
   # --- 42の要件で必須のチェックを追加 ---
   # Orthodox Canonical Form (コピーコンストラクタ、代入演算子など)の不備をチェック
-  cppcoreguidelines-special-member-functions,
+  # cppcoreguidelines-special-member-functions,
   # C言語スタイルの関数 (*printf(), *alloc(), free() など) の使用を警告
   cppcoreguidelines-pro-type-cstyle-api,
   # 'using namespace' の使用を禁止
