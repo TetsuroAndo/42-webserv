@@ -1,15 +1,43 @@
 #include "Config.hpp"
 
+#include <iostream>
 #include <ostream>
 
-#include "Config.hpp"
+void Config::setListens(const std::vector<listen> &listens) {
+	this->listens = listens;
+}
 
-#include <iostream>
+void Config::setDefaultErrorPage(const std::string &page) {
+	this->defaultErrorPage = page;
+}
 
+void Config::setMaxRequestBodySize(unsigned int size) {
+	this->maxRequestBodySize = size;
+}
+
+void Config::setIsAllowGet(bool allow) { this->isAllowGet = allow; }
+
+void Config::setIsAllowPost(bool allow) { this->isAllowPost = allow; }
+
+void Config::setIsAllowHead(bool allow) { this->isAllowHead = allow; }
+void Config::setIsAllowDelete(bool allow) { this->isAllowDelete = allow; }
+void Config::setRedirect(const std::string &redirect) {
+	this->redirect = redirect;
+}
+void Config::setLocations(const std::vector<location> &locations) {
+	this->locations = locations;
+}
+void Config::setIsShowDirectoryListPage(bool show) {
+	this->isShowDirectoryListPage = show;
+}
+void Config::setWhenRequestedDirectory(const std::string &dir) {
+	this->whenRequestedDirectory = dir;
+}
+void Config::setSaveFileDirectory(const std::string &dir) {
+	this->saveFileDirectory = dir;
+}
 Config::Config() { setup(); }
-
 Config::~Config() {}
-
 Config::Config(const Config &other)
 	: listens(other.listens), defaultErrorPage(other.defaultErrorPage),
 	  maxRequestBodySize(other.maxRequestBodySize),
@@ -20,7 +48,6 @@ Config::Config(const Config &other)
 	  whenRequestedDirectory(other.whenRequestedDirectory),
 	  saveFileDirectory(other.saveFileDirectory), timeoutSec(other.timeoutSec),
 	  maxEvents(other.maxEvents) {}
-
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
 		listens = other.listens;
@@ -40,7 +67,6 @@ Config &Config::operator=(const Config &other) {
 	}
 	return *this;
 }
-
 void Config::setup(std::string configFile) {
 	(void)configFile;
 
@@ -84,11 +110,11 @@ void Config::setup(std::string configFile) {
 	timeoutSec = 5;
 	maxEvents = 1024;
 }
-
 const std::vector<listen> &Config::getListens() const { return listens; }
 const std::string &Config::getDefaultErrorPage() const {
 	return defaultErrorPage;
 }
+
 unsigned int Config::getMaxRequestBodySize() const {
 	return maxRequestBodySize;
 }
@@ -109,35 +135,6 @@ const std::string &Config::getSaveFileDirectory() const {
 }
 unsigned int Config::getTimeoutSec() const { return timeoutSec; }
 unsigned int Config::getMaxEvents() const { return maxEvents; }
-
-void Config::setListens(const std::vector<listen> &listens) {
-	this->listens = listens;
-}
-void Config::setDefaultErrorPage(const std::string &page) {
-	this->defaultErrorPage = page;
-}
-void Config::setMaxRequestBodySize(unsigned int size) {
-	this->maxRequestBodySize = size;
-}
-void Config::setIsAllowGet(bool allow) { this->isAllowGet = allow; }
-void Config::setIsAllowPost(bool allow) { this->isAllowPost = allow; }
-void Config::setIsAllowHead(bool allow) { this->isAllowHead = allow; }
-void Config::setIsAllowDelete(bool allow) { this->isAllowDelete = allow; }
-void Config::setRedirect(const std::string &redirect) {
-	this->redirect = redirect;
-}
-void Config::setLocations(const std::vector<location> &locations) {
-	this->locations = locations;
-}
-void Config::setIsShowDirectoryListPage(bool show) {
-	this->isShowDirectoryListPage = show;
-}
-void Config::setWhenRequestedDirectory(const std::string &dir) {
-	this->whenRequestedDirectory = dir;
-}
-void Config::setSaveFileDirectory(const std::string &dir) {
-	this->saveFileDirectory = dir;
-}
 
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
