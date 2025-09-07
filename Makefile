@@ -6,7 +6,7 @@
 #    By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/25 13:31:17 by teando            #+#    #+#              #
-#    Updated: 2025/09/06 16:01:37 by teando           ###   ########.fr        #
+#    Updated: 2025/09/07 11:43:30 by teando           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,12 +25,10 @@ CXX			:= c++
 CXXFLAG		:= -Wall -Wextra -Werror -std=c++98 -pedantic
 OPT			:= -O3
 RM			:= rm -rf
-IDFLAG		:= -I$(INC_DIR)
 DEFINE		:= -D_GLIBCXX_USE_CXX11_ABI=0
 
 ROOT_DIR		:= .
 SRC_DIR			:= $(ROOT_DIR)/src
-INC_DIR			:= $(ROOT_DIR)/inc
 OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
 CONF			:= $(CONF_DIR)/default.conf
