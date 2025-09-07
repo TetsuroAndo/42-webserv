@@ -12,8 +12,6 @@
 
 NAME		:= webserv
 
-SRC		:= $(shell find $(SRC_DIR) -name '*.cpp')
-
 UNAME_S 		:= $(shell uname -s)
 ifeq ($(UNAME_S),Darwin) # MacOS
 	CONF			:= $(CONF_DIR)/default.conf
@@ -33,6 +31,7 @@ OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
 CONF			:= $(CONF_DIR)/default.conf
 
+SRC		:= $(shell find $(SRC_DIR) -name '*.cpp')
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
 # =============== 42 RULES ==============
