@@ -33,9 +33,10 @@ CONF			:= $(CONF_DIR)/default.conf
 
 SRC := \
 	$(SRC_DIR)/main.cpp \
+	$(shell find $(SRC_DIR)/Config -name 'Config.cpp') \
 	$(shell find $(SRC_DIR)/Server -name '*.cpp') \
 	$(shell find $(SRC_DIR)/Socket -name '*.cpp') \
-	$(shell find $(SRC_DIR)/SocketsManager -name '*.cpp')
+	$(shell find $(SRC_DIR)/SocketsManager -name '*.cpp') \
 
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
