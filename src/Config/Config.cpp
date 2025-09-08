@@ -2,17 +2,18 @@
 
 #include <iostream>
 #include <ostream>
+#include <string>
 
-void Config::setListens(const std::vector<listen> &listens) {
-	this->listens = listens;
+void Config::setListens(const std::vector<listen> &lists) {
+	this->_listens = lists;
 }
 
 void Config::setDefaultErrorPage(const std::string &page) {
-	this->defaultErrorPage = page;
+	this->_defaultErrorPage = page;
 }
 
 void Config::setMaxRequestBodySize(unsigned int size) {
-	this->maxRequestBodySize = size;
+	this->_maxRequestBodySize = size;
 }
 
 void Config::setIsAllowGet(bool allow) { this->isAllowGet = allow; }
@@ -21,11 +22,11 @@ void Config::setIsAllowPost(bool allow) { this->isAllowPost = allow; }
 
 void Config::setIsAllowHead(bool allow) { this->isAllowHead = allow; }
 void Config::setIsAllowDelete(bool allow) { this->isAllowDelete = allow; }
-void Config::setRedirect(const std::string &redirect) {
-	this->redirect = redirect;
+void Config::setRedirect(const std::string &url) {
+	this->redirect = url;
 }
-void Config::setLocations(const std::vector<location> &locations) {
-	this->locations = locations;
+void Config::setLocations(const std::vector<location> &url) {
+	this->locations = url;
 }
 void Config::setIsShowDirectoryListPage(bool show) {
 	this->isShowDirectoryListPage = show;
@@ -39,8 +40,8 @@ void Config::setSaveFileDirectory(const std::string &dir) {
 Config::Config() { setup(); }
 Config::~Config() {}
 Config::Config(const Config &other)
-	: listens(other.listens), defaultErrorPage(other.defaultErrorPage),
-	  maxRequestBodySize(other.maxRequestBodySize),
+	: _listens(other._listens), _defaultErrorPage(other._defaultErrorPage),
+	  _maxRequestBodySize(other._maxRequestBodySize),
 	  isAllowGet(other.isAllowGet), isAllowPost(other.isAllowPost),
 	  isAllowHead(other.isAllowHead), isAllowDelete(other.isAllowDelete),
 	  redirect(other.redirect), locations(other.locations),
@@ -50,9 +51,9 @@ Config::Config(const Config &other)
 	  maxEvents(other.maxEvents) {}
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
-		listens = other.listens;
-		defaultErrorPage = other.defaultErrorPage;
-		maxRequestBodySize = other.maxRequestBodySize;
+		_listens = other._listens;
+		_defaultErrorPage = other._defaultErrorPage;
+		_maxRequestBodySize = other._maxRequestBodySize;
 		isAllowGet = other.isAllowGet;
 		isAllowPost = other.isAllowPost;
 		isAllowHead = other.isAllowHead;
@@ -67,24 +68,24 @@ Config &Config::operator=(const Config &other) {
 	}
 	return *this;
 }
-void Config::setup(std::string configFile) {
+void Config::setup(const std::string &configFile) {
 	(void)configFile;
 
-	listens.clear();
+	_listens.clear();
 	{
 		listen l1;
 		l1.interface = "0.0.0.0";
 		l1.port = 8080;
-		listens.push_back(l1);
+		_listens.push_back(l1);
 
 		listen l2;
 		l2.interface = "127.0.0.1";
 		l2.port = 3000;
-		listens.push_back(l2);
+		_listens.push_back(l2);
 	}
 
-	defaultErrorPage = "/tmp/www/error.html";
-	maxRequestBodySize = 1024 * 1024; // 1MB
+	_defaultErrorPage = "/tmp/www/error.html";
+	_maxRequestBodySize = 1024 * 1024; // 1MB
 	isAllowGet = true;
 	isAllowPost = true;
 	isAllowHead = true;
@@ -110,13 +111,13 @@ void Config::setup(std::string configFile) {
 	timeoutSec = 5;
 	maxEvents = 1024;
 }
-const std::vector<listen> &Config::getListens() const { return listens; }
+const std::vector<listen> &Config::getListens() const { return _listens; }
 const std::string &Config::getDefaultErrorPage() const {
-	return defaultErrorPage;
+	return _defaultErrorPage;
 }
 
 unsigned int Config::getMaxRequestBodySize() const {
-	return maxRequestBodySize;
+	return _maxRequestBodySize;
 }
 bool Config::getIsAllowGet() const { return isAllowGet; }
 bool Config::getIsAllowPost() const { return isAllowPost; }
@@ -139,12 +140,12 @@ unsigned int Config::getMaxEvents() const { return maxEvents; }
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  listens:\n";
-	for (std::vector<listen>::const_iterator it = config.listens.begin();
-		 it != config.listens.end(); ++it) {
+	for (std::vector<listen>::const_iterator it = config._listens.begin();
+		 it != config._listens.end(); ++it) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
-	os << "  defaultErrorPage: " << config.defaultErrorPage << "\n";
-	os << "  maxRequestBodySize: " << config.maxRequestBodySize << "\n";
+	os << "  defaultErrorPage: " << config._defaultErrorPage << "\n";
+	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
 	os << "  isAllowGet: " << config.isAllowGet << "\n";
 	os << "  isAllowPost: " << config.isAllowPost << "\n";
 	os << "  isAllowHead: " << config.isAllowHead << "\n";

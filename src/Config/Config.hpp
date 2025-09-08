@@ -15,9 +15,9 @@ struct location {
 
 class Config {
 private:
-	std::vector<listen> listens;
-	std::string defaultErrorPage;
-	unsigned int maxRequestBodySize;
+	std::vector<listen> _listens;
+	std::string _defaultErrorPage;
+	unsigned int _maxRequestBodySize;
 	bool isAllowGet;
 	bool isAllowPost;
 	bool isAllowHead;
@@ -30,7 +30,7 @@ private:
 	unsigned int timeoutSec;
 	unsigned int maxEvents;
 
-	void setListens(const std::vector<listen> &newListens);
+	void setListens(const std::vector<listen> &lists);
 	void setDefaultErrorPage(const std::string &page);
 	void setMaxRequestBodySize(unsigned int size);
 	void setIsAllowGet(bool allow);
@@ -38,7 +38,7 @@ private:
 	void setIsAllowHead(bool allow);
 	void setIsAllowDelete(bool allow);
 	void setRedirect(const std::string &url);
-	void setLocations(const std::vector<location> &newLocations);
+	void setLocations(const std::vector<location> &url);
 	void setIsShowDirectoryListPage(bool show);
 	void setWhenRequestedDirectory(const std::string &dir);
 	void setSaveFileDirectory(const std::string &dir);
@@ -49,7 +49,7 @@ public:
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 
-	void setup(std::string configFile = "");
+	void setup(const std::string& configFile = "");
 
 	const std::vector<listen> &getListens() const;
 	const std::string &getDefaultErrorPage() const;
