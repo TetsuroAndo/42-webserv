@@ -20,8 +20,8 @@ void Socket::setRecvBuffer(const std::string &str) { this->recvBuffer = str; }
 
 void Socket::setSendBuffer(const std::string &str) { this->sendBuffer = str; }
 
-void Socket::appendRecvBuffer(const std::string &str, int size) {
-	this->recvBuffer.append(str, size);
+void Socket::appendRecvBuffer(const char* data, int size) {
+    this->recvBuffer.append(data, size);
 }
 
 void Socket::eraseSendBuffer(int start, int end) {
