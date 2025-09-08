@@ -1,7 +1,6 @@
 #include "Server.hpp"
 
 #include <arpa/inet.h>
-#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -122,14 +121,7 @@ void Server::handleClientRead(int client_fd) {
             closeConnection(client_fd);
             return;
         } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
-            }
-            if (errno == EINTR) {
-                continue;
-            }
-            closeConnection(client_fd);
-            return;
+			break;
         }
     }
 
@@ -155,10 +147,10 @@ void Server::handleClientWrite(int client_fd) {
         if (sock->getSendBuffer().empty()) {
             closeConnection(client_fd);
         }
+	} else if (bytes_sent == 0) {
+        closeConnection(client_fd);
     } else {
-        if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
-            closeConnection(client_fd);
-        }
+		return;
     }
 }
 
