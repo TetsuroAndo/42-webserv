@@ -1,0 +1,50 @@
+---
+Checks: >
+
+  -*,
+  clang-diagnostic-*, # コンパイラの警告を有効化
+  llvm-*, # LLVMのコーディング規約に基づくチェックを有効化
+  misc-*, # 雑多なチェックを有効化
+  -misc-const-correctness, # const修飾子に関するチェックを無効化
+  -misc-include-cleaner, # インクルードガードに関するチェックを無効化
+  -misc-no-recursion, # 再帰関数に関するチェックを無効化
+  -misc-non-private-member-variables-in-classes, # クラスの非privateメンバ変数に関するチェックを無効化
+  -misc-unused-parameters, # 未使用のパラメータに関するチェックを無効化
+  -misc-use-anonymous-namespace, # 無名名前空間の使用に関するチェックを無効化
+  readability-identifier-naming, # 識別子の命名規則に関するチェックを有効化
+
+  # --- 42の要件で必須のチェックを追加 ---
+  # Orthodox Canonical Form (コピーコンストラクタ、代入演算子など)の不備をチェック
+  # cppcoreguidelines-special-member-functions,
+  # C言語スタイルの関数 (*printf(), *alloc(), free() など) の使用を警告
+  cppcoreguidelines-pro-type-cstyle-api,
+  # 'using namespace' の使用を禁止
+  google-build-using-namespace,
+
+  # --- C++98準拠のため、近代的な機能に関するチェックを無効化 ---
+  -modernize-*
+
+CheckOptions:
+  - key:             readability-identifier-naming.ClassCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.EnumCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.StructCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.UnionCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.FunctionCase # 関数の命名規則
+    value:           camelBack
+  - key:             readability-identifier-naming.MemberCase # クラスメンバの命名規則
+    value:           camelBack
+  - key:             readability-identifier-naming.ParameterCase # 関数パラメータの命名規則
+    value:           camelBack
+  - key:             readability-identifier-naming.VariableCase # 変数の命名規則
+    value:           camelBack
+  - key:             readability-identifier-naming.IgnoreMainLikeFunctions # main関数の命名規則を無視
+    value:           1
+  - key:             readability-redundant-member-init.IgnoreBaseInCopyConstructors # コピーコンストラクタでの基底クラスの初期化を無視
+    value:           1
+  - key:             readability-identifier-naming.PrivateMemberPrefix # プライベートメンバの接頭辞
+    value:           "_"
+...
