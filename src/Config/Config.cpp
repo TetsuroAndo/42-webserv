@@ -4,7 +4,7 @@
 #include <ostream>
 #include <string>
 
-void Config::setListens(const std::vector<listen> &lists) {
+void Config::setListens(const std::vector<Listen> &lists) {
 	this->_listens = lists;
 }
 
@@ -16,55 +16,55 @@ void Config::setMaxRequestBodySize(unsigned int size) {
 	this->_maxRequestBodySize = size;
 }
 
-void Config::setIsAllowGet(bool allow) { this->isAllowGet = allow; }
+void Config::setIsAllowGet(bool allow) { this->_isAllowGet = allow; }
 
-void Config::setIsAllowPost(bool allow) { this->isAllowPost = allow; }
+void Config::setIsAllowPost(bool allow) { this->_isAllowPost = allow; }
 
-void Config::setIsAllowHead(bool allow) { this->isAllowHead = allow; }
-void Config::setIsAllowDelete(bool allow) { this->isAllowDelete = allow; }
+void Config::setIsAllowHead(bool allow) { this->_isAllowHead = allow; }
+void Config::setIsAllowDelete(bool allow) { this->_isAllowDelete = allow; }
 void Config::setRedirect(const std::string &url) {
-	this->redirect = url;
+	this->_redirect = url;
 }
-void Config::setLocations(const std::vector<location> &url) {
-	this->locations = url;
+void Config::setLocations(const std::vector<Location> &url) {
+	this->_locations = url;
 }
 void Config::setIsShowDirectoryListPage(bool show) {
-	this->isShowDirectoryListPage = show;
+	this->_isShowDirectoryListPage = show;
 }
 void Config::setWhenRequestedDirectory(const std::string &dir) {
-	this->whenRequestedDirectory = dir;
+	this->_whenRequestedDirectory = dir;
 }
 void Config::setSaveFileDirectory(const std::string &dir) {
-	this->saveFileDirectory = dir;
+	this->_saveFileDirectory = dir;
 }
 Config::Config() { setup(); }
 Config::~Config() {}
 Config::Config(const Config &other)
 	: _listens(other._listens), _defaultErrorPage(other._defaultErrorPage),
 	  _maxRequestBodySize(other._maxRequestBodySize),
-	  isAllowGet(other.isAllowGet), isAllowPost(other.isAllowPost),
-	  isAllowHead(other.isAllowHead), isAllowDelete(other.isAllowDelete),
-	  redirect(other.redirect), locations(other.locations),
-	  isShowDirectoryListPage(other.isShowDirectoryListPage),
-	  whenRequestedDirectory(other.whenRequestedDirectory),
-	  saveFileDirectory(other.saveFileDirectory), timeoutSec(other.timeoutSec),
-	  maxEvents(other.maxEvents) {}
+	  _isAllowGet(other._isAllowGet), _isAllowPost(other._isAllowPost),
+	  _isAllowHead(other._isAllowHead), _isAllowDelete(other._isAllowDelete),
+	  _redirect(other._redirect), _locations(other._locations),
+	  _isShowDirectoryListPage(other._isShowDirectoryListPage),
+	  _whenRequestedDirectory(other._whenRequestedDirectory),
+	  _saveFileDirectory(other._saveFileDirectory), _timeoutSec(other._timeoutSec),
+	  _maxEvents(other._maxEvents) {}
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
 		_listens = other._listens;
 		_defaultErrorPage = other._defaultErrorPage;
 		_maxRequestBodySize = other._maxRequestBodySize;
-		isAllowGet = other.isAllowGet;
-		isAllowPost = other.isAllowPost;
-		isAllowHead = other.isAllowHead;
-		isAllowDelete = other.isAllowDelete;
-		redirect = other.redirect;
-		locations = other.locations;
-		isShowDirectoryListPage = other.isShowDirectoryListPage;
-		whenRequestedDirectory = other.whenRequestedDirectory;
-		saveFileDirectory = other.saveFileDirectory;
-		timeoutSec = other.timeoutSec;
-		maxEvents = other.maxEvents;
+		_isAllowGet = other._isAllowGet;
+		_isAllowPost = other._isAllowPost;
+		_isAllowHead = other._isAllowHead;
+		_isAllowDelete = other._isAllowDelete;
+		_redirect = other._redirect;
+		_locations = other._locations;
+		_isShowDirectoryListPage = other._isShowDirectoryListPage;
+		_whenRequestedDirectory = other._whenRequestedDirectory;
+		_saveFileDirectory = other._saveFileDirectory;
+		_timeoutSec = other._timeoutSec;
+		_maxEvents = other._maxEvents;
 	}
 	return *this;
 }
@@ -73,12 +73,12 @@ void Config::setup(const std::string &configFile) {
 
 	_listens.clear();
 	{
-		listen l1;
+		Listen l1;
 		l1.interface = "0.0.0.0";
 		l1.port = 8080;
 		_listens.push_back(l1);
 
-		listen l2;
+		Listen l2;
 		l2.interface = "127.0.0.1";
 		l2.port = 3000;
 		_listens.push_back(l2);
@@ -86,32 +86,32 @@ void Config::setup(const std::string &configFile) {
 
 	_defaultErrorPage = "/tmp/www/error.html";
 	_maxRequestBodySize = 1024 * 1024; // 1MB
-	isAllowGet = true;
-	isAllowPost = true;
-	isAllowHead = true;
-	isAllowDelete = true;
-	redirect = "";
+	_isAllowGet = true;
+	_isAllowPost = true;
+	_isAllowHead = true;
+	_isAllowDelete = true;
+	_redirect = "";
 
-	locations.clear();
+	_locations.clear();
 	{
-		location loc1;
+		Location loc1;
 		loc1.path = "/";
 		loc1.root = "/tmp/www";
-		locations.push_back(loc1);
+		_locations.push_back(loc1);
 
-		location loc2;
+		Location loc2;
 		loc2.path = "/uploads";
 		loc2.root = "/tmp/uploads";
-		locations.push_back(loc2);
+		_locations.push_back(loc2);
 	}
 
-	isShowDirectoryListPage = true;
-	whenRequestedDirectory = "index.html";
-	saveFileDirectory = "/tmp/uploads";
-	timeoutSec = 5;
-	maxEvents = 1024;
+	_isShowDirectoryListPage = true;
+	_whenRequestedDirectory = "index.html";
+	_saveFileDirectory = "/tmp/uploads";
+	_timeoutSec = 5;
+	_maxEvents = 1024;
 }
-const std::vector<listen> &Config::getListens() const { return _listens; }
+const std::vector<Listen> &Config::getListens() const { return _listens; }
 const std::string &Config::getDefaultErrorPage() const {
 	return _defaultErrorPage;
 }
@@ -119,48 +119,48 @@ const std::string &Config::getDefaultErrorPage() const {
 unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
 }
-bool Config::getIsAllowGet() const { return isAllowGet; }
-bool Config::getIsAllowPost() const { return isAllowPost; }
-bool Config::getIsAllowHead() const { return isAllowHead; }
-bool Config::getIsAllowDelete() const { return isAllowDelete; }
-const std::string &Config::getRedirect() const { return redirect; }
-const std::vector<location> &Config::getLocations() const { return locations; }
+bool Config::getIsAllowGet() const { return _isAllowGet; }
+bool Config::getIsAllowPost() const { return _isAllowPost; }
+bool Config::getIsAllowHead() const { return _isAllowHead; }
+bool Config::getIsAllowDelete() const { return _isAllowDelete; }
+const std::string &Config::getRedirect() const { return _redirect; }
+const std::vector<Location> &Config::getLocations() const { return _locations; }
 bool Config::getIsShowDirectoryListPage() const {
-	return isShowDirectoryListPage;
+	return _isShowDirectoryListPage;
 }
 const std::string &Config::getWhenRequestedDirectory() const {
-	return whenRequestedDirectory;
+	return _whenRequestedDirectory;
 }
 const std::string &Config::getSaveFileDirectory() const {
-	return saveFileDirectory;
+	return _saveFileDirectory;
 }
-unsigned int Config::getTimeoutSec() const { return timeoutSec; }
-unsigned int Config::getMaxEvents() const { return maxEvents; }
+unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
+unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  listens:\n";
-	for (std::vector<listen>::const_iterator it = config._listens.begin();
+	for (std::vector<Listen>::const_iterator it = config._listens.begin();
 		 it != config._listens.end(); ++it) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
 	os << "  defaultErrorPage: " << config._defaultErrorPage << "\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
-	os << "  isAllowGet: " << config.isAllowGet << "\n";
-	os << "  isAllowPost: " << config.isAllowPost << "\n";
-	os << "  isAllowHead: " << config.isAllowHead << "\n";
-	os << "  isAllowDelete: " << config.isAllowDelete << "\n";
-	os << "  redirect: " << config.redirect << "\n";
+	os << "  isAllowGet: " << config._isAllowGet << "\n";
+	os << "  isAllowPost: " << config._isAllowPost << "\n";
+	os << "  isAllowHead: " << config._isAllowHead << "\n";
+	os << "  isAllowDelete: " << config._isAllowDelete << "\n";
+	os << "  redirect: " << config._redirect << "\n";
 	os << "  locations:\n";
-	for (std::vector<location>::const_iterator it = config.locations.begin();
-		 it != config.locations.end(); ++it) {
+	for (std::vector<Location>::const_iterator it = config._locations.begin();
+		 it != config._locations.end(); ++it) {
 		os << "    - path: " << it->path << ", root: " << it->root << "\n";
 	}
-	os << "  isShowDirectoryListPage: " << config.isShowDirectoryListPage
+	os << "  isShowDirectoryListPage: " << config._isShowDirectoryListPage
 	   << "\n";
-	os << "  whenRequestedDirectory: " << config.whenRequestedDirectory << "\n";
-	os << "  saveFileDirectory: " << config.saveFileDirectory << "\n";
-	os << "  timeoutSec: " << config.timeoutSec << "\n";
-	os << "  maxEvents: " << config.maxEvents << "\n";
+	os << "  whenRequestedDirectory: " << config._whenRequestedDirectory << "\n";
+	os << "  saveFileDirectory: " << config._saveFileDirectory << "\n";
+	os << "  timeoutSec: " << config._timeoutSec << "\n";
+	os << "  maxEvents: " << config._maxEvents << "\n";
 	return os;
 }

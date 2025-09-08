@@ -1,6 +1,5 @@
-#include <iostream>
-#include <vector>
 #include "Server/Server.hpp"
+#include <iostream>
 
 int main() {
     try {

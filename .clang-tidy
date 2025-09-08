@@ -33,6 +33,8 @@ Checks: |
   # --- C++98 準拠のため、近代的な機能に関するチェックを無効化 ---
   ,-modernize-*
 
+HeaderFilterRegex: '.*'
+
 CheckOptions:
   - key: readability-identifier-naming.ClassCase
     value: CamelCase

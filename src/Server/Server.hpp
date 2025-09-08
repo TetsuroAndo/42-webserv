@@ -10,7 +10,7 @@
 class Server {
 public:
 	Server();
-	//  Server(Config config);
+	Server(const Config &config);
 	Server(const Server &other);
 	~Server();
 	Server &operator=(const Server &other);
@@ -22,11 +22,13 @@ private:
 	SocketsManager manager;
 	std::map<int, Socket *> sockets;
 
-	void handleNewConnection(int listen_fd);
-	void handleClientRead(int client_fd);
-	void handleClientWrite(int client_fd);
+	void handleNewConnection(int listenFd);
+	void handleClientRead(int clientFd);
+	void handleClientWrite(int clientFd);
 	bool isRequestComplete(Socket *sock);
-	void closeConnection(int client_fd);
+	void closeConnection(int clientFd);
+
+	Config _config;
 };
 
 #endif
