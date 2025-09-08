@@ -47,5 +47,5 @@ CheckOptions:
     value:           1
   - key:             readability-identifier-naming.PrivateMemberPrefix # プライベートメンバの接頭辞
     value:           "_"
-  - key:			 readability-identifier-naming.readability-magic-numbers # マジックナンバー
+  - key:             readability-identifier-naming.readability-magic-numbers # マジックナンバー
     value:           0 # 1: 許容しない, 0: 許容する
