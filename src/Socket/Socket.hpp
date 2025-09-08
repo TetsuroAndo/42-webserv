@@ -19,8 +19,8 @@ public:
 	void setSendBuffer(const std::string &str);
 	void appendRecvBuffer(const std::string &str, int size);
 	void eraseSendBuffer(int start, int end);
-	const std::string &getRecvBuffer();
-	const std::string &getSendBuffer();
+	const std::string &getRecvBuffer() const;
+	const std::string &getSendBuffer() const;
 
 private:
 	int fd;

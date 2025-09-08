@@ -28,6 +28,6 @@ void Socket::eraseSendBuffer(int start, int end) {
 	this->sendBuffer.erase(start, end);
 }
 
-const std::string &Socket::getRecvBuffer() { return this->recvBuffer; }
+const std::string &Socket::getRecvBuffer() const { return this->recvBuffer; }
 
-const std::string &Socket::getSendBuffer() { return this->sendBuffer; }
+const std::string &Socket::getSendBuffer() const { return this->sendBuffer; }
