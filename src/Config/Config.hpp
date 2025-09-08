@@ -45,6 +45,7 @@ private:
 
 public:
 	Config();
+	Config(std::string configFile);
 	~Config();
 	Config(const Config &other);
 	Config &operator=(const Config &other);

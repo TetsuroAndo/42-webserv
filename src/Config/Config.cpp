@@ -38,6 +38,11 @@ void Config::setSaveFileDirectory(const std::string &dir) {
 	this->_saveFileDirectory = dir;
 }
 Config::Config() { setup(); }
+
+Config::Config(std::string configFile) {
+	setup(configFile);
+}
+
 Config::~Config() {}
 Config::Config(const Config &other)
 	: _listens(other._listens), _defaultErrorPage(other._defaultErrorPage),
