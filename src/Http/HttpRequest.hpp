@@ -17,9 +17,18 @@ class HttpRequest {
 		std::map<std::string, std::string> _query;
 		std::string _body;
 
+		std::string _queryString;
+
 		bool parseRequestLine(std::string& requestLine);
 		bool parseHeaders(std::istringstream& headerStream);
 		bool parseBody(std::string& buffer, size_t bodyStart);
+
+		bool splitRequestLine(const std::string& requestLine);
+		void splitPathAndQuery();
+		void parseQueryString();
+
+		bool parseChunkedBody(std::string &buffer, size_t bodyStart);
+		bool parseContentLengthBody(std::string &buffer, size_t bodyStart);
 	public:
 		HttpRequest();
 		~HttpRequest();

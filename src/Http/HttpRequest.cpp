@@ -39,14 +39,26 @@ bool HttpRequest::parse(std::string &buffer) {
     return _complete;
 }
 
-bool HttpRequest::parseRequestLine(std::string& requestLine) {
-    if (!requestLine.empty() && requestLine[requestLine.size()-1] == '\r') {
-        requestLine.erase(requestLine.size()-1);
+static void trimCR(std::string &line) {
+    if (!line.empty() && line[line.size()-1] == '\r') {
+        line.erase(line.size()-1);
 	}
+}
+
+bool HttpRequest::parseRequestLine(std::string& requestLine) {
+	trimCR(requestLine);
     if (requestLine.empty()) {
 		return false;
 	}
+    if (!splitRequestLine(requestLine)) {
+		return false;
+	}
+    splitPathAndQuery();
+    parseQueryString();
+    return true;
+}
 
+bool HttpRequest::splitRequestLine(const std::string& requestLine) {
     size_t firstSpace = requestLine.find(' ');
     size_t lastSpace  = requestLine.rfind(' ');
     if (firstSpace == std::string::npos || lastSpace == std::string::npos || firstSpace == lastSpace) {
@@ -55,10 +67,10 @@ bool HttpRequest::parseRequestLine(std::string& requestLine) {
 
     _method = requestLine.substr(0, firstSpace);
     if (_method != "GET" && _method != "POST" && _method != "DELETE") {
-		return false;
+        return false;
 	}
 
-    _path   = requestLine.substr(firstSpace + 1, lastSpace - firstSpace - 1);
+    _path = requestLine.substr(firstSpace + 1, lastSpace - firstSpace - 1);
     if (_path.find(' ') != std::string::npos) {
 		return false;
 	}
@@ -68,38 +80,59 @@ bool HttpRequest::parseRequestLine(std::string& requestLine) {
 		return false;
 	}
 
-    std::string decodedPath;
-    std::string queryString;
-    std::string::size_type questionPos = _path.find('?');
+    return true;
+}
+
+void HttpRequest::splitPathAndQuery() {
+    size_t questionPos = _path.find('?');
+	std::string decodedPath;
     if (questionPos != std::string::npos) {
         decodedPath = URI::decodeURIComponent(_path.substr(0, questionPos));
-        queryString = _path.substr(questionPos + 1);
+        _queryString = _path.substr(questionPos + 1);
     } else {
         decodedPath = URI::decodeURIComponent(_path);
-    }
-    
-    _query.clear();
-    if (!queryString.empty()) {
-        std::istringstream iss(queryString);
-        std::string pair;
-        while (std::getline(iss, pair, '&')) {
-            std::string::size_type equalPos = pair.find('=');
-            std::string key, value;
-            if (equalPos != std::string::npos) {
-                key = pair.substr(0, equalPos);
-                value = pair.substr(equalPos + 1);
-            } else {
-                key = pair;
-                value = "";
-            }
-            key = URI::decodeURIComponent(key);
-            value = URI::decodeURIComponent(value);
-            _query[key] = value;
-        }
+        _queryString.clear();
     }
     _path = decodedPath;
+}
 
-    return true;
+void HttpRequest::parseQueryString() {
+    _query.clear();
+    if (_queryString.empty()) {
+		return;
+	}
+
+    std::istringstream iss(_queryString);
+    std::string pair;
+    while (std::getline(iss, pair, '&')) {
+        size_t equalPos = pair.find('=');
+        std::string key;
+        std::string value;
+		if(equalPos != std::string::npos) {
+			key = pair.substr(0, equalPos);
+        	value = pair.substr(equalPos + 1);
+		} else {
+			key = pair;
+			value = "";
+		}
+        _query[URI::decodeURIComponent(key)] = URI::decodeURIComponent(value);
+    }
+}
+
+static void trimSpaces(std::string &s, std::string spaces) {
+    size_t start = s.find_first_not_of(spaces);
+    size_t end = s.find_last_not_of(spaces);
+    if (start == std::string::npos) {
+        s.clear();
+    } else {
+        s = s.substr(start, end - start + 1);
+    }
+}
+
+static void toLower(std::string &str) {
+    for (std::string::size_type i = 0; i < str.size(); ++i) {
+        str[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(str[i])));
+    }
 }
 
 bool HttpRequest::parseHeaders(std::istringstream& headerStream) {
@@ -110,24 +143,15 @@ bool HttpRequest::parseHeaders(std::istringstream& headerStream) {
         if (headerBytes > maxHeaderSize) {
 			return false;
 		}
-        if (!line.empty() && line[line.size()-1] == '\r') {
-			line.erase(line.size()-1);
-		}
+
+		trimCR(line);
 
         size_t pos = line.find(":");
         if (pos != std::string::npos) {
             std::string key = line.substr(0, pos);
+            toLower(key);
             std::string value = line.substr(pos + 1);
-            for (size_t i = 0; i < key.size(); ++i) {
-                key[i] = std::tolower(static_cast<unsigned char>(key[i]));
-			}
-			size_t start = value.find_first_not_of(" \t");
-			size_t end = value.find_last_not_of(" \t");
-			if (start == std::string::npos) {
-				value.clear();
-			} else {
-				value = value.substr(start, end - start + 1);
-			}
+			trimSpaces(value, " \t");
             if (_headers.find(key) != _headers.end()) {
 				return false;
 			}
@@ -137,94 +161,111 @@ bool HttpRequest::parseHeaders(std::istringstream& headerStream) {
     return true;
 }
 
-bool HttpRequest::parseBody(std::string& buffer, size_t bodyStart) {
-    size_t consumed = bodyStart;
-
+bool HttpRequest::parseBody(std::string &buffer, size_t bodyStart) {
     if (_headers.find("transfer-encoding") != _headers.end() &&
         _headers["transfer-encoding"].find("chunked") != std::string::npos) {
-        size_t pos = bodyStart;
-        while (true) {
-            size_t crlf = buffer.find("\r\n", pos);
-            if (crlf == std::string::npos) {
-				return false;
-			}
-
-            std::string chunkSizeStr = buffer.substr(pos, crlf - pos);
-            size_t semiPos = chunkSizeStr.find(";");
-            if (semiPos != std::string::npos) {
-				chunkSizeStr = chunkSizeStr.substr(0, semiPos);
-			}
-
-            char *endptr = NULL;
-            long chunkSize = std::strtol(chunkSizeStr.c_str(), &endptr, 16);
-            if (endptr == chunkSizeStr.c_str() || chunkSize < 0) {
-				return false;
-			}
-
-            pos = crlf + 2;
-            if (chunkSize == 0) {
-                size_t trailerEnd = buffer.find("\r\n\r\n", pos);
-				if (buffer.compare(pos, 2, "\r\n") == 0) {
-					pos += 2;
-				} else {
-					if (trailerEnd != std::string::npos) {
-						pos = trailerEnd + 4;
-					}
-				}
-                _complete = true;
-                consumed = trailerEnd + 4;
-                break;
-            }
-
-            if (pos + (size_t)chunkSize + 2 > buffer.size()) {
-				return false;
-			}
-            if (_body.size() + static_cast<size_t>(chunkSize) > maxBodySize) {
-				return false;
-			}
-
-            _body.append(buffer, pos, chunkSize);
-            pos += chunkSize;
-
-            if (buffer.compare(pos, 2, "\r\n") != 0) {
-				return false;
-			}
-            pos += 2;
-            consumed = pos;
-        }
-    } else if (_headers.find("content-length") != _headers.end()) {
-        std::string lenStr = _headers["content-length"];
-
-		size_t start = lenStr.find_first_not_of(" \t\n\r\f\v");
-		size_t end = lenStr.find_last_not_of(" \t\n\r\f\v");
-		if (start == std::string::npos) {
-			lenStr.clear(); // 空白だけなら空文字に
-		} else {
-			lenStr = lenStr.substr(start, end - start + 1);
-		}
-        
-        char *endPtr = NULL;
-        long contentLength = std::strtol(lenStr.c_str(), &endPtr, 10);
-        if (endPtr == lenStr.c_str() || *endPtr != '\0' || contentLength < 0 ||
-            contentLength > static_cast<long>(maxBodySize)) {
-			return false;
-		}
-
-        if (buffer.size() - bodyStart < static_cast<size_t>(contentLength)) {
-			return false;
-		}
-
-        _body.append(buffer, bodyStart, static_cast<size_t>(contentLength));
-        _complete = true;
-        consumed = bodyStart + static_cast<size_t>(contentLength);
-
-    } else {
-        _body = "";
-        _complete = true;
-        consumed = bodyStart;
+        return parseChunkedBody(buffer, bodyStart);
     }
-    
-    buffer.erase(0, consumed);
+	if (_headers.find("content-length") != _headers.end()) {
+        return parseContentLengthBody(buffer, bodyStart);
+    }
+	_body = "";
+	_complete = true;
+	buffer.erase(0, bodyStart);
+	return true;
+}
+
+static bool getChunkSize(const std::string &buffer, size_t pos, long &chunkSize, size_t &nextPos) {
+    size_t crlf = buffer.find("\r\n", pos);
+    if (crlf == std::string::npos) {
+		return false;
+	}
+
+    std::string chunkSizeStr = buffer.substr(pos, crlf - pos);
+    size_t semiPos = chunkSizeStr.find(";");
+    if (semiPos != std::string::npos) chunkSizeStr = chunkSizeStr.substr(0, semiPos);
+
+    char *endptr = NULL;
+    chunkSize = std::strtol(chunkSizeStr.c_str(), &endptr, 16);
+    if (endptr == chunkSizeStr.c_str() || chunkSize < 0) {
+		return false;
+	}
+
+    nextPos = crlf + 2;
+    return true;
+}
+
+static bool readChunkData(const std::string &buffer, size_t &pos, std::string &body, long chunkSize, size_t maxBodySize) {
+    if (pos + static_cast<size_t>(chunkSize) + 2 > buffer.size()) {
+		return false;
+	}
+    if (body.size() + static_cast<size_t>(chunkSize) > maxBodySize) {
+		return false;
+	}
+
+    body.append(buffer, pos, chunkSize);
+    pos += chunkSize;
+
+    if (buffer.compare(pos, 2, "\r\n") != 0) return false;
+    pos += 2;
+    return true;
+}
+
+static size_t handleLastChunk(const std::string &buffer, size_t pos) {
+    size_t trailerEnd = buffer.find("\r\n\r\n", pos);
+
+    if (buffer.compare(pos, 2, "\r\n") == 0) {
+		pos += 2;
+	} else if (trailerEnd != std::string::npos) {
+		pos = trailerEnd + 4;
+	}
+    return std::min(pos, buffer.size());  
+}
+
+bool HttpRequest::parseChunkedBody(std::string &buffer, size_t bodyStart) {
+    size_t erasePos = bodyStart;
+    size_t pos = bodyStart;
+
+    while (true) {
+        long chunkSize;
+        size_t nextPos;
+        if (!getChunkSize(buffer, pos, chunkSize, nextPos)) {
+			return false;
+		}
+        pos = nextPos;
+        if (chunkSize == 0) {
+			erasePos = std::min(handleLastChunk(buffer, pos), buffer.size());
+            _complete = true;
+            break;
+        }
+        if (!readChunkData(buffer, pos, _body, chunkSize, maxBodySize)) {
+			return false;
+		}
+        erasePos = pos;
+    }
+
+    if (erasePos > 0) buffer.erase(0, erasePos);
+    return true;
+}
+
+bool HttpRequest::parseContentLengthBody(std::string &buffer, size_t bodyStart) {
+    std::string lenStr = _headers["content-length"];
+    trimSpaces(lenStr, " \t\n\r\f\v");
+
+    char *endPtr = NULL;
+    long contentLength = std::strtol(lenStr.c_str(), &endPtr, 10);
+    if (endPtr == lenStr.c_str() || *endPtr != '\0' || contentLength < 0 ||
+        contentLength > static_cast<long>(maxBodySize)) {
+		return false;
+	}
+
+    if (buffer.size() - bodyStart < static_cast<size_t>(contentLength)) {
+		return false;
+	}
+
+    _body.append(buffer, bodyStart, static_cast<size_t>(contentLength));
+    _complete = true;
+    buffer.erase(0, bodyStart + static_cast<size_t>(contentLength));
     return true;
 }
 
