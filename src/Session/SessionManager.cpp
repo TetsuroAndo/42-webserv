@@ -53,18 +53,14 @@ bool SessionManager::destroySession(const std::string& sessionId) {
 
 void SessionManager::cleanupExpiredSessions() {
 	time_t now = std::time(NULL);
-	std::vector<std::string> toDelete;
 
-	std::map<std::string, Session*>::iterator it = _sessions.begin();
-	for ( ; it != _sessions.end(); ++it) {
+	std::map<std::string, Session *>::iterator it = _sessions.begin();
+	while (it != _sessions.end()) {
 		if (now - it->second->getLastAccess() > SESSION_TIMEOUT) {
-			toDelete.push_back(it->first);
-		}
-	}
-
-	for (size_t i = 0; i < toDelete.size(); ++i) {
-		if (!destroySession(toDelete[i])) {
-			// TODO: セッションの削除に失敗した場合のログ出力やエラーハンドリング
+			delete it->second;
+			_sessions.erase(it++);
+		} else {
+			++it;
 		}
 	}
 }

@@ -19,7 +19,7 @@ const std::string &Session::getData(const std::string &key) const {
 	return it->second;
 }
 
-const std::string &Session::getOptionalData(const std::string &key, const std::string &defaultValue) const {
+std::string Session::getOptionalData(const std::string &key, const std::string &defaultValue) const {
 	std::map<std::string, std::string>::const_iterator it = _data.find(key);
 	if (it == _data.end()) {
 		return defaultValue;

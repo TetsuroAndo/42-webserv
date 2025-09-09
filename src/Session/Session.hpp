@@ -11,7 +11,7 @@ public:
 	// Getters
 	const std::string &getId() const;
 	const std::string &getData(const std::string &key) const;
-	const std::string &getOptionalData(const std::string &key, const std::string &defaultValue = "") const;
+	std::string getOptionalData(const std::string &key, const std::string &defaultValue = "") const;
 	time_t getLastAccess() const;
 	bool hasData(const std::string &key) const;
 
