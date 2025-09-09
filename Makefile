@@ -99,7 +99,7 @@ fill:
 	./tools/fillEmptyDir.sh
 
 view:
-	./tools/rowCodeViewer.sh
+	./tools/rawCodeViewer.sh
 
 help:
 	@echo "Usage: make [target]"
