@@ -14,7 +14,7 @@ public:
 	Session* createSession();
 	Session* getSession(const std::string& sessionId);
 	bool destroySession(const std::string& sessionId);
-	void cleanupExpiredSessions(); // 定期的に呼び出す
+	void cleanupExpiredSessions(); // TODO: 定期的に呼び出す
 
 private:
 	SessionManager();

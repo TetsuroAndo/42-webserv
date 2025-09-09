@@ -64,7 +64,7 @@ void SessionManager::cleanupExpiredSessions() {
 
 	for (size_t i = 0; i < toDelete.size(); ++i) {
 		if (!destroySession(toDelete[i])) {
-			// セッションの削除に失敗した場合のログ出力やエラーハンドリング
+			// TODO: セッションの削除に失敗した場合のログ出力やエラーハンドリング
 		}
 	}
 }
