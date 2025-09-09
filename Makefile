@@ -1,15 +1,3 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/04/25 13:31:17 by teando            #+#    #+#              #
-#    Updated: 2025/09/08 19:16:55 by teando           ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 NAME		:= webserv
 
 UNAME_S 		:= $(shell uname -s)
@@ -33,9 +21,10 @@ CONF			:= $(CONF_DIR)/default.conf
 
 SRC := \
 	$(SRC_DIR)/main.cpp \
+	$(shell find $(SRC_DIR)/Config -name 'Config.cpp') \
 	$(shell find $(SRC_DIR)/Server -name '*.cpp') \
 	$(shell find $(SRC_DIR)/Socket -name '*.cpp') \
-	$(shell find $(SRC_DIR)/SocketsManager -name '*.cpp')
+	$(shell find $(SRC_DIR)/SocketsManager -name '*.cpp') \
 
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
