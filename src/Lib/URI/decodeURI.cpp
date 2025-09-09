@@ -7,6 +7,7 @@
 /**
  * @brief URLデコードを行う
  * https://triple-underscore.github.io/rfc-others/RFC3986-ja.html#section-2.1
+ * https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/decodeURI
  * @param str デコード対象の文字列
  * @return std::string デコード後の文字列 (UTF-8)
  */
@@ -15,7 +16,7 @@ std::string URI::decodeURI(const std::string &str) {
 
 	for (std::size_t i = 0; i < str.length(); ++i) {
 		if (str[i] == '%' && i <= str.length() - 3) {
-			// '%' の後ろから2文字を切り出す
+
 			std::string hex_val = str.substr(i + 1, 2);
 			std::istringstream iss(hex_val);
 			int c = 0;
