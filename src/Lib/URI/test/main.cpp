@@ -6,9 +6,9 @@
 int main(int ac, char **av) {
 	if (ac != 2)
 		return 1;
-	std::string mode(av[1]);
+	const std::string mode(av[1]);
 	// 重複している行を削除し、正しい構文で書き直す
-	std::string input((std::istreambuf_iterator<char>(std::cin)),
+	const std::string input((std::istreambuf_iterator<char>(std::cin)),
 					  std::istreambuf_iterator<char>());
 
 	std::string out;

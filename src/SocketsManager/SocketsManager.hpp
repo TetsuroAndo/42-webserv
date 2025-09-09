@@ -1,5 +1,4 @@
-#ifndef SOCKETSMANAGER_HPP
-#define SOCKETSMANAGER_HPP
+#pragma once
 
 #include <sys/epoll.h>
 #include <vector>
@@ -12,14 +11,12 @@ public:
 	~SocketsManager();
 
 	void registerSocket(int fd, uint32_t events);
-	void modifySocket(int fd, uint32_t events);
-	void unregisterSocket(int fd);
+	void modifySocket(int fd, uint32_t events) const;
+	void unregisterSocket(int fd) const;
 	int wait(int timeout);
 	struct epoll_event *getEvents();
 
 private:
-	int epoll_fd;
-	std::vector<struct epoll_event> events;
+	int _epoll_fd;
+	std::vector<struct epoll_event> _events;
 };
-
-#endif
