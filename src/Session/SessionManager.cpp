@@ -37,7 +37,7 @@ Session* SessionManager::getSession(const std::string& sessionId) {
 		it->second->updateLastAccess();
 		return it->second;
 	}
-	return nullptr;
+	return NULL;
 }
 
 bool SessionManager::destroySession(const std::string& sessionId) {
@@ -48,7 +48,7 @@ bool SessionManager::destroySession(const std::string& sessionId) {
 		return true;
 	}
 	return false;
-	
+
 }
 
 void SessionManager::cleanupExpiredSessions() {

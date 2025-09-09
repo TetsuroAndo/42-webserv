@@ -5,10 +5,10 @@
 #include <string>
 #include <map>
 
+#define SESSION_TIMEOUT 1800 // 30分
+
 class SessionManager {
 public:
-	
-
 	static SessionManager& getInstance();
 
 	Session* createSession();
@@ -26,5 +26,4 @@ private:
 	std::string generateSessionId();
 
 	std::map<std::string, Session*> _sessions;
-	const uint32_t SESSION_TIMEOUT = 1800; // 30分
 };

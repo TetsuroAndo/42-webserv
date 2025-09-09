@@ -4,7 +4,7 @@ SRCS = main.cpp ../Token.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -I../
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -pedantic -I../
 
 all: $(NAME)
 

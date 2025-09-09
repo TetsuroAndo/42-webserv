@@ -1,11 +1,36 @@
 #include "Token.hpp"
 #include <iostream>
 #include <string>
-#include <random>
 #include <vector>
+#include <cstdlib>
+#include <ctime>
 
-Token::Token() : _generator(std::random_device{}()) {}
+Token::Token() {
+	std::srand(static_cast<unsigned int>(std::time(NULL)));
+}
 Token::~Token() {}
+
+namespace {
+	// 指定された範囲 [min, max] の整数を、より一様に生成する関数
+	// uniform_int_distributionの簡易的な代替
+	long uniformRand(long min, long max) {
+		if (min > max) {
+			throw std::invalid_argument("min cannot be greater than max.");
+		}
+		long range = max - min + 1;
+		// rand()が返す値の最大値
+		long rand_max = RAND_MAX;
+		// 偏りが発生しない最大の区切り値を見つける
+		// (rand_max + 1) が range で割り切れない場合、余りの部分が偏りの原因になる
+		long limit = rand_max - (rand_max + 1) % range;
+		long result;
+		// 生成された乱数が limit を超えていたら、偏りのある範囲なのでやり直す
+		do {
+			result = std::rand();
+		} while (result > limit);
+		return result % range + min;
+	}
+}
 
 /**
  * @brief 新しいセッショントークンを生成します。
@@ -15,14 +40,10 @@ Token::~Token() {}
 std::string Token::genToken(size_t length) {
 	// 使用する文字セット（英数字）
 	const std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=-_.";
-
-	// 文字セットからランダムに選ぶための分布
-	std::uniform_int_distribution<int> distribution(0, charset.length() - 1);
-
 	std::string token;
 	token.reserve(length);
 	for (size_t i = 0; i < length; ++i) {
-		token += charset[distribution(_generator)];
+		token += charset[uniformRand(0, charset.length() - 1)];
 	}
 	return token;
 }
