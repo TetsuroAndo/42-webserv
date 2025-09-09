@@ -26,7 +26,8 @@ Server::Server() {
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_port = htons(port);
 
-	if (bind(listenFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) < 0) {
+	if (bind(listenFd, reinterpret_cast<struct sockaddr *>(&addr),
+			 sizeof(addr)) < 0) {
 		close(listenFd);
 		throw std::runtime_error("bind() failed");
 	}
@@ -41,11 +42,9 @@ Server::Server() {
 	_manager.registerSocket(listenFd, EPOLLIN);
 }
 
-Server::Server(const Config &config) : _config(config) {
-}
+Server::Server(const Config &config) : _config(config) {}
 
-Server::Server(const Server &/*other*/) {
-}
+Server::Server(const Server & /*other*/) {}
 
 Server::~Server() {
 	for (std::map<int, Socket *>::iterator it = _sockets.begin();
@@ -54,9 +53,7 @@ Server::~Server() {
 	}
 }
 
-Server & Server::operator=(const Server &/*other*/) {
-	return *this;
-}
+Server &Server::operator=(const Server & /*other*/) { return *this; }
 
 void Server::run() {
 	while (true) {
@@ -95,8 +92,8 @@ void Server::run() {
 void Server::handleNewConnection(int listenFd) {
 	sockaddr_in clientAddr;
 	socklen_t clientLen = sizeof(clientAddr);
-	int clientFd =
-		accept(listenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
+	int clientFd = accept(
+		listenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
 
 	if (clientFd < 0) {
 		return;
@@ -128,14 +125,14 @@ void Server::handleClientRead(int clientFd) {
 			break;
 		}
 	}
-    if (sock->getRequest()->parse(sock->getRecvBuffer())) {
+	if (sock->getRequest()->parse(sock->getRecvBuffer())) {
 		// debug用のパース結果出力、提出前に消す
-        sock->getRequest()->printData();
+		sock->getRequest()->printData();
 		// レスポンスを作成するmethodに置き換える
-        sock->setSendBuffer("HTTP/1.0 200 OK\r\nContent-Length: "
-                            "13\r\nConnection: close\r\n\r\nHello, World!");
-        _manager.modifySocket(clientFd, EPOLLOUT);
-    }
+		sock->setSendBuffer("HTTP/1.0 200 OK\r\nContent-Length: "
+							"13\r\nConnection: close\r\n\r\nHello, World!");
+		_manager.modifySocket(clientFd, EPOLLOUT);
+	}
 }
 
 void Server::handleClientWrite(int clientFd) {

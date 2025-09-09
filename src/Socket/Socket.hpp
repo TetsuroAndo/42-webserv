@@ -19,7 +19,7 @@ public:
 	const sockaddr_in &getAddr() const;
 	void setRecvBuffer(const std::string &str);
 	void setSendBuffer(const std::string &str);
-	void appendRecvBuffer(const char* data, int size);
+	void appendRecvBuffer(const char *data, int size);
 	void eraseSendBuffer(int start, int end);
 	std::string &getRecvBuffer();
 	const std::string &getSendBuffer() const;
@@ -31,7 +31,7 @@ private:
 	sockaddr_in _addr;
 	std::string _recvBuffer;
 	std::string _sendBuffer;
-    HttpRequest *_request;
+	HttpRequest *_request;
 };
 
 #endif
