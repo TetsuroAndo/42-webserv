@@ -17,17 +17,17 @@ public:
 	const sockaddr_in &getAddr() const;
 	void setRecvBuffer(const std::string &str);
 	void setSendBuffer(const std::string &str);
-	void appendRecvBuffer(const std::string &str, int size);
+	void appendRecvBuffer(const char* data, int size);
 	void eraseSendBuffer(int start, int end);
 	const std::string &getRecvBuffer() const;
 	const std::string &getSendBuffer() const;
 
 private:
-	int fd;
-	bool listen;
-	sockaddr_in addr;
-	std::string recvBuffer;
-	std::string sendBuffer;
+	int _fd;
+	bool _listen;
+	sockaddr_in _addr;
+	std::string _recvBuffer;
+	std::string _sendBuffer;
 };
 
 #endif
