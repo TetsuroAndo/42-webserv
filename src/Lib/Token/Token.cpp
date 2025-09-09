@@ -14,7 +14,7 @@ Token::~Token() {}
  */
 std::string Token::genToken(size_t length) {
 	// 使用する文字セット（英数字）
-	const std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	const std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=-_.";
 
 	// 文字セットからランダムに選ぶための分布
 	std::uniform_int_distribution<int> distribution(0, charset.length() - 1);

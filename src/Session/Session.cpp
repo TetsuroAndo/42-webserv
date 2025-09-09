@@ -2,8 +2,9 @@
 #include <ctime>
 #include <string>
 #include <map>
+#include <stdexcept>
 
-Session::Session(const std::string &id) : _sessionId(id), _lastAccessTime(std::time(nullptr)) {}
+Session::Session(const std::string &id) : _sessionId(id), _lastAccessTime(std::time(NULL)) {}
 Session::~Session() {}
 
 const std::string &Session::getId() const {
@@ -12,10 +13,18 @@ const std::string &Session::getId() const {
 
 const std::string &Session::getData(const std::string &key) const {
 	std::map<std::string, std::string>::const_iterator it = _data.find(key);
-	if (it != _data.end()) {
-		return it->second;
+	if (it == _data.end()) {
+		throw std::runtime_error("Required session data not found: " + key);
 	}
-	throw std::runtime_error("Data not found");
+	return it->second;
+}
+
+const std::string &Session::getOptionalData(const std::string &key, const std::string &defaultValue) const {
+	std::map<std::string, std::string>::const_iterator it = _data.find(key);
+	if (it == _data.end()) {
+		return defaultValue;
+	}
+	return it->second;
 }
 
 time_t Session::getLastAccess() const {

@@ -1,6 +1,6 @@
 NAME = hash_test
 
-SRCS = main.cpp ../GenHash.cpp
+SRCS = main.cpp ../Token.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = g++
