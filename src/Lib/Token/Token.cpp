@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
 Token::Token() {
 	std::srand(static_cast<unsigned int>(std::time(NULL)));
@@ -15,7 +16,7 @@ namespace {
 	// uniform_int_distributionの簡易的な代替
 	long uniformRand(long min, long max) {
 		if (min > max) {
-			throw std::invalid_argument("min cannot be greater than max.");
+			std::swap(min, max);
 		}
 		long range = max - min + 1;
 		// rand()が返す値の最大値
@@ -42,8 +43,14 @@ std::string Token::genToken(size_t length) {
 	const std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=-_.";
 	std::string token;
 	token.reserve(length);
-	for (size_t i = 0; i < length; ++i) {
-		token += charset[uniformRand(0, charset.length() - 1)];
-	}
+	do {
+		token.clear();
+		for (size_t i = 0; i < length; ++i) {
+			token += charset[uniformRand(0, charset.length() - 1)];
+		}
+	} while (
+		token.find("..") != std::string::npos ||
+		token.size() != length
+	);
 	return token;
 }
