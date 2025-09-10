@@ -5,6 +5,8 @@
 #include <string>
 #include <sys/socket.h>
 
+#include "../Http/HttpRequest.hpp"
+
 class Socket {
 public:
 	Socket(int fd);
@@ -17,10 +19,11 @@ public:
 	const sockaddr_in &getAddr() const;
 	void setRecvBuffer(const std::string &str);
 	void setSendBuffer(const std::string &str);
-	void appendRecvBuffer(const char* data, int size);
+	void appendRecvBuffer(const char *data, int size);
 	void eraseSendBuffer(int start, int end);
-	const std::string &getRecvBuffer() const;
+	std::string &getRecvBuffer();
 	const std::string &getSendBuffer() const;
+	HttpRequest *getRequest();
 
 private:
 	int _fd;
@@ -28,6 +31,7 @@ private:
 	sockaddr_in _addr;
 	std::string _recvBuffer;
 	std::string _sendBuffer;
+	HttpRequest *_request;
 };
 
 #endif
