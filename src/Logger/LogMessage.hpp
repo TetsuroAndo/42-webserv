@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 #include <ctime>
-#include "LogLevel.hpp"
+#include "Logger.hpp"
 
 struct LogMessage {
 	time_t timestamp;

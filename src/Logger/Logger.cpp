@@ -1,6 +1,7 @@
 #include "Logger.hpp"
-#include <sstream>
+#include "LogMessage.hpp"
 #include <ctime>
+#include <sstream>
 #include <stdexcept>
 
 Logger* Logger::_instance = NULL;
@@ -59,6 +60,36 @@ std::string Logger::levelToString(LogLevel level) const {
 std::string Logger::formatMessage(const LogMessage& msg) {
 	std::stringstream ss;
 	char timeStr[20];
-	std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", localtime(&msg.timestamp));
+	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S",
+			 localtime(&msg.timestamp));
 
+	ss << "{";
+	ss << "\"timestamp\":\"" << timeStr << "\",";
+	ss << "\"level\":\"" << levelToString(msg.level) << "\",";
+
+	// JSON文字列内の特殊文字をエスケープ
+	std::string escapedMessage = msg.message;
+	size_t pos = 0;
+	while ((pos = escapedMessage.find("\"", pos)) != std::string::npos) {
+		escapedMessage.replace(pos, 1, "\\\"");
+		pos += 2;
+	}
+	ss << "\"message\":\"" << escapedMessage << "\",";
+
+	ss << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
+
+	if (!msg.attributes.empty()) {
+		ss << ",\"attributes\":{";
+		for (std::map<std::string, std::string>::const_iterator it =
+				 msg.attributes.begin();
+			 it != msg.attributes.end();) {
+			ss << "\"" << it->first << "\":\"" << it->second << "\"";
+			if (++it != msg.attributes.end()) {
+				ss << ",";
+			}
+		}
+		ss << "}";
+	}
+	ss << "}";
+	return ss.str();
 }

@@ -3,7 +3,9 @@
 #include <iostream>
 #include <stdexcept>
 
-FileSink::FileSink(const std::string& filename) : _file(filename, std::ios::out | std::ios::app) {
+FileSink::FileSink(const std::string &filename)
+	: _file(filename.c_str(), std::ios::out | std::ios::app)
+{
 	if (!_file.is_open()) {
 		throw std::runtime_error("Logger: Failed to open log file: " + filename);
 	}
@@ -15,7 +17,7 @@ FileSink::~FileSink() {
 	}
 }
 
-void FileSink::write(const std::string& formattedMessage) {
+void FileSink::write(const std::string &formattedMessage) {
 	if (_file.is_open()) {
 		_file << formattedMessage << std::endl;
 	}
