@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ILogSink.hpp"
+#include "LogSink.hpp"
 #include <string>
 #include <fstream>
 
-class FileSink : public ILogSink {
+class FileSink : public LogSink {
 public:
 	FileSink(const std::string& filename);
 	virtual ~FileSink();

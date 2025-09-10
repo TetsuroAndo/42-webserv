@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ILogSink.hpp"
+#include "LogSink.hpp"
 #include <string>
 
-class ConsoleSink : public ILogSink {
+class ConsoleSink : public LogSink {
 public:
 	virtual void write(const std::string& formattedMessage);
 };

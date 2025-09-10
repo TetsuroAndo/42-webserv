@@ -1,10 +1,16 @@
 #pragma once
 
-class LogMessage {
-public:
-	LogMessage(const std::string& message);
-	const std::string& getMessage() const;
+#include <string>
+#include <map>
+#include <ctime>
+#include "LogLevel.hpp"
 
-private:
-	std::string _message;
+struct LogMessage {
+	time_t timestamp;
+	LogLevel level;
+	std::string message;
+	const char* file;
+	int line;
+	const char* function;
+	std::map<std::string, std::string> attributes;
 };

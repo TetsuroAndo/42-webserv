@@ -2,8 +2,8 @@
 
 #include <string>
 
-class ILogSink {
+class LogSink {
 public:
-	virtual ~ILogSink() {}
+	virtual ~LogSink() {}
 	virtual void write(const std::string& formattedMessage) = 0;
 };
