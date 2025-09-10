@@ -12,7 +12,7 @@ const std::string &Session::getId() const {
 }
 
 const std::string &Session::getData(const std::string &key) const {
-	std::map<std::string, std::string>::const_iterator it = _data.find(key);
+	const std::map<std::string, std::string>::const_iterator it = _data.find(key);
 	if (it == _data.end()) {
 		throw std::runtime_error("Required session data not found: " + key);
 	}
@@ -20,7 +20,7 @@ const std::string &Session::getData(const std::string &key) const {
 }
 
 std::string Session::getOptionalData(const std::string &key, const std::string &defaultValue) const {
-	std::map<std::string, std::string>::const_iterator it = _data.find(key);
+	const std::map<std::string, std::string>::const_iterator it = _data.find(key);
 	if (it == _data.end()) {
 		return defaultValue;
 	}
