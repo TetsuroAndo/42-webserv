@@ -5,7 +5,8 @@
 
 SessionManager::SessionManager() {}
 SessionManager::~SessionManager() {
-	for (std::map<std::string, Session*>::iterator it = _sessions.begin(); it != _sessions.end(); ++it) {
+	for (std::map<std::string, Session *>::iterator it = _sessions.begin();
+		 it != _sessions.end(); ++it) {
 		delete it->second;
 	}
 	_sessions.clear();
@@ -19,20 +20,20 @@ std::string SessionManager::generateSessionId() {
 	return sessionId;
 }
 
-SessionManager& SessionManager::getInstance() {
+SessionManager &SessionManager::getInstance() {
 	static SessionManager instance;
 	return instance;
 }
 
-Session* SessionManager::createSession() {
+Session *SessionManager::createSession() {
 	std::string sessionId = generateSessionId();
-	Session* newSession = new Session(sessionId);
+	Session *newSession = new Session(sessionId);
 	_sessions[sessionId] = newSession;
 	return newSession;
 }
 
-Session* SessionManager::getSession(const std::string& sessionId) {
-	std::map<std::string, Session*>::iterator it = _sessions.find(sessionId);
+Session *SessionManager::getSession(const std::string &sessionId) {
+	std::map<std::string, Session *>::iterator it = _sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		it->second->updateLastAccess();
 		return it->second;
@@ -40,15 +41,14 @@ Session* SessionManager::getSession(const std::string& sessionId) {
 	return NULL;
 }
 
-bool SessionManager::destroySession(const std::string& sessionId) {
-	std::map<std::string, Session*>::iterator it = _sessions.find(sessionId);
+bool SessionManager::destroySession(const std::string &sessionId) {
+	std::map<std::string, Session *>::iterator it = _sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		delete it->second;
 		_sessions.erase(it);
 		return true;
 	}
 	return false;
-
 }
 
 void SessionManager::cleanupExpiredSessions() {
