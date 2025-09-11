@@ -3,8 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 
-FileSink::FileSink(const std::string &filename, LogForm *Form)
-	: LogSink(Form), _file(filename.c_str(), std::ios::out | std::ios::app)
+FileSink::FileSink(const std::string &filename, LogForm *Form, LogLevel level)
+	: LogSink(Form, level), _file(filename.c_str(), std::ios::out | std::ios::app)
 {
 	if (!_file.is_open()) {
 		throw std::runtime_error("Logger: Failed to open log file: " + filename);

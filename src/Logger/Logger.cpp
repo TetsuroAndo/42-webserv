@@ -17,7 +17,7 @@ void Logger::cleanup() {
 	_instance = NULL;
 }
 
-Logger::Logger() : _logLevel(DEBUG) {}
+Logger::Logger() {}
 
 Logger::~Logger() {
 	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
@@ -30,16 +30,10 @@ void Logger::addSink(LogSink* sink) {
 	_sinks.push_back(sink);
 }
 
-void Logger::setLogLevel(LogLevel level) {
-	_logLevel = level;
-}
-
 void Logger::log(const LogMessage& msg) {
-	if (msg.level < _logLevel) {
-		return;
-	}
 	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
 		LogSink* sink = *it;
+		if (msg.level < sink->getLogLevel()) continue;
 		std::string formatted = sink->getForm()->format(msg);
 		sink->write(formatted);
 	}

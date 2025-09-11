@@ -17,7 +17,6 @@ public:
 	static void cleanup(); // プログラム終了時にリソースを解放
 
 	void addSink(LogSink *sink);
-	void setLogLevel(LogLevel level);
 	void log(const LogMessage &msg);
 
 private:
@@ -27,6 +26,5 @@ private:
 	Logger &operator=(const Logger &);
 
 	static Logger *_instance;
-	LogLevel _logLevel;
 	std::vector<LogSink *> _sinks;
 };
