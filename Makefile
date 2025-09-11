@@ -25,6 +25,8 @@ SRC := \
 	$(shell find $(SRC_DIR)/Server -name '*.cpp') \
 	$(shell find $(SRC_DIR)/Socket -name '*.cpp') \
 	$(shell find $(SRC_DIR)/SocketsManager -name '*.cpp') \
+	$(shell find $(SRC_DIR)/Lib/URI -path '*/test' -prune -o -name '*.cpp' -print) \
+	$(shell find $(SRC_DIR)/Http -path '*/test' -prune -o -name '*.cpp' -print)
 
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
@@ -99,7 +101,7 @@ fill:
 	./tools/fillEmptyDir.sh
 
 view:
-	./tools/rowCodeViewer.sh
+	./tools/rawCodeViewer.sh
 
 help:
 	@echo "Usage: make [target]"
