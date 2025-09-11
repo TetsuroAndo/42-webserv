@@ -7,6 +7,5 @@ public:
 	virtual std::string format(const LogMessage& msg);
 
 private:
-	std::string levelToString(LogLevel level) const;
 	std::string escapeJson(const std::string& str) const;
 };
