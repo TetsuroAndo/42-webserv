@@ -30,8 +30,16 @@ void Logger::cleanup() {
 	_instance = NULL;
 }
 
-Logger::Logger(const std::string& logDir) : _logDir(logDir) {
-	mkdir(_logDir.c_str(), 0755);
+Logger::Logger(const std::string& logDir) {
+	_logDir = logDir;
+	struct stat st;
+	if (stat(_logDir.c_str(), &st) != 0) {
+		_logDir = _LOG_FALLBACK_DIR;
+		throw std::runtime_error("Logger: Log directory does not exist: " + logDir);
+	} else if (!S_ISDIR(st.st_mode)) {
+		_logDir = _LOG_FALLBACK_DIR;
+		throw std::runtime_error("Logger: Log path exists but is not a directory: " + logDir);
+	}
 }
 
 Logger::~Logger() {

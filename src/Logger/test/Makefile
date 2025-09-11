@@ -7,7 +7,10 @@ OBJS = $(SRCS:.cpp=.o)
 CXX = g++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -pedantic -I../
 
-all: $(NAME)
+all: $(NAME) logdir
+
+logdir:
+	mkdir -p log
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
@@ -18,7 +21,7 @@ $(NAME): $(OBJS)
 clean:
 	rm -f $(OBJS) $(NAME)
 
-test: $(NAME)
+test: $(NAME) logdir
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
 	$(MAKE) clean
 
