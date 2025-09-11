@@ -3,8 +3,8 @@
 #include <string>
 #include <map>
 
-#define _DEFAULT_LOG_DIR "./log"
-#define _LOG_FALLBACK_DIR "." // ディレクトリが存在しな場合はソースディレクトリに作成
+#define _LOG_DEFAULT_DIR "./log"
+#define _LOG_FALLBACK_DIR "./" // ディレクトリが存在しな場合はルートディレクトリに作成
 #define _LOG_MAX_FILE_SIZE (10 * 1024 * 1024) // 10MB
 #define _LOG_MAX_BACKUPS 8
 

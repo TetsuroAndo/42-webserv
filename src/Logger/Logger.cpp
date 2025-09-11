@@ -6,23 +6,29 @@
 #include <iostream>
 
 Logger* Logger::_instance = NULL;
+std::string Logger::_logDir = _LOG_DEFAULT_DIR;
+
+void Logger::setLogDir(const std::string &logDir) {
+	if (_instance) {
+		throw std::logic_error("Logger::setLogDir() must be called before the first call to Logger::getInstance().");
+	}
+	struct stat st;
+	if (stat(logDir.c_str(), &st) != 0) {
+		std::cerr << "[ WARNING ] Logger: Log directory does not exist: " + logDir
+				  << ", using default directory: " << _logDir << std::endl;
+	} else if (!S_ISDIR(st.st_mode)) {
+		std::cerr << "[ WARNING ] Logger: Log path exists but is not a directory: " + logDir
+				  << ", using default directory: " << _logDir << std::endl;
+	} else {
+		_logDir = logDir;
+	}
+}
 
 Logger& Logger::getInstance() {
 	if (_instance == NULL) {
-		_instance = new Logger(_DEFAULT_LOG_DIR);
+		_instance = new Logger();
 	}
 	return *_instance;
-}
-
-Logger& Logger::getInstance(const std::string& logDir) {
-	if (_instance == NULL) {
-		_instance = new Logger(logDir);
-	}
-	return *_instance;
-}
-
-std::string Logger::getLogDir() const {
-	return _logDir;
 }
 
 void Logger::cleanup() {
@@ -30,15 +36,12 @@ void Logger::cleanup() {
 	_instance = NULL;
 }
 
-Logger::Logger(const std::string& logDir) {
-	_logDir = logDir;
+Logger::Logger() {
 	struct stat st;
-	if (stat(_logDir.c_str(), &st) != 0) {
+	if (stat(_logDir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
 		_logDir = _LOG_FALLBACK_DIR;
-		throw std::runtime_error("Logger: Log directory does not exist: " + logDir);
-	} else if (!S_ISDIR(st.st_mode)) {
-		_logDir = _LOG_FALLBACK_DIR;
-		throw std::runtime_error("Logger: Log path exists but is not a directory: " + logDir);
+		std::cerr << "[ ERROR ] Logger: Default log directory does not exist,"
+				  << " using fallback directory: " << _logDir << std::endl;
 	}
 }
 

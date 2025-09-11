@@ -4,10 +4,12 @@
 
 int main() {
 	try {
+		Logger::setLogDir("./logs");
 		Logger &logger = Logger::getInstance();
 		logger.setSinkConsole(JSON, WARNING);
 		logger.setSinkFile("server.log", JSON, INFO);
 		logger.setSinkFile("WarningOnly.log", ELF, WARNING, EXACT);
+		logger.setSinkFile("test_log", "dir_test.log", ELF, DEBUG, EXACT);
 
 		LOG(DEBUG) << "This is a debug message. It should not appear.";
 		LOG(INFO) << "Server is starting...";

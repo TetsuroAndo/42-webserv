@@ -21,7 +21,7 @@ $(NAME): $(OBJS)
 clean:
 	rm -f $(OBJS) $(NAME)
 
-test: $(NAME) logdir
+test: $(NAME)
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
 	$(MAKE) clean
 

@@ -13,9 +13,8 @@
 
 class Logger {
 public:
+	static void setLogDir(const std::string &logDir);
 	static Logger &getInstance();
-	static Logger &getInstance(const std::string& logDir);
-	std::string getLogDir() const;
 	static void cleanup(); // プログラム終了時にリソースを解放
 
 	void setSinkFile(const std::string &filename, LogFormat format,
@@ -29,12 +28,12 @@ public:
 	void log(const LogMessage &msg);
 
 private:
-	Logger(const std::string& logDir = _DEFAULT_LOG_DIR);
+	Logger();
 	~Logger();
 	Logger(const Logger &);
 	Logger &operator=(const Logger &);
 
 	static Logger *_instance;
-	std::string _logDir;
+	static std::string _logDir;
 	std::vector<LogSink *> _sinks;
 };
