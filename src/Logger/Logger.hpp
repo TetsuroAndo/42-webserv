@@ -15,15 +15,15 @@ class Logger {
 public:
 	static Logger &getInstance();
 	static Logger &getInstance(const std::string& logDir);
+	std::string getLogDir() const;
 	static void cleanup(); // プログラム終了時にリソースを解放
 
-	void addSink(LogSink *sink);
-	void addFileSink(const std::string &filename, const std::string &Form, LogLevel level,
+	void setSinkFile(const std::string &filename, const std::string &Form, LogLevel level,
 		size_t maxFileSize = _LOG_MAX_FILE_SIZE, size_t maxBackupFiles = _LOG_MAX_BACKUPS);
-	void addFileSink(const std::string &logDir, const std::string &filename,
+	void setSinkFile(const std::string &logDir, const std::string &filename,
 		const std::string &Form, LogLevel level, size_t maxFileSize = _LOG_MAX_FILE_SIZE,
 		size_t maxBackupFiles = _LOG_MAX_BACKUPS);
-	void addConsoleSink(const std::string &Form, LogLevel level);
+	void setSinkConsole(const std::string &Form, LogLevel level);
 
 	void log(const LogMessage &msg);
 
@@ -34,6 +34,6 @@ private:
 	Logger &operator=(const Logger &);
 
 	static Logger *_instance;
-	std::vector<LogSink *> _sinks;
 	std::string _logDir;
+	std::vector<LogSink *> _sinks;
 };
