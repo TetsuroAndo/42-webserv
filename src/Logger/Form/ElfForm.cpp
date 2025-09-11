@@ -43,6 +43,8 @@ std::string ElfForm::format(const LogMessage& msg) {
 	ss << dateStr << " " << timeStr << " ";
 	// level
 	ss << LogForm::levelToString(msg.level) << " ";
+	// function
+	ss << msg.function << " ";
 	// file:line
 	ss << msg.file << ":" << msg.line << " ";
 	// message

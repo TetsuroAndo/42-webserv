@@ -32,6 +32,7 @@ std::string JsonForm::format(const LogMessage& msg) {
 	ss << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
 	ss << "\"message\":\"" << escapeJson(msg.message) << "\",";
 	ss << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
+	ss << ",\"function\":\"" << msg.function << "\"";
 
 	if (!msg.attributes.empty()) {
 		ss << ",\"attributes\":{";
