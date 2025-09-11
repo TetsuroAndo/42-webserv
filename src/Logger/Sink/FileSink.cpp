@@ -1,12 +1,12 @@
 #include "FileSink.hpp"
+#include "../Form/JsonForm.hpp"
+#include "../Form/ElfForm.hpp"
+#include <dirent.h>
 #include <fstream>
 #include <iostream>
-#include <sstream>
-#include <cstdlib>
 #include <stdexcept>
-#include <dirent.h>
 #include <string>
-#include <vector>
+#include <sstream>
 
 namespace {
 	template <typename T>
@@ -16,7 +16,7 @@ namespace {
 		return ss.str();
 	}
 
-	bool is_numeric(const char* s) {
+	bool isNumeric(const char* s) {
 		if (s == NULL || *s == '\0') {
 			return false;
 		}
@@ -40,10 +40,12 @@ namespace {
 			std::string name(entry->d_name);
 			if (name.find(prefix) == 0) {
 				const char* suffix = name.c_str() + prefix.length();
-				if (is_numeric(suffix)) {
-					long idx = strtol(suffix, NULL, 10);
-					if (idx > 0 && static_cast<size_t>(idx) > maxIndex) {
-						maxIndex = static_cast<size_t>(idx);
+				if (isNumeric(suffix)) {
+					std::istringstream iss(suffix);
+					size_t idx;
+					iss >> idx;
+					if (idx > 0 && idx > maxIndex) {
+						maxIndex = idx;
 					}
 				}
 			}
@@ -55,19 +57,26 @@ namespace {
 
 FileSink::FileSink(
 	const std::string &filename,
-	LogForm *Form,
+	const std::string &Form,
 	LogLevel level,
 	size_t maxFileSize,
 	size_t maxBackupFiles
 ) :
-	LogSink(Form, level),
+	LogSink(level),
 	_dir(_DEFAULT_LOG_DIR),
 	_fileName(filename),
 	_fileStream((_dir + "/" + filename).c_str(), std::ios::out | std::ios::app),
 	_maxFileSize(maxFileSize),
 	_maxBackupFiles(maxBackupFiles)
 {
-
+	if (Form == "JSON") {
+		LogSink::_Form = new JsonForm();
+	} else {
+		if (Form != "ELF") {
+			std::cerr << "[ WARNING ] Logger: FileSink: Unknown log format: " + Form << std::endl;
+		}
+		LogSink::_Form = new ElfForm();
+	}
 	if (!_fileStream.is_open()) {
 		throw std::runtime_error("Logger: Failed to open log file: " + filename);
 	}
@@ -76,19 +85,26 @@ FileSink::FileSink(
 FileSink::FileSink(
 	const std::string& logDir,
 	const std::string &filename,
-	LogForm *Form,
+	const std::string &Form,
 	LogLevel level,
 	size_t maxFileSize,
 	size_t maxBackupFiles
 ) :
-	LogSink(Form, level),
+	LogSink(level),
 	_dir(logDir),
 	_fileName(filename),
 	_fileStream((logDir + "/" + filename).c_str(), std::ios::out | std::ios::app),
 	_maxFileSize(maxFileSize),
 	_maxBackupFiles(maxBackupFiles)
 {
-
+	if (Form == "JSON") {
+		LogSink::_Form = new JsonForm();
+	} else {
+		if (Form != "ELF") {
+			std::cerr << "[ WARNING ] Logger: FileSink: Unknown log format: " + Form << std::endl;
+		}
+		LogSink::_Form = new ElfForm();
+	}
 	if (!_fileStream.is_open()) {
 		throw std::runtime_error("Logger: Failed to open log file: " + filename);
 	}

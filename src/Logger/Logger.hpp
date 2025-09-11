@@ -18,6 +18,13 @@ public:
 	static void cleanup(); // プログラム終了時にリソースを解放
 
 	void addSink(LogSink *sink);
+	void addFileSink(const std::string &filename, const std::string &Form, LogLevel level,
+		size_t maxFileSize = _LOG_MAX_FILE_SIZE, size_t maxBackupFiles = _LOG_MAX_BACKUPS);
+	void addFileSink(const std::string &logDir, const std::string &filename,
+		const std::string &Form, LogLevel level, size_t maxFileSize = _LOG_MAX_FILE_SIZE,
+		size_t maxBackupFiles = _LOG_MAX_BACKUPS);
+	void addConsoleSink(const std::string &Form, LogLevel level);
+
 	void log(const LogMessage &msg);
 
 private:

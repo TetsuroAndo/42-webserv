@@ -6,11 +6,13 @@
 
 class FileSink : public LogSink {
 public:
-	FileSink(const std::string& filename, LogForm* Form, LogLevel level,
-		size_t maxFileSize = 10 * 1024 * 1024, size_t maxBackupFiles = 8);
-	FileSink(const std::string& logDir, const std::string& filename, LogForm* Form,
-		LogLevel level, size_t maxFileSize = 10 * 1024 * 1024, size_t maxBackupFiles = 8);
+	FileSink(const std::string& filename, const std::string &Form, LogLevel level,
+		size_t maxFileSize = _LOG_MAX_FILE_SIZE, size_t maxBackupFiles = _LOG_MAX_BACKUPS);
+	FileSink(const std::string& logDir, const std::string& filename,
+		const std::string &Form, LogLevel level,
+		size_t maxFileSize = _LOG_MAX_FILE_SIZE, size_t maxBackupFiles = _LOG_MAX_BACKUPS);
 	virtual ~FileSink();
+		
 	virtual void write(const std::string& formattedMessage);
 
 private:

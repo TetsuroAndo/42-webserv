@@ -3,7 +3,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <sys/stat.h>
-#include <sys/types.h>
+#include <cerrno>
+#include <iostream>
 
 Logger* Logger::_instance = NULL;
 
@@ -45,11 +46,29 @@ void Logger::addSink(LogSink* sink) {
 	_sinks.push_back(sink);
 }
 
+void Logger::addFileSink(const std::string &filename, const std::string &Form, LogLevel level,
+	size_t maxFileSize, size_t maxBackupFiles) {
+	_sinks.push_back(new FileSink(_logDir, filename, Form, level, maxFileSize, maxBackupFiles));
+}
+
+void Logger::addFileSink(const std::string &logDir, const std::string &filename,
+	const std::string &Form, LogLevel level, size_t maxFileSize, size_t maxBackupFiles) {
+	_sinks.push_back(new FileSink(logDir, filename, Form, level, maxFileSize, maxBackupFiles));
+}
+
+void Logger::addConsoleSink(const std::string &Form, LogLevel level) {
+	_sinks.push_back(new ConsoleSink(Form, level));
+}
+
 void Logger::log(const LogMessage& msg) {
 	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
 		LogSink* sink = *it;
 		if (msg.level < sink->getLogLevel()) continue;
 		std::string formatted = sink->getForm()->format(msg);
-		sink->write(formatted);
+		try {
+			sink->write(formatted);
+		} catch (const std::exception& e) {
+			std::cerr << "Logger: Failed to write log: " << e.what() << std::endl;
+		}
 	}
 }

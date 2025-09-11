@@ -1,7 +1,7 @@
 #include "LogSink.hpp"
 #include "../Form/LogForm.hpp"
 
-LogSink::LogSink(LogForm* Form, LogLevel level) : _Form(Form), _logLevel(level) {}
+LogSink::LogSink(LogLevel level) : _logLevel(level) {}
 
 LogSink::~LogSink() {
 	delete _Form;

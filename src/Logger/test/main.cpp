@@ -5,8 +5,8 @@
 int main() {
 	try {
 		Logger &logger = Logger::getInstance();
-		logger.addSink(new ConsoleSink(new ElfForm(), WARNING));
-		logger.addSink(new FileSink("./server.log", new JsonForm(), DEBUG));
+		logger.addConsoleSink("ELF", WARNING);
+		logger.addFileSink("server.log", "JSON", DEBUG);
 
 		LOG(DEBUG) << "This is a debug message. It should not appear.";
 		LOG(INFO) << "Server is starting...";

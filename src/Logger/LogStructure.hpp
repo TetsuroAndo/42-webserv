@@ -4,6 +4,8 @@
 #include <map>
 
 #define _DEFAULT_LOG_DIR "./log"
+#define _LOG_MAX_FILE_SIZE (10 * 1024 * 1024) // 10MB
+#define _LOG_MAX_BACKUPS 8
 
 enum LogFormat {
 	JSON,
