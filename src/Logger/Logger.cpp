@@ -27,7 +27,11 @@ void Logger::cleanup() {
 }
 
 Logger::Logger(const std::string& logDir) : _logDir(logDir) {
-	mkdir(_logDir.c_str(), 0755);
+	if (mkdir(_logDir.c_str(), 0755) != 0) {
+		if (errno != EEXIST) {
+			throw std::runtime_error("Logger: Failed to create log directory: " + _logDir);
+		}
+	}
 }
 
 Logger::~Logger() {

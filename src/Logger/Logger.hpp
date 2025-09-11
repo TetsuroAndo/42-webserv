@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-#define _DEFAULT_LOG_DIR "./log"
-
 class Logger {
 public:
 	static Logger &getInstance();
@@ -23,7 +21,7 @@ public:
 	void log(const LogMessage &msg);
 
 private:
-	Logger(const std::string& logDir = "./log");
+	Logger(const std::string& logDir = _DEFAULT_LOG_DIR);
 	~Logger();
 	Logger(const Logger &);
 	Logger &operator=(const Logger &);
@@ -31,7 +29,4 @@ private:
 	static Logger *_instance;
 	std::vector<LogSink *> _sinks;
 	std::string _logDir;
-
-	static const size_t _maxLogFileSize = (10 * 1024 * 1024); // 10MB
-	static const size_t _maxBackupFiles = 8; // 最大バックアップファイル数
 };

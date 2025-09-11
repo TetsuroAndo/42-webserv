@@ -3,6 +3,8 @@
 #include <string>
 #include <map>
 
+#define _DEFAULT_LOG_DIR "./log"
+
 enum LogFormat {
 	JSON,
 	ELF
