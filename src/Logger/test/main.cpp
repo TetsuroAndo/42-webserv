@@ -5,10 +5,9 @@
 int main() {
 	try {
 		Logger &logger = Logger::getInstance();
-		logger.setSinkConsole("JSON", WARNING);
-		logger.setSinkFile("server.log", "JSON", INFO);
-		logger.setSinkFile("errorFormat.log", "LOG", DEBUG);
-		logger.setSinkFile("WarningOnly.log", "JSON", WARNING, EXACT);
+		logger.setSinkConsole(JSON, WARNING);
+		logger.setSinkFile("server.log", JSON, INFO);
+		logger.setSinkFile("WarningOnly.log", ELF, WARNING, EXACT);
 
 		LOG(DEBUG) << "This is a debug message. It should not appear.";
 		LOG(INFO) << "Server is starting...";

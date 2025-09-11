@@ -49,19 +49,19 @@ Logger::~Logger() {
 	_sinks.clear();
 }
 
-void Logger::setSinkFile(const std::string &filename, const std::string &Form,
+void Logger::setSinkFile(const std::string &filename, LogFormat format,
 	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles) {
-	_sinks.push_back(new FileSink(_logDir, filename, Form, level, mode, maxFileSize, maxBackupFiles));
+	_sinks.push_back(new FileSink(_logDir, filename, format, level, mode, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
-	const std::string &Form, LogLevel level, LogFilterMode mode,
+	LogFormat format, LogLevel level, LogFilterMode mode,
 	size_t maxFileSize, size_t maxBackupFiles) {
-	_sinks.push_back(new FileSink(logDir, filename, Form, level, mode, maxFileSize, maxBackupFiles));
+	_sinks.push_back(new FileSink(logDir, filename, format, level, mode, maxFileSize, maxBackupFiles));
 }
 
-void Logger::setSinkConsole(const std::string &Form, LogLevel level, LogFilterMode mode) {
-	_sinks.push_back(new ConsoleSink(Form, level, mode));
+void Logger::setSinkConsole(LogFormat format, LogLevel level, LogFilterMode mode) {
+	_sinks.push_back(new ConsoleSink(format, level, mode));
 }
 
 void Logger::log(const LogMessage& msg) {

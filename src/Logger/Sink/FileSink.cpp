@@ -58,7 +58,7 @@ namespace {
 FileSink::FileSink(
 	const std::string& logDir,
 	const std::string &filename,
-	const std::string &Form,
+	LogFormat form,
 	LogLevel level,
 	LogFilterMode mode,
 	size_t maxFileSize,
@@ -71,12 +71,9 @@ FileSink::FileSink(
 	_maxFileSize(maxFileSize),
 	_maxBackupFiles(maxBackupFiles)
 {
-	if (Form == "JSON") {
+	if (form == JSON) {
 		LogSink::_Form = new JsonForm();
 	} else {
-		if (Form != "ELF") {
-			std::cerr << "[ WARNING ] Logger: FileSink: Unknown log format: " + Form << std::endl;
-		}
 		LogSink::_Form = new ElfForm();
 	}
 	if (!_fileStream.is_open()) {

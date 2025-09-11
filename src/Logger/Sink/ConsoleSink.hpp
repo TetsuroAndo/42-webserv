@@ -5,6 +5,6 @@
 
 class ConsoleSink : public LogSink {
 public:
-	ConsoleSink(const std::string &Form, LogLevel level, LogFilterMode mode);
+	ConsoleSink(LogFormat form, LogLevel level, LogFilterMode mode);
 	virtual void write(const std::string& formattedMessage);
 };
