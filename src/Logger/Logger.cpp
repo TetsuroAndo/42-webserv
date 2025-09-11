@@ -2,12 +2,21 @@
 #include <ctime>
 #include <sstream>
 #include <stdexcept>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 Logger* Logger::_instance = NULL;
 
 Logger& Logger::getInstance() {
 	if (_instance == NULL) {
-		_instance = new Logger();
+		_instance = new Logger(_DEFAULT_LOG_DIR);
+	}
+	return *_instance;
+}
+
+Logger& Logger::getInstance(const std::string& logDir) {
+	if (_instance == NULL) {
+		_instance = new Logger(logDir);
 	}
 	return *_instance;
 }
@@ -17,7 +26,9 @@ void Logger::cleanup() {
 	_instance = NULL;
 }
 
-Logger::Logger() {}
+Logger::Logger(const std::string& logDir) : _logDir(logDir) {
+	mkdir(_logDir.c_str(), 0755);
+}
 
 Logger::~Logger() {
 	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
