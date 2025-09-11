@@ -1,5 +1,5 @@
 #pragma once
-#include "LogMessage.hpp"
+#include "LogStructure.hpp"
 #include <sstream>
 #include <string>
 
@@ -10,8 +10,7 @@ struct LogAttribute {
 };
 
 // This free function will be used as a stream manipulator
-inline LogAttribute addAttribute(const std::string &key,
-								 const std::string &value) {
+inline LogAttribute addAttribute(const std::string &key, const std::string &value) {
 	LogAttribute attr;
 	attr.key = key;
 	attr.value = value;

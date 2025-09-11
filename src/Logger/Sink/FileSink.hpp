@@ -6,7 +6,7 @@
 
 class FileSink : public LogSink {
 public:
-	FileSink(const std::string& filename);
+	FileSink(const std::string& filename, LogForm* Form);
 	virtual ~FileSink();
 	virtual void write(const std::string& formattedMessage);
 

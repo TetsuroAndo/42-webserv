@@ -2,8 +2,15 @@
 
 #include <string>
 
+class LogForm;
+
 class LogSink {
 public:
-	virtual ~LogSink() {}
+	LogSink(LogForm* Form);
+	virtual ~LogSink();
 	virtual void write(const std::string& formattedMessage) = 0;
+	LogForm* getForm();
+
+protected:
+	LogForm* _Form;
 };

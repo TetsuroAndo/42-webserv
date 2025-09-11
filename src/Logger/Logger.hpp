@@ -1,11 +1,15 @@
 #pragma once
 
-#include "LogSink.hpp"
+#include "Form/LogForm.hpp"
+#include "Form/JsonForm.hpp"
+#include "Form/ElfForm.hpp"
+#include "LogBuilder.hpp"
+#include "LogStructure.hpp"
+#include "Sink/LogSink.hpp"
+#include "Sink/ConsoleSink.hpp"
+#include "Sink/FileSink.hpp"
 #include <string>
 #include <vector>
-
-struct LogMessage;
-enum LogLevel { DEBUG, INFO, WARNING, ERROR, FATAL };
 
 class Logger {
 public:
@@ -21,9 +25,6 @@ private:
 	~Logger();
 	Logger(const Logger &);
 	Logger &operator=(const Logger &);
-
-	std::string levelToString(LogLevel level) const;
-	std::string formatMessage(const LogMessage &msg);
 
 	static Logger *_instance;
 	LogLevel _logLevel;

@@ -1,10 +1,7 @@
 NAME = logger_test
 
-SRCS = main.cpp \
-	   ../ConsoleSink.cpp \
-	   ../FileSink.cpp \
-	   ../LogBuilder.cpp \
-	   ../Logger.cpp
+SRCS = $(shell find ../ -name "*.cpp")
+
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = g++
@@ -22,5 +19,8 @@ clean:
 	rm -f $(OBJS) $(NAME)
 
 test: $(NAME)
-	./$(NAME)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
 	$(MAKE) clean
+
+printsrc:
+	@echo $(SRCS)

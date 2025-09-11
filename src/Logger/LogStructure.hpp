@@ -2,8 +2,19 @@
 
 #include <string>
 #include <map>
-#include <ctime>
-#include "Logger.hpp"
+
+enum LogFormat {
+	JSON,
+	ELF
+};
+
+enum LogLevel {
+	DEBUG,
+	INFO,
+	WARNING,
+	ERROR,
+	FATAL
+};
 
 struct LogMessage {
 	time_t timestamp;

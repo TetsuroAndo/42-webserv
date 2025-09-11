@@ -1,7 +1,9 @@
-#include "../ConsoleSink.hpp"
-#include "../FileSink.hpp"
+#include "../Sink/ConsoleSink.hpp"
+#include "../Sink/FileSink.hpp"
 #include "../LogBuilder.hpp"
 #include "../Logger.hpp"
+#include "../Form/JsonForm.hpp"
+#include "../Form/ElfForm.hpp"
 #include <iostream>
 #include <stdexcept>
 
@@ -9,8 +11,8 @@ int main() {
 	try {
 		Logger &logger = Logger::getInstance();
 		logger.setLogLevel(INFO);
-		logger.addSink(new ConsoleSink());
-		logger.addSink(new FileSink("server.log"));
+		logger.addSink(new ConsoleSink(new ElfForm()));
+		logger.addSink(new FileSink("./server.log", new JsonForm()));
 
 		LOG(DEBUG) << "This is a debug message. It should not appear.";
 		LOG(INFO) << "Server is starting...";
