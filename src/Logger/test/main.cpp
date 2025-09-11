@@ -8,6 +8,7 @@ int main() {
 		logger.setSinkConsole("JSON", WARNING);
 		logger.setSinkFile("server.log", "JSON", INFO);
 		logger.setSinkFile("errorFormat.log", "LOG", DEBUG);
+		logger.setSinkFile("ErrorOnly.log", "JSON", ERROR, EXACT);
 		
 
 		LOG(DEBUG) << "This is a debug message. It should not appear.";

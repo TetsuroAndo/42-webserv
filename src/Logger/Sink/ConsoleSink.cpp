@@ -3,7 +3,7 @@
 #include "../Form/ElfForm.hpp"
 #include <iostream>
 
-ConsoleSink::ConsoleSink(const std::string &Form, LogLevel level) : LogSink(level) {
+ConsoleSink::ConsoleSink(const std::string &Form, LogLevel level, LogFilterMode mode) : LogSink(level, mode) {
 	if (Form == "JSON") {
 		LogSink::_Form = new JsonForm();
 	} else {

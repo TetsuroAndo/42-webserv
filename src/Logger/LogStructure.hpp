@@ -12,6 +12,11 @@ enum LogFormat {
 	ELF
 };
 
+enum LogFilterMode {
+	GREATER_OR_EQUAL, // 指定レベル以上（デフォルト）
+	EXACT             // 指定レベルと完全一致
+};
+
 enum LogLevel {
 	DEBUG,
 	INFO,

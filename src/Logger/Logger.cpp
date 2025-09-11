@@ -41,24 +41,31 @@ Logger::~Logger() {
 	_sinks.clear();
 }
 
-void Logger::setSinkFile(const std::string &filename, const std::string &Form, LogLevel level,
-	size_t maxFileSize, size_t maxBackupFiles) {
-	_sinks.push_back(new FileSink(_logDir, filename, Form, level, maxFileSize, maxBackupFiles));
+void Logger::setSinkFile(const std::string &filename, const std::string &Form,
+	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles) {
+	_sinks.push_back(new FileSink(_logDir, filename, Form, level, mode, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
-	const std::string &Form, LogLevel level, size_t maxFileSize, size_t maxBackupFiles) {
-	_sinks.push_back(new FileSink(logDir, filename, Form, level, maxFileSize, maxBackupFiles));
+	const std::string &Form, LogLevel level, LogFilterMode mode,
+	size_t maxFileSize, size_t maxBackupFiles) {
+	_sinks.push_back(new FileSink(logDir, filename, Form, level, mode, maxFileSize, maxBackupFiles));
 }
 
-void Logger::setSinkConsole(const std::string &Form, LogLevel level) {
-	_sinks.push_back(new ConsoleSink(Form, level));
+void Logger::setSinkConsole(const std::string &Form, LogLevel level, LogFilterMode mode) {
+	_sinks.push_back(new ConsoleSink(Form, level, mode));
 }
 
 void Logger::log(const LogMessage& msg) {
 	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
 		LogSink* sink = *it;
-		if (msg.level < sink->getLogLevel()) continue;
+
+		if ((sink->getFilterMode() == EXACT && msg.level != sink->getLogLevel()) ||
+			(sink->getFilterMode() == GREATER_OR_EQUAL && msg.level < sink->getLogLevel()))
+		{
+			continue;
+		}
+
 		std::string formatted = sink->getForm()->format(msg);
 		try {
 			sink->write(formatted);

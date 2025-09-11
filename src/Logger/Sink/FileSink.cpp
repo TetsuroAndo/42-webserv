@@ -60,10 +60,11 @@ FileSink::FileSink(
 	const std::string &filename,
 	const std::string &Form,
 	LogLevel level,
+	LogFilterMode mode,
 	size_t maxFileSize,
 	size_t maxBackupFiles
 ) :
-	LogSink(level),
+	LogSink(level, mode),
 	_dir(logDir),
 	_fileName(filename),
 	_fileStream((logDir + "/" + filename).c_str(), std::ios::out | std::ios::app),

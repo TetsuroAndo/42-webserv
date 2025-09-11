@@ -18,12 +18,13 @@ public:
 	std::string getLogDir() const;
 	static void cleanup(); // プログラム終了時にリソースを解放
 
-	void setSinkFile(const std::string &filename, const std::string &Form, LogLevel level,
+	void setSinkFile(const std::string &filename, const std::string &Form,
+		LogLevel level, LogFilterMode mode = GREATER_OR_EQUAL,
 		size_t maxFileSize = _LOG_MAX_FILE_SIZE, size_t maxBackupFiles = _LOG_MAX_BACKUPS);
 	void setSinkFile(const std::string &logDir, const std::string &filename,
-		const std::string &Form, LogLevel level, size_t maxFileSize = _LOG_MAX_FILE_SIZE,
-		size_t maxBackupFiles = _LOG_MAX_BACKUPS);
-	void setSinkConsole(const std::string &Form, LogLevel level);
+		const std::string &Form, LogLevel level, LogFilterMode mode = GREATER_OR_EQUAL,
+		size_t maxFileSize = _LOG_MAX_FILE_SIZE, size_t maxBackupFiles = _LOG_MAX_BACKUPS);
+	void setSinkConsole(const std::string &Form, LogLevel level, LogFilterMode mode = GREATER_OR_EQUAL);
 
 	void log(const LogMessage &msg);
 
