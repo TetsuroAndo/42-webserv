@@ -11,17 +11,6 @@
 
 ElfForm::ElfForm() : _headerWritten(false) {}
 
-std::string ElfForm::levelToString(LogLevel level) const {
-	switch (level) {
-		case DEBUG: return "DEBUG";
-		case INFO: return "INFO";
-		case WARNING: return "WARNING";
-		case ERROR: return "ERROR";
-		case FATAL: return "FATAL";
-		default: return "UNKNOWN";
-	}
-}
-
 // スペースや特殊文字を '-' に置換
 std::string ElfForm::sanitize(const std::string& str) const {
 	std::string sanitized = str;
@@ -53,7 +42,7 @@ std::string ElfForm::format(const LogMessage& msg) {
 	// date time
 	ss << dateStr << " " << timeStr << " ";
 	// level
-	ss << levelToString(msg.level) << " ";
+	ss << LogForm::levelToString(msg.level) << " ";
 	// file:line
 	ss << msg.file << ":" << msg.line << " ";
 	// message

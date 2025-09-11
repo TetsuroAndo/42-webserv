@@ -3,22 +3,6 @@
 #include <ctime>
 
 /**
- * @brief log levelを文字列に変換
- * @param level ログレベル
- * @return ログレベルに対応する文字列
- */
-std::string JsonForm::levelToString(LogLevel level) const {
-	switch (level) {
-		case DEBUG: return "DEBUG";
-		case INFO: return "INFO";
-		case WARNING: return "WARNING";
-		case ERROR: return "ERROR";
-		case FATAL: return "FATAL";
-		default: return "UNKNOWN";
-	}
-}
-
-/**
  * @brief JSONエスケープ処理
  * @param str エスケープ対象の文字列
  * @return エスケープ後の文字列
@@ -45,7 +29,7 @@ std::string JsonForm::format(const LogMessage& msg) {
 
 	ss << "{";
 	ss << "\"timestamp\":\"" << timeStr << "\",";
-	ss << "\"level\":\"" << levelToString(msg.level) << "\",";
+	ss << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
 	ss << "\"message\":\"" << escapeJson(msg.message) << "\",";
 	ss << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
 
