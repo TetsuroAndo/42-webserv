@@ -58,7 +58,7 @@ namespace {
 FileSink::FileSink(
 	const std::string& logDir,
 	const std::string &filename,
-	LogFormat form, LogLevel level, LogFilterMode mode,
+	LogForm *form, LogLevel level, LogFilterMode mode,
 	size_t maxFileSize,
 	size_t maxBackupFiles
 ) :
@@ -80,9 +80,10 @@ FileSink::~FileSink() {
 	}
 }
 
-void FileSink::write(const std::string &formattedMessage) {
+void FileSink::log(const LogMessage &msg) {
 	if (_fileStream.is_open()) {
-		_fileStream << formattedMessage << std::endl;
+		_form->format(msg, _fileStream);
+		_fileStream << '\n';
 		if (_maxFileSize > 0
 			&& static_cast<size_t>(_fileStream.tellp()) >= _maxFileSize)
 		{
@@ -108,5 +109,6 @@ void FileSink::write(const std::string &formattedMessage) {
 			}
 			_fileStream.open(baseFilepath.c_str(), std::ios::out | std::ios::app);
 		}
+		_fileStream.flush();
 	}
 }

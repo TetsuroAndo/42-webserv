@@ -1,5 +1,4 @@
 #include "JsonForm.hpp"
-#include <sstream>
 #include <ctime>
 
 /**
@@ -20,31 +19,29 @@ std::string JsonForm::escapeJson(const std::string& str) const {
 /**
  * @brief JSON形式でログメッセージをフォーマット
  * @param msg ログメッセージ
- * @return フォーマットされたログメッセージ
+ * @param out 出力ストリーム
  */
-std::string JsonForm::format(const LogMessage& msg) {
-	std::stringstream ss;
+void JsonForm::format(const LogMessage& msg, std::ostream& out) {
 	char timeStr[20];
 	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", localtime(&msg.timestamp));
 
-	ss << "{";
-	ss << "\"timestamp\":\"" << timeStr << "\",";
-	ss << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
-	ss << "\"message\":\"" << escapeJson(msg.message) << "\",";
-	ss << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
-	ss << ",\"function\":\"" << msg.function << "\"";
+	out << "{";
+	out << "\"timestamp\":\"" << timeStr << "\",";
+	out << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
+	out << "\"message\":\"" << escapeJson(msg.message) << "\",";
+	out << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
+	out << ",\"function\":\"" << msg.function << "\"";
 
 	if (!msg.attributes.empty()) {
-		ss << ",\"attributes\":{";
+		out << ",\"attributes\":{";
 		for (std::map<std::string, std::string>::const_iterator it = msg.attributes.begin();
 			 it != msg.attributes.end();) {
-			ss << "\"" << it->first << "\":\"" << escapeJson(it->second) << "\"";
+			out << "\"" << it->first << "\":\"" << escapeJson(it->second) << "\"";
 			if (++it != msg.attributes.end()) {
-				ss << ",";
+				out << ",";
 			}
 		}
-		ss << "}";
+		out << "}";
 	}
-	ss << "}";
-	return ss.str();
+	out << "}";
 }

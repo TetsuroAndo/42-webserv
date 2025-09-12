@@ -1,5 +1,6 @@
 #pragma once
 #include "LogStructure.hpp"
+#include "Logger.hpp"
 #include <sstream>
 #include <string>
 
@@ -10,10 +11,13 @@ struct LogAttribute {
 };
 
 // This free function will be used as a stream manipulator
-inline LogAttribute addAttribute(const std::string &key, const std::string &value) {
+template <typename T>
+inline LogAttribute attr(const std::string &key, const T &value) {
+	std::stringstream ss;
+	ss << value;
 	LogAttribute attr;
 	attr.key = key;
-	attr.value = value;
+	attr.value = ss.str();
 	return attr;
 }
 
@@ -38,4 +42,6 @@ private:
 	std::stringstream _ss;
 };
 
-#define LOG(level) LogBuilder(level, __FILE__, __LINE__, __func__)
+#define LOG(level) \
+	if (!Logger::getInstance().isLogLevelActive(level)) {} \
+	else LogBuilder(level, __FILE__, __LINE__, __func__)

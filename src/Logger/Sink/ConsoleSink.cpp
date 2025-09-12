@@ -3,9 +3,9 @@
 #include "../Form/JsonForm.hpp"
 #include <iostream>
 
-ConsoleSink::ConsoleSink(LogFormat form, LogLevel level, LogFilterMode mode)
+ConsoleSink::ConsoleSink(LogForm *form, LogLevel level, LogFilterMode mode)
 	: LogSink(form, level, mode) {}
 
-void ConsoleSink::write(const std::string &formattedMessage) {
-	std::cout << formattedMessage << std::endl;
+void ConsoleSink::log(const LogMessage &msg) {
+	_form->format(msg, std::cout);
 }

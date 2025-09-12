@@ -6,7 +6,7 @@
 class ElfForm : public LogForm {
 public:
 	ElfForm();
-	virtual std::string format(const LogMessage& msg);
+	virtual void format(const LogMessage& msg, std::ostream& out);
 
 private:
 	std::string getHeader();

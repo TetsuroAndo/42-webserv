@@ -3,22 +3,13 @@
 #include "../Form/JsonForm.hpp"
 #include "../Form/ElfForm.hpp"
 
-LogSink::LogSink(LogFormat form, LogLevel level, LogFilterMode mode)
-	: _logLevel(level), _filterMode(mode)
-{
-	if (form == JSON) {
-		_Form = new JsonForm();
-	} else {
-		_Form = new ElfForm();
-	}
-}
+LogSink::LogSink(LogForm *form, LogLevel level, LogFilterMode mode)
+	: _form(form), _logLevel(level), _filterMode(mode) {}
 
-LogSink::~LogSink() {
-	delete _Form;
-}
+LogSink::~LogSink() {}
 
 LogForm* LogSink::getForm() const {
-	return _Form;
+	return _form;
 }
 
 LogLevel LogSink::getLogLevel() const {

@@ -1,4 +1,5 @@
 #include "LogForm.hpp"
+#include "../LogStructure.hpp"
 
 LogForm::~LogForm() {}
 

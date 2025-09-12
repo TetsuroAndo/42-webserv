@@ -5,13 +5,12 @@
 #include <sys/stat.h>
 #include <iostream>
 
-Logger* Logger::_instance = NULL;
-std::string Logger::_logDir = _LOG_DEFAULT_DIR;
+Logger& Logger::getInstance() {
+	static Logger instance;
+	return instance;
+}
 
 void Logger::setLogDir(const std::string &logDir) {
-	if (_instance) {
-		throw std::logic_error("Logger::setLogDir() must be called before the first call to Logger::getInstance().");
-	}
 	struct stat st;
 	if (stat(logDir.c_str(), &st) != 0) {
 		std::cerr << "[ WARNING ] Logger: Log directory does not exist: " + logDir
@@ -24,19 +23,7 @@ void Logger::setLogDir(const std::string &logDir) {
 	}
 }
 
-Logger& Logger::getInstance() {
-	if (_instance == NULL) {
-		_instance = new Logger();
-	}
-	return *_instance;
-}
-
-void Logger::cleanup() {
-	delete _instance;
-	_instance = NULL;
-}
-
-Logger::Logger() {
+Logger::Logger() : _logDir(_LOG_DEFAULT_DIR), _activeLevelsMask(0) {
 	struct stat st;
 	if (stat(_logDir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
 		_logDir = _LOG_FALLBACK_DIR;
@@ -52,36 +39,70 @@ Logger::~Logger() {
 	_sinks.clear();
 }
 
-void Logger::setSinkFile(const std::string &filename, LogFormat format,
-	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles) {
-	_sinks.push_back(new FileSink(_logDir, filename, format, level, mode, maxFileSize, maxBackupFiles));
+void Logger::setSinkFile(const std::string &filename, LogFormat eFormat,
+	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles) 
+{
+	LogForm *form;
+	if (eFormat == JSON) {
+		form = static_cast<LogForm *>(&_jsonForm);
+	} else {
+		form = static_cast<LogForm *>(&_elfForm);
+	}
+	_sinks.push_back(new FileSink(_logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
+	updateActiveLevelsMask();
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
-	LogFormat format, LogLevel level, LogFilterMode mode,
+	LogFormat eFormat, LogLevel level, LogFilterMode mode,
 	size_t maxFileSize, size_t maxBackupFiles) {
-	_sinks.push_back(new FileSink(logDir, filename, format, level, mode, maxFileSize, maxBackupFiles));
+	LogForm *form;
+	if (eFormat == JSON) {
+		form = static_cast<LogForm *>(&_jsonForm);
+	} else {
+		form = static_cast<LogForm *>(&_elfForm);
+	}
+	_sinks.push_back(new FileSink(logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
 }
 
-void Logger::setSinkConsole(LogFormat format, LogLevel level, LogFilterMode mode) {
-	_sinks.push_back(new ConsoleSink(format, level, mode));
+void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mode) {
+	LogForm *form;
+	if (eFormat == JSON) {
+		form = static_cast<LogForm *>(&_jsonForm);
+	} else {
+		form = static_cast<LogForm *>(&_elfForm);
+	}
+	_sinks.push_back(new ConsoleSink(form, level, mode));
 }
 
 void Logger::log(const LogMessage& msg) {
 	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
 		LogSink* sink = *it;
-
-		if ((sink->getFilterMode() == EXACT && msg.level != sink->getLogLevel()) ||
-			(sink->getFilterMode() == GREATER_OR_EQUAL && msg.level < sink->getLogLevel()))
+		if ((sink->getFilterMode() == EXACT && msg.level == sink->getLogLevel()) ||
+			(sink->getFilterMode() == GREATER_OR_EQUAL && msg.level >= sink->getLogLevel()))
 		{
-			continue;
+			try {
+				sink->log(msg);
+			} catch (const std::exception& e) {
+				std::cerr << "[ ERROR ] Logger: Failed to write log: " << e.what() << std::endl;
+			}
 		}
+	}
+}
 
-		std::string formatted = sink->getForm()->format(msg);
-		try {
-			sink->write(formatted);
-		} catch (const std::exception& e) {
-			std::cerr << "[ ERROR ] Logger: Failed to write log: " << e.what() << std::endl;
+bool Logger::isLogLevelActive(LogLevel level) const {
+	return (_activeLevelsMask >> level) & 1;
+}
+
+void Logger::updateActiveLevelsMask() {
+	_activeLevelsMask = 0;
+	for (std::vector<LogSink*>::const_iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
+		LogLevel level = (*it)->getLogLevel();
+		if ((*it)->getFilterMode() == GREATER_OR_EQUAL) {
+			for (int i = level; i <= FATAL; ++i) {
+				_activeLevelsMask |= (1 << i);
+			}
+		} else {
+			_activeLevelsMask |= (1 << level);
 		}
 	}
 }
