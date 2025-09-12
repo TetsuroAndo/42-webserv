@@ -7,7 +7,7 @@ class LogForm;
 
 class LogSink {
 public:
-	LogSink(LogLevel level = INFO, LogFilterMode mode = GREATER_OR_EQUAL);
+	LogSink(LogFormat format, LogLevel level = INFO, LogFilterMode mode = GREATER_OR_EQUAL);
 	virtual ~LogSink();
 	virtual void write(const std::string& formattedMessage) = 0;
 

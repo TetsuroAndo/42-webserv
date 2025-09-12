@@ -58,24 +58,17 @@ namespace {
 FileSink::FileSink(
 	const std::string& logDir,
 	const std::string &filename,
-	LogFormat form,
-	LogLevel level,
-	LogFilterMode mode,
+	LogFormat form, LogLevel level, LogFilterMode mode,
 	size_t maxFileSize,
 	size_t maxBackupFiles
 ) :
-	LogSink(level, mode),
+	LogSink(form, level, mode),
 	_dir(logDir),
 	_fileName(filename),
 	_fileStream((logDir + "/" + filename).c_str(), std::ios::out | std::ios::app),
 	_maxFileSize(maxFileSize),
 	_maxBackupFiles(maxBackupFiles)
 {
-	if (form == JSON) {
-		LogSink::_Form = new JsonForm();
-	} else {
-		LogSink::_Form = new ElfForm();
-	}
 	if (!_fileStream.is_open()) {
 		throw std::runtime_error("Logger: Failed to open log file: " + filename);
 	}

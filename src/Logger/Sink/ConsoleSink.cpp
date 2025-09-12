@@ -1,16 +1,11 @@
 #include "ConsoleSink.hpp"
-#include "../Form/JsonForm.hpp"
 #include "../Form/ElfForm.hpp"
+#include "../Form/JsonForm.hpp"
 #include <iostream>
 
-ConsoleSink::ConsoleSink(LogFormat form, LogLevel level, LogFilterMode mode) : LogSink(level, mode) {
-	if (form == JSON) {
-		LogSink::_Form = new JsonForm();
-	} else {
-		LogSink::_Form = new ElfForm();
-	}
-}
+ConsoleSink::ConsoleSink(LogFormat form, LogLevel level, LogFilterMode mode)
+	: LogSink(form, level, mode) {}
 
-void ConsoleSink::write(const std::string& formattedMessage) {
+void ConsoleSink::write(const std::string &formattedMessage) {
 	std::cout << formattedMessage << std::endl;
 }
