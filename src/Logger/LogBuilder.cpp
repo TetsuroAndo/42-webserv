@@ -14,3 +14,8 @@ LogBuilder::~LogBuilder() {
 	_msg.message = _ss.str();
 	Logger::getInstance().log(_msg);
 }
+
+LogBuilder &operator<<(LogBuilder &builder, const LogAttribute &attr) {
+	builder._msg.attributes[attr.key] = attr.value;
+	return builder;
+}
