@@ -56,7 +56,7 @@ void SessionManager::cleanupExpiredSessions() {
 
 	std::map<std::string, Session *>::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {
-		if (now - it->second->getLastAccess() > SESSION_TIMEOUT) {
+		if (now - it->second->getLastAccess() > _SESSION_TIMEOUT) {
 			delete it->second;
 			_sessions.erase(it++);
 		} else {
