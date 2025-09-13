@@ -193,7 +193,7 @@ int main() {
         // 1. Loggerインスタンスを取得
         Logger &logger = Logger::getInstance();
 
-        // 2. ログファイルの保存先ディレクトリを設定
+        // 2. ログファイルのデフォルトの保存先ディレクトリを設定
         logger.setLogDir("./logs");
 
         // 3. 出力先 (シンク) を複数設定
