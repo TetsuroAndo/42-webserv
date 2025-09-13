@@ -1,0 +1,114 @@
+# Logger 使用方法
+このドキュメントは、C++98ロガーライブラリをプロジェクトに導入し、基本的なログ出力を行うための手順を解説します。
+## 1. 準備
+ヘッダーのインクルード
+ロガー機能を使用するには、まずメインのヘッダーファイルをインクルードします。
+#include "Logger.hpp"
+
+Loggerインスタンスの取得
+このライブラリはシングルトンとして設計されています。以下のコードで、アプリケーション全体で共有される唯一のインスタンスへの参照を取得します。
+Logger &logger = Logger::getInstance();
+
+以降の操作は、すべてこの logger 変数を通じて行います。
+## 2. 出力先 (シンク) の設定
+ログを実際にどこに、どのような形式で、どのレベルから出力するかを設定します。設定はいくつでも追加できます。
+コンソールへの出力
+setSinkConsole() を使用して、標準出力（コンソール）にログを出力するよう設定します。
+例: コンソールに JSON 形式で DEBUG レベル以上のログを出力する。
+logger.setSinkConsole(JSON, DEBUG);
+
+ファイルへの出力
+setSinkFile() を使用して、ファイルにログを出力するよう設定します。
+例1: デフォルトのログディレクトリ (./log) に server.log という名前で、JSON 形式で INFO レベル以上のログを出力する。
+// ログファイルを保存するディレクトリを指定 (任意)
+logger.setLogDir("./logs");
+
+// ファイルシンクを設定
+logger.setSinkFile("server.log", JSON, INFO);
+
+例2: WarningOnly.log というファイルに、ELF 形式で WARNING レベルのログのみを出力する (EXACT モード)。
+logger.setSinkFile("WarningOnly.log", ELF, WARNING, EXACT);
+
+ログローテーションの設定
+ファイルサイズが大きくなったときに、自動でバックアップを取り新しいファイルに切り替える（ローテーションする）ことができます。setSinkFile() の追加引数で設定します。
+例: MaxTest.log は最大サイズを 100バイト に制限し、バックアップは 3世代 まで保持する。
+// setSinkFile(ファイル名, フォーマット, レベル, モード, 最大ファイルサイズ, 最大バックアップ数)
+logger.setSinkFile("MaxTest.log", ELF, DEBUG, GREATER_OR_EQUAL, 100, 3);
+
+この設定では、MaxTest.log が100バイトを超えると MaxTest.log.1 にリネームされ、新しい MaxTest.log が作成されます。古いバックアップは順次繰り上げられ、MaxTest.log.3 を超えるものは削除されます。
+## 3. ログの記録方法
+LOG(level) マクロと << 演算子を使用して、std::cout のような直感的なスタイルでログを記録します。
+基本的なメッセージ
+LOG(INFO) << "Server is starting...";
+LOG(WARNING) << "Configuration file has a deprecated option.";
+
+変数や値を含める
+文字列だけでなく、数値や std::string 型の変数なども直接ストリームに渡せます。
+int port = 8080;
+std::string host = "localhost";
+LOG(INFO) << "Server listening on " << host << ":" << port;
+
+構造化属性の追加
+attr("キー", 値) ヘルパー関数を使うことで、ログに構造化されたデータを追加できます。これは特に JSON フォーマットで効果的です。
+std::string clientIp = "127.0.0.1";
+int clientFd = 5;
+
+LOG(INFO) << "Accepted new connection"
+          << attr("client_ip", clientIp)
+          << attr("fd", clientFd);
+
+LOG(ERROR) << "Failed to process request"
+           << attr("status_code", 404)
+           << attr("reason", "File not found");
+
+上記のログは、JSON フォーマットの場合、attributes フィールドに {"client_ip": "127.0.0.1", "fd": "5"} のような情報を含んで出力されます。
+## 4. 総合的なサンプルコード
+以下は、これまでに説明した機能を組み合わせた完全なサンプルコードです。
+#include "Logger.hpp"
+#include <iostream>
+#include <stdexcept>
+
+int main() {
+    try {
+        // 1. Loggerインスタンスを取得
+        Logger &logger = Logger::getInstance();
+
+        // 2. ログファイルの保存先ディレクトリを設定
+        logger.setLogDir("./logs");
+
+        // 3. 出力先 (シンク) を複数設定
+        //    - コンソールにはJSON形式でDEBUGレベル以上を出力
+        logger.setSinkConsole(JSON, DEBUG);
+        //    - server.logにはJSON形式でINFOレベル以上を出力
+        logger.setSinkFile("server.log", JSON, INFO);
+        //    - WarningOnly.logにはELF形式でWARNINGレベルのみを出力
+        logger.setSinkFile("WarningOnly.log", ELF, WARNING, EXACT);
+        //    - MaxTest.logは100バイトでローテーションする
+        logger.setSinkFile("MaxTest.log", ELF, DEBUG, GREATER_OR_EQUAL, 100, 3);
+
+
+        // 4. ログを記録
+        LOG(DEBUG) << "This is a debug message. It will appear on console and MaxTest.log";
+
+        LOG(INFO) << "Server is starting...";
+
+        std::string clientIp = "127.0.0.1";
+        int clientFd = 5;
+        LOG(INFO) << "Accepted new connection"
+                  << attr("client_ip", clientIp)
+                  << attr("fd", clientFd);
+
+        LOG(WARNING) << "Configuration file has a deprecated option.";
+
+        LOG(ERROR) << "Failed to process request for resource: /test.html"
+                   << attr("status_code", 404)
+                   << attr("reason", "File not found");
+
+    } catch (const std::exception &e) {
+        // ロガー自体の初期化失敗など、致命的なエラーを捕捉
+        std::cerr << "A critical error occurred: " << e.what() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
