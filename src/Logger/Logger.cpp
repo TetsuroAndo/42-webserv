@@ -40,7 +40,7 @@ Logger::~Logger() {
 }
 
 void Logger::setSinkFile(const std::string &filename, LogFormat eFormat,
-	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles) 
+	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles)
 {
 	LogForm *form;
 	if (eFormat == JSON) {
@@ -62,6 +62,7 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 		form = static_cast<LogForm *>(&_elfForm);
 	}
 	_sinks.push_back(new FileSink(logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
+	updateActiveLevelsMask();
 }
 
 void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mode) {
@@ -72,6 +73,7 @@ void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mod
 		form = static_cast<LogForm *>(&_elfForm);
 	}
 	_sinks.push_back(new ConsoleSink(form, level, mode));
+	updateActiveLevelsMask();
 }
 
 void Logger::log(const LogMessage& msg) {
