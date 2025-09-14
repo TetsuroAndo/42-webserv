@@ -2,6 +2,7 @@
 .vscode
 *.swp
 *.log
+*.log.*
 *.db
 *.pdf
 logs/*
