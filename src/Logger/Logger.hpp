@@ -43,7 +43,4 @@ private:
 	std::string _logDir;
 	std::vector<LogSink *> _sinks;
 	unsigned int _activeLevelsMask;
-
-	JsonForm _jsonForm;
-	ElfForm _elfForm;
 };

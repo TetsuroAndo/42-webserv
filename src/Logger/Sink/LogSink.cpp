@@ -6,7 +6,12 @@
 LogSink::LogSink(LogForm *form, LogLevel level, LogFilterMode mode)
 	: _form(form), _logLevel(level), _filterMode(mode) {}
 
-LogSink::~LogSink() {}
+LogSink::~LogSink() {
+	if (_form) {
+		delete _form;
+		_form = NULL;
+	}
+}
 
 LogForm* LogSink::getForm() const {
 	return _form;
