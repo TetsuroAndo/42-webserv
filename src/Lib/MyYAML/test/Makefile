@@ -1,10 +1,11 @@
-NAME = http_request_test
+NAME = myYaml_test
 
-SRCS = main.cpp ../HttpRequest.cpp ../HttpRequestHelper.cpp
+SRCS = main.cpp ../MyYAML.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror
+#CXXFLAGS = -Wall -Wextra -Werror
+#CXXFLAGS
 
 all: $(NAME)
 
@@ -20,4 +21,3 @@ clean:
 test: $(NAME)
 	./$(NAME)
 	$(MAKE) clean
-
