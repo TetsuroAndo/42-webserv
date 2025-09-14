@@ -44,9 +44,9 @@ void Logger::setSinkFile(const std::string &filename, LogFormat eFormat,
 {
 	LogForm *form;
 	if (eFormat == JSON) {
-		form = static_cast<LogForm *>(&_jsonForm);
+		form = new JsonForm();
 	} else {
-		form = static_cast<LogForm *>(&_elfForm);
+		form = new ElfForm();
 	}
 	_sinks.push_back(new FileSink(_logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
 	updateActiveLevelsMask();
@@ -57,9 +57,9 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 	size_t maxFileSize, size_t maxBackupFiles) {
 	LogForm *form;
 	if (eFormat == JSON) {
-		form = static_cast<LogForm *>(&_jsonForm);
+		form = new JsonForm();
 	} else {
-		form = static_cast<LogForm *>(&_elfForm);
+		form = new ElfForm();
 	}
 	_sinks.push_back(new FileSink(logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
 	updateActiveLevelsMask();
@@ -68,9 +68,9 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mode) {
 	LogForm *form;
 	if (eFormat == JSON) {
-		form = static_cast<LogForm *>(&_jsonForm);
+		form = new JsonForm();
 	} else {
-		form = static_cast<LogForm *>(&_elfForm);
+		form = new ElfForm();
 	}
 	_sinks.push_back(new ConsoleSink(form, level, mode));
 	updateActiveLevelsMask();
