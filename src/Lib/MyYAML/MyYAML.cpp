@@ -115,11 +115,10 @@ void MyYAML::parseYaml(std::string buf) {
 	std::string prevKey = "";
 	int prevIndent = -1;
 	for (; it != endIt; ++it) {
-		std::string line = "";
-		while ('\n' != *it && it != endIt) {
-			line += *it;
-			++it;
-		}
+		std::string::const_iterator lineStart = it;
+		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
+		std::string line(lineStart, lineEnd);
+		it = lineEnd;
 		if (line.empty() || isOnlyCommentLine(line)) {
 			continue;
 		}
