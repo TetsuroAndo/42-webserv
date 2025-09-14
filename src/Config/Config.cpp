@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include "../Lib/MyYAML/MyYAML.hpp"
 
 #include <iostream>
 #include <ostream>
@@ -37,9 +38,8 @@ void Config::setWhenRequestedDirectory(const std::string &dir) {
 void Config::setSaveFileDirectory(const std::string &dir) {
 	this->_saveFileDirectory = dir;
 }
-Config::Config() { setup(); }
 
-Config::Config(std::string configFile) {
+Config::Config(const std::string &configFile) {
 	setup(configFile);
 }
 
@@ -74,7 +74,7 @@ Config &Config::operator=(const Config &other) {
 	return *this;
 }
 void Config::setup(const std::string &configFile) {
-	(void)configFile;
+	MyYAML input(configFile);
 
 	_listens.clear();
 	{

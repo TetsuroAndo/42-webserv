@@ -44,13 +44,12 @@ private:
 	void setSaveFileDirectory(const std::string &dir);
 
 public:
-	Config();
-	Config(std::string configFile);
+	Config(const std::string &configFile);
 	~Config();
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 
-	void setup(const std::string& configFile = "");
+	void setup(const std::string& configFile);
 
 	const std::vector<Listen> &getListens() const;
 	const std::string &getDefaultErrorPage() const;
