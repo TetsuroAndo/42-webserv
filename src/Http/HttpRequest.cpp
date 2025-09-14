@@ -4,49 +4,48 @@
 
 #include "../Lib/URI/uri.hpp"
 #include "HttpRequest.hpp"
+#include "HttpRequestHelper.hpp"
 
-HttpRequest::HttpRequest() : _complete(false) {}
+HttpRequest::HttpRequest() : _parseStatus(PARSE_INCOMPLETE), _error(NONE) {}
 
 HttpRequest::~HttpRequest() {}
 
-bool HttpRequest::parse(std::string &buffer) {
-	if (_complete) {
-		return true;
+ParseStatus HttpRequest::parse(std::string &buffer) {
+	if (_parseStatus == PARSE_COMPLETE) {
+		return _parseStatus;
 	}
 
 	size_t headerEnd = buffer.find("\r\n\r\n");
 	if (headerEnd == std::string::npos) {
-		return false;
+		return _parseStatus;
 	}
-
+	if (headerEnd > maxHeaderSize) {
+		setError(PARSE_ERROR_LARGE_HEADER);
+		return _parseStatus;
+	}
 	std::string headerPart = buffer.substr(0, headerEnd);
 	std::istringstream headerStream(headerPart);
 	std::string requestLine;
 
 	if (!std::getline(headerStream, requestLine)) {
-		return false;
+		return _parseStatus;
 	}
 	if (!HttpRequest::parseRequestLine(requestLine)) {
-		return false;
+		return _parseStatus;
 	}
 	if (!HttpRequest::parseHeaders(headerStream)) {
-		return false;
+		return _parseStatus;
 	}
 	if (!HttpRequest::parseBody(buffer, headerEnd + 4)) {
-		return false;
+		return _parseStatus;
 	}
-	return _complete;
-}
-
-static void trimCR(std::string &line) {
-	if (!line.empty() && line[line.size() - 1] == '\r') {
-		line.erase(line.size() - 1);
-	}
+	return _parseStatus;
 }
 
 bool HttpRequest::parseRequestLine(std::string &requestLine) {
-	trimCR(requestLine);
+	HttpRequestHelper::trimCR(requestLine);
 	if (requestLine.empty()) {
+		setError(PARSE_ERROR_INVALID_REQUEST);
 		return false;
 	}
 	if (!splitRequestLine(requestLine)) {
@@ -54,32 +53,29 @@ bool HttpRequest::parseRequestLine(std::string &requestLine) {
 	}
 	splitPathAndQuery();
 	parseQueryString();
+	_parseStatus = PARSE_INCOMPLETE;
 	return true;
 }
 
 bool HttpRequest::splitRequestLine(const std::string &requestLine) {
-	size_t firstSpace = requestLine.find(' ');
-	size_t lastSpace = requestLine.rfind(' ');
-	if (firstSpace == std::string::npos || lastSpace == std::string::npos ||
-		firstSpace == lastSpace) {
+	std::istringstream iss(requestLine);
+	if (!(iss >> _method >> _path >> _version)) {
+		setError(PARSE_ERROR_INVALID_REQUEST);
 		return false;
 	}
-
-	_method = requestLine.substr(0, firstSpace);
+	std::string extra;
+	if (iss >> extra) {
+		setError(PARSE_ERROR_INVALID_REQUEST);
+		return false;
+	}
 	if (_method != "GET" && _method != "POST" && _method != "DELETE") {
+		setError(PARSE_ERROR_HTTP_METHOD);
 		return false;
 	}
-
-	_path = requestLine.substr(firstSpace + 1, lastSpace - firstSpace - 1);
-	if (_path.find(' ') != std::string::npos) {
-		return false;
-	}
-
-	_version = requestLine.substr(lastSpace + 1);
 	if (_version != "HTTP/1.0" && _version != "HTTP/1.1") {
+		setError(PARSE_ERROR_HTTP_VERSION);
 		return false;
 	}
-
 	return true;
 }
 
@@ -119,50 +115,44 @@ void HttpRequest::parseQueryString() {
 	}
 }
 
-static void trimSpaces(std::string &s, std::string spaces) {
-	size_t start = s.find_first_not_of(spaces);
-	size_t end = s.find_last_not_of(spaces);
-	if (start == std::string::npos) {
-		s.clear();
-	} else {
-		s = s.substr(start, end - start + 1);
-	}
-}
-
-static void toLower(std::string &str) {
-	for (std::string::size_type i = 0; i < str.size(); ++i) {
-		str[i] =
-			static_cast<char>(std::tolower(static_cast<unsigned char>(str[i])));
-	}
-}
-
 bool HttpRequest::parseHeaders(std::istringstream &headerStream) {
-	size_t headerBytes = 0;
+	size_t parsedHeaderBytes = 0;
 	std::string line;
 	while (std::getline(headerStream, line)) {
-		headerBytes += line.size() + 1;
-		if (headerBytes > maxHeaderSize) {
+		parsedHeaderBytes += line.size() + 2;
+		if (parsedHeaderBytes > maxHeaderSize) {
+			setError(PARSE_ERROR_LARGE_HEADER);
 			return false;
 		}
 
-		trimCR(line);
+		HttpRequestHelper::trimCR(line);
 
 		size_t pos = line.find(":");
 		if (pos != std::string::npos) {
 			std::string key = line.substr(0, pos);
-			toLower(key);
+			HttpRequestHelper::trimSpaces(key, " \t");
+			HttpRequestHelper::toLower(key);
 			std::string value = line.substr(pos + 1);
-			trimSpaces(value, " \t");
+			HttpRequestHelper::trimSpaces(value, " \t");
 			if (_headers.find(key) != _headers.end()) {
+				setError(PARSE_ERROR_INVALID_REQUEST);
 				return false;
 			}
 			_headers[key] = value;
+		} else {
+			setError(PARSE_ERROR_INVALID_REQUEST);
+			return false;
 		}
 	}
 	return true;
 }
 
 bool HttpRequest::parseBody(std::string &buffer, size_t bodyStart) {
+	if (_headers.find("transfer-encoding") != _headers.end() &&
+		_headers.find("content-length") != _headers.end()) {
+		setError(PARSE_ERROR_INVALID_REQUEST);
+		return false;
+	}
 	if (_headers.find("transfer-encoding") != _headers.end() &&
 		_headers["transfer-encoding"].find("chunked") != std::string::npos) {
 		return parseChunkedBody(buffer, bodyStart);
@@ -171,61 +161,9 @@ bool HttpRequest::parseBody(std::string &buffer, size_t bodyStart) {
 		return parseContentLengthBody(buffer, bodyStart);
 	}
 	_body = "";
-	_complete = true;
+	_parseStatus = PARSE_COMPLETE;
 	buffer.erase(0, bodyStart);
 	return true;
-}
-
-static bool getChunkSize(const std::string &buffer, size_t pos, long &chunkSize,
-						 size_t &nextPos) {
-	size_t crlf = buffer.find("\r\n", pos);
-	if (crlf == std::string::npos) {
-		return false;
-	}
-
-	std::string chunkSizeStr = buffer.substr(pos, crlf - pos);
-	size_t semiPos = chunkSizeStr.find(";");
-	if (semiPos != std::string::npos)
-		chunkSizeStr = chunkSizeStr.substr(0, semiPos);
-
-	char *endptr = NULL;
-	chunkSize = std::strtol(chunkSizeStr.c_str(), &endptr, 16);
-	if (endptr == chunkSizeStr.c_str() || chunkSize < 0) {
-		return false;
-	}
-
-	nextPos = crlf + 2;
-	return true;
-}
-
-static bool readChunkData(const std::string &buffer, size_t &pos,
-						  std::string &body, long chunkSize,
-						  size_t maxBodySize) {
-	if (pos + static_cast<size_t>(chunkSize) + 2 > buffer.size()) {
-		return false;
-	}
-	if (body.size() + static_cast<size_t>(chunkSize) > maxBodySize) {
-		return false;
-	}
-
-	body.append(buffer, pos, chunkSize);
-	pos += chunkSize;
-
-	if (buffer.compare(pos, 2, "\r\n") != 0)
-		return false;
-	pos += 2;
-	return true;
-}
-
-static size_t handleLastChunk(const std::string &buffer, size_t pos) {
-	size_t trailerEnd = buffer.find("\r\n\r\n", pos);
-
-	if (buffer.compare(pos, 2, "\r\n") == 0) {
-		pos += 2;
-	} else if (trailerEnd != std::string::npos) {
-		pos = trailerEnd + 4;
-	}
-	return std::min(pos, buffer.size());
 }
 
 bool HttpRequest::parseChunkedBody(std::string &buffer, size_t bodyStart) {
@@ -233,18 +171,31 @@ bool HttpRequest::parseChunkedBody(std::string &buffer, size_t bodyStart) {
 	size_t pos = bodyStart;
 
 	while (true) {
-		long chunkSize;
+		size_t chunkSize;
 		size_t nextPos;
-		if (!getChunkSize(buffer, pos, chunkSize, nextPos)) {
+		int chunkStatus =
+			HttpRequestHelper::getChunkSize(buffer, pos, chunkSize, nextPos);
+		if (chunkStatus == HttpRequestHelper::CHUNK_ERROR) {
+			setError(PARSE_ERROR_INVALID_REQUEST);
+			return false;
+		}
+		if (chunkStatus == HttpRequestHelper::CHUNK_INCOMPLETE) {
 			return false;
 		}
 		pos = nextPos;
 		if (chunkSize == 0) {
-			erasePos = std::min(handleLastChunk(buffer, pos), buffer.size());
-			_complete = true;
+			erasePos = std::min(HttpRequestHelper::handleLastChunk(buffer, pos),
+								buffer.size());
 			break;
 		}
-		if (!readChunkData(buffer, pos, _body, chunkSize, maxBodySize)) {
+
+		int readStatus = HttpRequestHelper::readChunkData(
+			buffer, pos, _body, chunkSize, maxBodySize);
+		if (readStatus == HttpRequestHelper::CHUNK_ERROR) {
+			setError(PARSE_ERROR_INVALID_REQUEST);
+			return false;
+		}
+		if (readStatus == HttpRequestHelper::CHUNK_INCOMPLETE) {
 			return false;
 		}
 		erasePos = pos;
@@ -252,32 +203,41 @@ bool HttpRequest::parseChunkedBody(std::string &buffer, size_t bodyStart) {
 
 	if (erasePos > 0)
 		buffer.erase(0, erasePos);
+	_parseStatus = PARSE_COMPLETE;
 	return true;
 }
 
 bool HttpRequest::parseContentLengthBody(std::string &buffer,
 										 size_t bodyStart) {
 	std::string lenStr = _headers["content-length"];
-	trimSpaces(lenStr, " \t\n\r\f\v");
+	HttpRequestHelper::trimSpaces(lenStr, " \t\n\r\f\v");
 
 	char *endPtr = NULL;
-	long contentLength = std::strtol(lenStr.c_str(), &endPtr, 10);
-	if (endPtr == lenStr.c_str() || *endPtr != '\0' || contentLength < 0 ||
-		contentLength > static_cast<long>(maxBodySize)) {
+	size_t contentLength = std::strtoul(lenStr.c_str(), &endPtr, 10);
+	if (endPtr == lenStr.c_str() || *endPtr != '\0' ||
+		contentLength > maxBodySize) {
+		setError(PARSE_ERROR_LARGE_REQUEST);
 		return false;
 	}
 
-	if (buffer.size() - bodyStart < static_cast<size_t>(contentLength)) {
+	if (buffer.size() - bodyStart < contentLength) {
 		return false;
 	}
 
-	_body.append(buffer, bodyStart, static_cast<size_t>(contentLength));
-	_complete = true;
-	buffer.erase(0, bodyStart + static_cast<size_t>(contentLength));
+	_body.append(buffer, bodyStart, contentLength);
+	_parseStatus = PARSE_COMPLETE;
+	buffer.erase(0, bodyStart + contentLength);
 	return true;
 }
 
-bool HttpRequest::isComplete() const { return this->_complete; }
+void HttpRequest::setError(ParseErrorStatus status) {
+	_parseStatus = PARSE_ERROR;
+	_error = status;
+}
+
+bool HttpRequest::isComplete() const { return _parseStatus == PARSE_COMPLETE; }
+
+int HttpRequest::getError() const { return static_cast<int>(_error); }
 
 const std::string &HttpRequest::getMethod() const { return this->_method; }
 
@@ -288,12 +248,15 @@ const std::string &HttpRequest::getVersion() const { return this->_version; }
 const std::string &HttpRequest::getBody() const { return this->_body; }
 
 const std::string &HttpRequest::getHeader(const std::string &header) const {
-	try {
-		return this->_headers.at(header);
-	} catch (const std::out_of_range &) {
-		static const std::string empty;
-		return empty;
+	std::string lowerHeader = header;
+	HttpRequestHelper::toLower(lowerHeader);
+	std::map<std::string, std::string>::const_iterator it =
+		this->_headers.find(lowerHeader);
+	if (it != this->_headers.end()) {
+		return it->second;
 	}
+	static const std::string empty;
+	return empty;
 }
 
 // debug
@@ -301,7 +264,14 @@ void HttpRequest::printData() {
 	std::map<std::string, std::string>::iterator it;
 
 	std::cout << "======================================================\n";
-	std::cout << "isComplete: " << _complete << "\n";
+	if (_parseStatus == PARSE_COMPLETE) {
+		std::cout << "parseStatus: " << "PARSE_COMPLETE" << "\n";
+	} else if (_parseStatus == PARSE_INCOMPLETE) {
+		std::cout << "parseStatus: " << "PARSE_INCOMPLETE" << "\n";
+	} else if (_parseStatus == PARSE_ERROR) {
+		std::cout << "parseStatus: " << "PARSE_ERROR" << "\n";
+		std::cout << "parseErrorStatus: " << getError() << "\n";
+	}
 	std::cout << "method: " << _method << "\n";
 	std::cout << "path: " << _path << "\n";
 	std::cout << "query: " << "\n";
@@ -314,5 +284,6 @@ void HttpRequest::printData() {
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
 	}
 	std::cout << "body: " << _body << "\n";
-	std::cout << "======================================================\n";
+	std::cout << "======================================================"
+			  << std::endl;
 }
