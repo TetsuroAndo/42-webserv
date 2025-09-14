@@ -31,7 +31,7 @@ void ElfForm::format(const LogMessage& msg, std::ostream& out) {
 		out << getHeader() << "\n";
 		_headerWritten = true;
 	}
-	struct tm *timeinfo = localtime(&msg.timestamp); // 一度だけ呼び出す
+	struct tm *timeinfo = localtime(&msg.timestamp);
 	char dateStr[11];
 	char timeStr[9];
 	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
