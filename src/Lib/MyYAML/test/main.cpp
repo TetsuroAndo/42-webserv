@@ -7,12 +7,14 @@ int main() {
 		std::cout << "show all keys: " << "\n";
 		data.debugAllKeyAndValue();
 
-		const std::vector<std::string> key4 = data.getValue("key4");
-		std::cout << std::endl << "show key4: " << "\n";
-		for (int i = 0; i < key4.size(); i++) {
-			std::cout << "key4 "<< i << ": " <<  key4[i] << "\n";
-		}
-		std::cout << "\n" << "key4 Size:" <<data.getSize("key4") << "\n";
+		// const std::vector<std::string> key4 = data.getValue("key4");
+		// std::cout << std::endl << "show key4: " << "\n";
+		// for (int i = 0; i < key4.size(); i++) {
+		// 	std::cout << "key4 "<< i << ": " <<  key4[i] << "\n";
+		// }
+		// std::cout << "\n" << "key4 Size:" <<data.getSize("key4") << "\n";
+		std::cout << std::flush;
+		return 0;
 	} catch (std::exception& e) {
 		// std::cerr << e.what() << std::endl;
 		return 1;
