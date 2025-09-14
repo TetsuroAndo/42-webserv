@@ -1,32 +1,42 @@
 #pragma once
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
-class MyYAML
-{
+class MyYAML {
 public:
 	MyYAML(const std::string &filepath);
-    ~MyYAML();
+
+	~MyYAML();
 
 	void debugAllKeyAndValue();
 
+	std::vector<std::string> getValue(const std::string &key);
+
+	std::size_t getSize(const std::string &key);
+
 	class FileNotFound : public std::exception {
-		const char *what () const throw() { return "File not found"; }
+		const char *what() const throw() { return "File not found"; }
 	};
 
 	class InvalidFormat : public std::exception {
-		const char *what () const throw() { return "Invalid format"; }
+		const char *what() const throw() { return "Invalid format"; }
 	};
 
+	class ValueNotFound : public std::runtime_error {
+	public:
+		explicit ValueNotFound(const std::string& key)
+			: std::runtime_error("Value not found: " + key) {}
+	};
+
+
 private:
-	std::map<std::string, std::vector<std::string> > myYamlData;
-	static std::string readFileAll(const std::string &filepath);
+	std::map<std::string, std::vector<std::string> > _myYamlData;
 	void parseYaml(std::string buf);
 
 
-    MyYAML();
-
-    MyYAML(const MyYAML&);
-    MyYAML& operator=(const MyYAML&);
+	MyYAML();
+	MyYAML(const MyYAML &);
+	MyYAML &operator=(const MyYAML &);
 };

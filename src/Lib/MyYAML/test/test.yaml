@@ -1,7 +1,12 @@
+#comment
 key : value
 key2 : value2
 key3 :
   - hoge
   - huga
   - hage
-#comment
+key4 :
+  - hoge
+  - huga
+  - hage
+#key6:
