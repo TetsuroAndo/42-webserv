@@ -31,17 +31,18 @@ void ElfForm::format(const LogMessage& msg, std::ostream& out) {
 		out << getHeader() << "\n";
 		_headerWritten = true;
 	}
+	struct tm *timeinfo = localtime(&msg.timestamp); // 一度だけ呼び出す
 	char dateStr[11];
 	char timeStr[9];
-	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", localtime(&msg.timestamp));
-	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", localtime(&msg.timestamp));
-	
+	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
+	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
+
 	out << dateStr << " " << timeStr << " ";
 	out << LogForm::levelToString(msg.level) << " ";
 	out << msg.function << " ";
 	out << msg.file << ":" << msg.line << " ";
 	out << sanitize(msg.message) << " ";
-	
+
 	if (msg.attributes.empty()) {
 		out << "-";
 	} else {
