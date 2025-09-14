@@ -93,7 +93,7 @@ void HttpResponse::setDateHeader() {
 	setHeaders("Date", buf);
 }
 
-const std::string &HttpResponse::getResponse(void) {
+void HttpResponse::makeResponse(void) {
 	_response.clear();
 	_response += getStatusLine() + "\r\n";
 	setDateHeader();
@@ -104,5 +104,9 @@ const std::string &HttpResponse::getResponse(void) {
 	}
 	_response += "\r\n";
 	_response += _body;
+}
+const std::string &HttpResponse::getResponse(void) {
+	if (_response == "")
+		makeResponse();
 	return _response;
 }

@@ -22,6 +22,7 @@ public:
 					const std::string &headerValue);
 	void setResponseBody(const std::string &bodyMessage);
 	void setDateHeader(void);
+	void makeResponse(void);
 	const std::string &getResponse(void);
 };
 
