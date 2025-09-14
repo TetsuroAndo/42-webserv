@@ -18,7 +18,7 @@ static std::string readFileAll(const std::string &filepath) {
 static bool isOnlyCommentLine(const std::string &line) {
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
-	while (it != itEnd && isspace(*it)) {
+	while (it != itEnd && ' ' == *it) {
 		++it;
 	}
 	return *it == '#';
