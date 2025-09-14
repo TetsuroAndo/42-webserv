@@ -21,19 +21,19 @@ static bool isOnlyCommentLine(const std::string &line) {
 	while (it != itEnd && ' ' == *it) {
 		++it;
 	}
-	return *it == '#';
+	return '#' == *it;
 }
 
 static std::string extractKey(const std::string &key) {
 	std::string::const_iterator it = key.begin();
 	const std::string::const_iterator itEnd = key.end();
-	while (it != itEnd && *it == ' ') {
+	while (it != itEnd && ' ' == *it) {
 		++it;
 	}
 	std::string tmp(it, itEnd);
 	std::string::reverse_iterator revIt = tmp.rbegin();
 	const std::string::reverse_iterator revEnd = tmp.rend();
-	while (revIt != revEnd && *revIt == ' ') {
+	while (revIt != revEnd && ' ' == *revIt) {
 		++revIt;
 	}
 	std::string result(tmp.begin(), revIt.base());
@@ -45,7 +45,7 @@ static std::string extractListValue(const std::string &line, int &prevIndent) {
 	int spaceCount = 0;
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
-	while (it != itEnd && *it == ' ') {
+	while (it != itEnd && ' ' == *it) {
 		spaceCount++;
 		++it;
 	}
@@ -53,7 +53,7 @@ static std::string extractListValue(const std::string &line, int &prevIndent) {
 		throw MyYAML::InvalidFormat();
 	}
 	std::string tmp = extractKey(line);
-	if (tmp[0] == '-' && tmp[1] == ' ') {
+	if ('-' == tmp[0] && ' ' == tmp[1]) {
 		tmp = tmp.substr(2, tmp.size() - 2);
 	} else {
 		throw MyYAML::InvalidFormat();
@@ -88,7 +88,7 @@ void MyYAML::debugAllKeyAndValue() {
 }
 
 std::vector<std::string> MyYAML::getValue(const std::string &key) {
-	if (_myYamlData.find(key) == _myYamlData.end()) {
+	if (_myYamlData.end() == _myYamlData.find(key)) {
 		throw ValueNotFound(key);
 	}
 	return _myYamlData.find(key)->second;
@@ -99,7 +99,7 @@ std::size_t MyYAML::getSize(const std::string &key) {
 }
 
 void MyYAML::parseYaml(std::string buf) {
-	if (!buf.empty() && buf[buf.size() - 1] != '\n') {
+	if (!buf.empty() && '\n' != buf[buf.size() - 1]) {
 		buf.push_back('\n');
 	}
 	std::string::const_iterator it = buf.begin();
@@ -107,7 +107,7 @@ void MyYAML::parseYaml(std::string buf) {
 	if (it == endIt) {
 		return;
 	}
-	if (*it == '\n') {
+	if ('\n' == *it) {
 		++it;
 	}
 	bool isPrevKeyOnly = false;
@@ -116,7 +116,7 @@ void MyYAML::parseYaml(std::string buf) {
 	int prevIndent = -1;
 	for (; it != endIt; ++it) {
 		std::string line = "";
-		while (*it != '\n' && it != endIt) {
+		while ('\n' != *it && it != endIt) {
 			line += *it;
 			++it;
 		}
@@ -124,7 +124,7 @@ void MyYAML::parseYaml(std::string buf) {
 			continue;
 		}
 		const std::string::size_type pos = line.find(":");
-		if (pos == std::string::npos) {
+		if (std::string::npos == pos) {
 			if (isPrevKeyOnly) {
 				if (!isPrevIsList) {
 					_myYamlData[prevKey] = std::vector<std::string>();
@@ -166,7 +166,7 @@ void MyYAML::parseYaml(std::string buf) {
 		}
 		prevKey = key;
 	}
-	if (isPrevKeyOnly && isPrevIsList == false) {
+	if (isPrevKeyOnly && false == isPrevIsList) {
 		throw InvalidFormat();
 	}
 
