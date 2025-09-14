@@ -7,6 +7,9 @@
 
 static std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
+	if (!input) {
+		throw std::runtime_error("Could not open file " + filepath);
+	}
 	std::stringstream buffer;
 	buffer << input.rdbuf();
 	return buffer.str();
