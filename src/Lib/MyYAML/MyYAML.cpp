@@ -1,5 +1,6 @@
 #include "MyYAML.hpp"
-
+#include <cerrno>
+#include <cstring>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -8,7 +9,8 @@
 static std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
 	if (!input) {
-		throw std::runtime_error("Could not open file " + filepath);
+		std::cerr << "Webserv: " << filepath << ": " << strerror(errno) << std::endl;
+		throw std::runtime_error("Could not open file");
 	}
 	std::stringstream buffer;
 	buffer << input.rdbuf();

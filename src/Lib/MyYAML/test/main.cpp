@@ -14,7 +14,8 @@ int main() {
 		}
 		std::cout << "\n" << "key4 Size:" <<data.getSize("key4") << "\n";
 	} catch (std::exception& e) {
-		std::cout << e.what() << std::endl;
+		// std::cerr << e.what() << std::endl;
+		return 1;
 	}
 	// invalid file
 	try {
