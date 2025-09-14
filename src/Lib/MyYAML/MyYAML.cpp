@@ -53,6 +53,9 @@ static std::string extractListValue(const std::string &line, int &prevIndent) {
 		throw MyYAML::InvalidFormat();
 	}
 	std::string tmp = extractKey(line);
+	if (tmp.size() < 2) {
+		throw MyYAML::InvalidFormat();
+	}
 	if ('-' == tmp[0] && ' ' == tmp[1]) {
 		tmp = tmp.substr(2, tmp.size() - 2);
 	} else {
