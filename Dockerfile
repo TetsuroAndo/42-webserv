@@ -23,3 +23,4 @@ RUN apt-get update && apt-get install -y build-essential libssl-dev wget \
 
 
 # $docker build -t my/ubuntu-dev:22.04 .
+# $docker run -it --rm -v $(pwd):/workspace -w /workspace my/ubuntu-dev:22.04 bash
