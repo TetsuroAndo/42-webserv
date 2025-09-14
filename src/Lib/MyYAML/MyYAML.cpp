@@ -66,8 +66,16 @@ static std::string extractListValue(const std::string &line, int &prevIndent) {
 	return (tmp);
 }
 
+static bool endsWith(const std::string& s, const std::string& suffix) {
+	return s.size() >= suffix.size() &&
+		   s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
 
 MyYAML::MyYAML(const std::string &filepath) {
+	const std::string extension(".yaml");
+	if (endsWith(filepath, extension) == false) {
+		throw std::invalid_argument("Filepath does not end with extension '" + extension + "'");
+	}
 	const std::string buf = readFileAll(filepath);
 	parseYaml(buf);
 }

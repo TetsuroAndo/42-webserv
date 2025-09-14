@@ -24,5 +24,12 @@ int main() {
 	} catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;
 	}
+	try {
+		MyYAML data("test222.yam");
+		std::cout << "show all keys: " << "\n";
+		data.debugAllKeyAndValue();
+	} catch (const std::exception& e) {
+		std::cout << e.what() << std::endl;
+	}
 	return 0;
 }
