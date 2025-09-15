@@ -1,6 +1,6 @@
 NAME = myYaml_test
 
-SRCS = main.cpp ../MyYAML.cpp
+SRCS = main.cpp ../MyYAML.cpp ../Node.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = c++

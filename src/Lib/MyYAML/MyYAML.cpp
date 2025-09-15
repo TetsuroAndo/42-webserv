@@ -184,6 +184,10 @@ void MyYAML::parseYaml(std::string buf) {
 
 }
 
+void MyYAML::NewParseYaml(std::string buf) {
+
+}
+
 MyYAML::MyYAML() {
 }
 

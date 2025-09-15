@@ -34,6 +34,8 @@ public:
 private:
 	std::map<std::string, std::vector<std::string> > _myYamlData;
 	void parseYaml(std::string buf);
+	void NewParseYaml(std::string buf);
+
 
 
 	MyYAML();
