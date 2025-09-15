@@ -1,7 +1,7 @@
 #include "MyYAML.hpp"
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -17,13 +17,13 @@ static std::string readFileAll(const std::string &filepath) {
 	return buffer.str();
 }
 
-static bool isOnlyCommentLine(const std::string &line) {
+static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
 	while (it != itEnd && ' ' == *it) {
 		++it;
 	}
-	return '#' == *it;
+	return delimiter == *it;
 }
 
 static std::string extractKey(const std::string &key) {
@@ -132,11 +132,10 @@ void MyYAML::parseYaml(std::string buf) {
 		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
 		std::string line(lineStart, lineEnd);
 		it = lineEnd;
-		if (line.empty() || isOnlyCommentLine(line)) {
+		if (line.empty() || isOnlyCharLine(line, '#')) {
 			continue;
 		}
-		const std::string::size_type pos = line.find(":");
-		if (std::string::npos == pos) {
+		if (isOnlyCharLine(line, '-')) {
 			if (isPrevKeyOnly) {
 				if (!isPrevIsList) {
 					_myYamlData[prevKey] = std::vector<std::string>();
@@ -160,6 +159,7 @@ void MyYAML::parseYaml(std::string buf) {
 			isPrevIsList = false;
 			prevIndent = -1;
 		}
+		const std::string::size_type pos = line.find(":");
 		std::string key = line.substr(0, pos);
 		key = extractKey(key);
 		if (key.empty()) {

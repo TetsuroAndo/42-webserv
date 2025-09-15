@@ -1,9 +1,10 @@
 # sample setting
+# separator " | " (ascii 32 124 32)
 
-# interface:port
+# interface | port
 listens :
-  - 0.0.0.0:8080
-  - 127.0.0.1:3000
+  - 0.0.0.0 | 8080
+  - 127.0.0.1 | 3000
 
 defaultErrorPage : /tmp/www/error.html
 
@@ -16,19 +17,20 @@ isAllowPost : true
 isAllowHead : true
 isAllowDelete : true
 
-# old,code,new
-redirect : /old,301,/new
+# old | code | new
+redirect :
+  - /old | 301 | /new
+  - /api/v2 | 302 | /api/v3
 
-# path:root
+# path | root
 locations :
-  - /,/tmp/www
-  - /uploads,/tmp/uploads
+  - / | /tmp/www
+  - /uploads | /tmp/uploads
 
 # true/false
 isShowDirectoryListPage : true
 
-
-whenRequestedDirectory : index.html
+whenRequestedDirectory : /tmp/www/index.html
 saveFileDirectory : /tmp/uploads
 
 timeoutSec : 5
