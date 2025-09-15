@@ -125,12 +125,28 @@ void Server::handleClientRead(int clientFd) {
 			break;
 		}
 	}
-	if (sock->getRequest()->parse(sock->getRecvBuffer())) {
+	ParseStatus status = sock->getRequest()->parse(sock->getRecvBuffer());
+	if (status == PARSE_COMPLETE) {
 		// debug用のパース結果出力、提出前に消す
 		sock->getRequest()->printData();
 		// レスポンスを作成するmethodに置き換える
-		sock->setSendBuffer("HTTP/1.0 200 OK\r\nContent-Length: "
-							"13\r\nConnection: close\r\n\r\nHello, World!");
+		{
+			sock->getResponse()->setStatusCode(200);
+			sock->getResponse()->setHeaders("Test-Header", "test-value");
+			sock->getResponse()->setResponseBody("Hello, World!");
+			sock->setSendBuffer(sock->getResponse()->getResponse());
+		}
+		_manager.modifySocket(clientFd, EPOLLOUT);
+	} else if (status == PARSE_ERROR) {
+		// debug用のパース結果出力、提出前に消す
+		sock->getRequest()->printData();
+		// レスポンスを作成するmethodに置き換える
+		{
+			sock->getResponse()->setStatusCode(sock->getRequest()->getError());
+			sock->getResponse()->setHeaders("Test-Header", "test-value");
+			sock->getResponse()->setResponseBody("invalid test");
+			sock->setSendBuffer(sock->getResponse()->getResponse());
+		}
 		_manager.modifySocket(clientFd, EPOLLOUT);
 	}
 }

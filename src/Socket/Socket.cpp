@@ -3,11 +3,13 @@
 
 Socket::Socket(int fd) : _fd(fd), _listen(false), _addr() {
 	_request = new HttpRequest();
+	_response = new HttpResponse();
 }
 
 Socket::Socket(const int fd, const sockaddr_in &addr)
 	: _fd(fd), _listen(false), _addr(addr) {
 	_request = new HttpRequest();
+	_response = new HttpResponse();
 }
 
 Socket::~Socket() {
@@ -42,3 +44,5 @@ std::string &Socket::getRecvBuffer() { return this->_recvBuffer; }
 const std::string &Socket::getSendBuffer() const { return this->_sendBuffer; }
 
 HttpRequest *Socket::getRequest() { return this->_request; }
+
+HttpResponse *Socket::getResponse() { return this->_response; }

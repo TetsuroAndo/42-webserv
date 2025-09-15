@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "../HttpRequest.hpp"
+#include "../HttpResponse.hpp"
 
 namespace URI {
 std::string decodeURIComponent(const std::string &encoded) { return encoded; }
@@ -189,7 +190,35 @@ static void invalidTestChunkSize() {
 	req.printData();
 }
 
+static void testStatusLine() {
+    HttpResponse res;
+    res.setStatusCode(200);
+    std::string status = res.getStatusLine();
+    assert(status.find("200 OK") != std::string::npos);
+}
+
+static void testHeadersAndBody() {
+    HttpResponse res;
+    res.setStatusCode(404);
+    res.setHeaders("Content-Type", "text/plain");
+    res.setResponseBody("Not Found");
+    std::string resp = res.getResponse();
+    assert(resp.find("404 Not Found") != std::string::npos);
+    assert(resp.find("Content-Type: text/plain") != std::string::npos);
+    assert(resp.find("Content-Length: 9") != std::string::npos);
+    assert(resp.find("Not Found") != std::string::npos);
+}
+
+static void testDateHeader() {
+    HttpResponse res;
+    res.setStatusCode(200);
+    res.setResponseBody("Hello");
+    std::string resp = res.getResponse();
+    assert(resp.find("Date: ") != std::string::npos);
+}
+
 int main(void) {
+	std::cout << "=========REQUEST TEST========\n";
 	// 正常系
 	validTestGetMethod();
 	validTestPostMethod();
@@ -199,18 +228,20 @@ int main(void) {
 
 	// 異常系
 	invalidTestIncompleteRequest();
-
 	invalidTestUnsupportedMethod();
 	invalidTestHttpVersion();
-
 	invalidTestHeaderTooLarge();
 	invalidTestContentLengthTooLarge();
-
 	invalidTestRequestLine();
 	invalidTestContentLength();
 	invalidTestDuplicateHeader();
 	invalidTestChunkedAndContentLength();
 	invalidTestChunkSize();
+
+	std::cout << "=========RESPONSE TEST========\n";
+    testStatusLine();
+    testHeadersAndBody();
+    testDateHeader();
 
 	std::cout << "All tests passed!" << std::endl;
 	return 0;

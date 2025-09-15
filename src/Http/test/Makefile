@@ -1,6 +1,6 @@
 NAME = http_request_test
 
-SRCS = main.cpp ../HttpRequest.cpp ../HttpRequestHelper.cpp
+SRCS = main.cpp ../HttpRequest.cpp ../HttpRequestHelper.cpp ../HttpResponse.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = c++
