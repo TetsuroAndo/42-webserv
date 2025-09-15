@@ -1,37 +1,53 @@
 # sample setting
 # separator " | " (ascii 32 124 32)
 
-# interface | port
-listens :
-  - 0.0.0.0 | 8080
-  - 127.0.0.1 | 3000
+servers:
+  - server :
+      # interface | port
+      - listens :
+      - listen:
+          - interface: 0.0.0.0
+          - port: 8080
+      - listen:
+          - interface: 127.0.0.1
+          - port: 3000
 
-defaultErrorPage : /tmp/www/error.html
+  - defaultErrorPage : /tmp/www/error.html
 
-# 1024 x 1024
-maxRequestBodySize : 1048576
+  # 1024 x 1024
+  - maxRequestBodySize : 1048576
 
-# true / false
-isAllowGet : true
-isAllowPost : true
-isAllowHead : true
-isAllowDelete : true
+  # true / false
+  - isAllowGet : true
+  - isAllowPost : true
+  - isAllowHead : true
+  - isAllowDelete : true
 
-# old | code | new
-redirect :
-  - /old | 301 | /new
-  - /api/v2 | 302 | /api/v3
+  # old | code | new
+  - redirects :
+      - redirect:
+          - from: /old
+          - to: /new
+          - code: 301
+      - redirect:
+          - from: /
+          - to: /tmp/www/index.html
+          - code: 302
 
-# path | root
-locations :
-  - / | /tmp/www
-  - /uploads | /tmp/uploads
+  # path | root
+  - locations :
+      - location :
+          - path : /
+          - root : /tmp/www
+      - location:
+          - path : /uploads
+          - root : /tmp/uploads
 
-# true/false
-isShowDirectoryListPage : true
+  # true/false
+  - isShowDirectoryListPage : true
 
-whenRequestedDirectory : /tmp/www/index.html
-saveFileDirectory : /tmp/uploads
+  - whenRequestedDirectory : /tmp/www/index.html
+  - saveFileDirectory : /tmp/uploads
 
-timeoutSec : 5
-maxEvents : 1024
+  - timeoutSec : 5
+  - maxEvents : 1024
