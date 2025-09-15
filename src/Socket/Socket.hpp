@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 
 #include "../Http/HttpRequest.hpp"
+#include "../Http/HttpResponse.hpp"
 
 class Socket {
 public:
@@ -24,6 +25,7 @@ public:
 	std::string &getRecvBuffer();
 	const std::string &getSendBuffer() const;
 	HttpRequest *getRequest();
+	HttpResponse *getResponse();
 
 private:
 	int _fd;
@@ -32,6 +34,7 @@ private:
 	std::string _recvBuffer;
 	std::string _sendBuffer;
 	HttpRequest *_request;
+	HttpResponse *_response;
 };
 
 #endif
