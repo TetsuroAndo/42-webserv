@@ -49,7 +49,7 @@ std::string HttpResponse::getStatusText(void) const {
 	case 408:
 		return "Request Timeout";
 	case 413:
-		return "Content Too Large";
+		return "Payload Too Large";
 	case 414:
 		return "URI Too Long";
 	case 415:
