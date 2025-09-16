@@ -1,10 +1,30 @@
 
-#include "Uri.hpp"
+#include "URI.hpp"
 #include <cctype>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+unsigned char _parseHexByte(const std::string &str, std::size_t pos) {
+	if (pos + 2 >= str.length()) {
+		throw std::invalid_argument("URIError: malformed URI sequence");
+	}
+
+	std::string hex_val = str.substr(pos + 1, 2);
+	std::istringstream iss(hex_val);
+	int v = 0;
+
+	if (hex_val.find_first_not_of("0123456789abcdefABCDEF") !=
+		std::string::npos) {
+		throw std::invalid_argument("URIError: malformed URI sequence");
+	}
+
+	if (!(iss >> std::hex >> v)) {
+		throw std::invalid_argument("URIError: malformed URI sequence");
+	}
+	return static_cast<unsigned char>(v);
+}
 
 /**
  * @brief URLデコードを行う
@@ -19,7 +39,7 @@ std::string URI::decodeURI(const std::string &str) {
 
 	for (std::size_t i = 0; i < str.length(); ++i) {
 		if (str[i] == '%') {
-			unsigned char first = parseHexByte(str, i);
+			unsigned char first = _parseHexByte(str, i);
 
 			// 予約文字はデコードせずにそのまま出力
 			if (first < 0x80 &&
@@ -53,7 +73,7 @@ std::string URI::decodeURI(const std::string &str) {
 					throw std::invalid_argument(
 						"URIError: malformed URI sequence");
 				}
-				unsigned char cont = parseHexByte(str, pos);
+				unsigned char cont = _parseHexByte(str, pos);
 				if ((cont & 0xC0) != 0x80) {
 					throw std::invalid_argument(
 						"URIError: malformed URI sequence");
@@ -67,26 +87,6 @@ std::string URI::decodeURI(const std::string &str) {
 		}
 	}
 	return decoded.str();
-}
-
-unsigned char _parseHexByte(const std::string &str, std::size_t pos) {
-	if (pos + 2 >= str.length()) {
-		throw std::invalid_argument("URIError: malformed URI sequence");
-	}
-
-	std::string hex_val = str.substr(pos + 1, 2);
-	std::istringstream iss(hex_val);
-	int v = 0;
-
-	if (hex_val.find_first_not_of("0123456789abcdefABCDEF") !=
-		std::string::npos) {
-		throw std::invalid_argument("URIError: malformed URI sequence");
-	}
-
-	if (!(iss >> std::hex >> v)) {
-		throw std::invalid_argument("URIError: malformed URI sequence");
-	}
-	return static_cast<unsigned char>(v);
 }
 
 /**
@@ -134,7 +134,7 @@ std::string URI::encodeURIComponent(const std::string &str) {
 	return _internalEncodeURILogic(str, unescaped);
 }
 
-std::string URI::_internalURIEncodeLogic(const std::string &str,
+std::string URI::_internalEncodeURILogic(const std::string &str,
 							 const std::string &unescaped) const {
 	std::ostringstream encoded;
 	encoded.fill('0');
