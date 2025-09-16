@@ -11,9 +11,21 @@ enum Type {
 
 class Node {
 public:
-	Node() : _type(VAL) {}
-	Node(const Type type, const std::string &key, const std::string &value) : _type(type), _key(key), _value(value) {}
-	~Node() {};
+	Node(const Type type, const std::string &key,
+	     const std::string &value) : _type(type), _key(key), _value(value) {
+
+		if (type == SEQ && key == "") {
+			throw std::invalid_argument("Key must not be empty");
+		}
+		if (type == MAP && key == "") {
+			throw std::invalid_argument("Key must not be empty");
+		}
+		if (type == VAL && value == "") {
+			throw std::invalid_argument("Value must not be empty");
+		}
+	}
+	~Node() {
+	};
 
 	void push(Node *node);
 	void print(int indent) const;
@@ -22,12 +34,28 @@ public:
 	Type getType() const { return _type; }
 	const std::string &getKey() const { return _key; }
 	const std::string &getValue() const { return _value; }
-	std::vector<Node *> getSeq() const { return _seq; }
-	std::map<std::string, Node *> getMap() const { return _map; }
+
+	std::vector<Node *> getSeq() const {
+		if (_type != SEQ) {
+			throw std::invalid_argument("Node type is not SEQ");
+		}
+		return _seq;
+	}
+
+	Node *getMapNode(const std::string &key) const {
+		if (_type != MAP) {
+			throw std::invalid_argument("Node type is not MAP");
+		}
+		if (_map.find(key) == _map.end()) {
+			throw std::invalid_argument("Key not found");
+		}
+		return _map.find(key)->second;
+	}
+
 private:
-	Type _type;
-	std::string _key;
-	std::string _value;
+	const Type _type;
+	const std::string _key;
+	const std::string _value;
 	std::vector<Node *> _seq;
 	std::map<std::string, Node *> _map;
 };

@@ -6,10 +6,21 @@
 #include <stdexcept>
 
 void Node::push(Node *node) {
-	if (VAL == _type) {
+	switch (int type = _type) {
+	case VAL:
 		throw std::runtime_error("Can't push to value node");
+	case SEQ:
+		this->_seq.push_back(node);
+		break;
+	case MAP:
+		if (this->_map.find(node->_key) != this->_map.end()) {
+			throw std::runtime_error("Duplicate key " + node->_key);
+		}
+		this->_map[node->getKey()] = node;
+		break;
+	default:
+		break;
 	}
-	this->_seq.push_back(node);
 }
 
 void Node::print(const int indent) const {

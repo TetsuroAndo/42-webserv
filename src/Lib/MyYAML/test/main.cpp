@@ -4,20 +4,43 @@
 #include <iostream>
 
 int main() {
-	Node node("hoge");
-
+	Node root(MAP, "", "root");
+	Node seq(SEQ, "seq", "");
+	Node seq2(SEQ, "seq", "");
+	Node map(MAP, "map", "");
+	Node val(VAL, "val1", "huga");
+	Node val2(VAL, "val2", "huga");
+	Node val3(VAL, "val3", "huga");
+	Node val4(VAL, "val4", "huga");
+	Node val5(VAL, "val5", "huga");
+	Node val6(VAL, "val6", "huga");
 	try {
-		Node node2("hoge");
-		Node node3("hoge","huga");
-		node.push(&node2);
-		node2.push(&node3);
-		node.print(2);
-		Node node4("hoge");
-		node3.push(&node4);
+		root.push(&seq);
+		root.push(&map);
+		map.push(&val);
+		map.push(&val2);
+		map.push(&val3);
+		seq.push(&val4);
+		seq.push(&val5);
+		seq.push(&seq2);
+		seq2.push(&val6);
+		root.print(2);
+		std::cout << "root is " << (root.isValidNode() ? "valid" : "not valid") << std::endl;
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
 	}
 
+	try {
+		std::map<std::string, Node *> tmpMap = root.getMap();
+		Node node = *tmpMap["map"];
+		node.print(2);
+
+		tmpMap = tmpMap["map"]->getMap();
+		Node tmpVal = *tmpMap["val1"];
+		tmpVal.print(2);
+	} catch (const std::exception &e) {
+		std::cerr << e.what() << std::endl;
+	}
 
 
 	// try {
