@@ -31,6 +31,7 @@ unsigned char _parseHexByte(const std::string &str, std::size_t pos) {
  * https://triple-underscore.github.io/rfc-others/RFC3986-ja.html#section-2.1
  * https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/decodeURI
  * @param str デコード対象の文字列
+ * @throw std::invalid_argument 不正なエンコードが含まれる場合
  * @return std::string デコード後の文字列 (UTF-8)
  */
 std::string URI::decodeURI(const std::string &str) {
