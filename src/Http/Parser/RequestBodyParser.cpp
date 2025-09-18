@@ -52,7 +52,7 @@ ParseResult RequestBodyParser::parse(HttpRequest& request, std::string& buffer, 
 		if (_state == COMPLETE) return PARSE_COMPLETE;
 	}
 	if (_state == IDENTITY) {
-		return parseIdentity(request, buffer);
+		return parseIdentity(request, buffer, errorCode);
 	} else if (_state >= CHUNKED_SIZE && _state <= CHUNKED_CRLF) {
 		return parseChunked(request, buffer, errorCode);
 	}
