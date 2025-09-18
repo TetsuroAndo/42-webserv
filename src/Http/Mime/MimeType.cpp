@@ -45,14 +45,17 @@ std::string MimeType::getMimeType(const std::string& extension) {
 	if (!_isInitialized) {
 		_setMimeTypes();
 	}
-	std::string ext = extension;
+
+	size_t dot_pos = extension.find_last_of('.');
+	if (dot_pos == std::string::npos) {
+		return "application/octet-stream";
+	}
+	std::string ext = extension.substr(dot_pos);
 	StringOps::toLower(ext);
 
-	std::map<std::string, std::string>::const_iterator it = _mimeMap.begin();
-	for ( ; it != _mimeMap.end(); ++it) {
-		if (StringOps::endsWith(ext, it->first)) {
-			return it->second;
-		}
+	std::map<std::string, std::string>::const_iterator it = _mimeMap.find(ext);
+	if (it != _mimeMap.end()) {
+		return it->second;
 	}
 	return "application/octet-stream";
 }
