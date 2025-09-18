@@ -10,6 +10,10 @@ public:
 	HttpRequest();
 	~HttpRequest();
 
+	// Max
+	size_t getMaxHeaderSize() const;
+	size_t getMaxBodySize() const;
+
 	// Method
 	const std::string& getMethod() const;
 	void setMethod(const std::string& method);
@@ -43,6 +47,9 @@ public:
 	void clear();
 
 private:
+	const static size_t maxHeaderSize = 8192;
+	const static size_t maxBodySize = 10 * 1024 * 1024;
+
 	std::string _method;
 	std::string _path;
 	std::string _version;
