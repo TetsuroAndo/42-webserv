@@ -1,12 +1,12 @@
 #include "HttpResponse.hpp"
 
-HttpResponse::HttpResponse() : _statusCode(200), _version("HTTP/1.1") {}
+HttpResponse::HttpResponse() : _statusCode(200), _version(HTTP_VERSION) {}
 
 HttpResponse::~HttpResponse() {}
 
 void HttpResponse::clear() {
 	_statusCode = 200;
-	_version = "HTTP/1.1";
+	_version = HTTP_VERSION;
 	_headers.clear();
 	_body.clear();
 }
