@@ -26,7 +26,7 @@ ParseResult RequestLineParser::parse(HttpRequest& request, const std::string& li
 	request.setPath(parsePath(request, tokens[1]));
 	request.setVersion(tokens[2]);
 
-	if (request.getVersion() != "HTTP/1.1" && request.getVersion() != "HTTP/1.0") {
+	if (tokens[2] != "HTTP/1.1" && tokens[2] != "HTTP/1.0") {
 		errorCode = HttpStatus::VERSION_NOT_SUPPORTED;
 		return PARSE_ERROR;
 	}

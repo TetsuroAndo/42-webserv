@@ -3,7 +3,6 @@
 #include "../../Lib/StringOps/StringOps.hpp"
 #include "RequestBodyParser.hpp"
 #include "ParseResult.hpp"
-#include <cstdlib>
 #include <sstream>
 
 RequestBodyParser::RequestBodyParser() : _state(STATE_INIT), _bodySizeRemaining(0), _chunkSize(0) {}
@@ -40,13 +39,12 @@ void RequestBodyParser::init(const HttpRequest& request, int& errorCode) {
 		}
 	} else if (request.hasHeader("Content-Length")) {
 		const std::string& lenStr = request.getHeader("Content-Length");
-		char* endptr;
-		long len = std::strtol(lenStr.c_str(), &endptr, 10);
-		if (*endptr != '\0' || len < 0) {
+		std::stringstream ss(lenStr);
+		ss >> _bodySizeRemaining;
+		if (ss.fail() || !ss.eof()) {
 			errorCode = HttpStatus::BAD_REQUEST;
 			return;
 		}
-		_bodySizeRemaining = static_cast<size_t>(len);
 		_state = _bodySizeRemaining > 0 ? STATE_CONTENT_LENGTH : STATE_COMPLETE;
 	} else {
 		_state = STATE_COMPLETE; // No body
