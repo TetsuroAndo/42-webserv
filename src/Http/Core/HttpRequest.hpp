@@ -3,25 +3,46 @@
 
 #include <map>
 #include <string>
-
-enum ParseErrorStatus {
-	NONE,
-	PARSE_ERROR_LARGE_REQUEST = 413,
-	PARSE_ERROR_LARGE_HEADER = 431,
-	PARSE_ERROR_INVALID_REQUEST = 500,
-	PARSE_ERROR_HTTP_METHOD = 501,
-	PARSE_ERROR_HTTP_VERSION = 505
-};
-
-enum ParseStatus { PARSE_COMPLETE, PARSE_INCOMPLETE, PARSE_ERROR };
+#include <vector>
 
 class HttpRequest {
-private:
-	ParseStatus _parseStatus;
-	ParseErrorStatus _error;
-	const static size_t maxBodySize = 10 * 1024 * 1024;
-	const static size_t maxHeaderSize = 8192;
+public:
+	HttpRequest();
+	~HttpRequest();
 
+	// Method
+	const std::string& getMethod() const;
+	void setMethod(const std::string& method);
+
+	// Path (URIの?より前の部分)
+	const std::string& getPath() const;
+	void setPath(const std::string& path);
+
+	// HTTP Version
+	const std::string& getVersion() const;
+	void setVersion(const std::string& version);
+
+	// Headers
+	const std::map<std::string, std::string>& getHeaders() const;
+	const std::string& getHeader(const std::string& key) const;
+	bool hasHeader(const std::string& key) const;
+	void addHeader(const std::string& key, const std::string& value);
+
+	// Query Parameters (?以降のキーバリュー)
+	const std::map<std::string, std::string>& getQueries() const;
+	const std::string& getQuery(const std::string& key) const;
+	bool hasQuery(const std::string& key) const;
+	void addQuery(const std::string& key, const std::string& value);
+
+	// Body
+	const std::string& getBody() const;
+	void setBody(const std::string& body);
+	void appendBody(const std::string& data);
+
+	// 内部状態をリセット
+	void clear();
+
+private:
 	std::string _method;
 	std::string _path;
 	std::string _version;
@@ -29,35 +50,8 @@ private:
 	std::map<std::string, std::string> _query;
 	std::string _body;
 
-	std::string _queryString;
-
-	bool parseRequestLine(std::string &requestLine);
-	bool parseHeaders(std::istringstream &headerStream);
-	bool parseBody(std::string &buffer, size_t bodyStart);
-
-	bool splitRequestLine(const std::string &requestLine);
-	void splitPathAndQuery();
-	void parseQueryString();
-
-	bool parseChunkedBody(std::string &buffer, size_t bodyStart);
-	bool parseContentLengthBody(std::string &buffer, size_t bodyStart);
-
-public:
-	HttpRequest();
-	~HttpRequest();
-
-	ParseStatus parse(std::string &buffer);
-	bool isComplete() const;
-	void setError(ParseErrorStatus status);
-
-	const std::string &getMethod() const;
-	const std::string &getPath() const;
-	const std::string &getVersion() const;
-	const std::string &getBody() const;
-	const std::string &getHeader(const std::string &header) const;
-	int getError() const;
-
-	void printData();
+	HttpRequest(const HttpRequest&);
+	HttpRequest& operator=(const HttpRequest&);
 };
 
 #endif

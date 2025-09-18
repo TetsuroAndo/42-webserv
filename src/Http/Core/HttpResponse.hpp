@@ -5,25 +5,39 @@
 #include <string>
 
 class HttpResponse {
-private:
-	int _statusCode;
-	std::map<std::string, std::string> _headers;
-	std::string _body;
-	std::string _response;
-
 public:
 	HttpResponse();
 	~HttpResponse();
 
+	// Status Code
+	int getStatusCode() const;
 	void setStatusCode(int code);
-	std::string getStatusText(void) const;
-	std::string getStatusLine(void) const;
-	void setHeaders(const std::string &headerTitle,
-					const std::string &headerValue);
-	void setResponseBody(const std::string &bodyMessage);
-	void setDateHeader(void);
-	void makeResponse(void);
-	const std::string &getResponse(void);
+
+	// HTTP Version
+	const std::string &getVersion() const;
+	void setVersion(const std::string &version);
+
+	// Headers
+	const std::map<std::string, std::string> &getHeaders() const;
+	const std::string &getHeader(const std::string &key) const;
+	bool hasHeader(const std::string& key) const;
+	void setHeader(const std::string& key, const std::string& value);
+
+	// Body
+	const std::string& getBody() const;
+	void setBody(const std::string& body);
+
+	// 内部状態をリセット
+	void clear();
+
+private:
+	int _statusCode;
+	std::string _version;
+	std::map<std::string, std::string> _headers;
+	std::string _body;
+	
+	HttpResponse(const HttpResponse&);
+	HttpResponse& operator=(const HttpResponse&);
 };
 
 #endif

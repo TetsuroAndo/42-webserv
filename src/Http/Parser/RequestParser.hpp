@@ -1,26 +1,57 @@
 #ifndef HTTP_REQUEST_HELPER_HPP
 #define HTTP_REQUEST_HELPER_HPP
 
-#include <cstddef>
+#include "../Core/HttpRequest.hpp"
+#include "RequestLineParser.hpp"
+#include "RequestHeaderParser.hpp"
+#include "RequestBodyParser.hpp"
+#include "ParseResult.hpp"
 #include <string>
 
-namespace HttpRequestHelper {
+class RequestParser {
+public:
+	RequestParser();
+	~RequestParser();
 
-void trimCR(std::string &line);
-void trimSpaces(std::string &s, const std::string &spaces);
-void toLower(std::string &str);
+	void reset();
 
-enum ChunkStatus { CHUNK_INCOMPLETE, CHUNK_COMPLETE, CHUNK_ERROR };
+	/**
+	 * @brief PARSE_ERRORの場合のHTTPステータスコードを返します。
+	 * @return int エラーに対応するHTTPステータスコード (e.g., 400, 413)。
+	 */
+	int getErrorCode() const;
 
-ChunkStatus getChunkSize(const std::string &buffer, size_t pos,
-						 size_t &chunkSize, size_t &nextPos);
+	/**
+	 * @brief パースが完了しているかどうかを返します。
+	 * @return bool パースが完了していればtrue、そうでなければfalse。
+	 */
+	bool isComplete() const;
 
-ChunkStatus readChunkData(const std::string &buffer, size_t &pos,
-						  std::string &body, size_t chunkSize,
-						  size_t maxBodySize);
+	/**
+	 * @brief 生のリクエストバッファをパースし、HttpRequestオブジェクトを構築します。
+	 * @param request 構築対象のHttpRequestオブジェクト。
+	 * @param buffer 受信した生データが入ったバッファ。パースした分は削除されます。
+	 * @return ParseResult パース結果。
+	 */
+	ParseResult parse(HttpRequest& request, std::string& buffer);
 
-size_t handleLastChunk(const std::string &buffer, size_t pos);
+private:
+	enum ParseState {
+		STATE_REQUEST_LINE,
+		STATE_HEADERS,
+		STATE_BODY,
+		STATE_COMPLETE,
+	};
 
-} // namespace HttpRequestHelper
+	int _errorCode;
+	ParseState _state;
+
+	RequestLineParser _lineParser;
+	RequestHeaderParser _headerParser;
+	RequestBodyParser _bodyParser;
+
+	RequestParser(const RequestParser&);
+	RequestParser& operator=(const RequestParser&);
+};
 
 #endif

@@ -1,85 +1,82 @@
-#include "HttpRequestHelper.hpp"
+#include "../Core/HttpStatus.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
+#include "RequestParser.hpp"
+#include "ParseResult.hpp"
+#include <sstream>
 
-#include <algorithm>
-#include <cctype>
-#include <cstdlib>
-
-namespace HttpRequestHelper {
-
-void trimCR(std::string &line) {
-	if (!line.empty() && line[line.size() - 1] == '\r') {
-		line.erase(line.size() - 1);
-	}
+RequestParser::RequestParser() {
+	reset();
 }
 
-void trimSpaces(std::string &s, const std::string &spaces) {
-	size_t start = s.find_first_not_of(spaces);
-	size_t end = s.find_last_not_of(spaces);
-	if (start == std::string::npos) {
-		s.clear();
-	} else {
-		s = s.substr(start, end - start + 1);
-	}
+RequestParser::~RequestParser() {}
+
+void RequestParser::reset() {
+	_state = STATE_REQUEST_LINE;
+	_errorCode = 0;
 }
 
-void toLower(std::string &str) {
-	for (std::string::size_type i = 0; i < str.size(); ++i) {
-		str[i] =
-			static_cast<char>(std::tolower(static_cast<unsigned char>(str[i])));
-	}
+int RequestParser::getErrorCode() const {
+	return _errorCode;
 }
 
-ChunkStatus getChunkSize(const std::string &buffer, size_t pos,
-						 size_t &chunkSize, size_t &nextPos) {
-	size_t crlf = buffer.find("\r\n", pos);
-	if (crlf == std::string::npos) {
-		return CHUNK_INCOMPLETE;
-	}
-
-	std::string chunkSizeStr = buffer.substr(pos, crlf - pos);
-	size_t semiPos = chunkSizeStr.find(";");
-	if (semiPos != std::string::npos)
-		chunkSizeStr = chunkSizeStr.substr(0, semiPos);
-
-	char *endptr = NULL;
-	chunkSize = std::strtoul(chunkSizeStr.c_str(), &endptr, 16);
-	if (endptr == chunkSizeStr.c_str() || *endptr != '\0') {
-		return CHUNK_ERROR;
-	}
-
-	nextPos = crlf + 2;
-	return CHUNK_COMPLETE;
+bool RequestParser::isComplete() const {
+	return _state == STATE_COMPLETE;
 }
 
-ChunkStatus readChunkData(const std::string &buffer, size_t &pos,
-						  std::string &body, size_t chunkSize,
-						  size_t maxBodySize) {
-	if (pos + chunkSize + 2 > buffer.size()) {
-		return CHUNK_INCOMPLETE;
-	}
-	if (body.size() + chunkSize > maxBodySize) {
-		return CHUNK_ERROR;
-	}
+ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
+	bool state_changed = true;
+	while (state_changed) {
+		state_changed = false;
 
-	body.append(buffer, pos, chunkSize);
-	pos += chunkSize;
+		switch (_state) {
+			case STATE_REQUEST_LINE: {
+				size_t crlf_pos = buffer.find("\r\n");
+				if (crlf_pos == std::string::npos) return PARSE_INCOMPLETE;
 
-	if (buffer.compare(pos, 2, "\r\n") != 0) {
-		return CHUNK_ERROR;
+				std::string line = buffer.substr(0, crlf_pos);
+				buffer.erase(0, crlf_pos + 2);
+				if (line.empty()) {
+					state_changed = true;
+					continue;
+				}
+
+				if (_lineParser.parse(request, line, _errorCode) == PARSE_ERROR) {
+					return PARSE_ERROR;
+				}
+				_state = STATE_HEADERS;
+				state_changed = true;
+				break;
+			}
+			case STATE_HEADERS: {
+				size_t header_end_pos = buffer.find("\r\n\r\n");
+				if (header_end_pos == std::string::npos) return PARSE_INCOMPLETE;
+
+				std::string headers_part = buffer.substr(0, header_end_pos);
+				buffer.erase(0, header_end_pos + 4);
+
+				std::istringstream iss(headers_part);
+				std::string line;
+				while (std::getline(iss, line)) {
+					StringOps::trim(line, "\r");
+					if (line.empty()) continue;
+					if (_headerParser.parse(request, line, _errorCode) == PARSE_ERROR) {
+						return PARSE_ERROR;
+					}
+				}
+				_state = STATE_BODY;
+				state_changed = true;
+				break;
+			}
+			case STATE_BODY: {
+				ParseResult res = _bodyParser.parse(request, buffer, _errorCode);
+				if (res == PARSE_COMPLETE) {
+					_state = STATE_COMPLETE;
+				}
+				return res;
+			}
+			case STATE_COMPLETE:
+				return PARSE_COMPLETE;
+		}
 	}
-	pos += 2;
-	return CHUNK_COMPLETE;
+	return PARSE_INCOMPLETE;
 }
-
-size_t handleLastChunk(const std::string &buffer, size_t pos) {
-	size_t trailerEnd = buffer.find("\r\n\r\n", pos);
-
-	if (buffer.compare(pos, 2, "\r\n") == 0) {
-		pos += 2;
-	} else if (trailerEnd != std::string::npos) {
-		pos = trailerEnd + 4;
-	}
-	return std::min(pos, buffer.size());
-}
-
-} // namespace HttpRequestHelper

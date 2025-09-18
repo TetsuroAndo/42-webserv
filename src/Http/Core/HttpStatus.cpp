@@ -1,52 +1,47 @@
 #include "HttpStatus.hpp"
 #include <string>
-#include <map>
 
-namespace {
-	typedef std::map<int, std::string> StatusMap;
-	StatusMap createStatusReasons() {
-		StatusMap code;
-		// Informational
-		code[100] = "Continue";
-		// Success
-		code[200] = "OK";
-		code[201] = "Created";
-		code[202] = "Accepted";
-		code[204] = "No Content";
-		// Redirection
-		code[301] = "Moved Permanently";
-		code[302] = "Found";
-		code[303] = "See Other";
-		// Client Error
-		code[400] = "Bad Request";
-		code[401] = "Unauthorized";
-		code[403] = "Forbidden";
-		code[404] = "Not Found";
-		code[405] = "Method Not Allowed";
-		code[408] = "Request Timeout";
-		code[413] = "Payload Too Large";
-		code[414] = "URI Too Long";
-		code[415] = "Unsupported Media Type";
-		code[431] = "Request Header Fields Too Large";
-		/// Server Error
-		code[500] = "Internal Server Error";
-		code[501] = "Not Implemented";
-		code[502] = "Bad Gateway";
-		code[503] = "Service Unavailable";
-		code[504] = "Gateway Timeout";
-		code[505] = "HTTP Version Not Supported";
-		return code;
-	}
+struct StatusEntry {
+	int code;
+	const char *reason;
+};
 
-	// Static
-	const StatusMap statusReasons = createStatusReasons();
-	const std::string unknown = "Internal Server Error";
-
-} // namespace
+static const StatusEntry statusEntries[] = {
+	{ HttpStatus::CONTINUE, "Continue" },
+	// Success
+	{ HttpStatus::OK, "OK" },
+	{ HttpStatus::CREATED, "Created" },
+	{ HttpStatus::ACCEPTED, "Accepted" },
+	{ HttpStatus::NO_CONTENT, "No Content" },
+	// Redirection
+	{ HttpStatus::MOVED_PERMANENTLY, "Moved Permanently" },
+	{ HttpStatus::FOUND, "Found" },
+	{ HttpStatus::SEE_OTHER, "See Other" },
+	// Client Error
+	{ HttpStatus::BAD_REQUEST, "Bad Request" },
+	{ HttpStatus::UNAUTHORIZED, "Unauthorized" },
+	{ HttpStatus::FORBIDDEN, "Forbidden" },
+	{ HttpStatus::NOT_FOUND, "Not Found" },
+	{ HttpStatus::METHOD_NOT_ALLOWED, "Method Not Allowed" },
+	{ HttpStatus::REQUEST_TIMEOUT, "Request Timeout" },
+	{ HttpStatus::PAYLOAD_TOO_LARGE, "Payload Too Large" },
+	{ HttpStatus::URI_TOO_LONG, "URI Too Long" },
+	{ HttpStatus::UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type" },
+	{ HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE, "Request Header Fields Too Large" },
+	// Server Error
+	{ HttpStatus::INTERNAL_SERVER_ERROR, "Internal Server Error" },
+	{ HttpStatus::NOT_IMPLEMENTED, "Not Implemented" },
+	{ HttpStatus::BAD_GATEWAY, "Bad Gateway" },
+	{ HttpStatus::SERVICE_UNAVAILABLE, "Service Unavailable" },
+	{ HttpStatus::GATEWAY_TIMEOUT, "Gateway Timeout" },
+	{ HttpStatus::VERSION_NOT_SUPPORTED, "HTTP Version Not Supported" }
+};
+static const std::string unknown = "Internal Server Error";
 
 const std::string &HttpStatus::getReason(int code) {
-	StatusMap::const_iterator it = statusReasons.find(code);
-	if (it != statusReasons.end())
-		return it->second;
+	for (size_t i = 0; i < sizeof(statusEntries) / sizeof(StatusEntry); ++i) {
+		if (statusEntries[i].code == code)
+			return std::string(statusEntries[i].reason);
+	}
 	return unknown;
 }
