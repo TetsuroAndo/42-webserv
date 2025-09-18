@@ -59,12 +59,15 @@ ParseResult RequestBodyParser::parse(HttpRequest& request, std::string& buffer, 
 	return PARSE_COMPLETE;
 }
 
-// Content-Lengthに基づくボディ解析
 ParseResult RequestBodyParser::parseIdentity(HttpRequest& request, std::string& buffer, int& errorCode) {
+	if (buffer.length() > _contentLengthRemaining) {
+		errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
 	if (buffer.length() == 0) {
 		return PARSE_INCOMPLETE;
 	}
-	size_t to_read = std::min(buffer.length(), _contentLengthRemaining);
+	size_t to_read = buffer.length();
 	request.appendBody(buffer.substr(0, to_read));
 	buffer.erase(0, to_read);
 	_contentLengthRemaining -= to_read;
@@ -73,69 +76,77 @@ ParseResult RequestBodyParser::parseIdentity(HttpRequest& request, std::string& 
 		_state = COMPLETE;
 		return PARSE_COMPLETE;
 	}
+
 	return PARSE_INCOMPLETE;
 }
 
 ParseResult RequestBodyParser::parseChunked(HttpRequest& request, std::string& buffer, int& errorCode) {
 	while (true) {
 		if (_state == CHUNKED_SIZE) {
-		size_t crlf_pos = buffer.find("\r\n");
-		if (crlf_pos == std::string::npos) return PARSE_INCOMPLETE;
+			size_t crlf_pos = buffer.find("\r\n");
+			if (crlf_pos == std::string::npos) return PARSE_INCOMPLETE;
 
-		std::string size_line = buffer.substr(0, crlf_pos);
-		size_t semi_pos = size_line.find(';');
-		if (semi_pos != std::string::npos) {
-			size_line = size_line.substr(0, semi_pos);
-		}
-		std::stringstream ss(size_line);
-		ss >> std::hex >> _chunkSize;
-		if (ss.fail() || !ss.eof()) {
-			errorCode = HttpStatus::BAD_REQUEST;
-			return PARSE_ERROR;
-		}
-		buffer.erase(0, crlf_pos + 2);
+			std::string size_line = buffer.substr(0, crlf_pos);
 
-		if (_chunkSize == 0) {
-			_state = CHUNKED_CRLF;
-		} else {
-			_state = CHUNKED_DATA;
+			// チャンク拡張(chunk-extension)があれば無視する (例: "a;foo=bar")
+			size_t semi_pos = size_line.find(';');
+			if (semi_pos != std::string::npos) {
+				size_line = size_line.substr(0, semi_pos);
+			}
+
+			std::stringstream ss(size_line);
+			ss >> std::hex >> _chunkSize;
+			if (ss.fail() || !ss.eof()) {
+				errorCode = HttpStatus::BAD_REQUEST;
+				return PARSE_ERROR;
+			}
+			buffer.erase(0, crlf_pos + 2);
+
+			if (_chunkSize == 0) {
+				_state = CHUNKED_CRLF;
+			} else {
+				_state = CHUNKED_DATA;
 			}
 		}
 
 		if (_state == CHUNKED_DATA) {
-			if (buffer.length() < _chunkSize + 2) return PARSE_INCOMPLETE; // データ + CRLF
+			if (buffer.length() < _chunkSize + 2) return PARSE_INCOMPLETE;
 
+			// チャンクデータをリクエストボディに追加
 			request.appendBody(buffer.substr(0, _chunkSize));
-			// チャンクデータの後のCRLFをチェック
+
+			// チャンクデータの直後がCRLFであることを確認
 			if (buffer.substr(_chunkSize, 2) != "\r\n") {
 				errorCode = HttpStatus::BAD_REQUEST;
 				return PARSE_ERROR;
 			}
+			
+			// 処理した部分（データ + CRLF）をバッファから削除
 			buffer.erase(0, _chunkSize + 2);
 			_state = CHUNKED_SIZE; // 次のチャンクサイズを読む
 		}
 
 		if (_state == CHUNKED_CRLF) {
-			// trailer-partは無視し、最後のCRLFを待つ
-			if (buffer.find("\r\n") == 0) {
-				buffer.erase(0, 2);
-				_state = COMPLETE;
-				return PARSE_COMPLETE;
-			}
-			// Trailerヘッダを真面目にパースしない場合は、単に終端のCRLFを待つ
-			if (buffer.length() < 2) return PARSE_INCOMPLETE;
-			if (buffer[0] == '\r' && buffer[1] == '\n') { // 空のtrailer
-				buffer.erase(0, 2);
-				_state = COMPLETE;
-				return PARSE_COMPLETE;
-			}
-			// (簡易実装) trailerヘッダがあっても無視して次のCRLFを探す
-			size_t crlf_pos = buffer.find("\r\n");
-			if (crlf_pos != std::string::npos) {
+			while (true) {
+				size_t crlf_pos = buffer.find("\r\n");
+				if (crlf_pos == std::string::npos) {
+					return PARSE_INCOMPLETE;
+				}
+
+				// crlf_posが0なら、バッファの先頭がCRLF、つまり空行
+				if (crlf_pos == 0) {
+					buffer.erase(0, 2); // 最後のCRLFを消費
+					_state = COMPLETE;
+					return PARSE_COMPLETE;
+				}
+
+				// 空行でなければトレーラーヘッダなので、その行を読み飛ばす
 				buffer.erase(0, crlf_pos + 2);
-			continue; // loop to check for the final CRLF
+				// bufferに次の行が残っていれば、このwhileループで引き続き評価する
 			}
-			return PARSE_INCOMPLETE;
+		}
+		if (_state == COMPLETE) {
+			return PARSE_COMPLETE;
 		}
 	}
 	return PARSE_INCOMPLETE;
