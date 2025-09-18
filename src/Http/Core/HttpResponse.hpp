@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-#define HTTP_VERSION "HTTP/1.1"
+#define HTTP_VERSION "HTTP/1.0"
 
 class HttpResponse {
 public:
