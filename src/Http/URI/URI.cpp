@@ -54,7 +54,7 @@ std::string URI::decodeURI(const std::string &str) {
 			std::size_t expected_cont = 0;
 			if ((first & 0x80) == 0x00) { // 1-byte sequence (ASCII)
 				expected_cont = 0;
-			} else if ((first & 0xE0) == 0xC0) { // 2-byte sequence
+	} else if ((first & 0xE0) == 0xC0) { // 2-byte sequence
 				expected_cont = 1;
 			} else if ((first & 0xF0) == 0xE0) { // 3-byte sequence
 				expected_cont = 2;
@@ -136,7 +136,7 @@ std::string URI::encodeURIComponent(const std::string &str) {
 }
 
 std::string URI::_internalEncodeURILogic(const std::string &str,
-							 const std::string &unescaped) const {
+							 const std::string &unescaped) {
 	std::ostringstream encoded;
 	encoded.fill('0');
 	encoded << std::hex << std::uppercase;
