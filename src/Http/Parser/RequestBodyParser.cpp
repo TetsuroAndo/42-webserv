@@ -3,6 +3,7 @@
 #include "../Core/HttpStatus.hpp"
 #include "RequestBodyParser.hpp"
 #include <sstream>
+#include <ctime>
 
 RequestBodyParser::RequestBodyParser() {
 	reset();
@@ -81,7 +82,19 @@ ParseResult RequestBodyParser::parseIdentity(HttpRequest& request, std::string& 
 }
 
 ParseResult RequestBodyParser::parseChunked(HttpRequest& request, std::string& buffer, int& errorCode) {
+	static time_t lastReceiveTime = time(NULL);
+	const int TIMEOUT_SECONDS = 10; // TODO: ちゃんとしたタイムアウト時間を設定。暫定Timeout値
+
 	while (true) {
+		time_t now = time(NULL);
+		if (now - lastReceiveTime > TIMEOUT_SECONDS) {
+			errorCode = HttpStatus::REQUEST_TIMEOUT;
+			return PARSE_ERROR;
+		}
+		if (!buffer.empty()) {
+			lastReceiveTime = now;
+		}
+
 		if (_state == CHUNKED_SIZE) {
 			size_t crlf_pos = buffer.find("\r\n");
 			if (crlf_pos == std::string::npos) return PARSE_INCOMPLETE;
