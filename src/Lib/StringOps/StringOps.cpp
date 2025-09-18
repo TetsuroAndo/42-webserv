@@ -8,20 +8,20 @@
 namespace // Helper functor structs
 {
 	struct IsNotDigit {
-		bool operator()(char c) const {
+		inline bool operator()(char c) const {
 			return !std::isdigit(static_cast<unsigned char>(c));
 		}
 	};
 
 	struct CharEqualIgnoreCase {
-		bool operator()(char lhs, char rhs) const {
+		inline bool operator()(char lhs, char rhs) const {
 			return std::tolower(static_cast<unsigned char>(lhs)) ==
 				std::tolower(static_cast<unsigned char>(rhs));
 		}
 	};
 
 	struct CharToLower {
-		char operator()(char c) const {
+		inline char operator()(char c) const {
 			return std::tolower(static_cast<unsigned char>(c));
 		}
 	};
