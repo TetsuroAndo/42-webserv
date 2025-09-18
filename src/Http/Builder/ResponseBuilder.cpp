@@ -29,7 +29,6 @@ std::string ResponseBuilder::build(HttpResponse& res) {
 }
 
 void ResponseBuilder::addDateHeader(HttpResponse& res) {
-	// Date Header
 	if (!res.hasHeader("Date")) {
 		char buf[100];
 		time_t now = time(0);
@@ -38,15 +37,14 @@ void ResponseBuilder::addDateHeader(HttpResponse& res) {
 		res.setHeader("Date", buf);
 	}
 }
+
 void ResponseBuilder::addServerHeader(HttpResponse& res) {
-	// Server Header
 	if (!res.hasHeader("Server")) {
 		res.setHeader("Server", "webserv");
 	}
 }
 
 void ResponseBuilder::addContentLengthHeader(HttpResponse& res) {
-	// Content-Length Header
 	if (!res.hasHeader("Content-Length")) {
 		std::ostringstream oss;
 		oss << res.getBody().length();
