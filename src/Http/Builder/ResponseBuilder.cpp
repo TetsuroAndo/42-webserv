@@ -1,5 +1,6 @@
 #include "../Core/HttpResponse.hpp"
 #include "../Core/HttpStatus.hpp"
+#include "../../Lib/Time/TimeCache.hpp"
 #include "ResponseBuilder.hpp"
 #include <sstream>
 #include <ctime>
@@ -30,11 +31,7 @@ std::string ResponseBuilder::build(HttpResponse& res) {
 
 void ResponseBuilder::addDateHeader(HttpResponse& res) {
 	if (!res.hasHeader("Date")) {
-		char buf[100];
-		time_t now = time(0);
-		struct tm* gmt = gmtime(&now);
-		strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-		res.setHeader("Date", buf);
+		res.setHeader("Date", TimeCache::getCurrentTime());
 	}
 }
 
