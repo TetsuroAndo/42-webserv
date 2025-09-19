@@ -1,5 +1,5 @@
-#include "../Core/HttpStatus.hpp"
 #include "../../Lib/StringOps/StringOps.hpp"
+#include "../Core/HttpStatus.hpp"
 #include "RequestParser.hpp"
 #include "ParseResult.hpp"
 #include <sstream>
@@ -30,18 +30,16 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 
 		switch (_state) {
 			case STATE_REQUEST_LINE: {
-				size_t crlf_pos = buffer.find("\r\n");
-				if (crlf_pos == std::string::npos) return PARSE_INCOMPLETE;
+				size_t crlfPos = buffer.find("\r\n");
+				if (crlfPos == std::string::npos) return PARSE_INCOMPLETE;
 
-				const char* line_start = buffer.c_str();
-				const char* line_end = line_start + crlf_pos;
-				if (line_start == line_end) {
-					buffer.erase(0, crlf_pos + 2);
-					state_changed = true;
-					continue;
+				if (buffer.begin() == buffer.begin() + crlfPos) {
+					_errorCode = HttpStatus::BAD_REQUEST;
+					return PARSE_ERROR;
 				}
-				std::string line(line_start, line_end);
-				buffer.erase(0, crlf_pos + 2);
+
+				std::string line(buffer.begin(), buffer.begin() + crlfPos);
+				buffer.erase(0, crlfPos + 2);
 				if (_lineParser.parse(request, line, _errorCode) == PARSE_ERROR) {
 					return PARSE_ERROR;
 				}
@@ -50,26 +48,30 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				break;
 			}
 			case STATE_HEADERS: {
-				size_t header_end_pos = buffer.find("\r\n\r\n");
-				if (header_end_pos == std::string::npos) return PARSE_INCOMPLETE;
-
-				const char *headers_start = buffer.c_str();
-				const char *headers_end = headers_start + header_end_pos;
-
-				std::istringstream iss(std::string(headers_start, headers_end));
-				std::string line;
-				while (std::getline(iss, line)) {
-					StringOps::trim(line, "\r");
-					if (line.empty()) continue;
-					if (_headerParser.parse(request, line, _errorCode) == PARSE_ERROR) {
+				size_t headerEndPos = buffer.find("\r\n\r\n");
+				if (headerEndPos == std::string::npos) {
+					if (buffer.length() > request.getMaxHeaderSize()) {
+						_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
 						return PARSE_ERROR;
 					}
+					return PARSE_INCOMPLETE;
+				}
+
+				std::string headerBlock(buffer.begin(), buffer.begin() + headerEndPos);
+				buffer.erase(0, headerEndPos + 4);
+				if (_headerParser.parse(request, headerBlock, _errorCode) == PARSE_ERROR) {
+					return PARSE_ERROR;
 				}
 				_state = STATE_BODY;
 				state_changed = true;
 				break;
 			}
 			case STATE_BODY: {
+				if (buffer.length() > request.getMaxBodySize()) {
+					_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
+					return PARSE_ERROR;
+				}
+
 				ParseResult res = _bodyParser.parse(request, buffer, _errorCode);
 				if (res == PARSE_COMPLETE) {
 					_state = STATE_COMPLETE;

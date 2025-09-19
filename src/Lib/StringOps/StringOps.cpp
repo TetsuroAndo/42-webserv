@@ -63,12 +63,19 @@ bool equalsIgnoreCase(const std::string& a, const std::string& b) {
  * @brief 文字列の前後の空白を削除する
  */
 void StringOps::trim(std::string &s, const std::string &chars) {
-	s.erase(0, s.find_first_not_of(chars));
-	s.erase(s.find_last_not_of(chars) + 1);
+	size_t start = 0;
+	while (start < s.size() && chars.find(s[start]) != std::string::npos) {
+		++start;
+	}
+	size_t end = s.size();
+	while (end > start && chars.find(s[end - 1]) != std::string::npos) {
+		--end;
+	}
+	s = s.substr(start, end - start);
 }
 
 /**
- * @brief 
+ * @brief 文字列を小文字に変換する
  */
 void StringOps::toLower(std::string &str) {
 	std::transform(str.begin(), str.end(), str.begin(), CharToLower());
