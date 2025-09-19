@@ -5,11 +5,16 @@
 #include <string>
 
 #define HTTP_VERSION "HTTP/1.0"
+#define SERVER_NAME "webserv/42"
 
 class HttpResponse {
 public:
 	HttpResponse();
 	~HttpResponse();
+
+	// Server Name
+	const std::string &getServerName() const;
+	void setServerName(const std::string &name = SERVER_NAME);
 
 	// Status Code
 	int getStatusCode() const;
@@ -37,7 +42,7 @@ private:
 	std::string _version;
 	std::map<std::string, std::string> _headers;
 	std::string _body;
-	
+
 	HttpResponse(const HttpResponse&);
 	HttpResponse& operator=(const HttpResponse&);
 };

@@ -1,4 +1,5 @@
 #include "HttpResponse.hpp"
+#include <stdexcept>
 
 HttpResponse::HttpResponse() : _statusCode(200), _version(HTTP_VERSION) {}
 
@@ -9,6 +10,17 @@ void HttpResponse::clear() {
 	_version = HTTP_VERSION;
 	_headers.clear();
 	_body.clear();
+}
+
+// Server Name
+const std::string &HttpResponse::getServerName() const { 
+	return getHeader("Server");
+}
+
+void HttpResponse::setServerName(const std::string &name) {
+	if (hasHeader("Server"))
+		throw std::runtime_error("Server header is already set");
+	setHeader("Server", name);
 }
 
 // Status Code
@@ -23,6 +35,7 @@ void HttpResponse::setVersion(const std::string &version) { _version = version; 
 const std::map<std::string, std::string> &HttpResponse::getHeaders() const {
 	return _headers;
 }
+
 const std::string &HttpResponse::getHeader(const std::string &key) const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find(key);
 	if (it != _headers.end()) {
@@ -31,9 +44,11 @@ const std::string &HttpResponse::getHeader(const std::string &key) const {
 	static const std::string empty;
 	return empty;
 }
+
 bool HttpResponse::hasHeader(const std::string &key) const {
 	return _headers.count(key) > 0;
 }
+
 void HttpResponse::setHeader(const std::string &key, const std::string &value) {
 	_headers[key] = value;
 }
