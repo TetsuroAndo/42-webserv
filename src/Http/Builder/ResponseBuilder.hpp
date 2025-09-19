@@ -11,6 +11,7 @@ private:
 	static void addDateHeader(HttpResponse& res);
 	static void addServerHeader(HttpResponse& res);
 	static void addContentLengthHeader(HttpResponse& res);
+	static void addMimeTypeHeader(HttpResponse& res);
 
 	ResponseBuilder();
 	ResponseBuilder(const ResponseBuilder&);

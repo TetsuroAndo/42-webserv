@@ -11,6 +11,7 @@ std::string ResponseBuilder::build(HttpResponse& res) {
 	addDateHeader(res);
 	addServerHeader(res);
 	addContentLengthHeader(res);
+	addMimeTypeHeader(res);
 
 	std::ostringstream oss;
 
@@ -46,5 +47,12 @@ void ResponseBuilder::addContentLengthHeader(HttpResponse& res) {
 		std::ostringstream oss;
 		oss << res.getBody().length();
 		res.setHeader("Content-Length", oss.str());
+	}
+}
+
+// 暫定的にtext/htmlを設定
+void ResponseBuilder::addMimeTypeHeader(HttpResponse& res) {
+	if (!res.hasHeader("Content-Type")) {
+		res.setHeader("Content-Type", "text/html");
 	}
 }
