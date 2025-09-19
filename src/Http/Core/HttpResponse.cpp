@@ -1,7 +1,9 @@
 #include "HttpResponse.hpp"
 #include <stdexcept>
 
-HttpResponse::HttpResponse() : _statusCode(200), _version(HTTP_VERSION) {}
+HttpResponse::HttpResponse(const std::string &serverName) : _statusCode(200), _version(HTTP_VERSION) {
+	setServerName(serverName);
+}
 
 HttpResponse::~HttpResponse() {}
 

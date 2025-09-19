@@ -9,7 +9,7 @@
 
 class HttpResponse {
 public:
-	HttpResponse();
+	HttpResponse(const std::string &serverName = SERVER_NAME);
 	~HttpResponse();
 
 	// Server Name
@@ -27,12 +27,12 @@ public:
 	// Headers
 	const std::map<std::string, std::string> &getHeaders() const;
 	const std::string &getHeader(const std::string &key) const;
-	bool hasHeader(const std::string& key) const;
-	void setHeader(const std::string& key, const std::string& value);
+	bool hasHeader(const std::string &key) const;
+	void setHeader(const std::string &key, const std::string &value);
 
 	// Body
-	const std::string& getBody() const;
-	void setBody(const std::string& body);
+	const std::string &getBody() const;
+	void setBody(const std::string &body);
 
 	// 内部状態をリセット
 	void clear();
@@ -43,6 +43,7 @@ private:
 	std::map<std::string, std::string> _headers;
 	std::string _body;
 
+	HttpResponse();
 	HttpResponse(const HttpResponse&);
 	HttpResponse& operator=(const HttpResponse&);
 };
