@@ -24,9 +24,8 @@ const std::map<std::string, std::string>& HttpRequest::getHeaders() const {
 	return _headers;
 }
 const std::string& HttpRequest::getHeader(const std::string& key) const {
-	std::string lowerKey = key;
-	StringOps::toLower(lowerKey);
-	std::map<std::string, std::string>::const_iterator it = _headers.find(lowerKey);
+	StringOps::toLower(const_cast<std::string &>(key));
+	std::map<std::string, std::string>::const_iterator it = _headers.find(key);
 	if (it != _headers.end()) {
 		return it->second;
 	}
@@ -34,14 +33,12 @@ const std::string& HttpRequest::getHeader(const std::string& key) const {
 	return empty;
 }
 bool HttpRequest::hasHeader(const std::string& key) const {
-	std::string lowerKey = key;
-	StringOps::toLower(lowerKey);
-	return _headers.count(lowerKey) > 0;
+	StringOps::toLower(const_cast<std::string &>(key));
+	return _headers.count(key) > 0;
 }
 void HttpRequest::addHeader(const std::string& key, const std::string& value) {
-	std::string lowerKey = key;
-	StringOps::toLower(lowerKey);
-	_headers[lowerKey] = value;
+	StringOps::toLower(const_cast<std::string&>(key));
+	_headers[key] = value;
 }
 
 // Queries
