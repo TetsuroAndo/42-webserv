@@ -14,7 +14,7 @@ public:
 
 	// Server Name
 	const std::string &getServerName() const;
-	bool setServerName(const std::string &name = SERVER_NAME);
+	void setServerName(const std::string &name = SERVER_NAME);
 
 	// Status Code
 	int getStatusCode() const;
@@ -38,6 +38,7 @@ public:
 	void clear();
 
 private:
+	std::string _serverName;
 	int _statusCode;
 	std::string _version;
 	std::map<std::string, std::string> _headers;

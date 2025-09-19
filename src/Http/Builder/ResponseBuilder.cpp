@@ -37,7 +37,7 @@ void ResponseBuilder::addDateHeader(HttpResponse& res) {
 
 void ResponseBuilder::addServerHeader(HttpResponse& res) {
 	if (!res.hasHeader("Server")) {
-		res.setServerName();
+		res.setHeader("Server", res.getServerName());
 	}
 }
 

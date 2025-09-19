@@ -1,9 +1,7 @@
 #include "HttpResponse.hpp"
 #include <stdexcept>
 
-HttpResponse::HttpResponse(const std::string &serverName) : _statusCode(200), _version(HTTP_VERSION) {
-	setServerName(serverName);
-}
+HttpResponse::HttpResponse(const std::string &serverName) : _statusCode(200), _version(HTTP_VERSION), _serverName(serverName) {}
 
 HttpResponse::~HttpResponse() {}
 
@@ -15,14 +13,12 @@ void HttpResponse::clear() {
 }
 
 // Server Name
-const std::string &HttpResponse::getServerName() const { 
-	return getHeader("Server");
+const std::string &HttpResponse::getServerName() const {
+	return _serverName;
 }
 
-bool HttpResponse::setServerName(const std::string &name) {
-	if (hasHeader("Server")) return false;
-	setHeader("Server", name);
-	return true;
+void HttpResponse::setServerName(const std::string &name) {
+	_serverName = name;
 }
 
 // Status Code
