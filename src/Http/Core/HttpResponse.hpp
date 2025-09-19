@@ -14,7 +14,7 @@ public:
 
 	// Server Name
 	const std::string &getServerName() const;
-	void setServerName(const std::string &name = SERVER_NAME);
+	bool setServerName(const std::string &name = SERVER_NAME);
 
 	// Status Code
 	int getStatusCode() const;

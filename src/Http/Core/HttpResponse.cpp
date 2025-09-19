@@ -17,10 +17,10 @@ const std::string &HttpResponse::getServerName() const {
 	return getHeader("Server");
 }
 
-void HttpResponse::setServerName(const std::string &name) {
-	if (hasHeader("Server"))
-		throw std::runtime_error("Server header is already set");
+bool HttpResponse::setServerName(const std::string &name) {
+	if (hasHeader("Server")) return false;
 	setHeader("Server", name);
+	return true;
 }
 
 // Status Code
