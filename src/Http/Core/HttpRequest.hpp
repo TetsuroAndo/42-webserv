@@ -12,7 +12,9 @@ public:
 
 	// Max
 	size_t getMaxHeaderSize() const;
+	void setMaxHeaderSize(const size_t size = 8192);
 	size_t getMaxBodySize() const;
+	void setMaxBodySize(const size_t size = 10 * 1024 * 1024);
 
 	// Method
 	const std::string& getMethod() const;
@@ -47,8 +49,8 @@ public:
 	void clear();
 
 private:
-	const static size_t maxHeaderSize = 8192;
-	const static size_t maxBodySize = 10 * 1024 * 1024;
+	static size_t maxHeaderSize;
+	static size_t maxBodySize;
 
 	std::string _method;
 	std::string _path;

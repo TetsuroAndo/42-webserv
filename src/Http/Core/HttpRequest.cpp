@@ -4,8 +4,11 @@
 HttpRequest::HttpRequest() {}
 HttpRequest::~HttpRequest() {}
 
+// Max
 size_t HttpRequest::getMaxHeaderSize() const { return maxHeaderSize; }
+void HttpRequest::setMaxHeaderSize(const size_t size) { maxHeaderSize = size; }
 size_t HttpRequest::getMaxBodySize() const { return maxBodySize; }
+void HttpRequest::setMaxBodySize(const size_t size) { maxBodySize = size; }
 
 // Method
 const std::string& HttpRequest::getMethod() const { return _method; }
