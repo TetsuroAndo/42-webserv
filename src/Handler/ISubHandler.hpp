@@ -4,8 +4,8 @@
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Config/Config.hpp"
 
-class IHandler {
+class ISubHandler {
 public:
-	virtual ~IHandler() {}
+	virtual ~ISubHandler() {}
 	virtual HttpResponse handle(const HttpRequest& req, const Config& config) = 0;
 };
