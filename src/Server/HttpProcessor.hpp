@@ -9,7 +9,9 @@ public:
 	HttpProcessor();
 	~HttpProcessor();
 
-	void processRequest(const HttpRequest &request);
+	void handle(HttpRequest &ctx, const Config &conf);
+	void next(HttpRequest &ctx, const Config &conf);
+
 private:
 
 };
