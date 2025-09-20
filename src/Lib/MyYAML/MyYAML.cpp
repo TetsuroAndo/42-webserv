@@ -73,7 +73,7 @@ static bool endsWith(const std::string& s, const std::string& suffix) {
 		   s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-MyYAML::MyYAML(const std::string &filepath) {
+MyYAML::MyYAML(const std::string &filepath) : data(MAP, "root", NULL) {
 	const std::string extension(".yaml");
 	if (endsWith(filepath, extension) == false) {
 		throw std::invalid_argument("Filepath does not end with extension '" + extension + "'");
@@ -111,6 +111,7 @@ std::size_t MyYAML::getSize(const std::string &key) {
 	return getValue(key).size();
 }
 
+// TODO: 作業終わったらこっち消す
 void MyYAML::parseYaml(std::string buf) {
 	if (!buf.empty() && '\n' != buf[buf.size() - 1]) {
 		buf.push_back('\n');
@@ -185,18 +186,33 @@ void MyYAML::parseYaml(std::string buf) {
 }
 
 void MyYAML::NewParseYaml(std::string buf) {
-
-}
-
-MyYAML::MyYAML() {
-}
-
-MyYAML::MyYAML(const MyYAML &other) {
-	(void)other;
-}
-
-MyYAML &MyYAML::operator=(const MyYAML &other) {
-	if (this != &other) {
+	// TODO: パース処理を完成させる
+	if (!buf.empty() && '\n' != buf[buf.size() - 1]) {
+		buf.push_back('\n');
 	}
-	return *this;
+	std::string::const_iterator it = buf.begin();
+	const std::string::const_iterator endIt = buf.end();
+	if (it == endIt) {
+		return;
+	}
+	if ('\n' == *it) {
+		++it;
+	}
+	bool isPrevKeyOnly = false;
+	bool isPrevIsList = false;
+	std::string prevKey = "";
+	int prevIndent = -1;
+	for (; it != endIt; ++it) {
+		std::string::const_iterator lineStart = it;
+		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
+		std::string line(lineStart, lineEnd);
+		it = lineEnd;
+		if (line.empty() || isOnlyCharLine(line, '#')) {
+			continue;
+		}
+		// TODO: ここに書く
+		if (isOnlyCharLine(line, '-')) {
+
+		}
+	}
 }

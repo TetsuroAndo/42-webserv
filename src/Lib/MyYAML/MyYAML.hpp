@@ -1,4 +1,5 @@
 #pragma once
+#include  "Node.hpp"
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -30,15 +31,9 @@ public:
 			: std::runtime_error("Value not found: " + key) {}
 	};
 
-
+	Node data;
 private:
 	std::map<std::string, std::vector<std::string> > _myYamlData;
 	void parseYaml(std::string buf);
 	void NewParseYaml(std::string buf);
-
-
-
-	MyYAML();
-	MyYAML(const MyYAML &);
-	MyYAML &operator=(const MyYAML &);
 };
