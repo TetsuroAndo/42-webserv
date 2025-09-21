@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stack>
 
 static std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
@@ -17,6 +18,17 @@ static std::string readFileAll(const std::string &filepath) {
 	return buffer.str();
 }
 
+static int startCharCount(std::string str, char c) {
+	int result = 0;
+	std::string::const_iterator it = str.begin();
+	const std::string::const_iterator itEnd = str.end();
+	while (it != itEnd && c == *it) {
+		result++;
+		++it;
+	}
+	return result;
+}
+
 static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
@@ -26,7 +38,7 @@ static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	return delimiter == *it;
 }
 
-static std::string extractKey(const std::string &key) {
+static std::string trimWhitespace(const std::string &key) {
 	std::string::const_iterator it = key.begin();
 	const std::string::const_iterator itEnd = key.end();
 	while (it != itEnd && ' ' == *it) {
@@ -42,8 +54,33 @@ static std::string extractKey(const std::string &key) {
 	return result;
 }
 
+// TODO : keyを抽出する関数を作る。なければ""を返す
+static std::string extractKey(const std::string &line) {
+	std::string trimmedLine = trimWhitespace(line);
+	// 何もなければ何もないを返す
+	if (trimmedLine.empty()) {
+		return "";
+	}
+	// 一文字目がセパレーターならエラー
+	if (trimmedLine[0] == ':') {
+		throw std::runtime_error("Key is empty");
+	}
+	const size_t pos = trimmedLine.find(':');
+	// セパレーターがなければkeyは何もない
+	if (pos == std::string::npos) {
+		return "";
+	}
+	// 前後の空白を取り除いたセパレーターの手前の文字列を返す
+	return trimWhitespace(trimmedLine.substr(0, pos));
+}
 
-static std::string extractListValue(const std::string &line, int &prevIndent) {
+// TODO : valueを抽出する関数を作る。なければ""を返す
+// TODO : 前後の空白を削ってくれる関数を作る。削るのなければそのまま。
+// TODO : :で終わっていたかどうかを返す関数を作る。
+
+
+
+static std::string extractListValue(const std::string &line) {
 	int spaceCount = 0;
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
@@ -51,10 +88,7 @@ static std::string extractListValue(const std::string &line, int &prevIndent) {
 		spaceCount++;
 		++it;
 	}
-	if (prevIndent != -1 && spaceCount != prevIndent) {
-		throw MyYAML::InvalidFormat();
-	}
-	std::string tmp = extractKey(line);
+	std::string tmp = trimWhitespace(line);
 	if (tmp.size() < 2) {
 		throw MyYAML::InvalidFormat();
 	}
@@ -63,8 +97,6 @@ static std::string extractListValue(const std::string &line, int &prevIndent) {
 	} else {
 		throw MyYAML::InvalidFormat();
 	}
-
-	prevIndent = spaceCount;
 	return (tmp);
 }
 
@@ -73,7 +105,7 @@ static bool endsWith(const std::string& s, const std::string& suffix) {
 		   s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-MyYAML::MyYAML(const std::string &filepath) : data(MAP, "root", NULL) {
+MyYAML::MyYAML(const std::string &filepath) : data(NODE_MAP, "root", NULL) {
 	const std::string extension(".yaml");
 	if (endsWith(filepath, extension) == false) {
 		throw std::invalid_argument("Filepath does not end with extension '" + extension + "'");
@@ -127,7 +159,6 @@ void MyYAML::parseYaml(std::string buf) {
 	bool isPrevKeyOnly = false;
 	bool isPrevIsList = false;
 	std::string prevKey = "";
-	int prevIndent = -1;
 	for (; it != endIt; ++it) {
 		std::string::const_iterator lineStart = it;
 		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
@@ -142,7 +173,7 @@ void MyYAML::parseYaml(std::string buf) {
 					_myYamlData[prevKey] = std::vector<std::string>();
 					isPrevIsList = true;
 				}
-				std::string value = extractListValue(line, prevIndent);
+				std::string value = extractListValue(line);
 				if (value.empty()) {
 					throw InvalidFormat();
 				}
@@ -198,21 +229,73 @@ void MyYAML::NewParseYaml(std::string buf) {
 	if ('\n' == *it) {
 		++it;
 	}
-	bool isPrevKeyOnly = false;
-	bool isPrevIsList = false;
 	std::string prevKey = "";
-	int prevIndent = -1;
+	std::stack<int> prevIndent;
+	prevIndent.push(0);
+	std::stack<Node> nodeChain;
+	MyYamlState nowState = MyYamlState_NONE;
+	MyYamlState prevState = MyYamlState_NONE;
 	for (; it != endIt; ++it) {
 		std::string::const_iterator lineStart = it;
 		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
 		std::string line(lineStart, lineEnd);
 		it = lineEnd;
+		// コメント行・空行
 		if (line.empty() || isOnlyCharLine(line, '#')) {
 			continue;
 		}
 		// TODO: ここに書く
+		// インデントの数を数える
+		int nowIndent = startCharCount(line, ' ');
+		// 行の種類特定
 		if (isOnlyCharLine(line, '-')) {
-
+			line = extractListValue(line);
+			nowState = MyYamlState_SEQ;
+		} else {
+			nowState = MyYamlState_MAP;
 		}
+		std::string key = extractKey(line);
+		std::string value = extractValue(line);
+
+		// 前回のステートと変化がある場合はインデントの数をprevと比較して正しいかをみる
+		if (prevIndent.top() == nowIndent) {
+			// インデントに変化がない時に、typeは同じであることを期待
+			if (prevState != nowState) {
+				throw InvalidFormat();
+			}
+		} else {
+			// 増えたか減ったかで動作を変える
+			if (prevIndent.top() < nowIndent) {
+				// 階層が深くなった
+				// nodeChainにノードを増やす
+			} else {
+				// 階層が浅くなった
+				prevIndent.pop();
+				const int expectedIndent = prevIndent.top();
+				if (expectedIndent != nowIndent) {
+					throw InvalidFormat();
+				}
+				// インデントが少なくなったタイミングでは、nodeChainのtopを終端処理する
+				nodeChain.top().terminateNode();
+				nodeChain.pop();
+			}
+			prevIndent.push(nowIndent);
+		}
+		// 大丈夫ならデータをしまう
+		Node tmpNew(NODE_SEQ, "kokoni key", "kokoni value");
+		switch (nowState) {
+			case MyYamlState_SEQ:
+			tmpNew.setType(NODE_SEQ);
+			nodeChain.push(tmpNew);
+			break;
+			case MyYamlState_MAP:
+			tmpNew.setType(NODE_MAP);
+			nodeChain.push(tmpNew);
+			break;
+			default:
+				throw InvalidFormat();
+		}
+		prevState = nowState;
+
 	}
 }
