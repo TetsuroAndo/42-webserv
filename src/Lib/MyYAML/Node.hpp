@@ -4,9 +4,9 @@
 #include <vector>
 
 enum Type {
-	MAP,
-	SEQ,
-	VAL
+	NODE_MAP,
+	NODE_SEQ,
+	NODE_VAL
 };
 
 class Node {
@@ -14,10 +14,10 @@ public:
 	Node(const Type type, const std::string &key,
 	     const std::string &value) : _type(type), _key(key), _value(value) {
 
-		if (type == SEQ && key == "") {
+		if (type == NODE_SEQ && key == "") {
 			throw std::invalid_argument("Key must not be empty");
 		}
-		if (type == MAP && key == "") {
+		if (type == NODE_MAP && key == "") {
 			throw std::invalid_argument("Key must not be empty");
 		}
 		if (type == VAL && value == "") {
@@ -36,14 +36,14 @@ public:
 	const std::string &getValue() const { return _value; }
 
 	std::vector<Node *> getSeq() const {
-		if (_type != SEQ) {
+		if (_type != NODE_SEQ) {
 			throw std::invalid_argument("Node type is not SEQ");
 		}
 		return _seq;
 	}
 
 	Node *getMapNode(const std::string &key) const {
-		if (_type != MAP) {
+		if (_type != NODE_MAP) {
 			throw std::invalid_argument("Node type is not MAP");
 		}
 		if (_map.find(key) == _map.end()) {

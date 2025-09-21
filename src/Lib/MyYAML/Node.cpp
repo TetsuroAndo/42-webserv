@@ -7,12 +7,12 @@
 
 void Node::push(Node *node) {
 	switch (int type = _type) {
-	case VAL:
+	case NODE_VAL:
 		throw std::runtime_error("Can't push to value node");
-	case SEQ:
+	case NODE_SEQ:
 		this->_seq.push_back(node);
 		break;
-	case MAP:
+	case NODE_MAP:
 		if (this->_map.find(node->_key) != this->_map.end()) {
 			throw std::runtime_error("Duplicate key " + node->_key);
 		}
@@ -25,12 +25,12 @@ void Node::push(Node *node) {
 
 void Node::print(const int indent) const {
 	const std::string ind(indent, ' ');
-	if (_type == SEQ) {
+	if (_type == NODE_SEQ) {
 		std::cout << ind << "SEQ: " << _value << std::endl;
 		for (std::size_t i = 0; i < _seq.size(); i++) {
 			_seq[i]->print(indent + 2);
 		}
-	} else if (_type == MAP) {
+	} else if (_type == NODE_MAP) {
 		std::cout << ind << "MAP: " << _value << std::endl;
 		std::map<std::string, Node *>::const_iterator it = _map.begin();
 		const std::map<std::string, Node *>::const_iterator itEnd = _map.end();
@@ -45,13 +45,13 @@ void Node::print(const int indent) const {
 
 bool Node::isValidNode() {
 	switch (_type) {
-	case SEQ:
+	case NODE_SEQ:
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			if (!_seq[i]->isValidNode())
 				return false;
 		}
 		return true;
-	case MAP: {
+	case NODE_MAP: {
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
 		     it != _map.end(); ++it) {
 			if (!it->second->isValidNode())
@@ -59,7 +59,7 @@ bool Node::isValidNode() {
 		}
 		return true;
 	}
-	case VAL:
+	case NODE_VAL:
 		return true;
 	default:
 		return false;
