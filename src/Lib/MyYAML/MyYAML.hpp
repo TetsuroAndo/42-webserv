@@ -5,6 +5,13 @@
 #include <string>
 #include <vector>
 
+enum MyYamlState {
+	MyYamlState_NONE,
+	MyYamlState_SEQ,
+	MyYamlState_MAP,
+	MyYamlState_VAL
+};
+
 class MyYAML {
 public:
 	MyYAML(const std::string &filepath);
