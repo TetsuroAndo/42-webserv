@@ -4,16 +4,16 @@
 #include <iostream>
 
 int main() {
-	Node root(MAP, "", "root");
-	Node seq(SEQ, "seq", "");
-	Node seq2(SEQ, "seq", "");
-	Node map(MAP, "map", "");
-	Node val(VAL, "val1", "huga");
-	Node val2(VAL, "val2", "huga");
-	Node val3(VAL, "val3", "huga");
-	Node val4(VAL, "val4", "huga");
-	Node val5(VAL, "val5", "huga");
-	Node val6(VAL, "val6", "huga");
+	Node root(NODE_MAP, "", "root");
+	Node seq(NODE_SEQ, "seq", "");
+	Node seq2(NODE_SEQ, "seq", "");
+	Node map(NODE_MAP, "map", "");
+	Node val(NODE_VAL, "val1", "huga");
+	Node val2(NODE_VAL, "val2", "huga");
+	Node val3(NODE_VAL, "val3", "huga");
+	Node val4(NODE_VAL, "val4", "huga");
+	Node val5(NODE_VAL, "val5", "huga");
+	Node val6(NODE_VAL, "val6", "huga");
 	try {
 		root.push(&seq);
 		root.push(&map);
