@@ -38,6 +38,7 @@ static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	return delimiter == *it;
 }
 
+// 前後の空白を削ってくれる関数
 static std::string trimWhitespace(const std::string &key) {
 	std::string::const_iterator it = key.begin();
 	const std::string::const_iterator itEnd = key.end();
@@ -54,7 +55,7 @@ static std::string trimWhitespace(const std::string &key) {
 	return result;
 }
 
-// TODO : keyを抽出する関数を作る。なければ""を返す
+// keyを抽出する関数
 static std::string extractKey(const std::string &line) {
 	std::string trimmedLine = trimWhitespace(line);
 	// 何もなければ何もないを返す
@@ -74,9 +75,37 @@ static std::string extractKey(const std::string &line) {
 	return trimWhitespace(trimmedLine.substr(0, pos));
 }
 
-// TODO : valueを抽出する関数を作る。なければ""を返す
-// TODO : 前後の空白を削ってくれる関数を作る。削るのなければそのまま。
-// TODO : :で終わっていたかどうかを返す関数を作る。
+// valueを抽出する関数
+static std::string extractValue(const std::string &line) {
+	std::string trimmedLine = trimWhitespace(line);
+	// 何もなければ何もないを返す
+	if (trimmedLine.empty()) {
+		return "";
+	}
+	const size_t pos = trimmedLine.find(':');
+	// セパレーターがなければそのまま
+	if (pos == std::string::npos) {
+		return trimmedLine;
+	}
+	// 前後の空白を取り除いたセパレーターの後半の文字列を返す
+	return trimWhitespace(trimmedLine.substr(pos + 1, trimmedLine.length()));
+}
+
+// セパレーターで終わっているかどうかを返す関数
+static bool isEndSeparator(const std::string &line) {
+	std::string trimmedLine = trimWhitespace(line);
+	if (trimmedLine.empty()) {
+		return false;
+	}
+	const size_t pos = trimmedLine.find(':');
+	if (pos == std::string::npos) {
+		return false;
+	}
+	if (pos == trimmedLine.length() - 1) {
+		return true;
+	}
+	return false;
+}
 
 
 
