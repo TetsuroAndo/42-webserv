@@ -35,6 +35,8 @@ public:
 	const std::string &getKey() const { return _key; }
 	const std::string &getValue() const { return _value; }
 
+	void setType(const Type type) { _type = type; }
+
 	std::vector<Node *> getSeq() const {
 		if (_type != NODE_SEQ) {
 			throw std::invalid_argument("Node type is not SEQ");
