@@ -1,0 +1,82 @@
+#include "../Core/HttpStatus.hpp"
+#include "../URI/URI.hpp"
+#include "ParseResult.hpp"
+#include "RequestLineParser.hpp"
+#include <cstring>
+
+RequestLineParser::RequestLineParser() {}
+RequestLineParser::~RequestLineParser() {}
+
+ParseResult RequestLineParser::parse(HttpRequest& request, const std::string& line, int &errorCode) {
+	// 1. 3つのパートに分割 (METHOD, URI, VERSION)
+	size_t methodEnd = line.find(' ');
+	if (methodEnd == std::string::npos) {
+		errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
+
+	size_t uriEnd = line.find(' ', methodEnd + 1);
+	if (uriEnd == std::string::npos) {
+		errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
+
+	size_t methodLen = methodEnd;
+	std::string method(line.c_str(), methodLen);
+	request.setMethod(method);
+
+	const char* uriStart = line.c_str() + methodEnd + 1;
+	size_t uriLen = uriEnd - (methodEnd + 1);
+
+	std::string version(line.c_str() + uriEnd + 1, line.length() - (uriEnd + 1));
+	request.setVersion(version);
+
+	// 2. HTTPバージョンを検証
+	if (version != "HTTP/1.1" && version != "HTTP/1.0") {
+		errorCode = HttpStatus::VERSION_NOT_SUPPORTED;
+		return PARSE_ERROR;
+	}
+
+	// 3. URIをパスとクエリに分割
+	const char* queryStartPtr = (const char*)std::memchr(uriStart, '?', uriLen);
+	size_t pathLen;
+	if (queryStartPtr) {
+		pathLen = queryStartPtr - uriStart;
+		const char* queryStart = queryStartPtr + 1;
+		size_t queryLen = uriLen - pathLen - 1;
+
+		// 4. クエリをキーと値のペアに分割
+		size_t queryOffset = 0;
+		while (queryOffset < queryLen) {
+			size_t pairEndOffset = queryOffset;
+			const char* ampPtr = (const char*)std::memchr(queryStart + queryOffset, '&', queryLen - queryOffset);
+			if (ampPtr) {
+				pairEndOffset = ampPtr - queryStart;
+			} else {
+				pairEndOffset = queryLen;
+			}
+
+			const char* pairStart = queryStart + queryOffset;
+			size_t pairLen = pairEndOffset - queryOffset;
+
+			const char* eqPtr = (const char*)std::memchr(pairStart, '=', pairLen);
+			std::string key, value;
+			if (eqPtr) {
+				key = URI::decodeURIComponent(std::string(pairStart, eqPtr - pairStart));
+				value = URI::decodeURIComponent(std::string(eqPtr + 1, pairStart + pairLen - (eqPtr + 1)));
+			} else {
+				key = URI::decodeURIComponent(std::string(pairStart, pairLen));
+				value = "";
+			}
+			request.addQuery(key, value);
+
+			queryOffset = pairEndOffset + 1;
+		}
+	} else {
+		pathLen = uriLen;
+	}
+
+	request.setPath(std::string(uriStart, pathLen));
+
+	return PARSE_COMPLETE;
+}
