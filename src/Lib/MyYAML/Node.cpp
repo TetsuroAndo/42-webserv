@@ -65,3 +65,23 @@ bool Node::isValidNode() {
 		return false;
 	}
 }
+
+void Node::terminateNode() {
+	switch (_type) {
+		case NODE_SEQ:
+		for (std::size_t i = 0; i < _seq.size(); ++i) {
+			_seq[i]->_type = NODE_VAL;
+		}
+		return;
+		case NODE_MAP:
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+			 it != _map.end(); ++it) {
+			it->second->_type = NODE_VAL;
+		}
+		return;
+		case NODE_VAL:
+			throw std::runtime_error("Node is already terminaterd");
+		return;
+
+	}
+}

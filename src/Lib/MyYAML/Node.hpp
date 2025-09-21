@@ -52,8 +52,10 @@ public:
 		return _map.find(key)->second;
 	}
 
+	void terminateNode();
+
 private:
-	const Type _type;
+	Type _type;
 	const std::string _key;
 	const std::string _value;
 	std::vector<Node *> _seq;
