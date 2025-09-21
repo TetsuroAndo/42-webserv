@@ -39,9 +39,22 @@ bool HttpRequest::hasHeader(const std::string& key) const {
 	StringOps::toLower(const_cast<std::string &>(key));
 	return _headers.count(key) > 0;
 }
+
+bool HttpRequest::hasHeader(const char* key_start, size_t key_len) const {
+	std::string key(key_start, key_len);
+	StringOps::toLower(key);
+	return _headers.count(key) > 0;
+}
+
 void HttpRequest::addHeader(const std::string& key, const std::string& value) {
 	StringOps::toLower(const_cast<std::string&>(key));
 	_headers[key] = value;
+}
+
+void HttpRequest::addHeader(const char* key_start, size_t key_len, const char* val_start, size_t val_len) {
+	std::string key(key_start, key_len);
+	StringOps::toLower(key);
+	_headers[key] = std::string(val_start, val_len);
 }
 
 // Queries

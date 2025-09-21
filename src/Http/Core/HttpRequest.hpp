@@ -32,7 +32,9 @@ public:
 	const std::map<std::string, std::string>& getHeaders() const;
 	const std::string& getHeader(const std::string& key) const;
 	bool hasHeader(const std::string& key) const;
+	bool hasHeader(const char* key_start, size_t key_len) const;
 	void addHeader(const std::string& key, const std::string& value);
+	void addHeader(const char* key_start, size_t key_len, const char* val_start, size_t val_len);
 
 	// Query Parameters (?以降のキーバリュー)
 	const std::map<std::string, std::string>& getQueries() const;

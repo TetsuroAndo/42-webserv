@@ -1,8 +1,6 @@
 #include "../Core/HttpStatus.hpp"
-#include "../../Lib/StringOps/StringOps.hpp"
-#include "RequestHeaderParser.hpp"
 #include "ParseResult.hpp"
-#include <sstream>
+#include "RequestHeaderParser.hpp"
 
 ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &headerBlock, int &errorCode) {
 	size_t size = headerBlock.size();
@@ -14,32 +12,36 @@ ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &
 		if (lineEnd > lineStart && headerBlock[lineEnd - 1] == '\r')
 			--lineEnd;
 
-		// 空行ならスキップ（\r\n\r\nで分離済み想定なのでERRORにしない）
-		if (lineEnd == lineStart) {
-			lineStart = nl + 1;
-			continue;
-		}
+		if (lineEnd > lineStart) {
+			size_t colonPos = headerBlock.find(':', lineStart);
+			if (colonPos == std::string::npos || colonPos >= lineEnd) {
+				errorCode = HttpStatus::BAD_REQUEST;
+				return PARSE_ERROR;
+			}
 
-		size_t colonPos = headerBlock.find(':', lineStart);
-		if (colonPos == std::string::npos || colonPos >= lineEnd || colonPos == lineStart) {
-			errorCode = HttpStatus::BAD_REQUEST;
-			return PARSE_ERROR;
-		}
+			size_t keyStart = lineStart;
+			size_t keyEnd = colonPos;
+			while (keyStart < keyEnd && (headerBlock[keyStart] == ' ' || headerBlock[keyStart] == '\t')) keyStart++;
+			while (keyEnd > keyStart && (headerBlock[keyEnd - 1] == ' ' || headerBlock[keyEnd - 1] == '\t')) keyEnd--;
+			size_t keyLen = keyEnd - keyStart;
+			if (keyLen == 0) {
+				errorCode = HttpStatus::BAD_REQUEST;
+				return PARSE_ERROR;
+			}
 
-		std::string key(headerBlock.substr(lineStart, colonPos - lineStart));
-		StringOps::trim(key, " \t");
-		if (key.empty()) {
-			errorCode = HttpStatus::BAD_REQUEST;
-			return PARSE_ERROR;
-		}
-		std::string value(headerBlock.substr(colonPos + 1, lineEnd - (colonPos + 1)));
-		StringOps::trim(value, " \t");
+			size_t valueStart = colonPos + 1;
+			size_t valueEnd = lineEnd;
+			while (valueStart < valueEnd && (headerBlock[valueStart] == ' ' || headerBlock[valueStart] == '\t')) valueStart++;
+			while (valueEnd > valueStart && (headerBlock[valueEnd - 1] == ' ' || headerBlock[valueEnd - 1] == '\t')) valueEnd--;
+			size_t valueLen = valueEnd - valueStart;
 
-		if (request.hasHeader(key)) {
-			errorCode = HttpStatus::BAD_REQUEST;
-			return PARSE_ERROR;
+			const char* keyPtr = headerBlock.c_str() + keyStart;
+			if (request.hasHeader(keyPtr, keyLen)) {
+				errorCode = HttpStatus::BAD_REQUEST;
+				return PARSE_ERROR;
+			}
+			request.addHeader(keyPtr, keyLen, headerBlock.c_str() + valueStart, valueLen);
 		}
-		request.addHeader(key, value);
 
 		lineStart = nl + 1;
 	}
