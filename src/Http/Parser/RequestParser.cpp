@@ -72,7 +72,13 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 					return PARSE_ERROR;
 				}
 
-				ParseResult res = _bodyParser.parse(request, buffer, _errorCode);
+				ParseResult res;
+				size_t consumed = _bodyParser.parse(request, buffer, _errorCode, res);
+
+				if (consumed > 0) {
+					buffer.erase(0, consumed);
+				}
+
 				if (res == PARSE_COMPLETE) {
 					_state = STATE_COMPLETE;
 				}

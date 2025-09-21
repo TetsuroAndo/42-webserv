@@ -4,27 +4,42 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <limits>
 
 namespace // Helper functor structs
 {
 	struct IsNotDigit {
-		inline bool operator()(char c) const {
+		bool operator()(char c) const {
 			return !std::isdigit(static_cast<unsigned char>(c));
 		}
 	};
 
 	struct CharEqualIgnoreCase {
-		inline bool operator()(char lhs, char rhs) const {
+		bool operator()(char lhs, char rhs) const {
 			return std::tolower(static_cast<unsigned char>(lhs)) ==
 				std::tolower(static_cast<unsigned char>(rhs));
 		}
 	};
 
 	struct CharToLower {
-		inline char operator()(char c) const {
+		char operator()(char c) const {
 			return std::tolower(static_cast<unsigned char>(c));
 		}
 	};
+
+	// 16進数の1文字を数値に変換する
+	bool hexCharToDigit(char c, unsigned int& digit) {
+		if (std::isdigit(c)) {
+			digit = c - '0';
+			return true;
+		}
+		if (std::isxdigit(c)) {
+			digit = std::tolower(c) - 'a' + 10;
+			return true;
+		}
+		return false;
+	}
+
 }
 
 /**
@@ -94,6 +109,7 @@ std::vector<std::string> StringOps::split(const std::string &str,
 		start = end + delimiter.length();
 		end = str.find(delimiter, start);
 	}
+	tokens.push_back(str.substr(start));
 	return tokens;
 }
 
@@ -102,7 +118,7 @@ std::vector<std::string> StringOps::split(const std::string &str,
  * @throw std::invalid_argument 変換できない文字が含まれる場合
  * @throw std::out_of_range      数値がsize_tの範囲を超える場合
  */
-inline size_t toSize_t(const std::string &str) {
+size_t StringOps::toSize_t(const std::string &str) {
 	std::stringstream ss(str);
 	size_t res;
 	ss >> res;
@@ -110,4 +126,50 @@ inline size_t toSize_t(const std::string &str) {
 		throw std::invalid_argument("Invalid conversion to size_t");
 	}
 	return res;
+}
+
+bool StringOps::hexStrToSize(const char* str, size_t len, size_t& result) {
+    result = 0;
+    if (len == 0) {
+        return false;
+    }
+
+    const size_t maxDiv16 = std::numeric_limits<size_t>::max() / 16;
+    const size_t maxMod16 = std::numeric_limits<size_t>::max() % 16;
+
+    for (size_t i = 0; i < len; ++i) {
+        unsigned int digit;
+        if (!hexCharToDigit(str[i], digit)) {
+            return false; // 不正な文字
+        }
+
+        if (result > maxDiv16 || (result == maxDiv16 && digit > maxMod16)) {
+            return false; // オーバーフロー
+        }
+        result = result * 16 + digit;
+    }
+    return true;
+}
+
+bool StringOps::decStrToSize(const std::string& str, size_t& result) {
+    result = 0;
+    if (str.empty()) {
+        return false;
+    }
+
+    const size_t maxDiv10 = std::numeric_limits<size_t>::max() / 10;
+    const size_t maxMod10 = std::numeric_limits<size_t>::max() % 10;
+
+    for (size_t i = 0; i < str.length(); ++i) {
+        if (!std::isdigit(str[i])) {
+            return false;
+        }
+        unsigned int digit = str[i] - '0';
+
+        if (result > maxDiv10 || (result == maxDiv10 && digit > maxMod10)) {
+            return false;
+        }
+        result = result * 10 + digit;
+    }
+    return true;
 }

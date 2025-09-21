@@ -44,6 +44,7 @@ public:
 	const std::string& getBody() const;
 	void setBody(const std::string& body);
 	void appendBody(const std::string& data);
+	void appendBody(const char* data, size_t len);
 
 	// 内部状態をリセット
 	void clear();

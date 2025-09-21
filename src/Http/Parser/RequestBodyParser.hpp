@@ -1,6 +1,8 @@
 #pragma once
 
+#include <ctime>
 #include <string>
+
 #include "../Core/HttpRequest.hpp"
 #include "ParseResult.hpp"
 
@@ -23,9 +25,9 @@ public:
 	 * @brief リクエストボディを解析し、 HttpRequest オブジェクトにボディデータを格納します。
 	 * @param request HttpRequest オブジェクトへの参照
 	 * @param buffer 解析するリクエストボディの文字列
-	 * @return 解析に成功した場合は 0、失敗した場合はエラーコード
+	 * @return 消費したバイト数
 	 */
-	ParseResult parse(HttpRequest& request, std::string& buffer, int& errorCode);
+	size_t parse(HttpRequest& request, const std::string& buffer, int& errorCode, ParseResult& result);
 
 private:
 	enum BodyState {
@@ -40,9 +42,10 @@ private:
 	BodyState _state;
 	size_t _contentLengthRemaining;
 	size_t _chunkSize;
+	time_t _lastReceiveTime;
 
-	ParseResult parseIdentity(HttpRequest& request, std::string& buffer, int &errorCode);
-	ParseResult parseChunked(HttpRequest& request, std::string& buffer, int& errorCode);
+	size_t parseIdentity(HttpRequest& request, const std::string& buffer, ParseResult& result);
+	size_t parseChunked(HttpRequest& request, const std::string& buffer, int& errorCode, ParseResult& result);
 
 	RequestBodyParser(const RequestBodyParser&);
 	RequestBodyParser& operator=(const RequestBodyParser&);

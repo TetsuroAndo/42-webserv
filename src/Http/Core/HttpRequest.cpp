@@ -67,6 +67,7 @@ void HttpRequest::addQuery(const std::string& key, const std::string& value) {
 const std::string& HttpRequest::getBody() const { return _body; }
 void HttpRequest::setBody(const std::string& body) { _body = body; }
 void HttpRequest::appendBody(const std::string& data) { _body.append(data); }
+void HttpRequest::appendBody(const char* data, size_t len) { _body.append(data, len); }
 
 void HttpRequest::clear() {
 	_method.clear();
