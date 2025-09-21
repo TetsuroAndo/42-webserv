@@ -18,9 +18,6 @@ public:
 	ParseResult parse(HttpRequest& request, const std::string& line, int &errorCode);
 
 private:
-	void parseQuery(HttpRequest& request, const std::string& queryString);
-	std::string parsePath(HttpRequest& request, const std::string& uri);
-
 	RequestLineParser(const RequestLineParser&);
 	RequestLineParser& operator=(const RequestLineParser&);
 };

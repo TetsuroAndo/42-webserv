@@ -1,63 +1,82 @@
 #include "../Core/HttpStatus.hpp"
 #include "../URI/URI.hpp"
-#include "../../Lib/StringOps/StringOps.hpp"
-#include "RequestLineParser.hpp"
 #include "ParseResult.hpp"
-#include <vector>
-#include <sstream>
+#include "RequestLineParser.hpp"
+#include <cstring>
 
 RequestLineParser::RequestLineParser() {}
 RequestLineParser::~RequestLineParser() {}
 
 ParseResult RequestLineParser::parse(HttpRequest& request, const std::string& line, int &errorCode) {
-	std::vector<std::string> tokens;
-	std::string current;
-	std::istringstream iss(line);
-
-	while (iss >> current) {
-		tokens.push_back(current);
-	}
-	if (tokens.size() != 3) {
+	// 1. 3つのパートに分割 (METHOD, URI, VERSION)
+	size_t methodEnd = line.find(' ');
+	if (methodEnd == std::string::npos) {
 		errorCode = HttpStatus::BAD_REQUEST;
 		return PARSE_ERROR;
 	}
 
-	request.setMethod(tokens[0]);
-	request.setPath(parsePath(request, tokens[1]));
-	request.setVersion(tokens[2]);
+	size_t uriEnd = line.find(' ', methodEnd + 1);
+	if (uriEnd == std::string::npos) {
+		errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
 
-	if (tokens[2] != "HTTP/1.1" && tokens[2] != "HTTP/1.0") {
+	size_t methodLen = methodEnd;
+	std::string method(line.c_str(), methodLen);
+	request.setMethod(method);
+
+	const char* uriStart = line.c_str() + methodEnd + 1;
+	size_t uriLen = uriEnd - (methodEnd + 1);
+
+	std::string version(line.c_str() + uriEnd + 1, line.length() - (uriEnd + 1));
+	request.setVersion(version);
+
+	// 2. HTTPバージョンを検証
+	if (version != "HTTP/1.1" && version != "HTTP/1.0") {
 		errorCode = HttpStatus::VERSION_NOT_SUPPORTED;
 		return PARSE_ERROR;
 	}
-	return PARSE_COMPLETE;
-}
 
-void RequestLineParser::parseQuery(HttpRequest& request, const std::string& queryString) {
-	std::istringstream ss(queryString);
-	std::string pair;
-	while (std::getline(ss, pair, '&')) {
-		size_t eq_pos = pair.find('=');
-		std::string key, value;
-		if (eq_pos != std::string::npos) {
-			key = URI::decodeURIComponent(pair.substr(0, eq_pos));
-			value = URI::decodeURIComponent(pair.substr(eq_pos + 1));
-		} else {
-			key = URI::decodeURIComponent(pair);
-			value = "";
+	// 3. URIをパスとクエリに分割
+	const char* queryStartPtr = (const char*)std::memchr(uriStart, '?', uriLen);
+	size_t pathLen;
+	if (queryStartPtr) {
+		pathLen = queryStartPtr - uriStart;
+		const char* queryStart = queryStartPtr + 1;
+		size_t queryLen = uriLen - pathLen - 1;
+
+		// 4. クエリをキーと値のペアに分割
+		size_t queryOffset = 0;
+		while (queryOffset < queryLen) {
+			size_t pairEndOffset = queryOffset;
+			const char* ampPtr = (const char*)std::memchr(queryStart + queryOffset, '&', queryLen - queryOffset);
+			if (ampPtr) {
+				pairEndOffset = ampPtr - queryStart;
+			} else {
+				pairEndOffset = queryLen;
+			}
+
+			const char* pairStart = queryStart + queryOffset;
+			size_t pairLen = pairEndOffset - queryOffset;
+
+			const char* eqPtr = (const char*)std::memchr(pairStart, '=', pairLen);
+			std::string key, value;
+			if (eqPtr) {
+				key = URI::decodeURIComponent(std::string(pairStart, eqPtr - pairStart));
+				value = URI::decodeURIComponent(std::string(eqPtr + 1, pairStart + pairLen - (eqPtr + 1)));
+			} else {
+				key = URI::decodeURIComponent(std::string(pairStart, pairLen));
+				value = "";
+			}
+			request.addQuery(key, value);
+
+			queryOffset = pairEndOffset + 1;
 		}
-		request.addQuery(key, value);
-	}
-}
-
-std::string RequestLineParser::parsePath(HttpRequest& request, const std::string& uri) {
-	size_t query_pos = uri.find('?');
-	if (query_pos != std::string::npos) {
-		std::string path = uri.substr(0, query_pos);
-		std::string queryString = uri.substr(query_pos + 1);
-		RequestLineParser::parseQuery(request, queryString);
-		return path;
 	} else {
-		return uri;
+		pathLen = uriLen;
 	}
+
+	request.setPath(std::string(uriStart, pathLen));
+
+	return PARSE_COMPLETE;
 }
