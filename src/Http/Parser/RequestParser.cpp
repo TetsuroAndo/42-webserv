@@ -1,8 +1,7 @@
 #include "../../Lib/StringOps/StringOps.hpp"
 #include "../Core/HttpStatus.hpp"
-#include "RequestParser.hpp"
 #include "ParseResult.hpp"
-#include <sstream>
+#include "RequestParser.hpp"
 
 RequestParser::RequestParser() {
 	reset();
@@ -24,9 +23,9 @@ bool RequestParser::isComplete() const {
 }
 
 ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
-	bool state_changed = true;
-	while (state_changed) {
-		state_changed = false;
+	bool stateChanged = true;
+	while (stateChanged) {
+		stateChanged = false;
 
 		switch (_state) {
 			case STATE_REQUEST_LINE: {
@@ -39,12 +38,12 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				}
 
 				std::string line(buffer.begin(), buffer.begin() + crlfPos);
-				buffer.erase(0, crlfPos + 2);
+				buffer.assign(buffer.begin() + crlfPos + 2, buffer.end());
 				if (_lineParser.parse(request, line, _errorCode) == PARSE_ERROR) {
 					return PARSE_ERROR;
 				}
 				_state = STATE_HEADERS;
-				state_changed = true;
+				stateChanged = true;
 				break;
 			}
 			case STATE_HEADERS: {
@@ -58,12 +57,12 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				}
 
 				std::string headerBlock(buffer.begin(), buffer.begin() + headerEndPos);
-				buffer.erase(0, headerEndPos + 4);
+				buffer.assign(buffer.begin() + headerEndPos + 4, buffer.end());
 				if (_headerParser.parse(request, headerBlock, _errorCode) == PARSE_ERROR) {
 					return PARSE_ERROR;
 				}
 				_state = STATE_BODY;
-				state_changed = true;
+				stateChanged = true;
 				break;
 			}
 			case STATE_BODY: {
@@ -76,7 +75,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				size_t consumed = _bodyParser.parse(request, buffer, _errorCode, res);
 
 				if (consumed > 0) {
-					buffer.erase(0, consumed);
+					buffer.assign(buffer.begin() + consumed, buffer.end());
 				}
 
 				if (res == PARSE_COMPLETE) {
