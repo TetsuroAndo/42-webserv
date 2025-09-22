@@ -1,9 +1,9 @@
+#include "ResponseBuilder.hpp"
+#include "../../Lib/Time/TimeCache.hpp"
 #include "../Core/HttpResponse.hpp"
 #include "../Core/HttpStatus.hpp"
-#include "../../Lib/Time/TimeCache.hpp"
-#include "ResponseBuilder.hpp"
-#include <sstream>
 #include <ctime>
+#include <sstream>
 
 ResponseBuilder::ResponseBuilder() {}
 

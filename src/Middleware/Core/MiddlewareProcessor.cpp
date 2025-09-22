@@ -1,4 +1,5 @@
 #include "MiddlewareProcessor.hpp"
+#include "IMiddleware.hpp"
 #include <iostream>
 
 MiddlewareProcessor::MiddlewareProcessor() : _currentIndex(0) {}

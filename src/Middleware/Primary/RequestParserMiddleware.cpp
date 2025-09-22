@@ -1,25 +1,27 @@
 #include "RequestParserMiddleware.hpp"
-#include "../../Http/Parser/RequestParser.hpp" // 仮にパーサーがあるとする
+#include "../../Http/Core/HttpStatus.hpp"
+#include <sstream>
 
 void RequestParserMiddleware::handle(PipelineContext &ctx, MiddlewareProcessor *proc) {
-    if (!ctx.req || !ctx.res) {
-        return;
-    }
+	if (!ctx.req || !ctx.res) {
+		return;
+	}
 
-    // recvBufferからHttpRequestをパース
-    RequestParser parser;
-    bool parseOk = parser.parse(*(ctx.req), ctx.recvBuffer);
+	ParseResult result = ctx.parser.parse(*(ctx.req), ctx.recvBuffer);
 
-    if (parseOk) {
-        // パース成功 → 次のミドルウェアへ
-        if (proc) {
-            proc->next(ctx);
-        }
-    } else {
-        // パース失敗 → エラーレスポンスをセットして終了
-        ctx.res->setStatusCode(400); // Bad Request
-        ctx.res->setBody("<html><body><h1>400 Bad Request</h1></body></html>");
-        //ctx.sendBuffer = ctx.res->getResponse();
-        // この場合、次のミドルウェアには進まない
-    }
+	if (result == PARSE_COMPLETE) {
+		if (proc) {
+			proc->next(ctx);
+		}
+	} else if (result == PARSE_ERROR) {
+		int code = ctx.parser.getErrorCode();
+		ctx.res->setStatusCode(code);
+		ctx.res->setHeader("Content-Type", "text/html");
+		const std::string &reason = HttpStatus::getReason(code);
+		std::ostringstream oss;
+		oss << "<html><head><title>" << code << " " << reason
+			<< "</title></head>"
+			<< "<body><h1>" << code << " " << reason << "</h1></body></html>";
+		ctx.res->setBody(oss.str());
+	}
 }

@@ -3,6 +3,7 @@
 #include "../../Config/Config.hpp"
 #include "../../Http/Core/HttpRequest.hpp"
 #include "../../Http/Core/HttpResponse.hpp"
+#include "../../Http/Parser/RequestParser.hpp"
 #include "../../Session/Session.hpp"
 
 /**
@@ -15,7 +16,9 @@ struct PipelineContext {
 	const Config &conf;
 	Session *session;
     std::string recvBuffer;
-    std::string sendBuffer;  
+    std::string sendBuffer;
+	RequestParser parser;  
 
 	PipelineContext(HttpRequest *r, HttpResponse *s, const Config &c);
+	~PipelineContext();
 };

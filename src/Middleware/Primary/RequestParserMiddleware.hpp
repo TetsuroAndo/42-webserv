@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-class RequestPaserMiddleware : public IMiddleware {
+class RequestParserMiddleware : public IMiddleware {
 public:
     virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 

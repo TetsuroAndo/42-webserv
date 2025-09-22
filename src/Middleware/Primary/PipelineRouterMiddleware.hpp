@@ -10,6 +10,7 @@ class PipelineRouterMiddleware : public IMiddleware {
 public:
 	PipelineRouterMiddleware(const RouteMap &routes);
 	~PipelineRouterMiddleware();
+	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 
 private:
 	RouteMap _routes;

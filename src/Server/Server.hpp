@@ -1,35 +1,32 @@
-#ifndef SERVER_HPP
-#define SERVER_HPP
-
-#include <map>
+#pragma once
 
 #include "../Config/Config.hpp"
-#include "../Middleware/Core/PipelineContext.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
-#include "../Socket/Socket.hpp"
 #include "../SocketsManager/SocketsManager.hpp"
+#include "Client.hpp"
+#include <map>
 
 class Server {
 public:
 	Server();
 	Server(const Config &config);
-	Server(const Server &other);
 	~Server();
-	Server &operator=(const Server &other);
 
 	void run();
 
 private:
+	Server(const Server &other);
+	Server &operator=(const Server &other);
+
 	Config _config;
 	SocketsManager _manager;
-	std::map<int, Socket *> _sockets;
-	std::map<int, PipelineContext *> _contexts;
+	std::map<int, Socket *> _listenSockets;
+	std::map<int, Client *> _clients;
 	MiddlewareProcessor _mainProcessor;
 
+	void setupListenSockets();
 	void handleNewConnection(int listenFd);
 	void handleClientRead(int clientFd);
 	void handleClientWrite(int clientFd);
 	void closeConnection(int clientFd);
 };
-
-#endif
