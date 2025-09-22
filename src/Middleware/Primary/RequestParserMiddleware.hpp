@@ -7,6 +7,7 @@
 
 class RequestPaserMiddleware : public IMiddleware {
 public:
+    virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 
 private:
 

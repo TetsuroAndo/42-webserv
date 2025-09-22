@@ -1,11 +1,12 @@
 #pragma once
 
-#include "../Core/HttpRequest.hpp"
-#include "../Config/Config.hpp"
-#include "IMiddleware.hpp"
+#include "../../Http/Core/HttpRequest.hpp"
+#include "../../Config/Config.hpp"
 #include "PipelineContext.hpp"
 #include <string>
 #include <vector>
+
+class IMiddleware;
 
 class MiddlewareProcessor {
 public:

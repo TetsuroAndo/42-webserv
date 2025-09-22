@@ -5,6 +5,8 @@
 #include <unistd.h>
 
 #include "Server.hpp"
+#include "../Http/Parser/ParseResult.hpp"
+#include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 
 Server::Server() {
 	// Configから受け取ってセッティングできるように変更したい
@@ -40,6 +42,9 @@ Server::Server() {
 	sock->setListen();
 	_sockets[listenFd] = sock;
 	_manager.registerSocket(listenFd, EPOLLIN);
+
+    PipelineRouteBuilder builder;
+    builder.buildRoute(_config, &_mainProcessor);
 }
 
 Server::Server(const Config &config) : _config(config) {}
@@ -108,47 +113,35 @@ void Server::handleNewConnection(int listenFd) {
 
 	char ipStr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientAddr.sin_addr, ipStr, sizeof(ipStr));
+
+    HttpRequest *req = new HttpRequest();
+    HttpResponse *res = new HttpResponse("webserv");
+    PipelineContext *ctx = new PipelineContext(req, res, _config);
+    _contexts[clientFd] = ctx;
 }
 
 void Server::handleClientRead(int clientFd) {
-	Socket *sock = _sockets[clientFd];
-	char buffer[1024];
+    Socket *sock = _sockets[clientFd];
+    PipelineContext *ctx = _contexts[clientFd];
 
-	while (true) {
-		ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
-		if (bytesRead > 0) {
-			sock->appendRecvBuffer(buffer, bytesRead);
-		} else if (bytesRead == 0) {
-			closeConnection(clientFd);
-			return;
-		} else {
-			break;
-		}
-	}
-	ParseStatus status = sock->getRequest()->parse(sock->getRecvBuffer());
-	if (status == PARSE_COMPLETE) {
-		// debug用のパース結果出力、提出前に消す
-		sock->getRequest()->printData();
-		// レスポンスを作成するmethodに置き換える
-		{
-			sock->getResponse()->setStatusCode(200);
-			sock->getResponse()->setHeaders("Test-Header", "test-value");
-			sock->getResponse()->setResponseBody("Hello, World!");
-			sock->setSendBuffer(sock->getResponse()->getResponse());
-		}
-		_manager.modifySocket(clientFd, EPOLLOUT);
-	} else if (status == PARSE_ERROR) {
-		// debug用のパース結果出力、提出前に消す
-		sock->getRequest()->printData();
-		// レスポンスを作成するmethodに置き換える
-		{
-			sock->getResponse()->setStatusCode(sock->getRequest()->getError());
-			sock->getResponse()->setHeaders("Test-Header", "test-value");
-			sock->getResponse()->setResponseBody("invalid test");
-			sock->setSendBuffer(sock->getResponse()->getResponse());
-		}
-		_manager.modifySocket(clientFd, EPOLLOUT);
-	}
+    char buffer[1024];
+    while (true) {
+        ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+        if (bytesRead > 0) {
+            ctx->recvBuffer.append(buffer, bytesRead);
+        } else if (bytesRead == 0) {
+            closeConnection(clientFd);
+            return;
+        } else {
+            break;
+        }
+    }
+
+    _mainProcessor.handle(*ctx);
+    if (!ctx->sendBuffer.empty()) {
+        sock->setSendBuffer(ctx->sendBuffer);
+        _manager.modifySocket(clientFd, EPOLLOUT);
+    }
 }
 
 void Server::handleClientWrite(int clientFd) {
@@ -176,10 +169,17 @@ void Server::handleClientWrite(int clientFd) {
 
 void Server::closeConnection(int clientFd) {
 	_manager.unregisterSocket(clientFd);
-	std::map<int, Socket *>::iterator it = _sockets.find(clientFd);
-	if (it != _sockets.end()) {
-		delete it->second;
-		_sockets.erase(it);
+	std::map<int, Socket *>::iterator socketIt = _sockets.find(clientFd);
+	if (socketIt != _sockets.end()) {
+		delete socketIt->second;
+		_sockets.erase(socketIt);
 	}
+    std::map<int, PipelineContext *>::iterator ctxIt = _contexts.find(clientFd);
+    if (ctxIt != _contexts.end()) {
+        delete ctxIt->second->req;
+        delete ctxIt->second->res; 
+        delete ctxIt->second;
+        _contexts.erase(ctxIt);
+    }
 	close(clientFd);
 }
