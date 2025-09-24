@@ -6,12 +6,13 @@ class ISubHandler;
 
 class HandlerMiddleware : public IMiddleware {
   public:
-	HandlerMiddleware();
+	HandlerMiddleware(const std::map<std::string, ISubHandler*>& handlers);
 	~HandlerMiddleware();
 	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 
-  private:
-	ISubHandler *_staticFileHandler;
-	ISubHandler *_deleteHandler;
-	// ISubHandler *_cgiHandler;
+private:
+	std::map<std::string, ISubHandler*> _handlers;
+
+	HandlerMiddleware(const HandlerMiddleware&);
+	HandlerMiddleware& operator=(const HandlerMiddleware&);
 };
