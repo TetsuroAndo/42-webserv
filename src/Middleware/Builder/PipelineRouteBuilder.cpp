@@ -5,7 +5,7 @@
 #include "../Secondary/HandlerMiddleware.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../../Handler/DeleteHandler.hpp"
-// #include "../../Handler/CgiHandler.hpp" // 将来のCGI用
+// #include "../../Handler/CgiHandler.hpp" //
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 
@@ -16,14 +16,34 @@ PipelineRouteBuilder::~PipelineRouteBuilder() {
 }
 
 void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *mainProc) {
-	MiddlewareProcessor* staticProc = createStaticRouteProcessor(conf);
-	MiddlewareProcessor* deleteProc = createDeleteRouteProcessor(conf);
-	// MiddlewareProcessor* cgiProc = createCgiRouteProcessor(conf);
-
 	RouteMap routes;
-	routes["/uploads"] = deleteProc; // /uploads は専用のdeleteProcが処理
-	routes["/"] = staticProc;        // /uploads に一致しなかったものは全てstaticProcが処理
-	// routes["/cgi-bin"] = cgiProc;
+	const std::vector<Location>& locations = conf.getLocations();
+
+	for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		const Location &currentLoc = *it;
+
+		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
+		_createdProcessors.push_back(routeProcessor);
+
+		std::map<std::string, ISubHandler*> handlers;
+
+		if (currentLoc.allowedMethods.count("GET")) {
+			handlers["GET"] = new StaticFileHandler( /* TODO: Implement location config for GET */ );
+		}
+		if (currentLoc.allowedMethods.count("HEAD")) {
+			handlers["HEAD"] = new StaticFileHandler( /* TODO: Implement HEAD method */ );
+		}
+		// if (currentLoc.allowedMethods.count("POST")) {
+		// 	handlers["POST"] = new CgiHandler(currentLoc.cgiConf);
+		// }
+		if (currentLoc.allowedMethods.count("DELETE")) {
+			handlers["DELETE"] = new DeleteHandler();
+		}
+		if (!handlers.empty()) {
+			routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
+		}
+		routes[currentLoc.path] = routeProcessor;
+	}
 
 	mainProc->addMiddleware(new RequestParserMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
