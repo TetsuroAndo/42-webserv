@@ -46,13 +46,13 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	std::string bestMatchPath;
 	std::string root;
 
-	const std::vector<Location> &locations = config.getLocations();
-	for (std::vector<Location>::const_iterator it = locations.begin();
+	const std::map<std::string, Location> &locations = config.getLocations();
+	for (std::map<std::string, Location>::const_iterator it = locations.begin();
 		 it != locations.end(); ++it) {
-		if (requestPath.rfind(it->path, 0) == 0) {
-			if (it->path.length() > bestMatchPath.length()) {
-				bestMatchPath = it->path;
-				root = it->root;
+		if (requestPath.rfind(it->first, 0) == 0) {
+			if (it->first.length() > bestMatchPath.length()) {
+				bestMatchPath = it->first;
+				root = it->second.root;
 			}
 		}
 	}

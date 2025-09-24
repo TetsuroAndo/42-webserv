@@ -102,14 +102,14 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req, const Config &con
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
-		std::string indexPath = filePath + "/" + config.getWhenRequestedDirectory();
+		std::string indexPath = filePath + "/" + config.getLocation("/").indexFile;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode)) {
 			filePath = indexPath;
 			pathStat = indexStat;
 		} else {
-			if (config.getIsShowDirectoryListPage()) {
+			if (config.getLocation("/").autoindex) {
 				generateDirectoryListing(res, filePath, req.getPath());
 			} else {
 				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);

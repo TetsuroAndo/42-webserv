@@ -18,10 +18,10 @@ PipelineRouteBuilder::~PipelineRouteBuilder() {
 
 void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *mainProc) {
 	RouteMap routes;
-	const std::vector<Location>& locations = conf.getLocations();
+	const std::map<std::string, Location>& locations = conf.getLocations();
 
-	for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
-		const Location &currentLocation = *it;
+	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		const Location &currentLocation = it->second;
 		std::map<std::string, ISubHandler*> handlers;
 
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
