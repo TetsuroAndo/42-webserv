@@ -3,41 +3,41 @@
 #include <vector>
 
 PipelineRouterMiddleware::PipelineRouterMiddleware(const RouteMap &routes)
-    : _routes(routes) {}
+	: _routes(routes) {}
 
 PipelineRouterMiddleware::~PipelineRouterMiddleware() {
 }
 
 struct CompareRoutes {
-    bool operator()(const std::pair<std::string, MiddlewareProcessor*>& a,
-                    const std::pair<std::string, MiddlewareProcessor*>& b) const {
-        return a.first.length() > b.first.length();
-    }
+	bool operator()(const std::pair<std::string, MiddlewareProcessor*>& a,
+					const std::pair<std::string, MiddlewareProcessor*>& b) const {
+		return a.first.length() > b.first.length();
+	}
 };
 
 void PipelineRouterMiddleware::handle(PipelineContext &ctx, MiddlewareProcessor *proc) {
-    std::string requestPath = ctx.req->getPath();
-    MiddlewareProcessor *nextProcessor = 0;
+	std::string requestPath = ctx.req->getPath();
+	MiddlewareProcessor *nextProcessor = 0;
 
-    std::vector<std::pair<std::string, MiddlewareProcessor*> > sortedRoutes;
+	std::vector<std::pair<std::string, MiddlewareProcessor*> > sortedRoutes;
 
-    for (RouteMap::const_iterator it = _routes.begin(); it != _routes.end(); ++it) {
-        sortedRoutes.push_back(*it);
-    }
+	for (RouteMap::const_iterator it = _routes.begin(); it != _routes.end(); ++it) {
+		sortedRoutes.push_back(*it);
+	}
 
-    std::sort(sortedRoutes.begin(), sortedRoutes.end(), CompareRoutes());
+	std::sort(sortedRoutes.begin(), sortedRoutes.end(), CompareRoutes());
 
-    for (std::vector<std::pair<std::string, MiddlewareProcessor*> >::const_iterator it = sortedRoutes.begin(); it != sortedRoutes.end(); ++it) {
-        const std::string& routeKey = it->first;
-        if (requestPath.rfind(routeKey, 0) == 0) {
-            nextProcessor = it->second;
-            break;
-        }
-    }
+	for (std::vector<std::pair<std::string, MiddlewareProcessor*> >::const_iterator it = sortedRoutes.begin(); it != sortedRoutes.end(); ++it) {
+		const std::string& routeKey = it->first;
+		if (requestPath.rfind(routeKey, 0) == 0) {
+			nextProcessor = it->second;
+			break;
+		}
+	}
 
-    if (nextProcessor != 0) {
-        nextProcessor->handle(ctx);
-    } else {
-        proc->next(ctx);
-    }
+	if (nextProcessor != 0) {
+		nextProcessor->handle(ctx);
+	} else {
+		proc->next(ctx);
+	}
 }

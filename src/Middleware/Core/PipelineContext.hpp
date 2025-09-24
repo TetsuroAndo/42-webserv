@@ -15,9 +15,9 @@ struct PipelineContext {
 	HttpResponse *res;
 	const Config &conf;
 	Session *session;
-    std::string recvBuffer;
-    std::string sendBuffer;
-	RequestParser parser;  
+	std::string recvBuffer;
+	std::string sendBuffer;
+	RequestParser parser;
 
 	PipelineContext(HttpRequest *r, HttpResponse *s, const Config &c);
 	~PipelineContext();

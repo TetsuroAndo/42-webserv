@@ -20,9 +20,9 @@ std::string getRealPath(const char *path) {
 }
 
 std::string toString(int value) {
-    char buffer[32];
-    std::sprintf(buffer, "%d", value);
-    return std::string(buffer);
+	char buffer[32];
+	std::sprintf(buffer, "%d", value);
+	return std::string(buffer);
 }
 
 void generateErrorBody(HttpResponse &res, int code) {
