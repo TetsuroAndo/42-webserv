@@ -3,6 +3,7 @@
 #include "../Primary/PipelineRouterMiddleware.hpp"
 #include "../Primary/RequestParserMiddleware.hpp"
 #include "../Secondary/HandlerMiddleware.hpp"
+#include "../Secondary/SessionMiddleware.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../../Handler/DeleteHandler.hpp"
 // #include "../../Handler/CgiHandler.hpp"
@@ -25,6 +26,10 @@ void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *m
 
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
+
+		if (!currentLocation.allowedMethods.empty()) {
+			routeProcessor->addMiddleware(new SessionMiddleware( /* TODO: Implement SessionMiddleware */ ));
+		}
 
 		if (currentLocation.allowedMethods.count("GET")) {
 			handlers["GET"] = new StaticFileHandler( /* TODO: Implement location config for GET */ );
