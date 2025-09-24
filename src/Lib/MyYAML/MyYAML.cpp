@@ -258,17 +258,24 @@ void MyYAML::NewParseYaml(std::string buf) {
 	if ('\n' == *it) {
 		++it;
 	}
-	std::string prevKey = "";
 	std::stack<int> prevIndent;
 	prevIndent.push(0);
 	std::stack<Node> nodeChain;
 	MyYamlState nowState = MyYamlState_NONE;
-	MyYamlState prevState = MyYamlState_NONE;
-	for (; it != endIt; ++it) {
-		std::string::const_iterator lineStart = it;
-		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
-		std::string line(lineStart, lineEnd);
-		it = lineEnd;
+	std::stack<MyYamlState> prevStates;
+
+	std::vector<std::string> lines;
+	{
+		std::istringstream iss(buf);
+		std::string l;
+		while (std::getline(iss, l)) {
+			lines.push_back(l);
+		}
+	}
+
+	
+	for (size_t idx = 0; idx < lines.size(); ++idx) {
+		std::string line = lines[idx];
 		// コメント行・空行
 		if (line.empty() || isOnlyCharLine(line, '#')) {
 			continue;
@@ -276,6 +283,7 @@ void MyYAML::NewParseYaml(std::string buf) {
 		// TODO: ここに書く
 		// インデントの数を数える
 		int nowIndent = startCharCount(line, ' ');
+
 		// 行の種類特定
 		if (isOnlyCharLine(line, '-')) {
 			line = extractListValue(line);
@@ -289,42 +297,55 @@ void MyYAML::NewParseYaml(std::string buf) {
 		// 前回のステートと変化がある場合はインデントの数をprevと比較して正しいかをみる
 		if (prevIndent.top() == nowIndent) {
 			// インデントに変化がない時に、typeは同じであることを期待
-			if (prevState != nowState) {
+			if (prevStates.top() != nowState) {
 				throw InvalidFormat();
 			}
 		} else {
 			// 増えたか減ったかで動作を変える
 			if (prevIndent.top() < nowIndent) {
 				// 階層が深くなった
-				// nodeChainにノードを増やす
+				// スタックに乗せる
+				prevIndent.push(nowIndent);
+				prevStates.push(nowState);
 			} else {
 				// 階層が浅くなった
-				prevIndent.pop();
+				// nodeChainのtopを終端処理する
+				nodeChain.top().terminateNode();
+
+				// インデントの階層が揃うか、Stackが残り一個になるまでpopする
+				while (1 < prevIndent.size() && prevIndent.top() == nowIndent) {
+					prevIndent.pop();
+					prevStates.pop();
+					nodeChain.pop();
+				}
 				const int expectedIndent = prevIndent.top();
-				if (expectedIndent != nowIndent) {
+				// 検証
+				if (expectedIndent != nowIndent || prevStates.top() != nowState) {
 					throw InvalidFormat();
 				}
-				// インデントが少なくなったタイミングでは、nodeChainのtopを終端処理する
-				nodeChain.top().terminateNode();
-				nodeChain.pop();
 			}
-			prevIndent.push(nowIndent);
 		}
+
 		// 大丈夫ならデータをしまう
-		Node tmpNew(NODE_SEQ, "kokoni key", "kokoni value");
+		Node newNode(NODE_SEQ, key, value);
 		switch (nowState) {
 			case MyYamlState_SEQ:
-			tmpNew.setType(NODE_SEQ);
-			nodeChain.push(tmpNew);
+			newNode.setType(NODE_SEQ);
 			break;
 			case MyYamlState_MAP:
-			tmpNew.setType(NODE_MAP);
-			nodeChain.push(tmpNew);
+			newNode.setType(NODE_MAP);
 			break;
 			default:
 				throw InvalidFormat();
 		}
-		prevState = nowState;
+		nodeChain.top().push(&newNode);
 
+		// 次インデントが増える場合はnodeChainにもtmpNodeを追加する
+		if (idx < lines.size() - 1) {
+			int nextIndent = startCharCount(lines[idx + 1], ' ');
+			if (nowIndent < nextIndent) {
+				nodeChain.push(newNode);
+			}
+		}
 	}
 }
