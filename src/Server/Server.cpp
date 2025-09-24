@@ -10,23 +10,21 @@
 
 Server::Server() : _config(Config()) {
 	setupListenSockets();
-	PipelineRouteBuilder builder;
-	builder.buildRoute(_config, &_mainProcessor);
+	_builder.buildRoute(_config, &_mainProcessor);
 }
 
 Server::Server(const Config &config) : _config(config) {
 	setupListenSockets();
-	PipelineRouteBuilder builder;
-	builder.buildRoute(_config, &_mainProcessor);
+	_builder.buildRoute(_config, &_mainProcessor);
 }
 
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin();
-		 it != _clients.end(); ++it) {
+		it != _clients.end(); ++it) {
 		delete it->second;
 	}
 	for (std::map<int, Socket *>::iterator it = _listenSockets.begin();
-		 it != _listenSockets.end(); ++it) {
+		it != _listenSockets.end(); ++it) {
 		delete it->second;
 	}
 }
