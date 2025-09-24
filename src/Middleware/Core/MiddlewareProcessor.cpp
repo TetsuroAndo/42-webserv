@@ -5,14 +5,14 @@
 MiddlewareProcessor::MiddlewareProcessor() : _currentIndex(0) {}
 
 MiddlewareProcessor::~MiddlewareProcessor() {
-	for (size_t i = 0; i < _middlewares.size(); ++i) {
-		delete _middlewares[i];
+	for (size_t i = 0; i < _middlewareChain.size(); ++i) {
+		delete _middlewareChain[i];
 	}
-	_middlewares.clear();
+	_middlewareChain.clear();
 }
 
 void MiddlewareProcessor::addMiddleware(IMiddleware *middleware) {
-	_middlewares.push_back(middleware);
+	_middlewareChain.push_back(middleware);
 }
 
 // 処理パイプラインを開始
@@ -23,11 +23,10 @@ void MiddlewareProcessor::handle(PipelineContext &ctx) {
 
 /**
  * @brief 次のミドルウェアを呼び出す
- *
 */
 void MiddlewareProcessor::next(PipelineContext &ctx) {
-	if (_currentIndex < _middlewares.size()) {
-		IMiddleware *currentMiddleware = _middlewares[_currentIndex];
+	if (_currentIndex < _middlewareChain.size()) {
+		IMiddleware *currentMiddleware = _middlewareChain[_currentIndex];
 		++_currentIndex;
 		currentMiddleware->handle(ctx, this);
 	}
