@@ -20,29 +20,29 @@ void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *m
 	const std::vector<Location>& locations = conf.getLocations();
 
 	for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
-		const Location &currentLoc = *it;
+		const Location &currentLocation = *it;
 
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
 
 		std::map<std::string, ISubHandler*> handlers;
 
-		if (currentLoc.allowedMethods.count("GET")) {
+		if (currentLocation.allowedMethods.count("GET")) {
 			handlers["GET"] = new StaticFileHandler( /* TODO: Implement location config for GET */ );
 		}
-		if (currentLoc.allowedMethods.count("HEAD")) {
+		if (currentLocation.allowedMethods.count("HEAD")) {
 			handlers["HEAD"] = new StaticFileHandler( /* TODO: Implement HEAD method */ );
 		}
-		// if (currentLoc.allowedMethods.count("POST")) {
-		// 	handlers["POST"] = new CgiHandler(currentLoc.cgiConf);
+		// if (currentLocation.allowedMethods.count("POST")) {
+		// 	handlers["POST"] = new CgiHandler(currentLocation.cgiConf);
 		// }
-		if (currentLoc.allowedMethods.count("DELETE")) {
+		if (currentLocation.allowedMethods.count("DELETE")) {
 			handlers["DELETE"] = new DeleteHandler();
 		}
 		if (!handlers.empty()) {
 			routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
 		}
-		routes[currentLoc.path] = routeProcessor;
+		routes[currentLocation.path] = routeProcessor;
 	}
 
 	mainProc->addMiddleware(new RequestParserMiddleware());
