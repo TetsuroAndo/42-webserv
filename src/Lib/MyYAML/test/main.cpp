@@ -5,9 +5,9 @@
 int main() {
 	try {
 		const MyYAML *yaml = new MyYAML("test.yaml"); // テスト用YAMLファイル
-		if (yaml->data) {
-			yaml->data->print(0); // ノード構造を表示
-			std::cout << yaml->data->size() << std::endl;
+		if (yaml->_data) {
+			yaml->_data->print(0); // ノード構造を表示
+			std::cout << yaml->_data->size() << std::endl;
 		} else {
 			std::cout << "data is null" << std::endl;
 		}

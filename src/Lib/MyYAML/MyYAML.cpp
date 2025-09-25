@@ -142,7 +142,7 @@ static bool endsWith(const std::string &s, const std::string &suffix) {
 }
 
 MyYAML::MyYAML(const std::string &filepath) {
-	data = NULL;
+	_data = NULL;
 	const std::string extension(".yaml");
 	if (endsWith(filepath, extension) == false) {
 		throw std::invalid_argument(
@@ -153,13 +153,13 @@ MyYAML::MyYAML(const std::string &filepath) {
 }
 
 MyYAML::~MyYAML() {
-	if (data != NULL) {
-		delete data;
+	if (_data != NULL) {
+		delete _data;
 	}
 }
 
 Node MyYAML::getData() const {
-	return *data;
+	return *_data;
 }
 
 void MyYAML::parseYaml(std::string buf) {
@@ -293,5 +293,5 @@ void MyYAML::parseYaml(std::string buf) {
 			throw std::runtime_error("Invalid format");
 		}
 	}
-	data = rootNode;
+	_data = rootNode;
 }

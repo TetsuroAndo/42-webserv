@@ -34,7 +34,7 @@ public:
 
 	Node getData() const;
 
-	Node *data;
 private:
+	Node *_data;
 	void parseYaml(std::string buf);
 };
