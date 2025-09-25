@@ -85,7 +85,8 @@ void Node::push(Node *node) {
 		_childNodeType = node->getType();
 	}
 
-	switch (int type = _childNodeType) {
+	const int type = _childNodeType;
+	switch (type) {
 	case NODE_VAL:
 		throw std::runtime_error("Can't push to value node");
 	case NODE_SEQ:
