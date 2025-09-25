@@ -274,7 +274,6 @@ void MyYAML::parseYaml(std::string buf) {
 			if (nowIndent < nextIndent) {
 				// valueがあった場合はエラー
 				if (isEndSeparator(line) == false) {
-					std::cerr << line << std::endl;
 					delete rootNode;
 					throwInvalidFormat(idx);
 				}
