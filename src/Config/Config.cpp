@@ -144,16 +144,16 @@ void Config::setup(const std::string &configFile) {
 
 	// --- Redirects ---
 	Redirect r1;
-	r1.from_path = "/old";
-	r1.to_url = "/new";
+	r1.fromPath = "/old";
+	r1.toUrl = "/new";
 	r1.code = 301;
-	_redirects[r1.from_path] = r1;
+	_redirects[r1.fromPath] = r1;
 
 	Redirect r2;
-	r2.from_path = "/";
-	r2.to_url = "/tmp/www/index.html";
+	r2.fromPath = "/";
+	r2.toUrl = "/tmp/www/index.html";
 	r2.code = 302;
-	_redirects[r2.from_path] = r2;
+	_redirects[r2.fromPath] = r2;
 
 	// --- Locations ---
 	Location defaultLoc;
@@ -234,7 +234,7 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 
 	os << "  redirects:\n";
 	for (std::map<std::string, Redirect>::const_iterator it = config._redirects.begin(); it != config._redirects.end(); ++it) {
-		os << "    - from: " << it->second.from_path << ", to: " << it->second.to_url << ", code: " << it->second.code << "\n";
+		os << "    - from: " << it->second.fromPath << ", to: " << it->second.toUrl << ", code: " << it->second.code << "\n";
 	}
 
 	os << "  locations:\n";

@@ -6,16 +6,16 @@
 #include <sstream>
 #include <stdexcept>
 
-unsigned char _parseHexByte(const std::string &str, std::size_t pos) {
+unsigned char URI::_parseHexByte(const std::string &str, std::size_t pos) {
 	if (pos + 2 >= str.length()) {
 		throw std::invalid_argument("URIError: malformed URI sequence");
 	}
 
-	std::string hex_val = str.substr(pos + 1, 2);
-	std::istringstream iss(hex_val);
+	std::string hexVal = str.substr(pos + 1, 2);
+	std::istringstream iss(hexVal);
 	int v = 0;
 
-	if (hex_val.find_first_not_of("0123456789abcdefABCDEF") !=
+	if (hexVal.find_first_not_of("0123456789abcdefABCDEF") !=
 		std::string::npos) {
 		throw std::invalid_argument("URIError: malformed URI sequence");
 	}
@@ -51,15 +51,15 @@ std::string URI::decodeURI(const std::string &str) {
 			}
 
 			// UTF-8 のマルチバイト長を判定
-			std::size_t expected_cont = 0;
+			std::size_t expectedCont = 0;
 			if ((first & 0x80) == 0x00) { // 1-byte sequence (ASCII)
-				expected_cont = 0;
+				expectedCont = 0;
 			} else if ((first & 0xE0) == 0xC0) { // 2-byte sequence
-				expected_cont = 1;
+				expectedCont = 1;
 			} else if ((first & 0xF0) == 0xE0) { // 3-byte sequence
-				expected_cont = 2;
+				expectedCont = 2;
 			} else if ((first & 0xF8) == 0xF0) { // 4-byte sequence
-				expected_cont = 3;
+				expectedCont = 3;
 			} else { // 不正な開始バイト
 				throw std::invalid_argument("URIError: malformed URI sequence");
 			}
@@ -68,7 +68,7 @@ std::string URI::decodeURI(const std::string &str) {
 			bytes += static_cast<char>(first);
 
 			// 続行バイトを検証
-			for (std::size_t k = 0; k < expected_cont; ++k) {
+			for (std::size_t k = 0; k < expectedCont; ++k) {
 				std::size_t pos = i + 3 * (k + 1);
 				if (pos >= str.length() || str[pos] != '%') {
 					throw std::invalid_argument(
@@ -82,7 +82,7 @@ std::string URI::decodeURI(const std::string &str) {
 				bytes += static_cast<char>(cont);
 			}
 			decoded << bytes;
-			i += 2 + expected_cont * 3;
+			i += 2 + expectedCont * 3;
 		} else {
 			decoded << str[i];
 		}

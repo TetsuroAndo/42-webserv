@@ -34,8 +34,22 @@ public:
 	const std::string &getBody() const;
 	void setBody(const std::string &body);
 
-	// 内部状態をリセット
 	void clear();
+
+	HttpResponse(const HttpResponse &other)
+		: _serverName(other._serverName), _statusCode(other._statusCode),
+		  _version(other._version), _headers(other._headers), _body(other._body) {}
+
+	HttpResponse &operator=(const HttpResponse &other) {
+		if (this != &other) {
+			_serverName = other._serverName;
+			_statusCode = other._statusCode;
+			_version = other._version;
+			_headers = other._headers;
+			_body = other._body;
+		}
+		return *this;
+	}
 
 private:
 	std::string _serverName;
@@ -45,8 +59,6 @@ private:
 	std::string _body;
 
 	HttpResponse();
-	HttpResponse(const HttpResponse&);
-	HttpResponse& operator=(const HttpResponse&);
 };
 
 #endif
