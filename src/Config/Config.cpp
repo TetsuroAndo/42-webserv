@@ -1,165 +1,261 @@
 #include "Config.hpp"
-#include "../Lib/MyYAML/MyYAML.hpp"
-
+#include <algorithm>
 #include <iostream>
-#include <ostream>
-#include <string>
+#include <sstream>
+#include <stdexcept>
 
-void Config::setListens(const std::vector<Listen> &lists) {
-	this->_listens = lists;
+/* ********************* Private Setters ********************* */
+void Config::setRoot(const std::string &root, const std::string &locationKey) {
+	_locations[locationKey].root = root;
 }
 
-void Config::setDefaultErrorPage(const std::string &page) {
-	this->_defaultErrorPage = page;
+void Config::setAutoindex(const bool autoindex, const std::string &locationKey) {
+	_locations[locationKey].autoindex = autoindex;
+}
+
+void Config::setIndexFile(const std::string &indexFile, const std::string &locationKey) {
+	_locations[locationKey].indexFile = indexFile;
+}
+
+void Config::setErrorFile(const std::string &errorFile, const std::string &locationKey) {
+	_locations[locationKey].errorFile = errorFile;
+}
+
+void Config::setUploadStore(const std::string &uploadStore, const std::string &locationKey) {
+	_locations[locationKey].uploadStore = uploadStore;
+}
+
+void Config::setCgiConf(const std::string &extension, const std::string &interpreterPath, const std::string &locationKey) {
+	_locations[locationKey].cgiConf[extension] = interpreterPath;
+}
+
+void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
+	if (allow) _locations[locationKey].allowedMethods.insert("GET");
+	else _locations[locationKey].allowedMethods.erase("GET");
+}
+
+void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
+	if (allow) _locations[locationKey].allowedMethods.insert("HEAD");
+	else _locations[locationKey].allowedMethods.erase("HEAD");
+}
+
+void Config::setIsAllowPost(const bool allow, const std::string &locationKey) {
+	if (allow) _locations[locationKey].allowedMethods.insert("POST");
+	else _locations[locationKey].allowedMethods.erase("POST");
+}
+
+void Config::setIsAllowDelete(const bool allow, const std::string &locationKey) {
+	if (allow) _locations[locationKey].allowedMethods.insert("DELETE");
+	else _locations[locationKey].allowedMethods.erase("DELETE");
+}
+
+void Config::setAllowedMethods(const std::string &methods, const std::string &locationKey) {
+	std::set<std::string> methodSet;
+	std::stringstream ss(methods);
+	std::string method;
+	while (ss >> method) {
+		methodSet.insert(method);
+	}
+	_locations[locationKey].allowedMethods = methodSet;
+}
+
+void Config::setAllowedMethods(const std::set<std::string> &methods, const std::string &locationKey) {
+	_locations[locationKey].allowedMethods = methods;
+}
+
+void Config::setListens(const std::vector<Listen> &lists) {
+	_listens = lists;
+}
+
+void Config::setRedirects(const std::map<std::string, Redirect> &redirects) {
+	_redirects = redirects;
+}
+
+void Config::setRedirect(const Redirect &redirect, const std::string &redirectKey) {
+	_redirects[redirectKey] = redirect;
+}
+
+void Config::setLocations(const std::map<std::string, Location> &locations) {
+	_locations = locations;
+}
+
+void Config::setLocation(const Location &location, const std::string &locationKey) {
+	_locations[locationKey] = location;
 }
 
 void Config::setMaxRequestBodySize(unsigned int size) {
-	this->_maxRequestBodySize = size;
+	_maxRequestBodySize = size;
 }
 
-void Config::setIsAllowGet(bool allow) { this->_isAllowGet = allow; }
+void Config::setTimeoutSec(unsigned int sec) {
+	_timeoutSec = sec;
+}
 
-void Config::setIsAllowPost(bool allow) { this->_isAllowPost = allow; }
+void Config::setMaxEvents(unsigned int maxEvents) {
+	_maxEvents = maxEvents;
+}
 
-void Config::setIsAllowHead(bool allow) { this->_isAllowHead = allow; }
-void Config::setIsAllowDelete(bool allow) { this->_isAllowDelete = allow; }
-void Config::setRedirect(const std::string &url) {
-	this->_redirect = url;
-}
-void Config::setLocations(const std::vector<Location> &url) {
-	this->_locations = url;
-}
-void Config::setIsShowDirectoryListPage(bool show) {
-	this->_isShowDirectoryListPage = show;
-}
-void Config::setWhenRequestedDirectory(const std::string &dir) {
-	this->_whenRequestedDirectory = dir;
-}
-void Config::setSaveFileDirectory(const std::string &dir) {
-	this->_saveFileDirectory = dir;
+/* ********************* Orthodox Canonical Form ********************* */
+Config::Config() {
+	_listens.clear();
+	_redirects.clear();
+	_locations.clear();
+	setup();
 }
 
 Config::Config(const std::string &configFile) {
 	setup(configFile);
 }
 
-Config::~Config() {}
 Config::Config(const Config &other)
-	: _listens(other._listens), _defaultErrorPage(other._defaultErrorPage),
+	: _listens(other._listens), _redirects(other._redirects),
+	  _locations(other._locations),
 	  _maxRequestBodySize(other._maxRequestBodySize),
-	  _isAllowGet(other._isAllowGet), _isAllowPost(other._isAllowPost),
-	  _isAllowHead(other._isAllowHead), _isAllowDelete(other._isAllowDelete),
-	  _redirect(other._redirect), _locations(other._locations),
-	  _isShowDirectoryListPage(other._isShowDirectoryListPage),
-	  _whenRequestedDirectory(other._whenRequestedDirectory),
-	  _saveFileDirectory(other._saveFileDirectory), _timeoutSec(other._timeoutSec),
-	  _maxEvents(other._maxEvents) {}
+	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
+	  _isShowDirectoryListPage(false) {
+}
+
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
 		_listens = other._listens;
-		_defaultErrorPage = other._defaultErrorPage;
-		_maxRequestBodySize = other._maxRequestBodySize;
-		_isAllowGet = other._isAllowGet;
-		_isAllowPost = other._isAllowPost;
-		_isAllowHead = other._isAllowHead;
-		_isAllowDelete = other._isAllowDelete;
-		_redirect = other._redirect;
+		_redirects = other._redirects;
 		_locations = other._locations;
-		_isShowDirectoryListPage = other._isShowDirectoryListPage;
-		_whenRequestedDirectory = other._whenRequestedDirectory;
-		_saveFileDirectory = other._saveFileDirectory;
+		_maxRequestBodySize = other._maxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
 	}
 	return *this;
 }
+
+Config::~Config() {}
+
+/* ********************* Setup method ********************* */
 void Config::setup(const std::string &configFile) {
-	MyYAML input(configFile);
+	(void)configFile; // TODO: Implement actual file parsing
 
-	_listens.clear();
-	{
-		Listen l1;
-		l1.interface = "0.0.0.0";
-		l1.port = 8080;
-		_listens.push_back(l1);
+	// --- Listens ---
+	Listen l1;
+	l1.interface = "0.0.0.0";
+	l1.port = 8080;
+	_listens.push_back(l1);
 
-		Listen l2;
-		l2.interface = "127.0.0.1";
-		l2.port = 3000;
-		_listens.push_back(l2);
-	}
+	Listen l2;
+	l2.interface = "127.0.0.1";
+	l2.port = 3000;
+	_listens.push_back(l2);
 
-	_defaultErrorPage = "/tmp/www/error.html";
+	// --- Redirects ---
+	Redirect r1;
+	r1.fromPath = "/old";
+	r1.toUrl = "/new";
+	r1.code = 301;
+	_redirects[r1.fromPath] = r1;
+
+	Redirect r2;
+	r2.fromPath = "/";
+	r2.toUrl = "/tmp/www/index.html";
+	r2.code = 302;
+	_redirects[r2.fromPath] = r2;
+
+	// --- Locations ---
+	Location defaultLoc;
+	defaultLoc.path = "/";
+	defaultLoc.root = "/tmp/www";
+	defaultLoc.errorFile = "/tmp/www/error.html";
+	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.indexFile = "/tmp/www/index.html";
+	defaultLoc.autoindex = true;
+	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("POST");
+	_locations[defaultLoc.path] = defaultLoc;
+	setIsAllowHead(true, defaultLoc.path);
+	setIsAllowDelete(true);
+
+	Location uploadsLoc = _locations[defaultLoc.path];
+	uploadsLoc.path = "/uploads";
+	_locations[uploadsLoc.path] = uploadsLoc;
+	setRoot("/tmp/uploads", uploadsLoc.path);
+
 	_maxRequestBodySize = 1024 * 1024; // 1MB
-	_isAllowGet = true;
-	_isAllowPost = true;
-	_isAllowHead = true;
-	_isAllowDelete = true;
-	_redirect = "";
-
-	_locations.clear();
-	{
-		Location loc1;
-		loc1.path = "/";
-		loc1.root = "/tmp/www";
-		_locations.push_back(loc1);
-
-		Location loc2;
-		loc2.path = "/uploads";
-		loc2.root = "/tmp/uploads";
-		_locations.push_back(loc2);
-	}
-
-	_isShowDirectoryListPage = true;
-	_whenRequestedDirectory = "index.html";
-	_saveFileDirectory = "/tmp/uploads";
-	_timeoutSec = 5;
+	_timeoutSec = 60;
 	_maxEvents = 1024;
 }
+
+/* ********************* Public Getters ********************* */
 const std::vector<Listen> &Config::getListens() const { return _listens; }
-const std::string &Config::getDefaultErrorPage() const {
-	return _defaultErrorPage;
+
+const std::map<std::string, Redirect> &Config::getRedirects() const {
+	return _redirects;
 }
 
-unsigned int Config::getMaxRequestBodySize() const {
-	return _maxRequestBodySize;
+const Redirect &Config::getRedirect(const std::string &path) const {
+	return _redirects.at(path);
 }
-bool Config::getIsAllowGet() const { return _isAllowGet; }
-bool Config::getIsAllowPost() const { return _isAllowPost; }
-bool Config::getIsAllowHead() const { return _isAllowHead; }
-bool Config::getIsAllowDelete() const { return _isAllowDelete; }
-const std::string &Config::getRedirect() const { return _redirect; }
-const std::vector<Location> &Config::getLocations() const { return _locations; }
-bool Config::getIsShowDirectoryListPage() const {
-	return _isShowDirectoryListPage;
+
+const std::map<std::string, Location> &Config::getLocations() const {
+	return _locations;
 }
-const std::string &Config::getWhenRequestedDirectory() const {
-	return _whenRequestedDirectory;
+
+const Location &Config::getLocation(const std::string &path) const {
+	std::string bestMatchKey = "";
+
+	for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
+		const std::string& locPath = it->first;
+		if (path.rfind(locPath, 0) == 0) {
+			if (locPath.length() > bestMatchKey.length()) {
+				bestMatchKey = locPath;
+			}
+		}
+	}
+	if (!bestMatchKey.empty()) {
+		std::map<std::string, Location>::const_iterator it = _locations.find(bestMatchKey);
+		return it->second;
+	}
+	std::map<std::string, Location>::const_iterator it = _locations.find("/");
+	if (it != _locations.end()) {
+		return it->second;
+	}
+	throw std::runtime_error("Default location '/' not found in configuration.");
 }
-const std::string &Config::getSaveFileDirectory() const {
-	return _saveFileDirectory;
-}
+
+unsigned int Config::getMaxRequestBodySize() const { return _maxRequestBodySize; }
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
+/* ********************* Friend Stream Operator ********************* */
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
+	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
+	os << "  timeoutSec: " << config._timeoutSec << "\n";
+	os << "  maxEvents: " << config._maxEvents << "\n";
+
 	os << "  listens:\n";
-	for (std::vector<Listen>::const_iterator it = config._listens.begin();
-		 it != config._listens.end(); ++it) {
+	for (std::vector<Listen>::const_iterator it = config._listens.begin(); it != config._listens.end(); ++it) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
-	os << "  defaultErrorPage: " << config._defaultErrorPage << "\n";
-	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
-	os << "  isAllowGet: " << config._isAllowGet << "\n";
-	os << "  isAllowPost: " << config._isAllowPost << "\n";
-	os << "  isAllowHead: " << config._isAllowHead << "\n";
-	os << "  isAllowDelete: " << config._isAllowDelete << "\n";
-	os << "  redirect: " << config._redirect << "\n";
+
+	os << "  redirects:\n";
+	for (std::map<std::string, Redirect>::const_iterator it = config._redirects.begin(); it != config._redirects.end(); ++it) {
+		os << "    - from: " << it->second.fromPath << ", to: " << it->second.toUrl << ", code: " << it->second.code << "\n";
+	}
+
 	os << "  locations:\n";
-	for (std::vector<Location>::const_iterator it = config._locations.begin();
-		 it != config._locations.end(); ++it) {
-		os << "    - path: " << it->path << ", root: " << it->root << "\n";
+	for (std::map<std::string, Location>::const_iterator it = config._locations.begin(); it != config._locations.end(); ++it) {
+		os << "  - path: " << it->second.path << "\n";
+		os << "      root: " << it->second.root << "\n";
+		os << "      allowedMethods: ";
+		for (std::set<std::string>::const_iterator mit = it->second.allowedMethods.begin(); mit != it->second.allowedMethods.end(); ++mit) {
+			os << *mit << " ";
+		}
+		os << "\n";
+		os << "      autoindex: " << (it->second.autoindex ? "on" : "off") << "\n";
+		os << "      indexFile: " << it->second.indexFile << "\n";
+		os << "      errorFile: " << it->second.errorFile << "\n";
+		os << "      uploadStore: " << it->second.uploadStore << "\n";
+		os << "      cgiConf:\n";
+		for (std::map<std::string, std::string>::const_iterator cit = it->second.cgiConf.begin(); cit != it->second.cgiConf.end(); ++cit) {
+			os << "        " << cit->first << ": " << cit->second << "\n";
+		}
 	}
 	os << "  isShowDirectoryListPage: " << config._isShowDirectoryListPage
 	   << "\n";
