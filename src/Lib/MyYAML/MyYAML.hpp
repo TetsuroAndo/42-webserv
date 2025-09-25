@@ -18,12 +18,6 @@ public:
 
 	~MyYAML();
 
-	void debugAllKeyAndValue();
-
-	std::vector<std::string> getValue(const std::string &key);
-
-	std::size_t getSize(const std::string &key);
-
 	class FileNotFound : public std::exception {
 		const char *what() const throw() { return "File not found"; }
 	};
@@ -38,9 +32,7 @@ public:
 			: std::runtime_error("Value not found: " + key) {}
 	};
 
-	Node data;
+	Node *data;
 private:
-	std::map<std::string, std::vector<std::string> > _myYamlData;
 	void parseYaml(std::string buf);
-	void NewParseYaml(std::string buf);
 };

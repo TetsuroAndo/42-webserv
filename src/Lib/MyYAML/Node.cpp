@@ -6,7 +6,11 @@
 #include <stdexcept>
 
 void Node::push(Node *node) {
-	switch (int type = _type) {
+	if (NODE_NULL == _childNodeType) {
+		_childNodeType = node->getType();
+	}
+
+	switch (int type = _childNodeType) {
 	case NODE_VAL:
 		throw std::runtime_error("Can't push to value node");
 	case NODE_SEQ:
@@ -25,13 +29,13 @@ void Node::push(Node *node) {
 
 void Node::print(const int indent) const {
 	const std::string ind(indent, ' ');
-	if (_type == NODE_SEQ) {
-		std::cout << ind << "SEQ: " << _value << std::endl;
+	if (_childNodeType == NODE_SEQ) {
+		std::cout << ind << "SEQ: " << _key << std::endl;
 		for (std::size_t i = 0; i < _seq.size(); i++) {
 			_seq[i]->print(indent + 2);
 		}
-	} else if (_type == NODE_MAP) {
-		std::cout << ind << "MAP: " << _value << std::endl;
+	} else if (_childNodeType == NODE_MAP) {
+		std::cout << ind << "MAP: " << _key << std::endl;
 		std::map<std::string, Node *>::const_iterator it = _map.begin();
 		const std::map<std::string, Node *>::const_iterator itEnd = _map.end();
 		for (; it != itEnd; ++it) {
@@ -44,7 +48,7 @@ void Node::print(const int indent) const {
 }
 
 bool Node::isValidNode() {
-	switch (_type) {
+	switch (_childNodeType) {
 	case NODE_SEQ:
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			if (!_seq[i]->isValidNode())
