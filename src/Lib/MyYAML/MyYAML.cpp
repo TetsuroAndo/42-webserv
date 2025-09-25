@@ -119,11 +119,9 @@ static bool isEndSeparator(const std::string &line) {
 
 
 static std::string extractListValue(const std::string &line) {
-	int spaceCount = 0;
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
 	while (it != itEnd && ' ' == *it) {
-		spaceCount++;
 		++it;
 	}
 	std::string tmp = trimWhitespace(line);
