@@ -8,8 +8,9 @@
 #include <stack>
 
 static void throwInvalidFormat(const int line) {
-	throw std::runtime_error(
-		"Invalid Format at line " + std::to_string(line + 1));
+	std::ostringstream oss;
+	oss << "Invalid Format at line " << (line + 1);
+	throw std::runtime_error(oss.str());
 }
 
 static std::string readFileAll(const std::string &filepath) {
