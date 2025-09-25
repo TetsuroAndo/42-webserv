@@ -48,43 +48,38 @@ void Node::print(const int indent) const {
 }
 
 bool Node::isValidNode() {
-	switch (_childNodeType) {
-	case NODE_SEQ:
-		for (std::size_t i = 0; i < _seq.size(); ++i) {
-			if (!_seq[i]->isValidNode())
-				return false;
-		}
-		return true;
-	case NODE_MAP: {
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
-		     it != _map.end(); ++it) {
-			if (!it->second->isValidNode())
-				return false;
-		}
+	if (_childNodeType == NODE_VAL) {
 		return true;
 	}
-	case NODE_VAL:
-		return true;
-	default:
-		return false;
+	for (std::size_t i = 0; i < _seq.size(); ++i) {
+		if (!_seq[i]->isValidNode())
+			return false;
 	}
+	for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+	     it != _map.end(); ++it) {
+		if (!it->second->isValidNode())
+			return false;
+	}
+	return true;
 }
 
 void Node::terminateNode() {
 	switch (_type) {
-		case NODE_SEQ:
+	case NODE_SEQ:
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			_seq[i]->setTypeValue();
 		}
 		return;
-		case NODE_MAP:
+	case NODE_MAP:
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
-			 it != _map.end(); ++it) {
+		     it != _map.end(); ++it) {
 			it->second->setTypeValue();
 		}
 		return;
-		case NODE_VAL:
-			throw std::runtime_error("Node is already terminated");
+	case NODE_VAL:
+		throw std::runtime_error("Node is already terminated");
+		return;
+	default:
 		return;
 
 	}

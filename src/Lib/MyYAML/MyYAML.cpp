@@ -150,7 +150,6 @@ MyYAML::MyYAML(const std::string &filepath) {
 
 MyYAML::~MyYAML() {
 	if (data != NULL) {
-		std::cout << "デストラクタ〜" << std::endl;
 		delete data;
 	}
 }
@@ -267,18 +266,19 @@ void MyYAML::parseYaml(std::string buf) {
 		}
 		nodeChain.top()->push(newNode);
 
-		// 次インデントが増える場合
 		if (idx < lines.size() - 1) {
 
-			// valueがあった場合
-			if (isEndSeparator(line) == false) {
-				delete rootNode;
-				throwInvalidFormat(idx);
-			}
 
-			// nodeChainにtmpNodeを追加する
+			// 次インデントが増える場合
 			int nextIndent = startCharCount(lines[idx + 1], ' ');
 			if (nowIndent < nextIndent) {
+				// valueがあった場合はエラー
+				if (isEndSeparator(line) == false) {
+					std::cerr << line << std::endl;
+					delete rootNode;
+					throwInvalidFormat(idx);
+				}
+				// nodeChainにtmpNodeを追加する
 				nodeChain.push(newNode);
 			}
 		}
