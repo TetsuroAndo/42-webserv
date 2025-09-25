@@ -32,6 +32,8 @@ public:
 			: std::runtime_error("Value not found: " + key) {}
 	};
 
+	Node getData() const;
+
 	Node *data;
 private:
 	void parseYaml(std::string buf);
