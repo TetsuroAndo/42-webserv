@@ -2,6 +2,9 @@
 #include "ParseResult.hpp"
 #include "RequestHeaderParser.hpp"
 
+RequestHeaderParser::RequestHeaderParser() {}
+RequestHeaderParser::~RequestHeaderParser() {}
+
 ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &headerBlock, int &errorCode) {
 	size_t size = headerBlock.size();
 	size_t lineStart = 0;

@@ -1,59 +1,73 @@
+#include "Server.hpp"
+#include "../Http/Builder/ResponseBuilder.hpp"
+#include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include <arpa/inet.h>
+#include <cerrno>
 #include <fcntl.h>
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
 
-#include "Server.hpp"
-
-Server::Server() {
-	// Configから受け取ってセッティングできるように変更したい
-	int port = 8080;
-
-	int listenFd = socket(AF_INET, SOCK_STREAM, 0);
-	if (listenFd < 0) {
-		throw std::runtime_error("socket() failed");
-	}
-
-	int flags = fcntl(listenFd, F_GETFL, 0);
-	fcntl(listenFd, F_SETFL, flags | O_NONBLOCK);
-
-	int opt = 1;
-	setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-	sockaddr_in addr = {};
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(port);
-
-	if (bind(listenFd, reinterpret_cast<struct sockaddr *>(&addr),
-			 sizeof(addr)) < 0) {
-		close(listenFd);
-		throw std::runtime_error("bind() failed");
-	}
-	if (listen(listenFd, SOMAXCONN) < 0) {
-		close(listenFd);
-		throw std::runtime_error("listen() failed");
-	}
-
-	Socket *sock = new Socket(listenFd, addr);
-	sock->setListen();
-	_sockets[listenFd] = sock;
-	_manager.registerSocket(listenFd, EPOLLIN);
+Server::Server() : _config(Config()) {
+	setupListenSockets();
+	_builder.buildRoute(_config, &_mainProcessor);
 }
 
-Server::Server(const Config &config) : _config(config) {}
-
-Server::Server(const Server & /*other*/) {}
+Server::Server(const Config &config) : _config(config) {
+	setupListenSockets();
+	_builder.buildRoute(_config, &_mainProcessor);
+}
 
 Server::~Server() {
-	for (std::map<int, Socket *>::iterator it = _sockets.begin();
-		 it != _sockets.end(); ++it) {
+	for (std::map<int, Client *>::iterator it = _clients.begin();
+		it != _clients.end(); ++it) {
+		delete it->second;
+	}
+	for (std::map<int, Socket *>::iterator it = _listenSockets.begin();
+		it != _listenSockets.end(); ++it) {
 		delete it->second;
 	}
 }
 
-Server &Server::operator=(const Server & /*other*/) { return *this; }
+void Server::setupListenSockets() {
+	const std::vector<Listen> &listens = _config.getListens();
+	for (std::vector<Listen>::const_iterator it = listens.begin();
+		 it != listens.end(); ++it) {
+		int port = it->port;
+		std::string interfaceAddr = it->interface;
+
+		int listenFd = socket(AF_INET, SOCK_STREAM, 0);
+		if (listenFd < 0) {
+			throw std::runtime_error("socket() failed");
+		}
+
+		int flags = fcntl(listenFd, F_GETFL, 0);
+		fcntl(listenFd, F_SETFL, flags | O_NONBLOCK);
+
+		int opt = 1;
+		setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+		sockaddr_in addr = {};
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
+
+		if (bind(listenFd, reinterpret_cast<struct sockaddr *>(&addr),
+				 sizeof(addr)) < 0) {
+			close(listenFd);
+			throw std::runtime_error("bind() failed for port ");
+		}
+		if (listen(listenFd, SOMAXCONN) < 0) {
+			close(listenFd);
+			throw std::runtime_error("listen() failed for port ");
+		}
+
+		Socket *sock = new Socket(listenFd, addr);
+		_listenSockets[listenFd] = sock;
+		_manager.registerSocket(listenFd, EPOLLIN);
+		std::cout << "Listening on " << interfaceAddr << ":" << port << std::endl;
+	}
+}
 
 void Server::run() {
 	while (true) {
@@ -69,21 +83,19 @@ void Server::run() {
 			uint32_t eventTypes = events[i].events;
 
 			if ((eventTypes & EPOLLERR) || (eventTypes & EPOLLHUP)) {
-				std::cerr << "epoll error on fd " << fd << std::endl;
 				closeConnection(fd);
 				continue;
 			}
 
-			if (eventTypes & EPOLLIN) {
-				if (_sockets[fd]->isListen()) {
-					handleNewConnection(fd);
-				} else {
+			if (_listenSockets.count(fd)) {
+				handleNewConnection(fd);
+			} else if (_clients.count(fd)) {
+				if (eventTypes & EPOLLIN) {
 					handleClientRead(fd);
 				}
-			}
-
-			if (eventTypes & EPOLLOUT) {
-				handleClientWrite(fd);
+				if (eventTypes & EPOLLOUT) {
+					handleClientWrite(fd);
+				}
 			}
 		}
 	}
@@ -102,63 +114,73 @@ void Server::handleNewConnection(int listenFd) {
 	int flags = fcntl(clientFd, F_GETFL, 0);
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
-	Socket *clientSocket = new Socket(clientFd, clientAddr);
-	_sockets[clientFd] = clientSocket;
-	_manager.registerSocket(clientFd, EPOLLIN);
-
-	char ipStr[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientAddr.sin_addr, ipStr, sizeof(ipStr));
+	try {
+		Client *client = new Client(clientFd, clientAddr, _config);
+		_clients[clientFd] = client;
+		_manager.registerSocket(clientFd, EPOLLIN);
+	} catch (const std::bad_alloc &e) {
+		std::cerr << "Failed to allocate Client object: " << e.what() << std::endl;
+		close(clientFd); // Close the newly accepted socket
+	} catch (const std::exception &e) {
+		std::cerr << "An unexpected error occurred during client creation: " << e.what() << std::endl;
+		close(clientFd); // Close the newly accepted socket
+	}
 }
 
 void Server::handleClientRead(int clientFd) {
-	Socket *sock = _sockets[clientFd];
-	char buffer[1024];
+	Client *client = _clients[clientFd];
+	PipelineContext *ctx = client->getContext();
+	char buffer[4096];
 
-	while (true) {
-		ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
-		if (bytesRead > 0) {
-			sock->appendRecvBuffer(buffer, bytesRead);
-		} else if (bytesRead == 0) {
-			closeConnection(clientFd);
-			return;
-		} else {
+	ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+
+	if (bytesRead > 0) {
+		ctx->recvBuffer.append(buffer, bytesRead);
+	} else {
+		closeConnection(clientFd);
+		return;
+	}
+
+	// Parse the request until complete or error
+	ParseResult parseResult = PARSE_INCOMPLETE;
+	while (parseResult == PARSE_INCOMPLETE && !ctx->recvBuffer.empty()) {
+		parseResult = ctx->parser.parse(*(ctx->req), ctx->recvBuffer);
+		if (parseResult == PARSE_ERROR) {
+			// Set error status code in response and break
+			ctx->res->setStatusCode(ctx->parser.getErrorCode());
+			break;
+		}
+		if (parseResult == PARSE_COMPLETE) {
 			break;
 		}
 	}
-	ParseStatus status = sock->getRequest()->parse(sock->getRecvBuffer());
-	if (status == PARSE_COMPLETE) {
-		// debug用のパース結果出力、提出前に消す
-		sock->getRequest()->printData();
-		// レスポンスを作成するmethodに置き換える
-		{
-			sock->getResponse()->setStatusCode(200);
-			sock->getResponse()->setHeaders("Test-Header", "test-value");
-			sock->getResponse()->setResponseBody("Hello, World!");
-			sock->setSendBuffer(sock->getResponse()->getResponse());
+
+	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
+		// Only execute middleware if request is complete or parsing error occurred
+		_mainProcessor.handle(*ctx);
+
+		std::string responseStr = ResponseBuilder::build(*(ctx->res));
+		if (!responseStr.empty()) {
+			client->getSocket()->setSendBuffer(
+				client->getSocket()->getSendBuffer() + responseStr);
 		}
-		_manager.modifySocket(clientFd, EPOLLOUT);
-	} else if (status == PARSE_ERROR) {
-		// debug用のパース結果出力、提出前に消す
-		sock->getRequest()->printData();
-		// レスポンスを作成するmethodに置き換える
-		{
-			sock->getResponse()->setStatusCode(sock->getRequest()->getError());
-			sock->getResponse()->setHeaders("Test-Header", "test-value");
-			sock->getResponse()->setResponseBody("invalid test");
-			sock->setSendBuffer(sock->getResponse()->getResponse());
-		}
-		_manager.modifySocket(clientFd, EPOLLOUT);
+	}
+
+	if (!client->getSocket()->getSendBuffer().empty()) {
+		_manager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
 	}
 }
 
 void Server::handleClientWrite(int clientFd) {
-	Socket *sock = _sockets[clientFd];
-	if (sock->getSendBuffer().empty()) {
+	Client *client = _clients[clientFd];
+	Socket *sock = client->getSocket();
+	const std::string &sendBuffer = sock->getSendBuffer();
+
+	if (sendBuffer.empty()) {
 		_manager.modifySocket(clientFd, EPOLLIN);
 		return;
 	}
 
-	const std::string &sendBuffer = sock->getSendBuffer();
 	ssize_t bytesSent =
 		send(clientFd, sendBuffer.c_str(), sendBuffer.size(), 0);
 
@@ -167,19 +189,20 @@ void Server::handleClientWrite(int clientFd) {
 		if (sock->getSendBuffer().empty()) {
 			closeConnection(clientFd);
 		}
-	} else if (bytesSent == 0) {
-		closeConnection(clientFd);
 	} else {
-		return;
+		if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			closeConnection(clientFd);
+		}
 	}
 }
 
 void Server::closeConnection(int clientFd) {
 	_manager.unregisterSocket(clientFd);
-	std::map<int, Socket *>::iterator it = _sockets.find(clientFd);
-	if (it != _sockets.end()) {
+	std::map<int, Client *>::iterator it = _clients.find(clientFd);
+	if (it != _clients.end()) {
 		delete it->second;
-		_sockets.erase(it);
-	}
+		_clients.erase(it);
+	} else {
+    }
 	close(clientFd);
 }

@@ -1,4 +1,7 @@
 #include "HttpRequest.hpp"
+
+size_t HttpRequest::maxHeaderSize = 8192;
+size_t HttpRequest::maxBodySize = 10 * 1024 * 1024;
 #include "../../Lib/StringOps/StringOps.hpp"
 
 HttpRequest::HttpRequest() {}
@@ -40,8 +43,8 @@ bool HttpRequest::hasHeader(const std::string& key) const {
 	return _headers.count(key) > 0;
 }
 
-bool HttpRequest::hasHeader(const char* key_start, size_t key_len) const {
-	std::string key(key_start, key_len);
+bool HttpRequest::hasHeader(const char* keyStart, size_t keyLen) const {
+	std::string key(keyStart, keyLen);
 	StringOps::toLower(key);
 	return _headers.count(key) > 0;
 }
@@ -51,10 +54,10 @@ void HttpRequest::addHeader(const std::string& key, const std::string& value) {
 	_headers[key] = value;
 }
 
-void HttpRequest::addHeader(const char* key_start, size_t key_len, const char* val_start, size_t val_len) {
-	std::string key(key_start, key_len);
+void HttpRequest::addHeader(const char* keyStart, size_t keyLen, const char* valStart, size_t valLen) {
+	std::string key(keyStart, keyLen);
 	StringOps::toLower(key);
-	_headers[key] = std::string(val_start, val_len);
+	_headers[key] = std::string(valStart, valLen);
 }
 
 // Queries

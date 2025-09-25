@@ -1,9 +1,10 @@
 #pragma once
-#include <map>
+
 #include <ostream>
-#include <set>
 #include <string>
 #include <vector>
+#include <set>
+#include <map>
 
 struct Listen {
 	std::string interface;
@@ -20,7 +21,7 @@ struct Location {
 	std::string path;							// e.g., "/" or "/cgi-bin"
 	std::string root;							// The root directory for this location
 	std::set<std::string> allowedMethods;		// "GET", "HEAD", "POST", "DELETE" を保持
-	bool autoindex;						// ディレクトリリスティングの on/off
+	bool autoindex;								// ディレクトリリスティングの on/off
 	std::string indexFile;						// 表示するファイル名
 	std::string errorFile;						// エラーページ
 	std::string uploadStore;					// アップロードファイルの保存先ディレクトリ

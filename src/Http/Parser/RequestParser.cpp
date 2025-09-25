@@ -38,7 +38,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				}
 
 				std::string line(buffer.begin(), buffer.begin() + crlfPos);
-				buffer.assign(buffer.begin() + crlfPos + 2, buffer.end());
+				buffer.erase(0, crlfPos + 2);
 				if (_lineParser.parse(request, line, _errorCode) == PARSE_ERROR) {
 					return PARSE_ERROR;
 				}
@@ -57,7 +57,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				}
 
 				std::string headerBlock(buffer.begin(), buffer.begin() + headerEndPos);
-				buffer.assign(buffer.begin() + headerEndPos + 4, buffer.end());
+				buffer.erase(0, headerEndPos + 4);
 				if (_headerParser.parse(request, headerBlock, _errorCode) == PARSE_ERROR) {
 					return PARSE_ERROR;
 				}
@@ -75,7 +75,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				size_t consumed = _bodyParser.parse(request, buffer, _errorCode, res);
 
 				if (consumed > 0) {
-					buffer.assign(buffer.begin() + consumed, buffer.end());
+					buffer.erase(0, consumed);
 				}
 
 				if (res == PARSE_COMPLETE) {

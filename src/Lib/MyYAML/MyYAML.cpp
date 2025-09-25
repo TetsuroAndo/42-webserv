@@ -157,7 +157,6 @@ MyYAML::~MyYAML() {
 }
 
 void MyYAML::parseYaml(std::string buf) {
-	// TODO: パース処理を完成させる
 	if (!buf.empty() && '\n' != buf[buf.size() - 1]) {
 		buf.push_back('\n');
 	}

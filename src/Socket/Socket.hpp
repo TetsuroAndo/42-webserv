@@ -5,9 +5,6 @@
 #include <string>
 #include <sys/socket.h>
 
-#include "../Http/HttpRequest.hpp"
-#include "../Http/HttpResponse.hpp"
-
 class Socket {
 public:
 	Socket(int fd);
@@ -18,23 +15,15 @@ public:
 	bool isListen() const;
 	void setListen();
 	const sockaddr_in &getAddr() const;
-	void setRecvBuffer(const std::string &str);
 	void setSendBuffer(const std::string &str);
-	void appendRecvBuffer(const char *data, int size);
 	void eraseSendBuffer(int start, int end);
-	std::string &getRecvBuffer();
 	const std::string &getSendBuffer() const;
-	HttpRequest *getRequest();
-	HttpResponse *getResponse();
 
 private:
 	int _fd;
 	bool _listen;
 	sockaddr_in _addr;
-	std::string _recvBuffer;
 	std::string _sendBuffer;
-	HttpRequest *_request;
-	HttpResponse *_response;
 };
 
 #endif

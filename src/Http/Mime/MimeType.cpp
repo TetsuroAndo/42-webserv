@@ -15,6 +15,7 @@ void MimeType::_setMimeTypes() {
 	_mimeMap[".xml"] = "application/xml";
 	_mimeMap[".pdf"] = "application/pdf";
 	_mimeMap[".zip"] = "application/zip";
+	_mimeMap[".txt"] = "text/plain";
 
 	// Images
 	_mimeMap[".jpeg"] = "image/jpeg";

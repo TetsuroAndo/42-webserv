@@ -2,10 +2,10 @@
 #define HTTP_REQUEST_HELPER_HPP
 
 #include "../Core/HttpRequest.hpp"
-#include "RequestLineParser.hpp"
-#include "RequestHeaderParser.hpp"
-#include "RequestBodyParser.hpp"
 #include "ParseResult.hpp"
+#include "RequestBodyParser.hpp"
+#include "RequestHeaderParser.hpp"
+#include "RequestLineParser.hpp"
 #include <string>
 
 class RequestParser {
@@ -40,7 +40,7 @@ private:
 		STATE_REQUEST_LINE,
 		STATE_HEADERS,
 		STATE_BODY,
-		STATE_COMPLETE,
+		STATE_COMPLETE
 	};
 
 	int _errorCode;
