@@ -19,6 +19,7 @@ public:
 	~Node();
 
 	void push(Node *node);
+	void print() const;
 	void print(int indent) const;
 	bool isValidNode();
 
