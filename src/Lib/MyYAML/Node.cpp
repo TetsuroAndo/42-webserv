@@ -48,32 +48,85 @@ void Node::print(const int indent) const {
 }
 
 bool Node::isValidNode() {
-	if (_childNodeType == NODE_VAL) {
+	switch (_type) {
+	case NODE_SEQ:
+		if (_seq.size() == 0 && _map.size() == 0) {
+			return false;
+		}
+		for (std::size_t i = 0; i < _seq.size(); ++i) {
+			if (_seq[i]->getKey().empty() && _seq[i]->getValue().empty()) {
+				return false;
+			}
+			if (_seq[i]->isValidNode() == false) {
+				return false;
+			}
+		}
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
+	 ;
+	 it != _map.end(); ++it) {
+			if (it->second->getKey().empty() && it->second->getValue().empty()) {
+				return false;
+			}
+			if (it->second->isValidNode() == false) {
+				return false;
+			}
+	 }
 		return true;
-	}
-	for (std::size_t i = 0; i < _seq.size(); ++i) {
-		if (!_seq[i]->isValidNode())
+	case NODE_MAP:
+		if (_seq.size() == 0 && _map.size() == 0) {
 			return false;
+		}
+		for (std::size_t i = 0; i < _seq.size(); ++i) {
+			if (_seq[i]->getKey().empty()) {
+				return false;
+			}
+			if (_seq[i]->isValidNode() == false) {
+				return false;
+			}
+		}
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
+		     ;
+		     it != _map.end(); ++it) {
+			if (it->second->getKey().empty()) {
+				return false;
+			}
+			if (it->second->isValidNode() == false) {
+				return false;
+			}
+		}
+		return true;
+	case NODE_VAL:
+		return _value.empty() == false;
+	default:
+		return false;
+
 	}
-	for (std::map<std::string, Node *>::const_iterator it = _map.begin();
-	     it != _map.end(); ++it) {
-		if (!it->second->isValidNode())
-			return false;
-	}
-	return true;
 }
 
 void Node::terminateNode() {
 	switch (_type) {
 	case NODE_SEQ:
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
+		     ;
+		     it != _map.end(); ++it) {
+			it->second->setTypeValue();
+			it->second->_childNodeType = NODE_VAL;
+		}
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			_seq[i]->setTypeValue();
+			_seq[i]->_childNodeType = NODE_VAL;
 		}
 		return;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		for (std::size_t i = 0; i < _seq.size(); ++i) {
+			_seq[i]->setTypeValue();
+			_seq[i]->_childNodeType = NODE_VAL;
+		}
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
+		     ;
 		     it != _map.end(); ++it) {
 			it->second->setTypeValue();
+			it->second->_childNodeType = NODE_VAL;
 		}
 		return;
 	case NODE_VAL:
@@ -81,6 +134,37 @@ void Node::terminateNode() {
 		return;
 	default:
 		return;
+	}
+}
 
+// Nodeを整形する(fix(固定)する)
+void Node::fixNode() {
+	if (_seq.size() == 0 && _map.size() == 0) {
+		setTypeValue();
+		return;
+	}
+	switch (_type) {
+	case NODE_SEQ:
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
+			 ;
+			 it != _map.end(); ++it) {
+				it->second->fixNode();
+			 }
+		for (std::size_t i = 0; i < _seq.size(); ++i) {
+			_seq[i]->fixNode();
+		}
+		return;
+	case NODE_MAP:
+		for (std::size_t i = 0; i < _seq.size(); ++i) {
+			_seq[i]->fixNode();
+		}
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
+			 ;
+			 it != _map.end(); ++it) {
+			it->second->fixNode();
+			 }
+		return;
+	default:
+		return;
 	}
 }

@@ -8,13 +8,15 @@
 #include <stack>
 
 static void throwInvalidFormat(const int line) {
-	throw std::runtime_error("Invalid Format at line " + std::to_string(line + 1));
+	throw std::runtime_error(
+		"Invalid Format at line " + std::to_string(line + 1));
 }
 
 static std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
 	if (!input) {
-		std::cerr << "Webserv: " << filepath << ": " << strerror(errno) << std::endl;
+		std::cerr << "Webserv: " << filepath << ": " << strerror(errno) <<
+			std::endl;
 		throw std::runtime_error("Could not open file");
 	}
 	std::stringstream buffer;
@@ -112,7 +114,6 @@ static bool isEndSeparator(const std::string &line) {
 }
 
 
-
 static std::string extractListValue(const std::string &line) {
 	int spaceCount = 0;
 	std::string::const_iterator it = line.begin();
@@ -133,16 +134,17 @@ static std::string extractListValue(const std::string &line) {
 	return (tmp);
 }
 
-static bool endsWith(const std::string& s, const std::string& suffix) {
+static bool endsWith(const std::string &s, const std::string &suffix) {
 	return s.size() >= suffix.size() &&
-		   s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+	       s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
 MyYAML::MyYAML(const std::string &filepath) {
 	data = NULL;
 	const std::string extension(".yaml");
 	if (endsWith(filepath, extension) == false) {
-		throw std::invalid_argument("Filepath does not end with extension '" + extension + "'");
+		throw std::invalid_argument(
+			"Filepath does not end with extension '" + extension + "'");
 	}
 	const std::string buf = readFileAll(filepath);
 	parseYaml(buf);
@@ -176,7 +178,6 @@ void MyYAML::parseYaml(std::string buf) {
 	prevIndent.push(-1);
 	prevStates.push(MyYamlState_NONE);
 
-
 	std::vector<std::string> lines;
 	{
 		std::istringstream iss(buf);
@@ -186,7 +187,6 @@ void MyYAML::parseYaml(std::string buf) {
 		}
 	}
 
-	
 	for (size_t idx = 0; idx < lines.size(); ++idx) {
 		std::string line = lines[idx];
 		// コメント行・空行
@@ -248,15 +248,15 @@ void MyYAML::parseYaml(std::string buf) {
 		Type newNodeType;
 		// 有効なTypeか確かめる
 		switch (nowState) {
-			case MyYamlState_SEQ:
+		case MyYamlState_SEQ:
 			newNodeType = NODE_SEQ;
 			break;
-			case MyYamlState_MAP:
+		case MyYamlState_MAP:
 			newNodeType = NODE_MAP;
 			break;
-			default:
-				delete rootNode;
-				throwInvalidFormat(idx);
+		default:
+			delete rootNode;
+			throwInvalidFormat(idx);
 		}
 		Node *newNode = new Node(newNodeType, key, value);
 		// 1個目の要素で一階層目のTypeを決定
@@ -267,7 +267,6 @@ void MyYAML::parseYaml(std::string buf) {
 		nodeChain.top()->push(newNode);
 
 		if (idx < lines.size() - 1) {
-
 
 			// 次インデントが増える場合
 			int nextIndent = startCharCount(lines[idx + 1], ' ');
@@ -282,9 +281,12 @@ void MyYAML::parseYaml(std::string buf) {
 			}
 		}
 	}
-	if (rootNode != NULL && rootNode->isValidNode() == false) {
-		delete rootNode;
-		throw std::runtime_error("Invalid format");
+	if (rootNode != NULL) {
+		rootNode->fixNode();
+		if (rootNode->isValidNode() == false) {
+			delete rootNode;
+			throw std::runtime_error("Invalid format");
+		}
 	}
 	data = rootNode;
 }

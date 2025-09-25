@@ -80,6 +80,8 @@ public:
 
 	void terminateNode();
 
+	void fixNode();
+
 private
 :
 	Type _type;
