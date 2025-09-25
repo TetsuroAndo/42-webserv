@@ -158,6 +158,10 @@ MyYAML::~MyYAML() {
 	}
 }
 
+Node MyYAML::getData() const {
+	return *data;
+}
+
 void MyYAML::parseYaml(std::string buf) {
 	if (!buf.empty() && '\n' != buf[buf.size() - 1]) {
 		buf.push_back('\n');
