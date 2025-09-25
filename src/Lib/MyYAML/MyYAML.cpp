@@ -25,7 +25,7 @@ static std::string readFileAll(const std::string &filepath) {
 	return buffer.str();
 }
 
-static int startCharCount(std::string str, const char c) {
+static int startCharCount(const std::string& str, const char c) {
 	int result = 0;
 	std::string::const_iterator it = str.begin();
 	const std::string::const_iterator itEnd = str.end();
