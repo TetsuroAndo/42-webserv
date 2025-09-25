@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -20,11 +21,26 @@ public:
 		if (type == NODE_MAP && key == "") {
 			throw std::invalid_argument("Key must not be empty");
 		}
-		if (type == VAL && value == "") {
+		if (type == NODE_VAL && value == "") {
 			throw std::invalid_argument("Value must not be empty");
 		}
 	}
 	~Node() {
+		switch (_type) {
+		case NODE_SEQ:
+			for (std::size_t i = 0; i < _seq.size(); ++i) {
+				delete _seq[i];
+			}
+			return;
+		case NODE_MAP:
+			for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+				 it != _map.end(); ++it) {
+				delete it->second;
+				 }
+			return;
+		case NODE_VAL:
+			return;
+		}
 	};
 
 	void push(Node *node);
@@ -35,7 +51,9 @@ public:
 	const std::string &getKey() const { return _key; }
 	const std::string &getValue() const { return _value; }
 
-	void setType(const Type type) { _type = type; }
+	void setTypeValue() {
+		_type = NODE_VAL;
+	}
 
 	std::vector<Node *> getSeq() const {
 		if (_type != NODE_SEQ) {
