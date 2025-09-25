@@ -14,73 +14,31 @@ enum Type {
 class Node {
 public:
 	Node(const Type type, const std::string &key,
-	     const std::string &value) : _type(type), _childNodeType(NODE_NULL),
-	                                 _key(key),
-	                                 _value(value), _isEndSeparator(false),
-	                                 _lineIndex(0) {
+	     const std::string &value);
 
-		if (type == NODE_SEQ && key == "") {
-			throw std::invalid_argument("Key must not be empty");
-		}
-		if (type == NODE_MAP && key == "") {
-			throw std::invalid_argument("Key must not be empty");
-		}
-		if (type == NODE_VAL && value == "") {
-			throw std::invalid_argument("Value must not be empty");
-		}
-	}
-
-	~Node() {
-		for (std::size_t i = 0; i < _seq.size(); ++i) {
-			delete _seq[i];
-		}
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
-			delete it->second;
-		}
-	};
+	~Node();;
 
 	void push(Node *node);
 	void print(int indent) const;
 	bool isValidNode();
 
-	Type getType() const {
-		return _type;
-	}
+	Type getType() const;
 
-	const std::string &getKey() const {
-		return _key;
-	}
+	const std::string &getKey() const;
 
-	const std::string &getValue() const {
-		return _value;
-	}
+	const std::string &getValue() const;
 
-	void setTypeValue() {
-		_type = NODE_VAL;
-	}
+	void setTypeValue();
 
-	std::vector<Node *> getSeq() const {
-		if (_type != NODE_SEQ) {
-			throw std::invalid_argument("Node type is not SEQ");
-		}
-		return _seq;
-	}
+	std::vector<Node *> getSeq() const;
 
-	Node *getMapNode(const std::string &key) const {
-		if (_type != NODE_MAP) {
-			throw std::invalid_argument("Node type is not MAP");
-		}
-		if (_map.find(key) == _map.end()) {
-			throw std::invalid_argument("Key not found");
-		}
-		return _map.find(key)->second;
-	}
+	Node *getMapNode(const std::string &key) const;
 
 	void terminateNode();
 
 	void fixNode();
+
+	std::size_t size() const;
 
 private
 :
