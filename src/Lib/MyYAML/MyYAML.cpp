@@ -41,6 +41,9 @@ static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	while (it != itEnd && ' ' == *it) {
 		++it;
 	}
+	if (it == itEnd) {
+		return false;
+	}
 	return delimiter == *it;
 }
 
