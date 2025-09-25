@@ -158,7 +158,10 @@ MyYAML::~MyYAML() {
 	}
 }
 
-Node MyYAML::getData() const {
+Node &MyYAML::getData() const {
+	if (_data == NULL) {
+		throw std::invalid_argument("Data is null");
+	}
 	return *_data;
 }
 

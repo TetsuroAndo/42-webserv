@@ -16,7 +16,7 @@ public:
 	Node(const Type type, const std::string &key,
 	     const std::string &value);
 
-	~Node();;
+	~Node();
 
 	void push(Node *node);
 	void print(int indent) const;
@@ -30,8 +30,7 @@ public:
 
 	void setTypeValue();
 
-	std::vector<Node *> getSeq() const;
-
+	const std::vector<Node*>& getSeq() const;
 	Node *getMapNode(const std::string &key) const;
 
 	void terminateNode();

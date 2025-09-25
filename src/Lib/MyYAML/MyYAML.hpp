@@ -32,7 +32,7 @@ public:
 			: std::runtime_error("Value not found: " + key) {}
 	};
 
-	Node getData() const;
+	Node &getData() const;
 
 private:
 	Node *_data;

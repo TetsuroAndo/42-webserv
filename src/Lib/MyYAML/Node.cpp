@@ -48,12 +48,13 @@ void Node::setTypeValue() {
 	_type = NODE_VAL;
 }
 
-std::vector<Node *> Node::getSeq() const {
+const std::vector<Node*>& Node::getSeq() const {
 	if (_type != NODE_SEQ) {
 		throw std::invalid_argument("Node type is not SEQ");
 	}
 	return _seq;
 }
+
 
 Node * Node::getMapNode(const std::string &key) const {
 	if (_type != NODE_MAP) {
