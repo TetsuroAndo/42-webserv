@@ -21,7 +21,8 @@ public:
 	void push(Node *node);
 	void print() const;
 	void print(int indent) const;
-	bool isValidNode();
+	bool isValidNode() const
+	;
 
 	Type getType() const;
 

@@ -98,7 +98,7 @@ void Node::print(const int indent) const {
 }
 
 
-bool Node::isValidNode() {
+bool Node::isValidNode() const {
 	switch (_type) {
 	case NODE_SEQ:
 		if (_seq.size() == 0 && _map.size() == 0) {
