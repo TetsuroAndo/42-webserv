@@ -1,4 +1,5 @@
 #include "Node.hpp"
+#include "../Colors/Colors.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -69,47 +70,36 @@ void Node::print() const {
 void Node::print(const int indent) const {
 	const std::string ind(indent, ' ');
 
-	const std::string reset = "\033[0m";
-	const std::string bold = "\033[1m";
-	const std::string red = "\033[38;2;255;0;0m";
-	const std::string green = "\033[38;2;0;255;0m";
-	const std::string blue = "\033[38;2;0;0;255m";
-	const std::string cyan = "\033[38;2;0;255;255m";
-	const std::string magenta = "\033[38;2;255;0;255m";
-	const std::string yellow = "\033[38;2;255;255;0m";
-
 	if (_childNodeType == NODE_SEQ) {
-		std::cout << ind << red << bold << "SEQ:" << reset
-			<< " " << magenta << _key << reset << std::endl;
+		std::cout << ind << Colors::RED << Colors::BOLD << "SEQ:" << Colors::RESET
+			<< " " << Colors::MAGENTA << _key << Colors::RESET << std::endl;
 		for (std::size_t i = 0; i < _seq.size(); i++) {
 			_seq[i]->print(indent + 2);
 		}
 	} else if (_childNodeType == NODE_MAP) {
-		std::cout << ind << green << bold << "MAP:" << reset
-			<< " " << magenta << _key << reset << std::endl;
+		std::cout << ind << Colors::GREEN << Colors::BOLD << "MAP:" << Colors::RESET
+			<< " " << Colors::MAGENTA << _key << Colors::RESET << std::endl;
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
 		     it != _map.end(); ++it) {
 			it->second->print(indent + 2);
 		}
 	} else {
 		if (_key.empty()) {
-			std::cout << ind << blue << bold << "VAL:" << reset
-				<< " " << cyan << _value << reset << std::endl;
+			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" << Colors::RESET
+				<< " " << Colors::CYAN << _value << Colors::RESET << std::endl;
 		} else {
-			std::cout << ind << blue << bold << "VAL:" << reset
-				<< " " << magenta << _key << reset
-				<< " = " << cyan << _value << reset << std::endl;
+			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" << Colors::RESET
+				<< " " << Colors::MAGENTA << _key << Colors::RESET
+				<< " = " << Colors::CYAN << _value << Colors::RESET << std::endl;
 		}
 	}
 }
 
 
-bool Node::isValidNode() const {
-	switch (_type) {
+bool Node::isValidChildNode() const
+{
+	switch (_childNodeType) {
 	case NODE_SEQ:
-		if (_seq.size() == 0 && _map.size() == 0) {
-			return false;
-		}
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			if (_seq[i]->getKey().empty() && _seq[i]->getValue().empty()) {
 				return false;
@@ -118,30 +108,8 @@ bool Node::isValidNode() const {
 				return false;
 			}
 		}
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
-			if (it->second->getKey().empty() && it->second->getValue().
-			                                        empty()) {
-				return false;
-			}
-			if (it->second->isValidNode() == false) {
-				return false;
-			}
-		}
-		return true;
+		break;
 	case NODE_MAP:
-		if (_seq.size() == 0 && _map.size() == 0) {
-			return false;
-		}
-		for (std::size_t i = 0; i < _seq.size(); ++i) {
-			if (_seq[i]->getKey().empty() && _seq[i]->getValue().empty()) {
-				return false;
-			}
-			if (_seq[i]->isValidNode() == false) {
-				return false;
-			}
-		}
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
 		     ;
 		     it != _map.end(); ++it) {
@@ -152,12 +120,23 @@ bool Node::isValidNode() const {
 				return false;
 			}
 		}
-		return true;
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
+bool Node::isValidNode() const {
+	switch (_type) {
+	case NODE_SEQ:
+		return isValidChildNode();
+	case NODE_MAP:
+		return isValidChildNode();
 	case NODE_VAL:
 		return _value.empty() == false;
 	default:
 		return false;
-
 	}
 }
 
