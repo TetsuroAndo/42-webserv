@@ -155,8 +155,6 @@ const std::string &Node::getValue() const {
 
 void Node::setTypeValue() {
 	_type = NODE_VAL;
-	_seq.clear();
-	_map.clear();
 	_childNodeType = NODE_VAL;
 }
 
