@@ -28,8 +28,9 @@ public:
 
 	class ValueNotFound : public std::runtime_error {
 	public:
-		explicit ValueNotFound(const std::string& key)
-			: std::runtime_error("Value not found: " + key) {}
+		explicit ValueNotFound(const std::string &key)
+			: std::runtime_error("Value not found: " + key) {
+		}
 	};
 
 	Node &getData() const;

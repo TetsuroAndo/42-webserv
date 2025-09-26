@@ -71,13 +71,15 @@ void Node::print(const int indent) const {
 	const std::string ind(indent, ' ');
 
 	if (_childNodeType == NODE_SEQ) {
-		std::cout << ind << Colors::RED << Colors::BOLD << "SEQ:" << Colors::RESET
+		std::cout << ind << Colors::RED << Colors::BOLD << "SEQ:" <<
+			Colors::RESET
 			<< " " << Colors::MAGENTA << _key << Colors::RESET << std::endl;
 		for (std::size_t i = 0; i < _seq.size(); i++) {
 			_seq[i]->print(indent + 2);
 		}
 	} else if (_childNodeType == NODE_MAP) {
-		std::cout << ind << Colors::GREEN << Colors::BOLD << "MAP:" << Colors::RESET
+		std::cout << ind << Colors::GREEN << Colors::BOLD << "MAP:" <<
+			Colors::RESET
 			<< " " << Colors::MAGENTA << _key << Colors::RESET << std::endl;
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
 		     it != _map.end(); ++it) {
@@ -85,19 +87,21 @@ void Node::print(const int indent) const {
 		}
 	} else {
 		if (_key.empty()) {
-			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" << Colors::RESET
+			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" <<
+				Colors::RESET
 				<< " " << Colors::CYAN << _value << Colors::RESET << std::endl;
 		} else {
-			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" << Colors::RESET
+			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" <<
+				Colors::RESET
 				<< " " << Colors::MAGENTA << _key << Colors::RESET
-				<< " = " << Colors::CYAN << _value << Colors::RESET << std::endl;
+				<< " = " << Colors::CYAN << _value << Colors::RESET <<
+				std::endl;
 		}
 	}
 }
 
 
-bool Node::isValidChildNode() const
-{
+bool Node::isValidChildNode() const {
 	switch (_childNodeType) {
 	case NODE_SEQ:
 		for (std::size_t i = 0; i < _seq.size(); ++i) {

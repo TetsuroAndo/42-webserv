@@ -32,7 +32,7 @@ static std::string readFileAll(const std::string &filepath) {
 	return buffer.str();
 }
 
-static int startCharCount(const std::string& str, const char c) {
+static int startCharCount(const std::string &str, const char c) {
 	int result = 0;
 	std::string::const_iterator it = str.begin();
 	const std::string::const_iterator itEnd = str.end();
@@ -113,7 +113,6 @@ static bool isEndSeparator(const std::string &line) {
 	}
 	return false;
 }
-
 
 static std::string extractListValue(const std::string &line) {
 	std::string::const_iterator it = line.begin();
@@ -252,17 +251,11 @@ void MyYAML::parseYaml(std::string buf) {
 		}
 
 		Type newNodeType;
-		// 有効なTypeか確かめる
-		switch (nowState) {
-		case MyYamlState_SEQ:
+		// newNodeTypeを設定
+		if (MyYamlState_SEQ == nowState) {
 			newNodeType = NODE_SEQ;
-			break;
-		case MyYamlState_MAP:
+		} else {
 			newNodeType = NODE_MAP;
-			break;
-		default:
-			delete rootNode;
-			throwInvalidFormat(idx);
 		}
 		Node *newNode = new Node(newNodeType, key, value);
 		// 1個目の要素で一階層目のTypeを決定

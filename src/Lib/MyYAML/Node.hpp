@@ -32,7 +32,7 @@ public:
 
 	void setTypeValue();
 
-	const std::vector<Node*>& getSeq() const;
+	const std::vector<Node *> &getSeq() const;
 	Node *getMapNode(const std::string &key) const;
 
 	void terminateNode();
