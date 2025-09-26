@@ -173,14 +173,14 @@ void Node::setTypeValue() {
 }
 
 const std::vector<Node *> &Node::getSeq() const {
-	if (_type != NODE_SEQ) {
+	if (_childNodeType != NODE_SEQ) {
 		throw std::invalid_argument("Node type is not SEQ");
 	}
 	return _seq;
 }
 
 Node *Node::getMapNode(const std::string &key) const {
-	if (_type != NODE_MAP) {
+	if (_childNodeType != NODE_MAP) {
 		throw std::invalid_argument("Node type is not MAP");
 	}
 	if (_map.find(key) == _map.end()) {
@@ -190,33 +190,20 @@ Node *Node::getMapNode(const std::string &key) const {
 }
 
 void Node::terminateNode() {
-	switch (_type) {
+	switch (_childNodeType) {
 	case NODE_SEQ:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
-			it->second->setTypeValue();
-			it->second->_childNodeType = NODE_VAL;
-		}
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			_seq[i]->setTypeValue();
 			_seq[i]->_childNodeType = NODE_VAL;
 		}
 		return;
 	case NODE_MAP:
-		for (std::size_t i = 0; i < _seq.size(); ++i) {
-			_seq[i]->setTypeValue();
-			_seq[i]->_childNodeType = NODE_VAL;
-		}
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
 		     ;
 		     it != _map.end(); ++it) {
 			it->second->setTypeValue();
 			it->second->_childNodeType = NODE_VAL;
 		}
-		return;
-	case NODE_VAL:
-		throw std::runtime_error("Node is already terminated");
 		return;
 	default:
 		return;
