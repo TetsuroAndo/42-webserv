@@ -216,21 +216,13 @@ void Node::fixNode() {
 		setTypeValue();
 		return;
 	}
-	switch (_type) {
+	switch (_childNodeType) {
 	case NODE_SEQ:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
-			it->second->fixNode();
-		}
 		for (std::size_t i = 0; i < _seq.size(); ++i) {
 			_seq[i]->fixNode();
 		}
 		return;
 	case NODE_MAP:
-		for (std::size_t i = 0; i < _seq.size(); ++i) {
-			_seq[i]->fixNode();
-		}
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
 		     ;
 		     it != _map.end(); ++it) {
