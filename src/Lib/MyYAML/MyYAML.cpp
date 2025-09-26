@@ -1,7 +1,8 @@
+#include "../StringOps/StringOps.hpp"
 #include "MyYAML.hpp"
 
-#include <cstring>
 #include <cerrno>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -54,26 +55,10 @@ static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	return delimiter == *it;
 }
 
-// 前後の空白を削ってくれる関数
-static std::string trimWhitespace(const std::string &key) {
-	std::string::const_iterator it = key.begin();
-	const std::string::const_iterator itEnd = key.end();
-	while (it != itEnd && ' ' == *it) {
-		++it;
-	}
-	std::string tmp(it, itEnd);
-	std::string::reverse_iterator revIt = tmp.rbegin();
-	const std::string::reverse_iterator revEnd = tmp.rend();
-	while (revIt != revEnd && ' ' == *revIt) {
-		++revIt;
-	}
-	std::string result(tmp.begin(), revIt.base());
-	return result;
-}
-
 // keyを抽出する関数
 static std::string extractKey(const std::string &line) {
-	std::string trimmedLine = trimWhitespace(line);
+	std::string trimmedLine = line;
+	StringOps::trim(trimmedLine, " ");
 	// 何もなければ何もないを返す
 	if (trimmedLine.empty()) {
 		return "";
@@ -88,12 +73,15 @@ static std::string extractKey(const std::string &line) {
 		return "";
 	}
 	// 前後の空白を取り除いたセパレーターの手前の文字列を返す
-	return trimWhitespace(trimmedLine.substr(0, pos));
+	std::string result = trimmedLine.substr(0, pos);
+	StringOps::trim(result, " ");
+	return result;
 }
 
 // valueを抽出する関数
 static std::string extractValue(const std::string &line) {
-	std::string trimmedLine = trimWhitespace(line);
+	std::string trimmedLine = line;
+	StringOps::trim(trimmedLine, " ");
 	// 何もなければ何もないを返す
 	if (trimmedLine.empty()) {
 		return "";
@@ -104,12 +92,15 @@ static std::string extractValue(const std::string &line) {
 		return trimmedLine;
 	}
 	// 前後の空白を取り除いたセパレーターの後半の文字列を返す
-	return trimWhitespace(trimmedLine.substr(pos + 1, trimmedLine.length()));
+	std::string result = trimmedLine.substr(pos + 1, trimmedLine.length());
+	StringOps::trim(result, " ");
+	return result;
 }
 
 // セパレーターで終わっているかどうかを返す関数
 static bool isEndSeparator(const std::string &line) {
-	std::string trimmedLine = trimWhitespace(line);
+	std::string trimmedLine = line;
+	StringOps::trim(trimmedLine, " ");
 	if (trimmedLine.empty()) {
 		return false;
 	}
@@ -130,7 +121,8 @@ static std::string extractListValue(const std::string &line) {
 	while (it != itEnd && ' ' == *it) {
 		++it;
 	}
-	std::string tmp = trimWhitespace(line);
+	std::string tmp = line;
+	StringOps::trim(tmp, " ");
 	if (tmp.size() < 2) {
 		throw std::runtime_error("Invalid Format");
 	}
