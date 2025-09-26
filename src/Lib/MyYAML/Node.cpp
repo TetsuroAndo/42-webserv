@@ -43,9 +43,15 @@ void Node::push(Node *node) {
 	case NODE_VAL:
 		throw std::runtime_error("Can't push to value node");
 	case NODE_SEQ:
+		if (node->getType() != NODE_SEQ) {
+			throw std::runtime_error("Can't push to sequence node");
+		}
 		this->_seq.push_back(node);
 		break;
 	case NODE_MAP:
+		if (node->getType() != NODE_MAP) {
+			throw std::runtime_error("Can't push to map node");
+		}
 		if (this->_map.find(node->_key) != this->_map.end()) {
 			throw std::runtime_error("Duplicate key " + node->_key);
 		}
@@ -63,36 +69,36 @@ void Node::print() const {
 void Node::print(const int indent) const {
 	const std::string ind(indent, ' ');
 
-	const std::string RESET = "\033[0m";
-	const std::string BOLD = "\033[1m";
-	const std::string RED = "\033[38;2;255;0;0m";
-	const std::string GREEN = "\033[38;2;0;255;0m";
-	const std::string BLUE = "\033[38;2;0;0;255m";
-	const std::string CYAN = "\033[38;2;0;255;255m";
-	const std::string MAGENTA = "\033[38;2;255;0;255m";
-	const std::string YELLOW = "\033[38;2;255;255;0m";
+	const std::string reset = "\033[0m";
+	const std::string bold = "\033[1m";
+	const std::string red = "\033[38;2;255;0;0m";
+	const std::string green = "\033[38;2;0;255;0m";
+	const std::string blue = "\033[38;2;0;0;255m";
+	const std::string cyan = "\033[38;2;0;255;255m";
+	const std::string magenta = "\033[38;2;255;0;255m";
+	const std::string yellow = "\033[38;2;255;255;0m";
 
 	if (_childNodeType == NODE_SEQ) {
-		std::cout << ind << RED << BOLD << "SEQ:" << RESET
-			<< " " << MAGENTA << _key << RESET << std::endl;
+		std::cout << ind << red << bold << "SEQ:" << reset
+			<< " " << magenta << _key << reset << std::endl;
 		for (std::size_t i = 0; i < _seq.size(); i++) {
 			_seq[i]->print(indent + 2);
 		}
 	} else if (_childNodeType == NODE_MAP) {
-		std::cout << ind << GREEN << BOLD << "MAP:" << RESET
-			<< " " << MAGENTA << _key << RESET << std::endl;
+		std::cout << ind << green << bold << "MAP:" << reset
+			<< " " << magenta << _key << reset << std::endl;
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
 		     it != _map.end(); ++it) {
 			it->second->print(indent + 2);
 		}
 	} else {
 		if (_key.empty()) {
-			std::cout << ind << BLUE << BOLD << "VAL:" << RESET
-				<< " " << CYAN << _value << RESET << std::endl;
+			std::cout << ind << blue << bold << "VAL:" << reset
+				<< " " << cyan << _value << reset << std::endl;
 		} else {
-			std::cout << ind << BLUE << BOLD << "VAL:" << RESET
-				<< " " << MAGENTA << _key << RESET
-				<< " = " << CYAN << _value << RESET << std::endl;
+			std::cout << ind << blue << bold << "VAL:" << reset
+				<< " " << magenta << _key << reset
+				<< " = " << cyan << _value << reset << std::endl;
 		}
 	}
 }

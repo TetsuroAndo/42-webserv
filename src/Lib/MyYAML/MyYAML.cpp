@@ -13,6 +13,12 @@ static void throwInvalidFormat(const int line) {
 	throw std::runtime_error(oss.str());
 }
 
+static void throwInvalidFormat(const int line, const std::string &message) {
+	std::ostringstream oss;
+	oss << "Invalid Format at line " << (line + 1) << ": " << message;
+	throw std::runtime_error(oss.str());
+}
+
 static std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
 	if (!input) {
@@ -272,7 +278,12 @@ void MyYAML::parseYaml(std::string buf) {
 			rootNode = new Node(newNodeType, "root", "");
 			nodeChain.push(rootNode);
 		}
-		nodeChain.top()->push(newNode);
+		try {
+			nodeChain.top()->push(newNode);
+		} catch (const std::exception &e) {
+			delete rootNode;
+			throwInvalidFormat(idx, e.what());
+		}
 
 		if (idx < lines.size() - 1) {
 
