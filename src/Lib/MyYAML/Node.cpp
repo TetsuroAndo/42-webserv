@@ -128,16 +128,12 @@ bool Node::isValidChildNode() const
 }
 
 bool Node::isValidNode() const {
-	switch (_type) {
-	case NODE_SEQ:
-		return isValidChildNode();
-	case NODE_MAP:
-		return isValidChildNode();
-	case NODE_VAL:
+	if (_type == NODE_VAL)
 		return _value.empty() == false;
-	default:
-		return false;
+	if (_type == NODE_MAP || _type == NODE_SEQ) {
+		return isValidChildNode();
 	}
+	return false;
 }
 
 Type Node::getType() const {
