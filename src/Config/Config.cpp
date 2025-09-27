@@ -34,7 +34,7 @@ void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
 	else _locations[locationKey].allowedMethods.erase("GET");
 }
 
-void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
+void Config::setIsAllowHead(const bool allow, const std::string &locationKey) {
 	if (allow) _locations[locationKey].allowedMethods.insert("HEAD");
 	else _locations[locationKey].allowedMethods.erase("HEAD");
 }
@@ -83,15 +83,15 @@ void Config::setLocation(const Location &location, const std::string &locationKe
 	_locations[locationKey] = location;
 }
 
-void Config::setMaxRequestBodySize(unsigned int size) {
+void Config::setMaxRequestBodySize(const unsigned int size) {
 	_maxRequestBodySize = size;
 }
 
-void Config::setTimeoutSec(unsigned int sec) {
+void Config::setTimeoutSec(const unsigned int sec) {
 	_timeoutSec = sec;
 }
 
-void Config::setMaxEvents(unsigned int maxEvents) {
+void Config::setMaxEvents(const unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
@@ -208,10 +208,10 @@ const Location &Config::getLocation(const std::string &path) const {
 		}
 	}
 	if (!bestMatchKey.empty()) {
-		std::map<std::string, Location>::const_iterator it = _locations.find(bestMatchKey);
+		const std::map<std::string, Location>::const_iterator it = _locations.find(bestMatchKey);
 		return it->second;
 	}
-	std::map<std::string, Location>::const_iterator it = _locations.find("/");
+	const std::map<std::string, Location>::const_iterator it = _locations.find("/");
 	if (it != _locations.end()) {
 		return it->second;
 	}

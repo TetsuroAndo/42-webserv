@@ -1,6 +1,6 @@
-#include "Server.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
+#include "Server.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <fcntl.h>
@@ -33,7 +33,7 @@ void Server::setupListenSockets() {
 	const std::vector<Listen> &listens = _config.getListens();
 	for (std::vector<Listen>::const_iterator it = listens.begin();
 		 it != listens.end(); ++it) {
-		int port = it->port;
+		const int port = it->port;
 		std::string interfaceAddr = it->interface;
 
 		int listenFd = socket(AF_INET, SOCK_STREAM, 0);
@@ -41,7 +41,7 @@ void Server::setupListenSockets() {
 			throw std::runtime_error("socket() failed");
 		}
 
-		int flags = fcntl(listenFd, F_GETFL, 0);
+		const int flags = fcntl(listenFd, F_GETFL, 0);
 		fcntl(listenFd, F_SETFL, flags | O_NONBLOCK);
 
 		int opt = 1;
@@ -52,7 +52,7 @@ void Server::setupListenSockets() {
 		addr.sin_port = htons(port);
 		inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
 
-		if (bind(listenFd, reinterpret_cast<struct sockaddr *>(&addr),
+		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr),
 				 sizeof(addr)) < 0) {
 			close(listenFd);
 			throw std::runtime_error("bind() failed for port ");
@@ -71,18 +71,18 @@ void Server::setupListenSockets() {
 
 void Server::run() {
 	while (true) {
-		int nEvents = _manager.wait(-1);
+		const int nEvents = _manager.wait(-1);
 		if (nEvents < 0) {
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
-		struct epoll_event *events = _manager.getEvents();
+		const epoll_event *events = _manager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
 			int fd = events[i].data.fd;
-			uint32_t eventTypes = events[i].events;
+			const uint32_t eventTypes = events[i].events;
 
-			if ((eventTypes & EPOLLERR) || (eventTypes & EPOLLHUP)) {
+			if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
 				closeConnection(fd);
 				continue;
 			}
@@ -101,17 +101,17 @@ void Server::run() {
 	}
 }
 
-void Server::handleNewConnection(int listenFd) {
+void Server::handleNewConnection(const int listenFd) {
 	sockaddr_in clientAddr;
 	socklen_t clientLen = sizeof(clientAddr);
-	int clientFd = accept(
+	const int clientFd = accept(
 		listenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
 
 	if (clientFd < 0) {
 		return;
 	}
 
-	int flags = fcntl(clientFd, F_GETFL, 0);
+	const int flags = fcntl(clientFd, F_GETFL, 0);
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
 	try {
@@ -127,12 +127,12 @@ void Server::handleNewConnection(int listenFd) {
 	}
 }
 
-void Server::handleClientRead(int clientFd) {
-	Client *client = _clients[clientFd];
+void Server::handleClientRead(const int clientFd) {
+	const Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	char buffer[4096];
 
-	ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+	const ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
 
 	if (bytesRead > 0) {
 		ctx->recvBuffer.append(buffer, bytesRead);
@@ -144,7 +144,7 @@ void Server::handleClientRead(int clientFd) {
 	// Parse the request until complete or error
 	ParseResult parseResult = PARSE_INCOMPLETE;
 	while (parseResult == PARSE_INCOMPLETE && !ctx->recvBuffer.empty()) {
-		parseResult = ctx->parser.parse(*(ctx->req), ctx->recvBuffer);
+		parseResult = ctx->parser.parse(*ctx->req, ctx->recvBuffer);
 		if (parseResult == PARSE_ERROR) {
 			// Set error status code in response and break
 			ctx->res->setStatusCode(ctx->parser.getErrorCode());
@@ -159,7 +159,7 @@ void Server::handleClientRead(int clientFd) {
 		// Only execute middleware if request is complete or parsing error occurred
 		_mainProcessor.handle(*ctx);
 
-		std::string responseStr = ResponseBuilder::build(*(ctx->res));
+		const std::string responseStr = ResponseBuilder::build(*ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
 				client->getSocket()->getSendBuffer() + responseStr);
@@ -171,8 +171,8 @@ void Server::handleClientRead(int clientFd) {
 	}
 }
 
-void Server::handleClientWrite(int clientFd) {
-	Client *client = _clients[clientFd];
+void Server::handleClientWrite(const int clientFd) {
+	const Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
 	const std::string &sendBuffer = sock->getSendBuffer();
 
@@ -181,7 +181,7 @@ void Server::handleClientWrite(int clientFd) {
 		return;
 	}
 
-	ssize_t bytesSent =
+	const ssize_t bytesSent =
 		send(clientFd, sendBuffer.c_str(), sendBuffer.size(), 0);
 
 	if (bytesSent > 0) {
@@ -196,9 +196,9 @@ void Server::handleClientWrite(int clientFd) {
 	}
 }
 
-void Server::closeConnection(int clientFd) {
+void Server::closeConnection(const int clientFd) {
 	_manager.unregisterSocket(clientFd);
-	std::map<int, Client *>::iterator it = _clients.find(clientFd);
+	const std::map<int, Client *>::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		delete it->second;
 		_clients.erase(it);

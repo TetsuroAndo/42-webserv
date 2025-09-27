@@ -29,7 +29,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 
 		switch (_state) {
 			case STATE_REQUEST_LINE: {
-				size_t crlfPos = buffer.find("\r\n");
+				const size_t crlfPos = buffer.find("\r\n");
 				if (crlfPos == std::string::npos) return PARSE_INCOMPLETE;
 
 				if (buffer.begin() == buffer.begin() + crlfPos) {
@@ -47,7 +47,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				break;
 			}
 			case STATE_HEADERS: {
-				size_t headerEndPos = buffer.find("\r\n\r\n");
+				const size_t headerEndPos = buffer.find("\r\n\r\n");
 				if (headerEndPos == std::string::npos) {
 					if (buffer.length() > request.getMaxHeaderSize()) {
 						_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
@@ -72,7 +72,7 @@ ParseResult RequestParser::parse(HttpRequest& request, std::string& buffer) {
 				}
 
 				ParseResult res;
-				size_t consumed = _bodyParser.parse(request, buffer, _errorCode, res);
+				const size_t consumed = _bodyParser.parse(request, buffer, _errorCode, res);
 
 				if (consumed > 0) {
 					buffer.erase(0, consumed);

@@ -77,7 +77,7 @@ size_t RequestBodyParser::parse(HttpRequest& request, const std::string& buffer,
 }
 
 size_t RequestBodyParser::parseIdentity(HttpRequest& request, const std::string& buffer, ParseResult& result) {
-	size_t toRead = std::min<size_t>(buffer.length(), _contentLengthRemaining);
+	const size_t toRead = std::min<size_t>(buffer.length(), _contentLengthRemaining);
 
 	if (toRead == 0) {
 		result = PARSE_INCOMPLETE;
@@ -98,20 +98,20 @@ size_t RequestBodyParser::parseIdentity(HttpRequest& request, const std::string&
 }
 
 size_t RequestBodyParser::parseChunked(HttpRequest& request, const std::string& buffer, int& errorCode, ParseResult& result) {
-	const int TIMEOUT_SECONDS = 10; // TODO: ちゃんとしたタイムアウト時間を設定。暫定Timeout値
+	const int timeoutSeconds = 10; // TODO: ちゃんとしたタイムアウト時間を設定。暫定Timeout値
 	size_t offset = 0;
 	result = PARSE_INCOMPLETE;
 
 	while (offset < buffer.length()) {
-		time_t now = time(NULL);
-		if (now - _lastReceiveTime > TIMEOUT_SECONDS) {
+		const time_t now = time(NULL);
+		if (now - _lastReceiveTime > timeoutSeconds) {
 			errorCode = HttpStatus::REQUEST_TIMEOUT;
 			result = PARSE_ERROR;
 			return offset;
 		}
 
 		if (_state == CHUNKED_SIZE) {
-			size_t crlfPos = buffer.find("\r\n", offset);
+			const size_t crlfPos = buffer.find("\r\n", offset);
 			if (crlfPos == std::string::npos) return offset;
 
 			const char* sizeLineStart = buffer.c_str() + offset;
@@ -151,7 +151,7 @@ size_t RequestBodyParser::parseChunked(HttpRequest& request, const std::string& 
 		if (_state == CHUNKED_CRLF) {
 			size_t trailerOffset = offset;
 			while (true) {
-				size_t crlfPos = buffer.find("\r\n", trailerOffset);
+				const size_t crlfPos = buffer.find("\r\n", trailerOffset);
 				if (crlfPos == std::string::npos) return offset;
 
 				if (crlfPos == trailerOffset) {

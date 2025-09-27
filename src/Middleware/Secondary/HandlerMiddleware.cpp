@@ -1,6 +1,6 @@
-#include "HandlerMiddleware.hpp"
 #include "../../Handler/ISubHandler.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "HandlerMiddleware.hpp"
 #include <sstream>
 
 HandlerMiddleware::HandlerMiddleware(const std::map<std::string, ISubHandler*>& handlers)
@@ -17,13 +17,13 @@ void HandlerMiddleware::handle(PipelineContext &ctx, MiddlewareProcessor *proc) 
 	(void)proc;
 	const std::string &method = ctx.req->getMethod();
 
-	std::map<std::string, ISubHandler*>::const_iterator it = _handlers.find(method);
+	const std::map<std::string, ISubHandler*>::const_iterator it = _handlers.find(method);
 
 	if (it != _handlers.end()) {
 		ISubHandler *handler = it->second;
 		try {
 			*ctx.res = handler->handle(*ctx.req, ctx.conf);
-		} catch (const std::exception &e) {
+		} catch (...) {
 			ctx.res->setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 			ctx.res->setHeader("Content-Type", "text/html");
 			ctx.res->setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");

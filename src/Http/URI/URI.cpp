@@ -2,16 +2,15 @@
 #include "URI.hpp"
 #include <cctype>
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-unsigned char URI::_parseHexByte(const std::string &str, std::size_t pos) {
+unsigned char URI::_parseHexByte(const std::string &str, const std::size_t pos) {
 	if (pos + 2 >= str.length()) {
 		throw std::invalid_argument("URIError: malformed URI sequence");
 	}
 
-	std::string hexVal = str.substr(pos + 1, 2);
+	const std::string hexVal = str.substr(pos + 1, 2);
 	std::istringstream iss(hexVal);
 	int v = 0;
 
@@ -40,7 +39,7 @@ std::string URI::decodeURI(const std::string &str) {
 
 	for (std::size_t i = 0; i < str.length(); ++i) {
 		if (str[i] == '%') {
-			unsigned char first = _parseHexByte(str, i);
+			const unsigned char first = _parseHexByte(str, i);
 
 			// 予約文字はデコードせずにそのまま出力
 			if (first < 0x80 &&
@@ -69,12 +68,12 @@ std::string URI::decodeURI(const std::string &str) {
 
 			// 続行バイトを検証
 			for (std::size_t k = 0; k < expectedCont; ++k) {
-				std::size_t pos = i + 3 * (k + 1);
+				const std::size_t pos = i + 3 * (k + 1);
 				if (pos >= str.length() || str[pos] != '%') {
 					throw std::invalid_argument(
 						"URIError: malformed URI sequence");
 				}
-				unsigned char cont = _parseHexByte(str, pos);
+				const unsigned char cont = _parseHexByte(str, pos);
 				if ((cont & 0xC0) != 0x80) {
 					throw std::invalid_argument(
 						"URIError: malformed URI sequence");
@@ -98,7 +97,7 @@ std::string URI::decodeURI(const std::string &str) {
  * @return std::string デコード後の文字列 (UTF-8)
  */
 std::string URI::decodeURIComponent(const std::string &str) {
-	return URI::decodeURI(str);
+	return decodeURI(str);
 }
 
 /**
@@ -142,7 +141,7 @@ std::string URI::_internalEncodeURILogic(const std::string &str,
 	encoded << std::hex << std::uppercase;
 
 	for (size_t i = 0; i < str.length(); ++i) {
-		unsigned char c = static_cast<unsigned char>(str[i]);
+		const unsigned char c = static_cast<unsigned char>(str[i]);
 		if (unescaped.find(static_cast<char>(c)) != std::string::npos) {
 			encoded << static_cast<char>(c);
 		} else {

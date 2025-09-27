@@ -20,7 +20,7 @@ namespace /* throws */ {
 		oss << "Invalid Format at line " << (line + 1) << ": " << message;
 		throw std::runtime_error(oss.str());
 	}
-}
+} // namespace
 
 namespace /* helper functions */ {
 	std::string readFileAll(const std::string &filepath) {
@@ -110,7 +110,7 @@ namespace /* helper functions */ {
 		} else {
 			throw std::runtime_error("Invalid Format");
 		}
-		return (tmp);
+		return tmp;
 	}
 } // Anonymous namespace
 

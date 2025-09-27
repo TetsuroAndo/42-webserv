@@ -32,7 +32,7 @@ const std::map<std::string, std::string>& HttpRequest::getHeaders() const {
 }
 const std::string& HttpRequest::getHeader(const std::string& key) const {
 	StringOps::toLower(const_cast<std::string &>(key));
-	std::map<std::string, std::string>::const_iterator it = _headers.find(key);
+	const std::map<std::string, std::string>::const_iterator it = _headers.find(key);
 	if (it != _headers.end()) {
 		return it->second;
 	}
@@ -44,7 +44,7 @@ bool HttpRequest::hasHeader(const std::string& key) const {
 	return _headers.count(key) > 0;
 }
 
-bool HttpRequest::hasHeader(const char* keyStart, size_t keyLen) const {
+bool HttpRequest::hasHeader(const char* keyStart, const size_t keyLen) const {
 	std::string key(keyStart, keyLen);
 	StringOps::toLower(key);
 	return _headers.count(key) > 0;
@@ -55,7 +55,7 @@ void HttpRequest::addHeader(const std::string& key, const std::string& value) {
 	_headers[key] = value;
 }
 
-void HttpRequest::addHeader(const char* keyStart, size_t keyLen, const char* valStart, size_t valLen) {
+void HttpRequest::addHeader(const char* keyStart, const size_t keyLen, const char* valStart, const size_t valLen) {
 	std::string key(keyStart, keyLen);
 	StringOps::toLower(key);
 	_headers[key] = std::string(valStart, valLen);
@@ -66,7 +66,7 @@ const std::map<std::string, std::string>& HttpRequest::getQueries() const {
 	return _query;
 }
 const std::string& HttpRequest::getQuery(const std::string& key) const {
-	std::map<std::string, std::string>::const_iterator it = _query.find(key);
+	const std::map<std::string, std::string>::const_iterator it = _query.find(key);
 	if (it != _query.end()) {
 		return it->second;
 	}
@@ -84,7 +84,7 @@ void HttpRequest::addQuery(const std::string& key, const std::string& value) {
 const std::string& HttpRequest::getBody() const { return _body; }
 void HttpRequest::setBody(const std::string& body) { _body = body; }
 void HttpRequest::appendBody(const std::string& data) { _body.append(data); }
-void HttpRequest::appendBody(const char* data, size_t len) { _body.append(data, len); }
+void HttpRequest::appendBody(const char* data, const size_t len) { _body.append(data, len); }
 
 void HttpRequest::clear() {
 	_method.clear();

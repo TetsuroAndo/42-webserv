@@ -47,14 +47,14 @@ std::string MimeType::getMimeType(const std::string& extension) {
 		_setMimeTypes();
 	}
 
-	size_t dot_pos = extension.find_last_of('.');
-	if (dot_pos == std::string::npos) {
+	const size_t dotPos = extension.find_last_of('.');
+	if (dotPos == std::string::npos) {
 		return "application/octet-stream";
 	}
-	std::string ext = extension.substr(dot_pos);
+	std::string ext = extension.substr(dotPos);
 	StringOps::toLower(ext);
 
-	std::map<std::string, std::string>::const_iterator it = _mimeMap.find(ext);
+	const std::map<std::string, std::string>::const_iterator it = _mimeMap.find(ext);
 	if (it != _mimeMap.end()) {
 		return it->second;
 	}

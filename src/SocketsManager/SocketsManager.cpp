@@ -16,8 +16,8 @@ SocketsManager::~SocketsManager() {
 	}
 }
 
-void SocketsManager::registerSocket(int fd, uint32_t events) {
-	struct epoll_event event;
+void SocketsManager::registerSocket(const int fd, const uint32_t events) const {
+	epoll_event event;
 	event.data.fd = fd;
 	event.events = events;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) < 0) {
@@ -26,7 +26,7 @@ void SocketsManager::registerSocket(int fd, uint32_t events) {
 }
 
 void SocketsManager::modifySocket(const int fd, const uint32_t events) const {
-	struct epoll_event event;
+	epoll_event event;
 	event.data.fd = fd;
 	event.events = events;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &event) < 0) {
@@ -39,11 +39,11 @@ void SocketsManager::unregisterSocket(const int fd) const {
 }
 
 int SocketsManager::wait(const int timeout) {
-	int eventSize = epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
+	const int eventSize = epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
 	if (eventSize < 0) {
 		throw std::runtime_error("epoll_wait() failed");
 	}
 	return eventSize;
 }
 
-struct epoll_event *SocketsManager::getEvents() { return _events.data(); }
+epoll_event *SocketsManager::getEvents() { return _events.data(); }

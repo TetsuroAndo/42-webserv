@@ -1,6 +1,6 @@
 #include "ElfForm.hpp"
-#include <sstream>
 #include <ctime>
+#include <sstream>
 
 /**
  * 参考先:
@@ -31,7 +31,7 @@ void ElfForm::format(const LogMessage& msg, std::ostream& out) {
 		out << getHeader() << "\n";
 		_headerWritten = true;
 	}
-	struct tm *timeinfo = localtime(&msg.timestamp);
+	const tm *timeinfo = localtime(&msg.timestamp);
 	char dateStr[11];
 	char timeStr[9];
 	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);

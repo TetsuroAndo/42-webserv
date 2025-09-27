@@ -1,34 +1,34 @@
 #include "StringOps.hpp"
 #include <algorithm>
 #include <cctype>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-#include <limits>
 
 namespace // Helper functor structs
 {
 	struct IsNotDigit {
-		bool operator()(char c) const {
+		bool operator()(const char c) const {
 			return !std::isdigit(static_cast<unsigned char>(c));
 		}
 	};
 
 	struct CharEqualIgnoreCase {
-		bool operator()(char lhs, char rhs) const {
+		bool operator()(const char lhs, const char rhs) const {
 			return std::tolower(static_cast<unsigned char>(lhs)) ==
 				std::tolower(static_cast<unsigned char>(rhs));
 		}
 	};
 
 	struct CharToLower {
-		char operator()(char c) const {
+		char operator()(const char c) const {
 			return std::tolower(static_cast<unsigned char>(c));
 		}
 	};
 
 	// 16進数の1文字を数値に変換する
-	bool hexCharToDigit(char c, unsigned int& digit) {
+	bool hexCharToDigit(const char c, unsigned int& digit) {
 		if (std::isdigit(c)) {
 			digit = c - '0';
 			return true;
@@ -40,7 +40,7 @@ namespace // Helper functor structs
 		return false;
 	}
 
-}
+} // namespace
 
 namespace StringOps
 {
@@ -77,8 +77,8 @@ namespace StringOps
 	}
 
 	int startCharCount(const std::string &str, const char c) {
-		const std::string str_c(1, c);
-		return startCharCount(str, str_c);
+		const std::string strC(1, c);
+		return startCharCount(str, strC);
 	}
 
 	int startCharCount(const std::string &str, const std::string &chars) {
@@ -163,7 +163,7 @@ namespace StringOps
 		return res;
 	}
 
-	bool hexStrToSize(const char* str, size_t len, size_t& result) {
+	bool hexStrToSize(const char* str, const size_t len, size_t& result) {
 		result = 0;
 		if (len == 0) {
 			return false;
@@ -199,7 +199,7 @@ namespace StringOps
 			if (!std::isdigit(str[i])) {
 				return false;
 			}
-			unsigned int digit = str[i] - '0';
+			const unsigned int digit = str[i] - '0';
 
 			if (result > maxDiv10 || (result == maxDiv10 && digit > maxMod10)) {
 				return false;

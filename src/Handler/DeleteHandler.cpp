@@ -1,7 +1,7 @@
-#include "DeleteHandler.hpp"
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "DeleteHandler.hpp"
 #include "HandlerUtil.hpp"
 
 #include <cstdio>
@@ -44,13 +44,13 @@ HttpResponse DeleteHandler::handle(const HttpRequest &req, const Config &config)
 		return res;
 	}
 
-	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
+	const std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
 		HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
-	FileDeleteStatus deleteStatus = tryDeleteFile(filePath);
+	const FileDeleteStatus deleteStatus = tryDeleteFile(filePath);
 
 	switch (deleteStatus) {
 		case DELETE_SUCCESS:

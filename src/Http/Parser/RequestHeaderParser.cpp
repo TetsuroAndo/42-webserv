@@ -6,7 +6,7 @@ RequestHeaderParser::RequestHeaderParser() {}
 RequestHeaderParser::~RequestHeaderParser() {}
 
 ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &headerBlock, int &errorCode) {
-	size_t size = headerBlock.size();
+	const size_t size = headerBlock.size();
 	size_t lineStart = 0;
 	while (lineStart < size) {
 		size_t nl = headerBlock.find('\n', lineStart);
@@ -16,7 +16,7 @@ ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &
 			--lineEnd;
 
 		if (lineEnd > lineStart) {
-			size_t colonPos = headerBlock.find(':', lineStart);
+			const size_t colonPos = headerBlock.find(':', lineStart);
 			if (colonPos == std::string::npos || colonPos >= lineEnd) {
 				errorCode = HttpStatus::BAD_REQUEST;
 				return PARSE_ERROR;
@@ -26,7 +26,7 @@ ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &
 			size_t keyEnd = colonPos;
 			while (keyStart < keyEnd && (headerBlock[keyStart] == ' ' || headerBlock[keyStart] == '\t')) keyStart++;
 			while (keyEnd > keyStart && (headerBlock[keyEnd - 1] == ' ' || headerBlock[keyEnd - 1] == '\t')) keyEnd--;
-			size_t keyLen = keyEnd - keyStart;
+			const size_t keyLen = keyEnd - keyStart;
 			if (keyLen == 0) {
 				errorCode = HttpStatus::BAD_REQUEST;
 				return PARSE_ERROR;
@@ -36,7 +36,7 @@ ParseResult RequestHeaderParser::parse(HttpRequest& request, const std::string &
 			size_t valueEnd = lineEnd;
 			while (valueStart < valueEnd && (headerBlock[valueStart] == ' ' || headerBlock[valueStart] == '\t')) valueStart++;
 			while (valueEnd > valueStart && (headerBlock[valueEnd - 1] == ' ' || headerBlock[valueEnd - 1] == '\t')) valueEnd--;
-			size_t valueLen = valueEnd - valueStart;
+			const size_t valueLen = valueEnd - valueStart;
 
 			const char* keyPtr = headerBlock.c_str() + keyStart;
 			if (request.hasHeader(keyPtr, keyLen)) {

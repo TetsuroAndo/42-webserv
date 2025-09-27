@@ -1,12 +1,12 @@
-#include "FileSink.hpp"
-#include "../Form/JsonForm.hpp"
 #include "../Form/ElfForm.hpp"
+#include "../Form/JsonForm.hpp"
+#include "FileSink.hpp"
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 
 namespace {
 	template <typename T>
@@ -34,8 +34,8 @@ namespace {
 		DIR* dir = opendir(logDir.c_str());
 		if (!dir) return 0;
 
-		std::string prefix = filename + ".";
-		struct dirent* entry;
+		const std::string prefix = filename + ".";
+		dirent* entry;
 		while ((entry = readdir(dir)) != NULL) {
 			std::string name(entry->d_name);
 			if (name.find(prefix) == 0) {
@@ -53,14 +53,14 @@ namespace {
 		closedir(dir);
 		return maxIndex;
 	}
-}
+} // namespace
 
 FileSink::FileSink(
 	const std::string& logDir,
 	const std::string &filename,
-	LogForm *form, LogLevel level, LogFilterMode mode,
-	size_t maxFileSize,
-	size_t maxBackupFiles
+	LogForm *form, const LogLevel level, const LogFilterMode mode,
+	const size_t maxFileSize,
+	const size_t maxBackupFiles
 ) :
 	LogSink(form, level, mode),
 	_dir(logDir),
@@ -89,8 +89,8 @@ void FileSink::log(const LogMessage &msg) {
 		{
 			_fileStream.close();
 
-			std::string baseFilepath = _dir + "/" + _fileName;
-			size_t lastIdx = getMaxBackupIndex(_dir, _fileName);
+			const std::string baseFilepath = _dir + "/" + _fileName;
+			const size_t lastIdx = getMaxBackupIndex(_dir, _fileName);
 			for (size_t i = lastIdx; i > 0; --i) {
 				std::string oldPath = baseFilepath + "." + numberToString(i);
 				std::string newPath = baseFilepath + "." + numberToString(i + 1);

@@ -1,9 +1,7 @@
 #include "Logger.hpp"
-#include <ctime>
-#include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <sys/stat.h>
-#include <iostream>
 
 Logger& Logger::getInstance() {
 	static Logger instance;
@@ -39,8 +37,8 @@ Logger::~Logger() {
 	_sinks.clear();
 }
 
-void Logger::setSinkFile(const std::string &filename, LogFormat eFormat,
-	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles)
+void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
+	const LogLevel level, const LogFilterMode mode, const size_t maxFileSize, const size_t maxBackupFiles)
 {
 	LogForm *form;
 	if (eFormat == JSON) {
@@ -53,8 +51,8 @@ void Logger::setSinkFile(const std::string &filename, LogFormat eFormat,
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
-	LogFormat eFormat, LogLevel level, LogFilterMode mode,
-	size_t maxFileSize, size_t maxBackupFiles) {
+	const LogFormat eFormat, const LogLevel level, const LogFilterMode mode,
+	const size_t maxFileSize, const size_t maxBackupFiles) {
 	LogForm *form;
 	if (eFormat == JSON) {
 		form = new JsonForm();
@@ -65,7 +63,7 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 	updateActiveLevelsMask();
 }
 
-void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mode) {
+void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level, const LogFilterMode mode) {
 	LogForm *form;
 	if (eFormat == JSON) {
 		form = new JsonForm();
@@ -91,20 +89,20 @@ void Logger::log(const LogMessage& msg) {
 	}
 }
 
-bool Logger::isLogLevelActive(LogLevel level) const {
-	return (_activeLevelsMask >> level) & 1;
+bool Logger::isLogLevelActive(const LogLevel level) const {
+	return _activeLevelsMask >> level & 1;
 }
 
 void Logger::updateActiveLevelsMask() {
 	_activeLevelsMask = 0;
 	for (std::vector<LogSink*>::const_iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
-		LogLevel level = (*it)->getLogLevel();
+		const LogLevel level = (*it)->getLogLevel();
 		if ((*it)->getFilterMode() == GREATER_OR_EQUAL) {
 			for (int i = level; i <= FATAL; ++i) {
-				_activeLevelsMask |= (1 << i);
+				_activeLevelsMask |= 1 << i;
 			}
 		} else {
-			_activeLevelsMask |= (1 << level);
+			_activeLevelsMask |= 1 << level;
 		}
 	}
 }

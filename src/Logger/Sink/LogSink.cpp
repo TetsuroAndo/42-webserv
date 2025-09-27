@@ -1,9 +1,7 @@
-#include "LogSink.hpp"
 #include "../Form/LogForm.hpp"
-#include "../Form/JsonForm.hpp"
-#include "../Form/ElfForm.hpp"
+#include "LogSink.hpp"
 
-LogSink::LogSink(LogForm *form, LogLevel level, LogFilterMode mode)
+LogSink::LogSink(LogForm *form, const LogLevel level, const LogFilterMode mode)
 	: _form(form), _logLevel(level), _filterMode(mode) {}
 
 LogSink::~LogSink() {

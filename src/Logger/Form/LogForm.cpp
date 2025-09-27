@@ -1,4 +1,5 @@
 #include "LogForm.hpp"
+
 #include "../LogStructure.hpp"
 
 LogForm::~LogForm() {}
@@ -8,7 +9,7 @@ LogForm::~LogForm() {}
  * @param level ログレベル
  * @return ログレベルに対応する文字列
  */
-std::string LogForm::levelToString(LogLevel level) const {
+std::string LogForm::levelToString(const LogLevel level) const {
 	switch (level) {
 		case DEBUG: return "DEBUG";
 		case INFO: return "INFO";

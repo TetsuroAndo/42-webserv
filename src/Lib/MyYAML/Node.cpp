@@ -1,5 +1,5 @@
-#include "Node.hpp"
 #include "../Colors/Colors.hpp"
+#include "Node.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -11,7 +11,7 @@ Node::Node(const Type type, const std::string &key, const std::string &value) :
 	_key(key),
 	_value(value) {
 
-	if (type == NODE_SEQ && (key == "" && value == "")) {
+	if (type == NODE_SEQ && key == "" && value == "") {
 		throw std::invalid_argument("Key must not be empty");
 	}
 	if (type == NODE_MAP && key == "") {

@@ -21,7 +21,7 @@ private:
 	~SessionManager();
 
 	Token token;
-	std::string generateSessionId();
+	std::string generateSessionId() const;
 
 	std::map<std::string, Session*> _sessions;
 	static const time_t _SESSION_TIMEOUT = 1800; // 30分

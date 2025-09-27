@@ -24,7 +24,7 @@ void HttpResponse::setServerName(const std::string &name) {
 
 // Status Code
 int HttpResponse::getStatusCode() const { return _statusCode; }
-void HttpResponse::setStatusCode(int code) { _statusCode = code; }
+void HttpResponse::setStatusCode(const int code) { _statusCode = code; }
 
 // Version
 const std::string &HttpResponse::getVersion() const { return _version; }
@@ -36,7 +36,7 @@ const std::map<std::string, std::string> &HttpResponse::getHeaders() const {
 }
 
 const std::string &HttpResponse::getHeader(const std::string &key) const {
-	std::map<std::string, std::string>::const_iterator it = _headers.find(key);
+	const std::map<std::string, std::string>::const_iterator it = _headers.find(key);
 	if (it != _headers.end()) {
 		return it->second;
 	}

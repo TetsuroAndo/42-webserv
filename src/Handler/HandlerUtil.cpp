@@ -5,7 +5,6 @@
 #include "../Http/Core/HttpStatus.hpp"
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
 
 namespace HandlerUtil {
 
@@ -19,22 +18,22 @@ std::string getRealPath(const char *path) {
 	return realPath;
 }
 
-std::string toString(int value) {
+std::string toString(const int value) {
 	char buffer[32];
 	std::sprintf(buffer, "%d", value);
 	return std::string(buffer);
 }
 
-void generateErrorBody(HttpResponse &res, int code) {
+void generateErrorBody(HttpResponse &res, const int code) {
 	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string body;
 	body += "<html><head><title>";
-	body += HandlerUtil::toString(code);
+	body += toString(code);
 	body += " ";
 	body += reason;
 	body += "</title></head><body><h1>";
-	body += HandlerUtil::toString(code);
+	body += toString(code);
 	body += " ";
 	body += reason;
 	body += "</h1></body></html>";
@@ -72,12 +71,12 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	}
 	resolvedPath += remainingPath;
 
-	resolvedPath = HandlerUtil::getRealPath(resolvedPath.c_str());
+	resolvedPath = getRealPath(resolvedPath.c_str());
 	if (resolvedPath.empty()) {
 		return "";
 	}
 
-	std::string realRoot = HandlerUtil::getRealPath(root.c_str());
+	const std::string realRoot = getRealPath(root.c_str());
 	if (realRoot.empty()) {
 		return "";
 	}

@@ -38,7 +38,7 @@ static const StatusEntry statusEntries[] = {
 };
 static const std::string unknown = "Internal Server Error";
 
-std::string HttpStatus::getReason(int code) {
+std::string HttpStatus::getReason(const int code) {
 	for (size_t i = 0; i < sizeof(statusEntries) / sizeof(StatusEntry); ++i) {
 		if (statusEntries[i].code == code)
 			return std::string(statusEntries[i].reason);

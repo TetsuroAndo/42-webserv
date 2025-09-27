@@ -1,7 +1,7 @@
-#include "StaticFileHandler.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
 #include "HandlerUtil.hpp"
+#include "StaticFileHandler.hpp"
 #include <algorithm>
 #include <dirent.h>
 #include <fstream>
@@ -25,7 +25,7 @@ namespace {
 			return FILE_READ_FORBIDDEN;
 		}
 
-		std::streampos fileSize = fileStat.st_size;
+		const std::streampos fileSize = fileStat.st_size;
 
 		outContent.resize(fileSize);
 		file.read(&outContent[0], fileSize);
@@ -56,7 +56,7 @@ void StaticFileHandler::generateDirectoryListing(HttpResponse &res,
 	htmlContent += "</h1><hr><pre>";
 
 	std::vector<std::string> files;
-	struct dirent *entry;
+	dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		files.push_back(entry->d_name);
 	}
@@ -102,7 +102,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req, const Config &con
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
-		std::string indexPath = filePath + "/" + config.getLocation("/").indexFile;
+		const std::string indexPath = filePath + "/" + config.getLocation("/").indexFile;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode)) {
@@ -120,7 +120,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req, const Config &con
 
 	if (S_ISREG(pathStat.st_mode)) {
 		std::string fileContent;
-		FileReadStatus readStatus = tryReadFile(filePath, fileContent, pathStat);
+		const FileReadStatus readStatus = tryReadFile(filePath, fileContent, pathStat);
 
 		switch (readStatus) {
 			case FILE_READ_SUCCESS:

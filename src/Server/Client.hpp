@@ -9,8 +9,8 @@ public:
 	~Client();
 
 	int getFd() const;
-	Socket *getSocket();
-	PipelineContext *getContext();
+	Socket *getSocket() const;
+	PipelineContext *getContext() const;
 
 private:
 	int _fd;
