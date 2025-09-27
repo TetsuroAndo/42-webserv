@@ -14,9 +14,7 @@ void HttpResponse::clear() {
 }
 
 // Server Name
-const std::string &HttpResponse::getServerName() const {
-	return _serverName;
-}
+const std::string &HttpResponse::getServerName() const { return _serverName; }
 
 void HttpResponse::setServerName(const std::string &name) {
 	_serverName = name;
@@ -28,7 +26,9 @@ void HttpResponse::setStatusCode(const int code) { _statusCode = code; }
 
 // Version
 const std::string &HttpResponse::getVersion() const { return _version; }
-void HttpResponse::setVersion(const std::string &version) { _version = version; }
+void HttpResponse::setVersion(const std::string &version) {
+	_version = version;
+}
 
 // Headers
 const std::map<std::string, std::string> &HttpResponse::getHeaders() const {
@@ -36,7 +36,8 @@ const std::map<std::string, std::string> &HttpResponse::getHeaders() const {
 }
 
 const std::string &HttpResponse::getHeader(const std::string &key) const {
-	const std::map<std::string, std::string>::const_iterator it = _headers.find(key);
+	const std::map<std::string, std::string>::const_iterator it =
+		_headers.find(key);
 	if (it != _headers.end()) {
 		return it->second;
 	}

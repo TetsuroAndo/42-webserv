@@ -39,7 +39,8 @@ void SocketsManager::unregisterSocket(const int fd) const {
 }
 
 int SocketsManager::wait(const int timeout) {
-	const int eventSize = epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
+	const int eventSize =
+		epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
 	if (eventSize < 0) {
 		throw std::runtime_error("epoll_wait() failed");
 	}

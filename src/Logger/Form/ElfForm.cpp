@@ -12,10 +12,11 @@
 ElfForm::ElfForm() : _headerWritten(false) {}
 
 // スペースや特殊文字を '-' に置換
-std::string ElfForm::sanitize(const std::string& str) const {
+std::string ElfForm::sanitize(const std::string &str) const {
 	std::string sanitized = str;
 	for (size_t i = 0; i < sanitized.length(); ++i) {
-		if (sanitized[i] == ' ' || sanitized[i] == '\t' || sanitized[i] == '\n' || sanitized[i] == '\r') {
+		if (sanitized[i] == ' ' || sanitized[i] == '\t' ||
+			sanitized[i] == '\n' || sanitized[i] == '\r') {
 			sanitized[i] = '-';
 		}
 	}
@@ -26,7 +27,7 @@ std::string ElfForm::getHeader() {
 	return "#Fields: date time level function file:line message attributes";
 }
 
-void ElfForm::format(const LogMessage& msg, std::ostream& out) {
+void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (!_headerWritten) {
 		out << getHeader() << "\n";
 		_headerWritten = true;
@@ -46,7 +47,8 @@ void ElfForm::format(const LogMessage& msg, std::ostream& out) {
 	if (msg.attributes.empty()) {
 		out << "-";
 	} else {
-		for (std::map<std::string, std::string>::const_iterator it = msg.attributes.begin();
+		for (std::map<std::string, std::string>::const_iterator it =
+				 msg.attributes.begin();
 			 it != msg.attributes.end();) {
 			out << sanitize(it->first) << "=" << sanitize(it->second);
 			if (++it != msg.attributes.end()) {

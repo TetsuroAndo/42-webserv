@@ -1,14 +1,13 @@
+#include "RequestBodyParser.hpp"
 #include "../../Lib/StringOps/StringOps.hpp"
 #include "../Core/HttpRequest.hpp"
 #include "../Core/HttpStatus.hpp"
-#include "RequestBodyParser.hpp"
 #include <algorithm>
 #include <cstring>
 #include <ctime>
 
-RequestBodyParser::RequestBodyParser() {
-	reset();
-}
+RequestBodyParser::RequestBodyParser() { reset(); }
+
 RequestBodyParser::~RequestBodyParser() {}
 
 void RequestBodyParser::reset() {
@@ -18,9 +17,9 @@ void RequestBodyParser::reset() {
 	_lastReceiveTime = time(NULL);
 }
 
-void RequestBodyParser::init(const HttpRequest& request, int& errorCode) {
+void RequestBodyParser::init(const HttpRequest &request, int &errorCode) {
 	if (request.hasHeader("Transfer-Encoding")) {
-		const std::string& encoding = request.getHeader("Transfer-Encoding");
+		const std::string &encoding = request.getHeader("Transfer-Encoding");
 		if (encoding == "chunked") {
 			if (request.hasHeader("Content-Length")) {
 				errorCode = HttpStatus::BAD_REQUEST;
@@ -31,7 +30,7 @@ void RequestBodyParser::init(const HttpRequest& request, int& errorCode) {
 			errorCode = HttpStatus::NOT_IMPLEMENTED;
 		}
 	} else if (request.hasHeader("Content-Length")) {
-		const std::string& lenStr = request.getHeader("Content-Length");
+		const std::string &lenStr = request.getHeader("Content-Length");
 		if (!StringOps::decStrToSize(lenStr, _contentLengthRemaining)) {
 			errorCode = HttpStatus::BAD_REQUEST;
 			return;
@@ -47,10 +46,11 @@ void RequestBodyParser::init(const HttpRequest& request, int& errorCode) {
 	}
 }
 
-size_t RequestBodyParser::parse(HttpRequest& request, const std::string& buffer, int& errorCode, ParseResult& result) {
-    if (!buffer.empty()) {
-        _lastReceiveTime = time(NULL);
-    }
+size_t RequestBodyParser::parse(HttpRequest &request, const std::string &buffer,
+								int &errorCode, ParseResult &result) {
+	if (!buffer.empty()) {
+		_lastReceiveTime = time(NULL);
+	}
 
 	if (_state == UNINITIALIZED) {
 		init(request, errorCode);
@@ -76,8 +76,11 @@ size_t RequestBodyParser::parse(HttpRequest& request, const std::string& buffer,
 	return 0;
 }
 
-size_t RequestBodyParser::parseIdentity(HttpRequest& request, const std::string& buffer, ParseResult& result) {
-	const size_t toRead = std::min<size_t>(buffer.length(), _contentLengthRemaining);
+size_t RequestBodyParser::parseIdentity(HttpRequest &request,
+										const std::string &buffer,
+										ParseResult &result) {
+	const size_t toRead =
+		std::min<size_t>(buffer.length(), _contentLengthRemaining);
 
 	if (toRead == 0) {
 		result = PARSE_INCOMPLETE;
@@ -97,8 +100,11 @@ size_t RequestBodyParser::parseIdentity(HttpRequest& request, const std::string&
 	return toRead;
 }
 
-size_t RequestBodyParser::parseChunked(HttpRequest& request, const std::string& buffer, int& errorCode, ParseResult& result) {
-	const int timeoutSeconds = 10; // TODO: ちゃんとしたタイムアウト時間を設定。暫定Timeout値
+size_t RequestBodyParser::parseChunked(HttpRequest &request,
+									   const std::string &buffer,
+									   int &errorCode, ParseResult &result) {
+	const int timeoutSeconds =
+		10; // TODO: ちゃんとしたタイムアウト時間を設定。暫定Timeout値
 	size_t offset = 0;
 	result = PARSE_INCOMPLETE;
 
@@ -112,17 +118,20 @@ size_t RequestBodyParser::parseChunked(HttpRequest& request, const std::string& 
 
 		if (_state == CHUNKED_SIZE) {
 			const size_t crlfPos = buffer.find("\r\n", offset);
-			if (crlfPos == std::string::npos) return offset;
+			if (crlfPos == std::string::npos)
+				return offset;
 
-			const char* sizeLineStart = buffer.c_str() + offset;
+			const char *sizeLineStart = buffer.c_str() + offset;
 			size_t sizeLineLen = crlfPos - offset;
 
-			const void* semiPosPtr = memchr(sizeLineStart, ';', sizeLineLen);
+			const void *semiPosPtr = memchr(sizeLineStart, ';', sizeLineLen);
 			if (semiPosPtr != NULL) {
-				sizeLineLen = static_cast<const char*>(semiPosPtr) - sizeLineStart;
+				sizeLineLen =
+					static_cast<const char *>(semiPosPtr) - sizeLineStart;
 			}
 
-			if (!StringOps::hexStrToSize(sizeLineStart, sizeLineLen, _chunkSize)) {
+			if (!StringOps::hexStrToSize(sizeLineStart, sizeLineLen,
+										 _chunkSize)) {
 				errorCode = HttpStatus::BAD_REQUEST;
 				result = PARSE_ERROR;
 				return offset;
@@ -137,9 +146,11 @@ size_t RequestBodyParser::parseChunked(HttpRequest& request, const std::string& 
 		}
 
 		if (_state == CHUNKED_DATA) {
-			if (buffer.length() - offset < _chunkSize + 2) return offset;
+			if (buffer.length() - offset < _chunkSize + 2)
+				return offset;
 			request.appendBody(buffer.c_str() + offset, _chunkSize);
-			if (!(buffer[offset + _chunkSize] == '\r' && buffer[offset + _chunkSize + 1] == '\n')) {
+			if (!(buffer[offset + _chunkSize] == '\r' &&
+				  buffer[offset + _chunkSize + 1] == '\n')) {
 				errorCode = HttpStatus::BAD_REQUEST;
 				result = PARSE_ERROR;
 				return offset;
@@ -152,7 +163,8 @@ size_t RequestBodyParser::parseChunked(HttpRequest& request, const std::string& 
 			size_t trailerOffset = offset;
 			while (true) {
 				const size_t crlfPos = buffer.find("\r\n", trailerOffset);
-				if (crlfPos == std::string::npos) return offset;
+				if (crlfPos == std::string::npos)
+					return offset;
 
 				if (crlfPos == trailerOffset) {
 					offset = trailerOffset + 2;

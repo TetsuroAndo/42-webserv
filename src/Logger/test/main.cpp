@@ -11,7 +11,8 @@ int main() {
 		logger.setSinkFile("server.log", JSON, DEBUG);
 		logger.setSinkFile("WarningOnly.log", ELF, WARNING, EXACT);
 		logger.setSinkFile("test_log", "dir_test.log", ELF, DEBUG);
-		logger.setSinkFile("test_log", "MaxTest.log", ELF, DEBUG, EXACT, 100, 3);
+		logger.setSinkFile("test_log", "MaxTest.log", ELF, DEBUG, EXACT, 100,
+						   3);
 
 		LOG(DEBUG) << "This is a debug message. It should not appear.";
 		LOG(INFO) << "Server is starting...";
@@ -21,8 +22,7 @@ int main() {
 
 		// std::stringstreamを使わずに直接数値を渡せる
 		LOG(INFO) << "Accepted new connection"
-				  << "ip: " << clientIp
-				  << attr("client_ip", clientIp)
+				  << "ip: " << clientIp << attr("client_ip", clientIp)
 				  << attr("fd", clientFd);
 
 		LOG(WARNING) << "Configuration file has a deprecated option.";
@@ -30,7 +30,6 @@ int main() {
 		LOG(ERROR) << "Failed to process request for resource: /test.html"
 				   << attr("status_code", 404) // 数値を直接渡す
 				   << attr("reason", "File not found");
-
 	} catch (const std::exception &e) {
 		std::cerr << "A critical error occurred: " << e.what() << std::endl;
 		return 1;

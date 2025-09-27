@@ -191,30 +191,30 @@ static void invalidTestChunkSize() {
 }
 
 static void testStatusLine() {
-    HttpResponse res;
-    res.setStatusCode(200);
-    std::string status = res.getStatusLine();
-    assert(status.find("200 OK") != std::string::npos);
+	HttpResponse res;
+	res.setStatusCode(200);
+	std::string status = res.getStatusLine();
+	assert(status.find("200 OK") != std::string::npos);
 }
 
 static void testHeadersAndBody() {
-    HttpResponse res;
-    res.setStatusCode(404);
-    res.setHeaders("Content-Type", "text/plain");
-    res.setResponseBody("Not Found");
-    std::string resp = res.getResponse();
-    assert(resp.find("404 Not Found") != std::string::npos);
-    assert(resp.find("Content-Type: text/plain") != std::string::npos);
-    assert(resp.find("Content-Length: 9") != std::string::npos);
-    assert(resp.find("Not Found") != std::string::npos);
+	HttpResponse res;
+	res.setStatusCode(404);
+	res.setHeaders("Content-Type", "text/plain");
+	res.setResponseBody("Not Found");
+	std::string resp = res.getResponse();
+	assert(resp.find("404 Not Found") != std::string::npos);
+	assert(resp.find("Content-Type: text/plain") != std::string::npos);
+	assert(resp.find("Content-Length: 9") != std::string::npos);
+	assert(resp.find("Not Found") != std::string::npos);
 }
 
 static void testDateHeader() {
-    HttpResponse res;
-    res.setStatusCode(200);
-    res.setResponseBody("Hello");
-    std::string resp = res.getResponse();
-    assert(resp.find("Date: ") != std::string::npos);
+	HttpResponse res;
+	res.setStatusCode(200);
+	res.setResponseBody("Hello");
+	std::string resp = res.getResponse();
+	assert(resp.find("Date: ") != std::string::npos);
 }
 
 int main(void) {
@@ -239,9 +239,9 @@ int main(void) {
 	invalidTestChunkSize();
 
 	std::cout << "=========RESPONSE TEST========\n";
-    testStatusLine();
-    testHeadersAndBody();
-    testDateHeader();
+	testStatusLine();
+	testHeadersAndBody();
+	testDateHeader();
 
 	std::cout << "All tests passed!" << std::endl;
 	return 0;

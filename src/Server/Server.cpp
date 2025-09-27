@@ -1,6 +1,6 @@
+#include "Server.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
-#include "Server.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <fcntl.h>
@@ -20,11 +20,11 @@ Server::Server(const Config &config) : _config(config) {
 
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin();
-		it != _clients.end(); ++it) {
+		 it != _clients.end(); ++it) {
 		delete it->second;
 	}
 	for (std::map<int, Socket *>::iterator it = _listenSockets.begin();
-		it != _listenSockets.end(); ++it) {
+		 it != _listenSockets.end(); ++it) {
 		delete it->second;
 	}
 }
@@ -52,8 +52,8 @@ void Server::setupListenSockets() {
 		addr.sin_port = htons(port);
 		inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
 
-		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr),
-				 sizeof(addr)) < 0) {
+		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) <
+			0) {
 			close(listenFd);
 			throw std::runtime_error("bind() failed for port ");
 		}
@@ -65,7 +65,8 @@ void Server::setupListenSockets() {
 		Socket *sock = new Socket(listenFd, addr);
 		_listenSockets[listenFd] = sock;
 		_manager.registerSocket(listenFd, EPOLLIN);
-		std::cout << "Listening on " << interfaceAddr << ":" << port << std::endl;
+		std::cout << "Listening on " << interfaceAddr << ":" << port
+				  << std::endl;
 	}
 }
 
@@ -119,10 +120,12 @@ void Server::handleNewConnection(const int listenFd) {
 		_clients[clientFd] = client;
 		_manager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {
-		std::cerr << "Failed to allocate Client object: " << e.what() << std::endl;
+		std::cerr << "Failed to allocate Client object: " << e.what()
+				  << std::endl;
 		close(clientFd); // Close the newly accepted socket
 	} catch (const std::exception &e) {
-		std::cerr << "An unexpected error occurred during client creation: " << e.what() << std::endl;
+		std::cerr << "An unexpected error occurred during client creation: "
+				  << e.what() << std::endl;
 		close(clientFd); // Close the newly accepted socket
 	}
 }
@@ -156,7 +159,8 @@ void Server::handleClientRead(const int clientFd) {
 	}
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		// Only execute middleware if request is complete or parsing error occurred
+		// Only execute middleware if request is complete or parsing error
+		// occurred
 		_mainProcessor.handle(*ctx);
 
 		const std::string responseStr = ResponseBuilder::build(*ctx->res);
@@ -203,6 +207,6 @@ void Server::closeConnection(const int clientFd) {
 		delete it->second;
 		_clients.erase(it);
 	} else {
-    }
+	}
 	close(clientFd);
 }

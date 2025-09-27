@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Http/Core/HttpRequest.hpp"
 #include "../../Config/Config.hpp"
+#include "../../Http/Core/HttpRequest.hpp"
 #include "PipelineContext.hpp"
 #include <string>
 #include <vector>
@@ -37,6 +37,6 @@ public:
 	void next(PipelineContext &ctx);
 
 private:
-	std::vector<IMiddleware*> _middlewareChain;
+	std::vector<IMiddleware *> _middlewareChain;
 	size_t _currentIndex;
 };

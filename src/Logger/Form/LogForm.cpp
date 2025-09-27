@@ -11,11 +11,17 @@ LogForm::~LogForm() {}
  */
 std::string LogForm::levelToString(const LogLevel level) const {
 	switch (level) {
-		case DEBUG: return "DEBUG";
-		case INFO: return "INFO";
-		case WARNING: return "WARNING";
-		case ERROR: return "ERROR";
-		case FATAL: return "FATAL";
-		default: return "UNKNOWN";
+	case DEBUG:
+		return "DEBUG";
+	case INFO:
+		return "INFO";
+	case WARNING:
+		return "WARNING";
+	case ERROR:
+		return "ERROR";
+	case FATAL:
+		return "FATAL";
+	default:
+		return "UNKNOWN";
 	}
 }

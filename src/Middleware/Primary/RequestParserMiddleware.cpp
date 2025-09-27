@@ -1,8 +1,9 @@
-#include "../../Http/Core/HttpStatus.hpp"
 #include "RequestParserMiddleware.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
 #include <sstream>
 
-void RequestParserMiddleware::handle(PipelineContext &ctx, MiddlewareProcessor *proc) {
+void RequestParserMiddleware::handle(PipelineContext &ctx,
+									 MiddlewareProcessor *proc) {
 	if (!ctx.req || !ctx.res) {
 		return;
 	}

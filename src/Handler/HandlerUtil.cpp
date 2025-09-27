@@ -7,7 +7,6 @@
 #include <cstdlib>
 
 namespace HandlerUtil {
-
 std::string getRealPath(const char *path) {
 	char *realPathPtr = realpath(path, NULL);
 	if (realPathPtr == NULL) {
@@ -63,7 +62,8 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	std::string resolvedPath = root;
 	std::string remainingPath = requestPath.substr(bestMatchPath.length());
 
-	if (!resolvedPath.empty() && resolvedPath[resolvedPath.length() - 1] != '/') {
+	if (!resolvedPath.empty() &&
+		resolvedPath[resolvedPath.length() - 1] != '/') {
 		resolvedPath += "/";
 	}
 	if (!remainingPath.empty() && remainingPath[0] == '/') {
@@ -87,5 +87,4 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 
 	return resolvedPath;
 }
-
 } // namespace HandlerUtil

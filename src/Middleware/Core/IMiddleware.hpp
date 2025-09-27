@@ -8,5 +8,6 @@
 class IMiddleware {
 public:
 	virtual ~IMiddleware() {}
+
 	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc) = 0;
 };

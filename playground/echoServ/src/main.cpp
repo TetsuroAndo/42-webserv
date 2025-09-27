@@ -14,21 +14,19 @@
 #include <iostream>
 #include <string>
 
-int main(void)
-{
-    std::string host = "0.0.0.0";
-    int port = 8080;
+int main(void) {
+	std::string host = "0.0.0.0";
+	int port = 8080;
 
-    // 引数で設定ファイルを受け取る想定だが、ここでは超ミニマルに直接指定
-    // 実際には default.conf などからポートやサーバ名などを読み込む
-    
-    Server server;
-    if (!server.init(host, port))
-    {
-        std::cerr << "Failed to initialize server\n";
-        return 1;
-    }
+	// 引数で設定ファイルを受け取る想定だが、ここでは超ミニマルに直接指定
+	// 実際には default.conf などからポートやサーバ名などを読み込む
 
-    server.run();
-    return 0;
+	Server server;
+	if (!server.init(host, port)) {
+		std::cerr << "Failed to initialize server\n";
+		return 1;
+	}
+
+	server.run();
+	return 0;
 }

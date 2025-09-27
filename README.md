@@ -2,7 +2,6 @@
 
 ## Overview
 
-
 ## Required
 
 - **Compiler**: C++98準拠のコンパイラ（g++, clang++）
@@ -118,6 +117,7 @@ make help
 - [Tsunami Saito](https://github.com/tsunami2170)
 
 ## THX
+
 - [Hiro Watanabe](https://github.com/melswonder)
 
 ## Acknowledgement

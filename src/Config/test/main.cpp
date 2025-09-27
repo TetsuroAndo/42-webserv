@@ -1,5 +1,5 @@
-#include <iostream>
 #include "../Config.hpp"
+#include <iostream>
 
 int main(const int argc, char **argv) {
 	(void)argc;

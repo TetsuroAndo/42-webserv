@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Socket/Socket.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
+#include "../Socket/Socket.hpp"
 
 class Client {
 public:

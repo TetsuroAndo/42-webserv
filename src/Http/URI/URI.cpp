@@ -1,11 +1,11 @@
-
 #include "URI.hpp"
 #include <cctype>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 
-unsigned char URI::_parseHexByte(const std::string &str, const std::size_t pos) {
+unsigned char URI::_parseHexByte(const std::string &str,
+								 const std::size_t pos) {
 	if (pos + 2 >= str.length()) {
 		throw std::invalid_argument("URIError: malformed URI sequence");
 	}
@@ -51,15 +51,20 @@ std::string URI::decodeURI(const std::string &str) {
 
 			// UTF-8 のマルチバイト長を判定
 			std::size_t expectedCont = 0;
-			if ((first & 0x80) == 0x00) { // 1-byte sequence (ASCII)
+			if ((first & 0x80) == 0x00) {
+				// 1-byte sequence (ASCII)
 				expectedCont = 0;
-			} else if ((first & 0xE0) == 0xC0) { // 2-byte sequence
+			} else if ((first & 0xE0) == 0xC0) {
+				// 2-byte sequence
 				expectedCont = 1;
-			} else if ((first & 0xF0) == 0xE0) { // 3-byte sequence
+			} else if ((first & 0xF0) == 0xE0) {
+				// 3-byte sequence
 				expectedCont = 2;
-			} else if ((first & 0xF8) == 0xF0) { // 4-byte sequence
+			} else if ((first & 0xF8) == 0xF0) {
+				// 4-byte sequence
 				expectedCont = 3;
-			} else { // 不正な開始バイト
+			} else {
+				// 不正な開始バイト
 				throw std::invalid_argument("URIError: malformed URI sequence");
 			}
 
@@ -135,7 +140,7 @@ std::string URI::encodeURIComponent(const std::string &str) {
 }
 
 std::string URI::_internalEncodeURILogic(const std::string &str,
-							 const std::string &unescaped) {
+										 const std::string &unescaped) {
 	std::ostringstream encoded;
 	encoded.fill('0');
 	encoded << std::hex << std::uppercase;

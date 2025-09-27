@@ -6,6 +6,7 @@
 #include <string>
 
 SessionManager::SessionManager() {}
+
 SessionManager::~SessionManager() {
 	for (std::map<std::string, Session *>::iterator it = _sessions.begin();
 		 it != _sessions.end(); ++it) {
@@ -35,7 +36,8 @@ Session *SessionManager::createSession() {
 }
 
 Session *SessionManager::getSession(const std::string &sessionId) {
-	const std::map<std::string, Session *>::iterator it = _sessions.find(sessionId);
+	const std::map<std::string, Session *>::iterator it =
+		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		it->second->updateLastAccess();
 		return it->second;
@@ -44,7 +46,8 @@ Session *SessionManager::getSession(const std::string &sessionId) {
 }
 
 bool SessionManager::destroySession(const std::string &sessionId) {
-	const std::map<std::string, Session *>::iterator it = _sessions.find(sessionId);
+	const std::map<std::string, Session *>::iterator it =
+		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		delete it->second;
 		_sessions.erase(it);

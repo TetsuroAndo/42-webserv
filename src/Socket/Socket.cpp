@@ -1,14 +1,11 @@
 #include "Socket.hpp"
 
-Socket::Socket(const int fd) : _fd(fd), _listen(false), _addr() {
-}
+Socket::Socket(const int fd) : _fd(fd), _listen(false), _addr() {}
 
 Socket::Socket(const int fd, const sockaddr_in &addr)
-	: _fd(fd), _listen(false), _addr(addr) {
-}
+	: _fd(fd), _listen(false), _addr(addr) {}
 
-Socket::~Socket() {
-}
+Socket::~Socket() {}
 
 int Socket::getFd() const { return this->_fd; }
 

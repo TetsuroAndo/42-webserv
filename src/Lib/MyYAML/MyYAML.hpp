@@ -1,5 +1,5 @@
 #pragma once
-#include  "Node.hpp"
+#include "Node.hpp"
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -29,8 +29,7 @@ public:
 	class ValueNotFound : public std::runtime_error {
 	public:
 		explicit ValueNotFound(const std::string &key)
-			: std::runtime_error("Value not found: " + key) {
-		}
+			: std::runtime_error("Value not found: " + key) {}
 	};
 
 	Node &getData() const;
