@@ -3,17 +3,12 @@
 
 int main(const int argc, char **argv) {
     try {
-// ******************************************
-// 将来的に置き換え
-//    	Config config;
-//    	if (argc != 1) {
-//    		config = Config(argv[1]);
-//    	}
-//        Server server(config);
-		(void)argc;
-		(void)argv;
-// ******************************************
-        Server server;
+        if (argc != 2) {
+            std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+            return 1;
+        }
+        Config config(argv[1]);
+        Server server(config);
         server.run();
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;

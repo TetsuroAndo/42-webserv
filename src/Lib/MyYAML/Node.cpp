@@ -169,10 +169,14 @@ Node *Node::getMapNode(const std::string &key) const {
 	if (_childNodeType != NODE_MAP) {
 		throw std::invalid_argument("Node type is not MAP");
 	}
-	if (_map.find(key) == _map.end()) {
-		throw std::invalid_argument("Key not found");
-	}
-	return _map.find(key)->second;
+
+    for (std::map<std::string, Node *>::const_iterator it = _map.begin(); it != _map.end(); ++it) {
+        if (it->first == key) {
+            return it->second;
+        }
+    }
+
+	throw std::invalid_argument("Key not found");
 }
 
 void Node::terminateNode() {
@@ -232,4 +236,14 @@ std::size_t Node::size() const {
 	default:
 		return 0;
 	}
+}
+
+std::vector<std::string> Node::getKeys() const {
+    std::vector<std::string> keys;
+    if (_childNodeType == NODE_MAP) {
+        for (std::map<std::string, Node *>::const_iterator it = _map.begin(); it != _map.end(); ++it) {
+            keys.push_back(it->first);
+        }
+    }
+    return keys;
 }

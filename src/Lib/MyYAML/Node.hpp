@@ -41,6 +41,8 @@ public:
 
 	std::size_t size() const;
 
+	std::vector<std::string> getKeys() const;
+
 private
 :
 	Type _type;

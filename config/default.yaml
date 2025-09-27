@@ -1,0 +1,52 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+        - listen:
+            interface: 127.0.0.1
+            port: 3000
+
+      defaultErrorPage: /tmp/www/error.html
+
+      maxRequestBodySize: 1048576
+
+      redirects:
+        - redirect:
+            from: /old
+            to: /new
+            code: 301
+        - redirect:
+            from: /
+            to: /tmp/www/index.html
+            code: 302
+
+      locations:
+        - location:
+            path: /
+            root: /tmp/www
+            errorFile: /tmp/www/error.html
+            uploadStore: /tmp/uploads
+            indexFile: /tmp/www/index.html
+            autoindex: true
+            allowedMethods:
+              - GET
+              - POST
+              - HEAD
+              - DELETE
+        - location:
+            path: /uploads
+            root: /tmp/uploads
+            errorFile: /tmp/www/error.html
+            uploadStore: /tmp/uploads
+            indexFile: /tmp/www/index.html
+            autoindex: true
+            allowedMethods:
+              - GET
+              - POST
+              - HEAD
+              - DELETE
+
+      timeoutSec: 60
+      maxEvents: 1024

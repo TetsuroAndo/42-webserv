@@ -6,6 +6,8 @@
 #include <set>
 #include <map>
 
+class Node;
+
 struct Listen {
 	std::string interface;
 	int port;
@@ -26,6 +28,8 @@ struct Location {
 	std::string errorFile;						// エラーページ
 	std::string uploadStore;					// アップロードファイルの保存先ディレクトリ
 	std::map<std::string, std::string> cgiConf;	// CGI設定 key: 拡張子 (e.g., ".php"), value: インタプリタのパス (e.g., "/usr/bin/php-cgi")
+
+	Location() : autoindex(false) {}
 };
 
 class Config {
@@ -36,9 +40,6 @@ private:
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
-	bool _isShowDirectoryListPage;
-	std::string _whenRequestedDirectory;
-	std::string _saveFileDirectory;
 
 	// Set Default Values
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
@@ -68,14 +69,18 @@ private:
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
 
+	void setup(const std::string& configFile);
+	void setup_hardcoded();
+	void parseListens(Node* node);
+    void parseRedirects(Node* node);
+    void parseLocations(Node* node);
+
 public:
 	Config();
 	Config(const std::string &configFile);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
-
-	void setup(const std::string& configFile = "");
 
 	// Getters
 	const std::vector<Listen> &getListens() const;
