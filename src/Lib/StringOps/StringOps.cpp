@@ -77,14 +77,8 @@ namespace StringOps
 	}
 
 	int startCharCount(const std::string &str, const char c) {
-		int result = 0;
-		std::string::const_iterator it = str.begin();
-		const std::string::const_iterator itEnd = str.end();
-		while (it != itEnd && c == *it) {
-			result++;
-			++it;
-		}
-		return result;
+		const std::string str_c(1, c);
+		return startCharCount(str, str_c);
 	}
 
 	int startCharCount(const std::string &str, const std::string &chars) {
@@ -99,15 +93,8 @@ namespace StringOps
 	}
 
 	bool isOnlyCharLine(const std::string &line, const char delimiter) {
-		std::string::const_iterator it = line.begin();
-		const std::string::const_iterator itEnd = line.end();
-		while (it != itEnd && ' ' == *it) {
-			++it;
-		}
-		if (it == itEnd) {
-			return false;
-		}
-		return delimiter == *it;
+		const std::string delimiters(1, delimiter);
+		return isOnlyCharLine(line, delimiters);
 	}
 
 	bool isOnlyCharLine(const std::string &line, const std::string &delimiters) {
