@@ -6,7 +6,7 @@
 #include "../Secondary/SessionMiddleware.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../../Handler/DeleteHandler.hpp"
-// #include "../../Handler/CgiHandler.hpp"
+#include "../../Handler/CgiHandler.hpp"
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 
@@ -37,9 +37,9 @@ void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *m
 		if (currentLocation.allowedMethods.count("HEAD")) {
 			handlers["HEAD"] = new StaticFileHandler( /* TODO: Implement HEAD method */ );
 		}
-		// if (currentLocation.allowedMethods.count("POST")) {
-		// 	handlers["POST"] = new CgiHandler(currentLocation.cgiConf);
-		// }
+		if (currentLocation.allowedMethods.count("POST")) {
+			handlers["POST"] = new CgiHandler();
+		}
 		if (currentLocation.allowedMethods.count("DELETE")) {
 			handlers["DELETE"] = new DeleteHandler();
 		}
