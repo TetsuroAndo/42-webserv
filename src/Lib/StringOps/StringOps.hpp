@@ -11,6 +11,11 @@ namespace StringOps {
 	bool isNumber(const std::string &str);
 	bool equalsIgnoreCase(const std::string& a, const std::string& b);
 
+	int startCharCount(const std::string &str, const char c);
+	int startCharCount(const std::string &str, const std::string &chars);
+	bool isOnlyCharLine(const std::string &line, const char delimiter);
+	bool isOnlyCharLine(const std::string &line, const std::string &delimiters);
+
 	void trim(std::string &s, const std::string &chars = " \t\n\r\f\v");
 	void toLower(std::string &str);
 	std::vector<std::string> split(const std::string &str,

@@ -9,8 +9,7 @@
 Node::Node(const Type type, const std::string &key, const std::string &value) :
 	_type(type), _childNodeType(NODE_NULL),
 	_key(key),
-	_value(value), _isEndSeparator(false),
-	_lineIndex(0) {
+	_value(value) {
 
 	if (type == NODE_SEQ && (key == "" && value == "")) {
 		throw std::invalid_argument("Key must not be empty");

@@ -39,7 +39,7 @@ StaticFileHandler::StaticFileHandler() {}
 StaticFileHandler::~StaticFileHandler() {}
 
 // Helper to generate an HTML page for directory listing
-void generateDirectoryListing(HttpResponse &res,
+void StaticFileHandler::generateDirectoryListing(HttpResponse &res,
 					 const std::string &directoryPath,
 					 const std::string &requestPath) {
 	DIR *dir = opendir(directoryPath.c_str());
