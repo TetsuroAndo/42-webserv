@@ -51,7 +51,6 @@ void ResponseBuilder::addContentLengthHeader(HttpResponse &res) {
 	}
 }
 
-// TODO: MimeTypeを解析するようにする。暫定的にtext/htmlを設定
 void ResponseBuilder::addMimeTypeHeader(HttpResponse &res) {
 	if (!res.hasHeader("Content-Type")) {
 		res.setHeader("Content-Type", "text/html");
