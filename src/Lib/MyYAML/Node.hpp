@@ -49,6 +49,4 @@ private
 	const std::string _value;
 	std::vector<Node *> _seq;
 	std::map<std::string, Node *> _map;
-	bool _isEndSeparator;
-	int _lineIndex;
 };
