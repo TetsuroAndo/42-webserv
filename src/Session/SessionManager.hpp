@@ -24,5 +24,5 @@ private:
 	std::string generateSessionId();
 
 	std::map<std::string, Session*> _sessions;
-	static const time_t SESSION_TIMEOUT = 1800; // 30分
+	static const time_t _SESSION_TIMEOUT = 1800; // 30分
 };
