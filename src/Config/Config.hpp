@@ -67,7 +67,7 @@ private:
 	void setMaxEvents(unsigned int maxEvents);
 
 	void setup(const std::string& configFile);
-	void setupHardcoded();
+	
 	void parseListens(Node* node);
     void parseRedirects(Node* node);
     void parseLocations(Node* node);

@@ -221,8 +221,7 @@ void Config::parseLocations(Node* node) {
         Node* autoindexNode = l_node->getMapNode("autoindex");
         if (autoindexNode) loc.autoindex = (autoindexNode->getValue() == "true");
 
-        Node* allowMethodsNode = l_node->getMapNode("allowedMethods");
-        if (allowMethodsNode) {
+        if (Node* allowMethodsNode = l_node->getMapNode("allowedMethods")) {
             const std::vector<Node*>& methods = allowMethodsNode->getSeq();
             for (std::vector<Node*>::const_iterator m_it = methods.begin(); m_it != methods.end(); ++m_it) {
                 std::string method = (*m_it)->getValue();
@@ -237,71 +236,42 @@ void Config::parseLocations(Node* node) {
 }
 
 void Config::setup(const std::string &configFile) {
-	try {
-        MyYAML yaml(configFile);
-        Node* serversNode = yaml.getData().getMapNode("servers");
-        if (!serversNode) {
-            throw std::runtime_error("Config error: missing 'servers' root node");
-        }
-
-        const std::vector<Node*>& serverList = serversNode->getSeq();
-        if (serverList.empty()) {
-            throw std::runtime_error("Config error: no servers configured");
-        }
-
-        Node* serverNode = serverList[0];
-        if (serverNode->getKey() != "server") {
-             throw std::runtime_error("Config error: missing 'server' key in server list");
-        }
-
-        parseListens(serverNode->getMapNode("listens"));
-        parseRedirects(serverNode->getMapNode("redirects"));
-        parseLocations(serverNode->getMapNode("locations"));
-
-        if (Node* n = serverNode->getMapNode("maxRequestBodySize"))
-            _maxRequestBodySize = stringToInt(n->getValue());
-        else
-            _maxRequestBodySize = 1024*1024;
-
-        if (Node* n = serverNode->getMapNode("timeoutSec"))
-            _timeoutSec = stringToInt(n->getValue());
-        else
-            _timeoutSec = 60;
-
-        if (Node* n = serverNode->getMapNode("maxEvents"))
-            _maxEvents = stringToInt(n->getValue());
-        else
-            _maxEvents = 1024;
-
-    } catch (const std::exception& e) {
-        std::cerr << "Error parsing config file: " << e.what() << "\n";
-        setupHardcoded();
+    MyYAML yaml(configFile);
+    Node* serversNode = yaml.getData().getMapNode("servers");
+    if (!serversNode) {
+        throw std::runtime_error("Config error: missing 'servers' root node");
     }
-}
 
-void Config::setupHardcoded() {
-    std::cout << "Using hardcoded default configuration\n";
-	Listen l1;
-	l1.interface = "0.0.0.0";
-	l1.port = 8080;
-	_listens.push_back(l1);
+    const std::vector<Node*>& serverList = serversNode->getSeq();
+    if (serverList.empty()) {
+        throw std::runtime_error("Config error: no servers configured");
+    }
 
-	Location defaultLoc;
-	defaultLoc.path = "/";
-	defaultLoc.root = "/tmp/www";
-	defaultLoc.errorFile = "/tmp/www/error.html";
-	defaultLoc.uploadStore = "/tmp/uploads";
-	defaultLoc.indexFile = "/tmp/www/index.html";
-	defaultLoc.autoindex = true;
-	defaultLoc.allowedMethods.insert("GET");
-	defaultLoc.allowedMethods.insert("POST");
-    defaultLoc.allowedMethods.insert("HEAD");
-    defaultLoc.allowedMethods.insert("DELETE");
-	_locations[defaultLoc.path] = defaultLoc;
+    Node* serverNode = serverList[0];
+    if (serverNode->getKey() != "server") {
+            throw std::runtime_error("Config error: missing 'server' key in server list");
+    }
 
-	_maxRequestBodySize = 1024 * 1024;
-	_timeoutSec = 60;
-	_maxEvents = 1024;
+    parseListens(serverNode->getMapNode("listens"));
+    if (Node* redirectsNode = serverNode->getMapNode("redirects")) {
+        parseRedirects(redirectsNode);
+    }
+    parseLocations(serverNode->getMapNode("locations"));
+
+    if (Node* n = serverNode->getMapNode("maxRequestBodySize"))
+        _maxRequestBodySize = stringToInt(n->getValue());
+    else
+        _maxRequestBodySize = 1024*1024;
+
+    if (Node* n = serverNode->getMapNode("timeoutSec"))
+        _timeoutSec = stringToInt(n->getValue());
+    else
+        _timeoutSec = 60;
+
+    if (Node* n = serverNode->getMapNode("maxEvents"))
+        _maxEvents = stringToInt(n->getValue());
+    else
+        _maxEvents = 1024;
 }
 
 const std::vector<Listen> &Config::getListens() const { return _listens; }
