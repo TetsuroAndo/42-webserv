@@ -1,4 +1,5 @@
 #include "PipelineRouterMiddleware.hpp"
+
 #include <algorithm>
 #include <vector>
 
