@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Session.hpp"
 #include "../Lib/Token/Token.hpp"
+#include "Session.hpp"
 #include <map>
 #include <string>
 
@@ -16,8 +16,8 @@ public:
 
 private:
 	SessionManager();
-	SessionManager(const SessionManager&);
-	SessionManager &operator=(const SessionManager&);
+	SessionManager(const SessionManager &);
+	SessionManager &operator=(const SessionManager &);
 	~SessionManager();
 
 	Token _token;
