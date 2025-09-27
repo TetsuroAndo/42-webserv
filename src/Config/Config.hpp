@@ -36,6 +36,9 @@ private:
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
+	bool _isShowDirectoryListPage;
+	std::string _whenRequestedDirectory;
+	std::string _saveFileDirectory;
 
 	// Set Default Values
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
@@ -67,7 +70,7 @@ private:
 
 public:
 	Config();
-	Config(std::string configFile);
+	Config(const std::string &configFile);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();

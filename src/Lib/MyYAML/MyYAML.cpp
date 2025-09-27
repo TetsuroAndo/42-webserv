@@ -1,15 +1,30 @@
+#include "../StringOps/StringOps.hpp"
 #include "MyYAML.hpp"
+
 #include <cerrno>
 #include <cstring>
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stack>
+
+static void throwInvalidFormat(const int line) {
+	std::ostringstream oss;
+	oss << "Invalid Format at line " << (line + 1);
+	throw std::runtime_error(oss.str());
+}
+
+static void throwInvalidFormat(const int line, const std::string &message) {
+	std::ostringstream oss;
+	oss << "Invalid Format at line " << (line + 1) << ": " << message;
+	throw std::runtime_error(oss.str());
+}
 
 static std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
 	if (!input) {
-		std::cerr << "Webserv: " << filepath << ": " << strerror(errno) << std::endl;
+		std::cerr << "Webserv: " << filepath << ": " << strerror(errno) <<
+			std::endl;
 		throw std::runtime_error("Could not open file");
 	}
 	std::stringstream buffer;
@@ -17,98 +32,130 @@ static std::string readFileAll(const std::string &filepath) {
 	return buffer.str();
 }
 
-static bool isOnlyCommentLine(const std::string &line) {
-	std::string::const_iterator it = line.begin();
-	const std::string::const_iterator itEnd = line.end();
-	while (it != itEnd && ' ' == *it) {
+static int startCharCount(const std::string &str, const char c) {
+	int result = 0;
+	std::string::const_iterator it = str.begin();
+	const std::string::const_iterator itEnd = str.end();
+	while (it != itEnd && c == *it) {
+		result++;
 		++it;
 	}
-	return '#' == *it;
-}
-
-static std::string extractKey(const std::string &key) {
-	std::string::const_iterator it = key.begin();
-	const std::string::const_iterator itEnd = key.end();
-	while (it != itEnd && ' ' == *it) {
-		++it;
-	}
-	std::string tmp(it, itEnd);
-	std::string::reverse_iterator revIt = tmp.rbegin();
-	const std::string::reverse_iterator revEnd = tmp.rend();
-	while (revIt != revEnd && ' ' == *revIt) {
-		++revIt;
-	}
-	std::string result(tmp.begin(), revIt.base());
 	return result;
 }
 
-
-static std::string extractListValue(const std::string &line, int &prevIndent) {
-	int spaceCount = 0;
+static bool isOnlyCharLine(const std::string &line, const char delimiter) {
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
 	while (it != itEnd && ' ' == *it) {
-		spaceCount++;
 		++it;
 	}
-	if (prevIndent != -1 && spaceCount != prevIndent) {
-		throw MyYAML::InvalidFormat();
+	if (it == itEnd) {
+		return false;
 	}
-	std::string tmp = extractKey(line);
+	return delimiter == *it;
+}
+
+// keyを抽出する関数
+static std::string extractKey(const std::string &line) {
+	std::string trimmedLine = line;
+	StringOps::trim(trimmedLine, " ");
+	// 何もなければ何もないを返す
+	if (trimmedLine.empty()) {
+		return "";
+	}
+	// 一文字目がセパレーターならエラー
+	if (trimmedLine[0] == ':') {
+		throw std::runtime_error("Key is empty");
+	}
+	const size_t pos = trimmedLine.find(':');
+	// セパレーターがなければkeyは何もない
+	if (pos == std::string::npos) {
+		return "";
+	}
+	// 前後の空白を取り除いたセパレーターの手前の文字列を返す
+	std::string result = trimmedLine.substr(0, pos);
+	StringOps::trim(result, " ");
+	return result;
+}
+
+// valueを抽出する関数
+static std::string extractValue(const std::string &line) {
+	std::string trimmedLine = line;
+	StringOps::trim(trimmedLine, " ");
+	// 何もなければ何もないを返す
+	if (trimmedLine.empty()) {
+		return "";
+	}
+	const size_t pos = trimmedLine.find(':');
+	// セパレーターがなければそのまま
+	if (pos == std::string::npos) {
+		return trimmedLine;
+	}
+	// 前後の空白を取り除いたセパレーターの後半の文字列を返す
+	std::string result = trimmedLine.substr(pos + 1, trimmedLine.length());
+	StringOps::trim(result, " ");
+	return result;
+}
+
+// セパレーターで終わっているかどうかを返す関数
+static bool isEndSeparator(const std::string &line) {
+	std::string trimmedLine = line;
+	StringOps::trim(trimmedLine, " ");
+	if (trimmedLine.empty()) {
+		return false;
+	}
+	const size_t pos = trimmedLine.find(':');
+	if (pos == std::string::npos) {
+		return false;
+	}
+	if (pos == trimmedLine.length() - 1) {
+		return true;
+	}
+	return false;
+}
+
+static std::string extractListValue(const std::string &line) {
+	std::string::const_iterator it = line.begin();
+	const std::string::const_iterator itEnd = line.end();
+	while (it != itEnd && ' ' == *it) {
+		++it;
+	}
+	std::string tmp = line;
+	StringOps::trim(tmp, " ");
 	if (tmp.size() < 2) {
-		throw MyYAML::InvalidFormat();
+		throw std::runtime_error("Invalid Format");
 	}
 	if ('-' == tmp[0] && ' ' == tmp[1]) {
 		tmp = tmp.substr(2, tmp.size() - 2);
 	} else {
-		throw MyYAML::InvalidFormat();
+		throw std::runtime_error("Invalid Format");
 	}
-
-	prevIndent = spaceCount;
 	return (tmp);
 }
 
-static bool endsWith(const std::string& s, const std::string& suffix) {
-	return s.size() >= suffix.size() &&
-		   s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
 
 MyYAML::MyYAML(const std::string &filepath) {
+	_data = NULL;
 	const std::string extension(".yaml");
-	if (endsWith(filepath, extension) == false) {
-		throw std::invalid_argument("Filepath does not end with extension '" + extension + "'");
+	if (StringOps::endsWith(filepath, extension) == false) {
+		throw std::invalid_argument(
+			"Filepath does not end with extension '" + extension + "'");
 	}
 	const std::string buf = readFileAll(filepath);
 	parseYaml(buf);
 }
 
 MyYAML::~MyYAML() {
-}
-
-void MyYAML::debugAllKeyAndValue() {
-	std::map<std::string, std::vector<std::string> >::const_iterator start =
-		_myYamlData.begin();
-	const std::map<std::string, std::vector<std::string> >::const_iterator end =
-		_myYamlData.end();
-	for (; start != end; ++start) {
-		std::cout << start->first << ":" << std::endl;
-		std::vector<std::string>::const_iterator it = start->second.begin();
-		for (; it != start->second.end(); ++it) {
-			std::cout << *it << std::endl;
-		}
+	if (_data != NULL) {
+		delete _data;
 	}
-
 }
 
-std::vector<std::string> MyYAML::getValue(const std::string &key) {
-	if (_myYamlData.end() == _myYamlData.find(key)) {
-		throw ValueNotFound(key);
+Node &MyYAML::getData() const {
+	if (_data == NULL) {
+		throw std::invalid_argument("Data is null");
 	}
-	return _myYamlData.find(key)->second;
-}
-
-std::size_t MyYAML::getSize(const std::string &key) {
-	return getValue(key).size();
+	return *_data;
 }
 
 void MyYAML::parseYaml(std::string buf) {
@@ -123,76 +170,123 @@ void MyYAML::parseYaml(std::string buf) {
 	if ('\n' == *it) {
 		++it;
 	}
-	bool isPrevKeyOnly = false;
-	bool isPrevIsList = false;
-	std::string prevKey = "";
-	int prevIndent = -1;
-	for (; it != endIt; ++it) {
-		std::string::const_iterator lineStart = it;
-		std::string::const_iterator lineEnd = std::find(it, endIt, '\n');
-		std::string line(lineStart, lineEnd);
-		it = lineEnd;
-		if (line.empty() || isOnlyCommentLine(line)) {
+	std::stack<int> prevIndent;
+	std::stack<Node *> nodeChain;
+	MyYamlState nowState = MyYamlState_NONE;
+	std::stack<MyYamlState> prevStates;
+	Node *rootNode = NULL;
+
+	prevIndent.push(-1);
+	prevStates.push(MyYamlState_NONE);
+
+	std::vector<std::string> lines;
+	{
+		std::istringstream iss(buf);
+		std::string l;
+		while (std::getline(iss, l)) {
+			lines.push_back(l);
+		}
+	}
+
+	for (size_t idx = 0; idx < lines.size(); ++idx) {
+		std::string line = lines[idx];
+		// コメント行・空行
+		if (line.empty() || isOnlyCharLine(line, '#')) {
 			continue;
 		}
-		const std::string::size_type pos = line.find(":");
-		if (std::string::npos == pos) {
-			if (isPrevKeyOnly) {
-				if (!isPrevIsList) {
-					_myYamlData[prevKey] = std::vector<std::string>();
-					isPrevIsList = true;
-				}
-				std::string value = extractListValue(line, prevIndent);
-				if (value.empty()) {
-					throw InvalidFormat();
-				}
-				_myYamlData[prevKey].push_back(value);
-				continue;
-			}
-		}
-		if (isPrevKeyOnly) {
-			// リストのフラグ
-			if (!isPrevIsList) {
-				//リストを処理せずに抜けてきた
-				throw InvalidFormat();
-			}
-			isPrevKeyOnly = false;
-			isPrevIsList = false;
-			prevIndent = -1;
-		}
-		std::string key = line.substr(0, pos);
-		key = extractKey(key);
-		if (key.empty()) {
-			throw InvalidFormat();
-		}
-		// key:value
-		std::string value = line.substr(pos + 1);
-		value = extractKey(value);
-		if (value.empty()) {
-			isPrevKeyOnly = true;
+		// インデントの数を数える
+		int nowIndent = startCharCount(line, ' ');
+
+		// 行の種類特定
+		if (isOnlyCharLine(line, '-')) {
+			line = extractListValue(line);
+			nowState = MyYamlState_SEQ;
 		} else {
-			if (_myYamlData[key].empty()) {
-				_myYamlData[key] = std::vector<std::string>();
-			}
-			_myYamlData[key].push_back(value);
+			nowState = MyYamlState_MAP;
 		}
-		prevKey = key;
+		std::string key = extractKey(line);
+		std::string value = extractValue(line);
+		// 前回のステートと変化がある場合はインデントの数をprevと比較して正しいかをみる
+		if (prevIndent.top() == nowIndent) {
+			// インデントに変化がない時に、typeは同じであることを期待
+			if (prevStates.top() != nowState) {
+				delete rootNode;
+				throwInvalidFormat(idx);
+			}
+		} else {
+			// 増えたか減ったかで動作を変える
+			if (prevIndent.top() < nowIndent) {
+				// 階層が深くなった
+				// スタックに乗せる
+				prevIndent.push(nowIndent);
+				prevStates.push(nowState);
+			} else {
+				// 階層が浅くなった
+				// nodeChainのtopを終端処理する
+				nodeChain.top()->terminateNode();
+				// インデントの階層が浅くなるまでポップする
+				while (1 < prevIndent.size() && prevIndent.top() > nowIndent) {
+					prevIndent.pop();
+					prevStates.pop();
+					nodeChain.pop();
+				}
+
+				// ポップ後のインデントが現在のインデントと一致するか確認
+				if (prevIndent.top() != nowIndent) {
+					delete rootNode;
+					throwInvalidFormat(idx);
+				}
+
+				// ステートの検証
+				if (prevStates.top() != nowState) {
+					delete rootNode;
+					throwInvalidFormat(idx);
+				}
+
+			}
+		}
+
+		Type newNodeType;
+		// newNodeTypeを設定
+		if (MyYamlState_SEQ == nowState) {
+			newNodeType = NODE_SEQ;
+		} else {
+			newNodeType = NODE_MAP;
+		}
+		Node *newNode = new Node(newNodeType, key, value);
+		// 1個目の要素で一階層目のTypeを決定
+		if (nodeChain.empty()) {
+			rootNode = new Node(newNodeType, "root", "");
+			nodeChain.push(rootNode);
+		}
+		try {
+			nodeChain.top()->push(newNode);
+		} catch (const std::exception &e) {
+			delete rootNode;
+			throwInvalidFormat(idx, e.what());
+		}
+
+		if (idx < lines.size() - 1) {
+
+			// 次インデントが増える場合
+			int nextIndent = startCharCount(lines[idx + 1], ' ');
+			if (nowIndent < nextIndent) {
+				// valueがあった場合はエラー
+				if (isEndSeparator(line) == false) {
+					delete rootNode;
+					throwInvalidFormat(idx);
+				}
+				// nodeChainにtmpNodeを追加する
+				nodeChain.push(newNode);
+			}
+		}
 	}
-	if (isPrevKeyOnly && false == isPrevIsList) {
-		throw InvalidFormat();
+	if (rootNode != NULL) {
+		rootNode->fixNode();
+		if (rootNode->isValidNode() == false) {
+			delete rootNode;
+			throw std::runtime_error("Invalid format");
+		}
 	}
-
-}
-
-MyYAML::MyYAML() {
-}
-
-MyYAML::MyYAML(const MyYAML &other) {
-	(void)other;
-}
-
-MyYAML &MyYAML::operator=(const MyYAML &other) {
-	if (this != &other) {
-	}
-	return *this;
+	_data = rootNode;
 }

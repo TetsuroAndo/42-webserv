@@ -1,7 +1,7 @@
 #include "Config.hpp"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <algorithm>
 #include <stdexcept>
 
 /* ********************* Private Setters ********************* */
@@ -9,7 +9,7 @@ void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
 }
 
-void Config::setAutoindex(bool autoindex, const std::string &locationKey) {
+void Config::setAutoindex(const bool autoindex, const std::string &locationKey) {
 	_locations[locationKey].autoindex = autoindex;
 }
 
@@ -29,7 +29,7 @@ void Config::setCgiConf(const std::string &extension, const std::string &interpr
 	_locations[locationKey].cgiConf[extension] = interpreterPath;
 }
 
-void Config::setIsAllowGet(bool allow, const std::string &locationKey) {
+void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
 	if (allow) _locations[locationKey].allowedMethods.insert("GET");
 	else _locations[locationKey].allowedMethods.erase("GET");
 }
@@ -39,12 +39,12 @@ void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
 	else _locations[locationKey].allowedMethods.erase("HEAD");
 }
 
-void Config::setIsAllowPost(bool allow, const std::string &locationKey) {
+void Config::setIsAllowPost(const bool allow, const std::string &locationKey) {
 	if (allow) _locations[locationKey].allowedMethods.insert("POST");
 	else _locations[locationKey].allowedMethods.erase("POST");
 }
 
-void Config::setIsAllowDelete(bool allow, const std::string &locationKey) {
+void Config::setIsAllowDelete(const bool allow, const std::string &locationKey) {
 	if (allow) _locations[locationKey].allowedMethods.insert("DELETE");
 	else _locations[locationKey].allowedMethods.erase("DELETE");
 }
@@ -95,7 +95,7 @@ void Config::setMaxEvents(unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
-/* ********************* Osodocs Canonical Form ********************* */
+/* ********************* Orthodox Canonical Form ********************* */
 Config::Config() {
 	_listens.clear();
 	_redirects.clear();
@@ -103,7 +103,7 @@ Config::Config() {
 	setup();
 }
 
-Config::Config(std::string configFile) {
+Config::Config(const std::string &configFile) {
 	setup(configFile);
 }
 
@@ -111,7 +111,9 @@ Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
 	  _locations(other._locations),
 	  _maxRequestBodySize(other._maxRequestBodySize),
-	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
+	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
+	  _isShowDirectoryListPage(false) {
+}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -166,13 +168,13 @@ void Config::setup(const std::string &configFile) {
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("POST");
 	_locations[defaultLoc.path] = defaultLoc;
-	Config::setIsAllowHead(true, defaultLoc.path);
-	Config::setIsAllowDelete(true);
+	setIsAllowHead(true, defaultLoc.path);
+	setIsAllowDelete(true);
 
 	Location uploadsLoc = _locations[defaultLoc.path];
 	uploadsLoc.path = "/uploads";
 	_locations[uploadsLoc.path] = uploadsLoc;
-	Config::setRoot("/tmp/uploads", uploadsLoc.path);
+	setRoot("/tmp/uploads", uploadsLoc.path);
 
 	_maxRequestBodySize = 1024 * 1024; // 1MB
 	_timeoutSec = 60;
@@ -255,5 +257,11 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
 		}
 	}
+	os << "  isShowDirectoryListPage: " << config._isShowDirectoryListPage
+	   << "\n";
+	os << "  whenRequestedDirectory: " << config._whenRequestedDirectory << "\n";
+	os << "  saveFileDirectory: " << config._saveFileDirectory << "\n";
+	os << "  timeoutSec: " << config._timeoutSec << "\n";
+	os << "  maxEvents: " << config._maxEvents << "\n";
 	return os;
 }
