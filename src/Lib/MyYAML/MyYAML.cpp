@@ -1,5 +1,5 @@
-#include "../StringOps/StringOps.hpp"
 #include "MyYAML.hpp"
+#include "../StringOps/StringOps.hpp"
 
 #include <cerrno>
 #include <cstring>
@@ -8,23 +8,28 @@
 #include <sstream>
 #include <stack>
 
-static void throwInvalidFormat(const int line) {
+namespace /* throws */
+{
+void throwInvalidFormat(const int line) {
 	std::ostringstream oss;
 	oss << "Invalid Format at line " << (line + 1);
 	throw std::runtime_error(oss.str());
 }
 
-static void throwInvalidFormat(const int line, const std::string &message) {
+void throwInvalidFormat(const int line, const std::string &message) {
 	std::ostringstream oss;
 	oss << "Invalid Format at line " << (line + 1) << ": " << message;
 	throw std::runtime_error(oss.str());
 }
+} // namespace
 
-static std::string readFileAll(const std::string &filepath) {
+namespace /* helper functions */
+{
+std::string readFileAll(const std::string &filepath) {
 	std::ifstream input(filepath.c_str());
 	if (!input) {
-		std::cerr << "Webserv: " << filepath << ": " << strerror(errno) <<
-			std::endl;
+		std::cerr << "Webserv: " << filepath << ": " << strerror(errno)
+				  << std::endl;
 		throw std::runtime_error("Could not open file");
 	}
 	std::stringstream buffer;
@@ -32,31 +37,8 @@ static std::string readFileAll(const std::string &filepath) {
 	return buffer.str();
 }
 
-static int startCharCount(const std::string &str, const char c) {
-	int result = 0;
-	std::string::const_iterator it = str.begin();
-	const std::string::const_iterator itEnd = str.end();
-	while (it != itEnd && c == *it) {
-		result++;
-		++it;
-	}
-	return result;
-}
-
-static bool isOnlyCharLine(const std::string &line, const char delimiter) {
-	std::string::const_iterator it = line.begin();
-	const std::string::const_iterator itEnd = line.end();
-	while (it != itEnd && ' ' == *it) {
-		++it;
-	}
-	if (it == itEnd) {
-		return false;
-	}
-	return delimiter == *it;
-}
-
 // keyを抽出する関数
-static std::string extractKey(const std::string &line) {
+std::string extractKey(const std::string &line) {
 	std::string trimmedLine = line;
 	StringOps::trim(trimmedLine, " ");
 	// 何もなければ何もないを返す
@@ -79,7 +61,7 @@ static std::string extractKey(const std::string &line) {
 }
 
 // valueを抽出する関数
-static std::string extractValue(const std::string &line) {
+std::string extractValue(const std::string &line) {
 	std::string trimmedLine = line;
 	StringOps::trim(trimmedLine, " ");
 	// 何もなければ何もないを返す
@@ -98,7 +80,7 @@ static std::string extractValue(const std::string &line) {
 }
 
 // セパレーターで終わっているかどうかを返す関数
-static bool isEndSeparator(const std::string &line) {
+bool isEndSeparator(const std::string &line) {
 	std::string trimmedLine = line;
 	StringOps::trim(trimmedLine, " ");
 	if (trimmedLine.empty()) {
@@ -114,7 +96,7 @@ static bool isEndSeparator(const std::string &line) {
 	return false;
 }
 
-static std::string extractListValue(const std::string &line) {
+std::string extractListValue(const std::string &line) {
 	std::string::const_iterator it = line.begin();
 	const std::string::const_iterator itEnd = line.end();
 	while (it != itEnd && ' ' == *it) {
@@ -130,16 +112,16 @@ static std::string extractListValue(const std::string &line) {
 	} else {
 		throw std::runtime_error("Invalid Format");
 	}
-	return (tmp);
+	return tmp;
 }
-
+} // Anonymous namespace
 
 MyYAML::MyYAML(const std::string &filepath) {
 	_data = NULL;
 	const std::string extension(".yaml");
 	if (StringOps::endsWith(filepath, extension) == false) {
-		throw std::invalid_argument(
-			"Filepath does not end with extension '" + extension + "'");
+		throw std::invalid_argument("Filepath does not end with extension '" +
+									extension + "'");
 	}
 	const std::string buf = readFileAll(filepath);
 	parseYaml(buf);
@@ -191,14 +173,14 @@ void MyYAML::parseYaml(std::string buf) {
 	for (size_t idx = 0; idx < lines.size(); ++idx) {
 		std::string line = lines[idx];
 		// コメント行・空行
-		if (line.empty() || isOnlyCharLine(line, '#')) {
+		if (line.empty() || StringOps::isOnlyCharLine(line, '#')) {
 			continue;
 		}
 		// インデントの数を数える
-		int nowIndent = startCharCount(line, ' ');
+		int nowIndent = StringOps::startCharCount(line, ' ');
 
 		// 行の種類特定
-		if (isOnlyCharLine(line, '-')) {
+		if (StringOps::isOnlyCharLine(line, '-')) {
 			line = extractListValue(line);
 			nowState = MyYamlState_SEQ;
 		} else {
@@ -242,7 +224,6 @@ void MyYAML::parseYaml(std::string buf) {
 					delete rootNode;
 					throwInvalidFormat(idx);
 				}
-
 			}
 		}
 
@@ -267,9 +248,8 @@ void MyYAML::parseYaml(std::string buf) {
 		}
 
 		if (idx < lines.size() - 1) {
-
 			// 次インデントが増える場合
-			int nextIndent = startCharCount(lines[idx + 1], ' ');
+			int nextIndent = StringOps::startCharCount(lines[idx + 1], ' ');
 			if (nowIndent < nextIndent) {
 				// valueがあった場合はエラー
 				if (isEndSeparator(line) == false) {

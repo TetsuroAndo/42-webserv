@@ -9,5 +9,5 @@ public:
 	Token();
 	~Token();
 
-	std::string genToken(size_t length = 32);
+	static std::string genToken(size_t length = 32);
 };

@@ -15,10 +15,10 @@ public:
 	 * @param line 解析するヘッダ行の文字列
 	 * @return 解析に成功した場合は 0、失敗した場合はエラーコード
 	 */
-	ParseResult parse(HttpRequest& request, const std::string &headerBlock, int &errorCode);
+	ParseResult parse(HttpRequest &request, const std::string &headerBlock,
+					  int &errorCode);
 
 private:
-	RequestHeaderParser(const RequestHeaderParser&);
-	RequestHeaderParser& operator=(const RequestHeaderParser&);
-
+	RequestHeaderParser(const RequestHeaderParser &);
+	RequestHeaderParser &operator=(const RequestHeaderParser &);
 };

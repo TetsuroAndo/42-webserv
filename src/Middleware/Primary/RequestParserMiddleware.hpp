@@ -2,8 +2,8 @@
 
 #include "../../Http/Core/HttpRequest.hpp"
 #include "../Core/IMiddleware.hpp"
-#include <string>
 #include <map>
+#include <string>
 
 class RequestParserMiddleware : public IMiddleware {
 public:

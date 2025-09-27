@@ -28,12 +28,14 @@ public:
 	bool isComplete() const;
 
 	/**
-	 * @brief 生のリクエストバッファをパースし、HttpRequestオブジェクトを構築します。
+	 * @brief
+	 * 生のリクエストバッファをパースし、HttpRequestオブジェクトを構築します。
 	 * @param request 構築対象のHttpRequestオブジェクト。
-	 * @param buffer 受信した生データが入ったバッファ。パースした分は削除されます。
+	 * @param buffer
+	 * 受信した生データが入ったバッファ。パースした分は削除されます。
 	 * @return ParseResult パース結果。
 	 */
-	ParseResult parse(HttpRequest& request, std::string& buffer);
+	ParseResult parse(HttpRequest &request, std::string &buffer);
 
 private:
 	enum ParseState {
@@ -50,8 +52,8 @@ private:
 	RequestHeaderParser _headerParser;
 	RequestBodyParser _bodyParser;
 
-	RequestParser(const RequestParser&);
-	RequestParser& operator=(const RequestParser&);
+	RequestParser(const RequestParser &);
+	RequestParser &operator=(const RequestParser &);
 };
 
 #endif

@@ -6,13 +6,10 @@
 #include <map>
 #include <stdexcept>
 
-Node::Node(const Type type, const std::string &key, const std::string &value) :
-	_type(type), _childNodeType(NODE_NULL),
-	_key(key),
-	_value(value), _isEndSeparator(false),
-	_lineIndex(0) {
+Node::Node(const Type type, const std::string &key, const std::string &value)
+	: _type(type), _childNodeType(NODE_NULL), _key(key), _value(value) {
 
-	if (type == NODE_SEQ && (key == "" && value == "")) {
+	if (type == NODE_SEQ && key == "" && value == "") {
 		throw std::invalid_argument("Key must not be empty");
 	}
 	if (type == NODE_MAP && key == "") {
@@ -27,9 +24,8 @@ Node::~Node() {
 	for (std::size_t i = 0; i < _seq.size(); ++i) {
 		delete _seq[i];
 	}
-	for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-	     ;
-	     it != _map.end(); ++it) {
+	for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		 it != _map.end(); ++it) {
 		delete it->second;
 	}
 }
@@ -63,43 +59,39 @@ void Node::push(Node *node) {
 	}
 }
 
-void Node::print() const {
-	print(2);
-}
+void Node::print() const { print(2); }
 
 void Node::print(const int indent) const {
 	const std::string ind(indent, ' ');
 
 	if (_childNodeType == NODE_SEQ) {
-		std::cout << ind << Colors::RED << Colors::BOLD << "SEQ:" <<
-			Colors::RESET
-			<< " " << Colors::MAGENTA << _key << Colors::RESET << std::endl;
+		std::cout << ind << Colors::RED << Colors::BOLD
+				  << "SEQ:" << Colors::RESET << " " << Colors::MAGENTA << _key
+				  << Colors::RESET << std::endl;
 		for (std::size_t i = 0; i < _seq.size(); i++) {
 			_seq[i]->print(indent + 2);
 		}
 	} else if (_childNodeType == NODE_MAP) {
-		std::cout << ind << Colors::GREEN << Colors::BOLD << "MAP:" <<
-			Colors::RESET
-			<< " " << Colors::MAGENTA << _key << Colors::RESET << std::endl;
+		std::cout << ind << Colors::GREEN << Colors::BOLD
+				  << "MAP:" << Colors::RESET << " " << Colors::MAGENTA << _key
+				  << Colors::RESET << std::endl;
 		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
-		     it != _map.end(); ++it) {
+			 it != _map.end(); ++it) {
 			it->second->print(indent + 2);
 		}
 	} else {
 		if (_key.empty()) {
-			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" <<
-				Colors::RESET
-				<< " " << Colors::CYAN << _value << Colors::RESET << std::endl;
+			std::cout << ind << Colors::BLUE << Colors::BOLD
+					  << "VAL:" << Colors::RESET << " " << Colors::CYAN
+					  << _value << Colors::RESET << std::endl;
 		} else {
-			std::cout << ind << Colors::BLUE << Colors::BOLD << "VAL:" <<
-				Colors::RESET
-				<< " " << Colors::MAGENTA << _key << Colors::RESET
-				<< " = " << Colors::CYAN << _value << Colors::RESET <<
-				std::endl;
+			std::cout << ind << Colors::BLUE << Colors::BOLD
+					  << "VAL:" << Colors::RESET << " " << Colors::MAGENTA
+					  << _key << Colors::RESET << " = " << Colors::CYAN
+					  << _value << Colors::RESET << std::endl;
 		}
 	}
 }
-
 
 bool Node::isValidChildNode() const {
 	switch (_childNodeType) {
@@ -114,9 +106,8 @@ bool Node::isValidChildNode() const {
 		}
 		break;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+			 it != _map.end(); ++it) {
 			if (it->second->getKey().empty()) {
 				return false;
 			}
@@ -140,18 +131,11 @@ bool Node::isValidNode() const {
 	return false;
 }
 
-Type Node::getType() const {
-	return _type;
-}
+Type Node::getType() const { return _type; }
 
+const std::string &Node::getKey() const { return _key; }
 
-const std::string &Node::getKey() const {
-	return _key;
-}
-
-const std::string &Node::getValue() const {
-	return _value;
-}
+const std::string &Node::getValue() const { return _value; }
 
 void Node::setTypeValue() {
 	_type = NODE_VAL;
@@ -188,9 +172,8 @@ void Node::terminateNode() {
 		}
 		return;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+			 it != _map.end(); ++it) {
 			it->second->setTypeValue();
 			it->second->_childNodeType = NODE_VAL;
 		}
@@ -213,9 +196,8 @@ void Node::fixNode() {
 		}
 		return;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin()
-		     ;
-		     it != _map.end(); ++it) {
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+			 it != _map.end(); ++it) {
 			it->second->fixNode();
 		}
 		return;

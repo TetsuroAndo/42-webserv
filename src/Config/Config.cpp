@@ -4,7 +4,6 @@
 #include <sstream>
 #include <stdexcept>
 
-// Helper function to convert string to integer
 static int stringToInt(const std::string& s) {
     std::istringstream iss(s);
     int i;
@@ -14,7 +13,6 @@ static int stringToInt(const std::string& s) {
     return i;
 }
 
-/* ********************* Private Setters ********************* */
 void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
 }
@@ -105,7 +103,6 @@ void Config::setMaxEvents(unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
-/* ********************* Orthodox Canonical Form ********************* */
 Config::Config() : _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
 	_listens.clear();
 	_redirects.clear();
@@ -140,8 +137,6 @@ Config &Config::operator=(const Config &other) {
 }
 
 Config::~Config() {}
-
-/* ********************* Parser Helper Functions ********************* */
 
 void Config::parseListens(Node* node) {
     if (!node) throw std::runtime_error("Config error: missing 'listens' node");
@@ -241,9 +236,6 @@ void Config::parseLocations(Node* node) {
     }
 }
 
-
-
-/* ********************* Setup method ********************* */
 void Config::setup(const std::string &configFile) {
 	try {
         MyYAML yaml(configFile);
@@ -283,19 +275,17 @@ void Config::setup(const std::string &configFile) {
 
     } catch (const std::exception& e) {
         std::cerr << "Error parsing config file: " << e.what() << "\n";
-        setup_hardcoded();
+        setupHardcoded();
     }
 }
 
-void Config::setup_hardcoded() {
+void Config::setupHardcoded() {
     std::cout << "Using hardcoded default configuration\n";
-	// --- Listens ---
 	Listen l1;
 	l1.interface = "0.0.0.0";
 	l1.port = 8080;
 	_listens.push_back(l1);
 
-	// --- Locations ---
 	Location defaultLoc;
 	defaultLoc.path = "/";
 	defaultLoc.root = "/tmp/www";
@@ -309,12 +299,11 @@ void Config::setup_hardcoded() {
     defaultLoc.allowedMethods.insert("DELETE");
 	_locations[defaultLoc.path] = defaultLoc;
 
-	_maxRequestBodySize = 1024 * 1024; // 1MB
+	_maxRequestBodySize = 1024 * 1024;
 	_timeoutSec = 60;
 	_maxEvents = 1024;
 }
 
-/* ********************* Public Getters ********************* */
 const std::vector<Listen> &Config::getListens() const { return _listens; }
 
 const std::map<std::string, Redirect> &Config::getRedirects() const {
@@ -355,7 +344,6 @@ unsigned int Config::getMaxRequestBodySize() const { return _maxRequestBodySize;
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
-/* ********************* Friend Stream Operator ********************* */
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";

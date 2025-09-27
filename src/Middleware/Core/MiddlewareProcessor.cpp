@@ -1,6 +1,6 @@
-#include "MiddlewareProcessor.hpp"
 #include "IMiddleware.hpp"
-#include <iostream>
+
+#include "MiddlewareProcessor.hpp"
 
 MiddlewareProcessor::MiddlewareProcessor() : _currentIndex(0) {}
 
@@ -23,7 +23,7 @@ void MiddlewareProcessor::handle(PipelineContext &ctx) {
 
 /**
  * @brief 次のミドルウェアを呼び出す
-*/
+ */
 void MiddlewareProcessor::next(PipelineContext &ctx) {
 	if (_currentIndex < _middlewareChain.size()) {
 		IMiddleware *currentMiddleware = _middlewareChain[_currentIndex];

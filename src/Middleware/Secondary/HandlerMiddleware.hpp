@@ -5,14 +5,14 @@
 class ISubHandler;
 
 class HandlerMiddleware : public IMiddleware {
-  public:
-	HandlerMiddleware(const std::map<std::string, ISubHandler*>& handlers);
+public:
+	HandlerMiddleware(const std::map<std::string, ISubHandler *> &handlers);
 	~HandlerMiddleware();
 	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 
 private:
-	std::map<std::string, ISubHandler*> _handlers;
+	std::map<std::string, ISubHandler *> _handlers;
 
-	HandlerMiddleware(const HandlerMiddleware&);
-	HandlerMiddleware& operator=(const HandlerMiddleware&);
+	HandlerMiddleware(const HandlerMiddleware &);
+	HandlerMiddleware &operator=(const HandlerMiddleware &);
 };

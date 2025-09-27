@@ -1,11 +1,9 @@
 #include "Logger.hpp"
-#include <ctime>
-#include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <sys/stat.h>
-#include <iostream>
 
-Logger& Logger::getInstance() {
+Logger &Logger::getInstance() {
 	static Logger instance;
 	return instance;
 }
@@ -13,11 +11,14 @@ Logger& Logger::getInstance() {
 void Logger::setLogDir(const std::string &logDir) {
 	struct stat st;
 	if (stat(logDir.c_str(), &st) != 0) {
-		std::cerr << "[ WARNING ] Logger: Log directory does not exist: " + logDir
+		std::cerr << "[ WARNING ] Logger: Log directory does not exist: " +
+						 logDir
 				  << ", using default directory: " << _logDir << std::endl;
 	} else if (!S_ISDIR(st.st_mode)) {
-		std::cerr << "[ WARNING ] Logger: Log path exists but is not a directory: " + logDir
-				  << ", using default directory: " << _logDir << std::endl;
+		std::cerr
+			<< "[ WARNING ] Logger: Log path exists but is not a directory: " +
+				   logDir
+			<< ", using default directory: " << _logDir << std::endl;
 	} else {
 		_logDir = logDir;
 	}
@@ -33,39 +34,45 @@ Logger::Logger() : _logDir(_LOG_DEFAULT_DIR), _activeLevelsMask(0) {
 }
 
 Logger::~Logger() {
-	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
+	for (std::vector<LogSink *>::iterator it = _sinks.begin();
+		 it != _sinks.end(); ++it) {
 		delete *it;
 	}
 	_sinks.clear();
 }
 
-void Logger::setSinkFile(const std::string &filename, LogFormat eFormat,
-	LogLevel level, LogFilterMode mode, size_t maxFileSize, size_t maxBackupFiles)
-{
+void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
+						 const LogLevel level, const LogFilterMode mode,
+						 const size_t maxFileSize,
+						 const size_t maxBackupFiles) {
 	LogForm *form;
 	if (eFormat == JSON) {
 		form = new JsonForm();
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new FileSink(_logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
+	_sinks.push_back(new FileSink(_logDir, filename, form, level, mode,
+								  maxFileSize, maxBackupFiles));
 	updateActiveLevelsMask();
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
-	LogFormat eFormat, LogLevel level, LogFilterMode mode,
-	size_t maxFileSize, size_t maxBackupFiles) {
+						 const LogFormat eFormat, const LogLevel level,
+						 const LogFilterMode mode, const size_t maxFileSize,
+						 const size_t maxBackupFiles) {
 	LogForm *form;
 	if (eFormat == JSON) {
 		form = new JsonForm();
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new FileSink(logDir, filename, form, level, mode, maxFileSize, maxBackupFiles));
+	_sinks.push_back(new FileSink(logDir, filename, form, level, mode,
+								  maxFileSize, maxBackupFiles));
 	updateActiveLevelsMask();
 }
 
-void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mode) {
+void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
+							const LogFilterMode mode) {
 	LogForm *form;
 	if (eFormat == JSON) {
 		form = new JsonForm();
@@ -76,35 +83,39 @@ void Logger::setSinkConsole(LogFormat eFormat, LogLevel level, LogFilterMode mod
 	updateActiveLevelsMask();
 }
 
-void Logger::log(const LogMessage& msg) {
-	for (std::vector<LogSink*>::iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
-		LogSink* sink = *it;
-		if ((sink->getFilterMode() == EXACT && msg.level == sink->getLogLevel()) ||
-			(sink->getFilterMode() == GREATER_OR_EQUAL && msg.level >= sink->getLogLevel()))
-		{
+void Logger::log(const LogMessage &msg) {
+	for (std::vector<LogSink *>::iterator it = _sinks.begin();
+		 it != _sinks.end(); ++it) {
+		LogSink *sink = *it;
+		if ((sink->getFilterMode() == EXACT &&
+			 msg.level == sink->getLogLevel()) ||
+			(sink->getFilterMode() == GREATER_OR_EQUAL &&
+			 msg.level >= sink->getLogLevel())) {
 			try {
 				sink->log(msg);
-			} catch (const std::exception& e) {
-				std::cerr << "[ ERROR ] Logger: Failed to write log: " << e.what() << std::endl;
+			} catch (const std::exception &e) {
+				std::cerr << "[ ERROR ] Logger: Failed to write log: "
+						  << e.what() << std::endl;
 			}
 		}
 	}
 }
 
-bool Logger::isLogLevelActive(LogLevel level) const {
-	return (_activeLevelsMask >> level) & 1;
+bool Logger::isLogLevelActive(const LogLevel level) const {
+	return _activeLevelsMask >> level & 1;
 }
 
 void Logger::updateActiveLevelsMask() {
 	_activeLevelsMask = 0;
-	for (std::vector<LogSink*>::const_iterator it = _sinks.begin(); it != _sinks.end(); ++it) {
-		LogLevel level = (*it)->getLogLevel();
+	for (std::vector<LogSink *>::const_iterator it = _sinks.begin();
+		 it != _sinks.end(); ++it) {
+		const LogLevel level = (*it)->getLogLevel();
 		if ((*it)->getFilterMode() == GREATER_OR_EQUAL) {
 			for (int i = level; i <= FATAL; ++i) {
-				_activeLevelsMask |= (1 << i);
+				_activeLevelsMask |= 1 << i;
 			}
 		} else {
-			_activeLevelsMask |= (1 << level);
+			_activeLevelsMask |= 1 << level;
 		}
 	}
 }

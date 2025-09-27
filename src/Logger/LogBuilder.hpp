@@ -24,19 +24,20 @@ public:
 	LogBuilder(LogLevel level, const char *file, int line, const char *func);
 	~LogBuilder();
 
-	template <typename T>
-	LogBuilder &operator<<(const T &value) {
+	template <typename T> LogBuilder &operator<<(const T &value) {
 		_ss << value;
 		return *this;
 	}
 
-	friend LogBuilder &operator<<(LogBuilder &builder, const LogAttribute &attr);
+	friend LogBuilder &operator<<(LogBuilder &builder,
+								  const LogAttribute &attr);
 
 private:
 	LogMessage _msg;
 	std::stringstream _ss;
 };
 
-#define LOG(level) \
-	if (!Logger::getInstance().isLogLevelActive(level)) {} \
-	else LogBuilder(level, __FILE__, __LINE__, __func__)
+#define LOG(level)                                                             \
+	if (!Logger::getInstance().isLogLevelActive(level)) {                      \
+	} else                                                                     \
+		LogBuilder(level, __FILE__, __LINE__, __func__)

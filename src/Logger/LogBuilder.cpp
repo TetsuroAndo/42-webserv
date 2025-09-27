@@ -2,7 +2,8 @@
 #include "Logger.hpp"
 #include <ctime>
 
-LogBuilder::LogBuilder(LogLevel level, const char *file, int line, const char *func) {
+LogBuilder::LogBuilder(const LogLevel level, const char *file, const int line,
+					   const char *func) {
 	_msg.timestamp = std::time(NULL);
 	_msg.level = level;
 	_msg.file = file;

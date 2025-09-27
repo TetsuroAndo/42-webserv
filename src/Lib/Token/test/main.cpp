@@ -1,9 +1,9 @@
 #include "../Token.hpp"
+#include <cassert>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <cassert>
 
 int main() {
 	Token hasher;
@@ -34,7 +34,8 @@ int main() {
 			std::cout << "Token " << i + 1 << ": " << t << std::endl;
 		}
 	}
-	std::cout << "All 999,999 tokens are unique: " << (unique ? "PASS" : "FAIL") << std::endl;
+	std::cout << "All 999,999 tokens are unique: " << (unique ? "PASS" : "FAIL")
+			  << std::endl;
 	assert(unique);
 
 	std::cout << "All tests passed!" << std::endl;

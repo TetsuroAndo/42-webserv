@@ -1,12 +1,11 @@
 #include "PipelineRouteBuilder.hpp"
-#include "../Core/PipelineContext.hpp"
+#include "../../Handler/CgiHandler.hpp"
+#include "../../Handler/DeleteHandler.hpp"
+#include "../../Handler/StaticFileHandler.hpp"
 #include "../Primary/PipelineRouterMiddleware.hpp"
 #include "../Primary/RequestParserMiddleware.hpp"
 #include "../Secondary/HandlerMiddleware.hpp"
 #include "../Secondary/SessionMiddleware.hpp"
-#include "../../Handler/StaticFileHandler.hpp"
-#include "../../Handler/DeleteHandler.hpp"
-#include "../../Handler/CgiHandler.hpp"
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 

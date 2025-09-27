@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Socket/Socket.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
+#include "../Socket/Socket.hpp"
 
 class Client {
 public:
@@ -9,8 +9,8 @@ public:
 	~Client();
 
 	int getFd() const;
-	Socket *getSocket();
-	PipelineContext *getContext();
+	Socket *getSocket() const;
+	PipelineContext *getContext() const;
 
 private:
 	int _fd;
