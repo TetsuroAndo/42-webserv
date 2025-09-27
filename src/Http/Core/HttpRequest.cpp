@@ -1,5 +1,6 @@
 #include "HttpRequest.hpp"
 
+// TODO:Configから取得するようにする
 size_t HttpRequest::maxHeaderSize = 8192;
 size_t HttpRequest::maxBodySize = 10 * 1024 * 1024;
 #include "../../Lib/StringOps/StringOps.hpp"
