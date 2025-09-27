@@ -2,12 +2,11 @@
 #include "../../Lib/Time/TimeCache.hpp"
 #include "../Core/HttpResponse.hpp"
 #include "../Core/HttpStatus.hpp"
-#include <ctime>
 #include <sstream>
 
 ResponseBuilder::ResponseBuilder() {}
 
-std::string ResponseBuilder::build(HttpResponse& res) {
+std::string ResponseBuilder::build(HttpResponse &res) {
 	addDateHeader(res);
 	addServerHeader(res);
 	addContentLengthHeader(res);
@@ -20,8 +19,10 @@ std::string ResponseBuilder::build(HttpResponse& res) {
 		<< HttpStatus::getReason(res.getStatusCode()) << "\r\n";
 
 	// Headers
-	const std::map<std::string, std::string>& headers = res.getHeaders();
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+	const std::map<std::string, std::string> &headers = res.getHeaders();
+	for (std::map<std::string, std::string>::const_iterator it =
+			 headers.begin();
+		 it != headers.end(); ++it) {
 		oss << it->first << ": " << it->second << "\r\n";
 	}
 
@@ -30,19 +31,19 @@ std::string ResponseBuilder::build(HttpResponse& res) {
 	return oss.str();
 }
 
-void ResponseBuilder::addDateHeader(HttpResponse& res) {
+void ResponseBuilder::addDateHeader(HttpResponse &res) {
 	if (!res.hasHeader("Date")) {
 		res.setHeader("Date", TimeCache::getCurrentTime());
 	}
 }
 
-void ResponseBuilder::addServerHeader(HttpResponse& res) {
+void ResponseBuilder::addServerHeader(HttpResponse &res) {
 	if (!res.hasHeader("Server")) {
 		res.setHeader("Server", res.getServerName());
 	}
 }
 
-void ResponseBuilder::addContentLengthHeader(HttpResponse& res) {
+void ResponseBuilder::addContentLengthHeader(HttpResponse &res) {
 	if (!res.hasHeader("Content-Length")) {
 		std::ostringstream oss;
 		oss << res.getBody().length();
@@ -51,7 +52,7 @@ void ResponseBuilder::addContentLengthHeader(HttpResponse& res) {
 }
 
 // TODO: MimeTypeを解析するようにする。暫定的にtext/htmlを設定
-void ResponseBuilder::addMimeTypeHeader(HttpResponse& res) {
+void ResponseBuilder::addMimeTypeHeader(HttpResponse &res) {
 	if (!res.hasHeader("Content-Type")) {
 		res.setHeader("Content-Type", "text/html");
 	}

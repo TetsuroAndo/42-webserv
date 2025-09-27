@@ -31,18 +31,19 @@ Logger &logger = Logger::getInstance();
 ### 設定できる内容
 
 - ログレベル
-	- 5段階のログレベル
-	- ログレベルフィルタ
+    - 5段階のログレベル
+    - ログレベルフィルタ
 - コンソール出力(標準出力)
 - ファイルへの出力
-	- PATH
-	- ファイル名
-	- ファイルサイズの制限
-	- バックアップファイル数
+    - PATH
+    - ファイル名
+    - ファイルサイズの制限
+    - バックアップファイル数
 
 ### 5段階のログレベル
 
 ログレベルはこの5段階です。
+
 1. `DEBUG`
 2. `INFO`
 3. `WARNING`
@@ -76,13 +77,15 @@ logger.setSinkFile("server.log", JSON, INFO, GREATER_OR_EQUAL);
 logger.setSinkConsole(ELF, WARNING, EXACT);
 logger.setSinkFile("WarningOnly.log", ELF, WARNING, EXACT);
 ```
+
 この例では、出力されるのはWARNINGのみ
 
 ---
 
 ### コンソールへの出力設定
 
-`setSinkConsole()` を使用して、標準出力（コンソール）にログを出力するよう設定します。引数には**フォーマット**と**ログレベル**を指定します。
+`setSinkConsole()` を使用して、標準出力（コンソール）にログを出力するよう設定します。引数には**フォーマット**と**ログレベル
+**を指定します。
 
 **例**: コンソールに `JSON` 形式で `DEBUG` レベル以上のログを出力する。
 
@@ -114,13 +117,15 @@ logger.setSinkFile("server.log", JSON, INFO);
 特別にSinkごとにディレクトリを指定することも可能。
 
 **例**: `/var/out-logs` ディレクトリに `special.log` という名前でログファイルを作成する。
+
 ```cpp
 logger.setSinkFile("/var/out-logs", "special.log", JSON, DEBUG);
 ```
 
 #### ファイルサイズとバックアップ数の設定 (ログローテーション)
 
-ファイルサイズが上限に達した際に、自動でファイルをバックアップし、新しいファイルに切り替えることができます。`setSinkFile()` の追加引数で**最大ファイルサイズ (バイト)** と**最大バックアップファイル数**を指定します。
+ファイルサイズが上限に達した際に、自動でファイルをバックアップし、新しいファイルに切り替えられます。`setSinkFile()` の追加引数で
+**最大ファイルサイズ (バイト)** と**最大バックアップファイル数**を指定します。
 
 **例**: `Max.log` は最大 **100バイト** に制限し、バックアップは **3世代** まで保持する。
 
@@ -129,9 +134,11 @@ logger.setSinkFile("/var/out-logs", "special.log", JSON, DEBUG);
 logger.setSinkFile("Max.log", ELF, DEBUG, GREATER_OR_EQUAL, 100, 3);
 ```
 
-この設定では、`Max.log` が100バイトを超えると `MaxTest.log.1` にリネームされ、新しい `MaxTest.log` が作成されます。古いバックアップは順次繰り上げられ (`.1`→`.2`)、最大数を超えるもの (`.3`より古いもの) は削除されます。
+この設定では、`Max.log` が100バイトを超えると `MaxTest.log.1` にリネームされ、新しい `MaxTest.log`
+が作成されます。古いバックアップは順次繰り上げられ (`.1`→`.2`)、最大数を超えるもの (`.3`より古いもの) は削除されます。
 
 デフォルトでは
+
 - 最大ファイルサイズ: `10MB`
 - バックアップファイル数: `8`
 
@@ -175,7 +182,8 @@ LOG(ERROR) << "Failed to process request"
            << attr("reason", "File not found");
 ```
 
-上記のログは、`JSON` フォーマットの場合、`attributes` フィールドに `{"client_ip": "127.0.0.1", "fd": "5"}` のような情報を含んで出力されます。
+上記のログは、`JSON` フォーマットの場合、`attributes` フィールドに `{"client_ip": "127.0.0.1", "fd": "5"}`
+のような情報を含んで出力されます。
 
 -----
 

@@ -5,16 +5,16 @@
 
 class ResponseBuilder {
 public:
-	static std::string build(HttpResponse& res);
+	static std::string build(HttpResponse &res);
 
 private:
-	static void addDateHeader(HttpResponse& res);
-	static void addServerHeader(HttpResponse& res);
-	static void addContentLengthHeader(HttpResponse& res);
-	static void addMimeTypeHeader(HttpResponse& res);
+	static void addDateHeader(HttpResponse &res);
+	static void addServerHeader(HttpResponse &res);
+	static void addContentLengthHeader(HttpResponse &res);
+	static void addMimeTypeHeader(HttpResponse &res);
 
 	ResponseBuilder();
-	ResponseBuilder(const ResponseBuilder&);
-	ResponseBuilder& operator=(const ResponseBuilder&);
+	ResponseBuilder(const ResponseBuilder &);
+	ResponseBuilder &operator=(const ResponseBuilder &);
 	~ResponseBuilder();
 };

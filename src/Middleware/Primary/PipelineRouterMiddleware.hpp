@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../Core/IMiddleware.hpp"
-#include <string>
 #include <map>
+#include <string>
 
-typedef std::map<std::string, class MiddlewareProcessor*> RouteMap;
+typedef std::map<std::string, class MiddlewareProcessor *> RouteMap;
 
 class PipelineRouterMiddleware : public IMiddleware {
 public:
@@ -15,6 +15,6 @@ public:
 private:
 	RouteMap _routes;
 
-	PipelineRouterMiddleware(const PipelineRouterMiddleware&);
-	PipelineRouterMiddleware& operator=(const PipelineRouterMiddleware&);
+	PipelineRouterMiddleware(const PipelineRouterMiddleware &);
+	PipelineRouterMiddleware &operator=(const PipelineRouterMiddleware &);
 };

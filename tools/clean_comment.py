@@ -35,6 +35,7 @@ COMMENT_RE = re.compile(r"//.*?$|/\*.*?\*/", re.DOTALL | re.MULTILINE)
 HEADER_BANNER_RE = re.compile(r"\A\s*/\*\s*\*{10,}.*?\*/", re.DOTALL)
 SKIP_HEAD_LINES = 11  # always skip first N lines
 
+
 # ───────────────────────── dataclass ─────────────────────────
 class CommentOcc:
     def __init__(self, file: Path, start: int, end: int):
@@ -56,6 +57,7 @@ class CommentOcc:
     def __str__(self) -> str:
         l, c = self.line_col
         return f"{self.file}:{l}:{c}"
+
 
 # ──────────────────────── helpers ───────────────────────────
 
@@ -97,6 +99,7 @@ def gather() -> List[CommentOcc]:
     for f in source_files():
         res.extend(scan(f))
     return sorted(res, key=lambda o: (o.file, *o.line_col))
+
 
 # ──────────────────── mutation utils ────────────────────────
 
@@ -149,6 +152,7 @@ def remove_comments(occs: List[CommentOcc]):
     for f, olist in grouped.items():
         remove_in_file(f, olist)
 
+
 # ───────────────────────── CLI ──────────────────────────────
 
 def cli() -> argparse.ArgumentParser:
@@ -167,7 +171,7 @@ def main(argv: List[str] | None = None):
     for o in occs:
         l, c = o.line_col
         snippet = (Path(o.file).read_text(encoding="utf-8", errors="ignore")[o.start:o.end]
-                   .split("\n", 1)[0][:40])
+        .split("\n", 1)[0][:40])
         print(f"  {o} → {snippet!r}")
     if not args.remove:
         print("Run again with --remove to delete them.")
@@ -178,6 +182,7 @@ def main(argv: List[str] | None = None):
         return
     remove_comments(occs)
     print("🎉  done")
+
 
 if __name__ == "__main__":
     try:

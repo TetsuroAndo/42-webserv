@@ -13,5 +13,4 @@ public:
 	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 
 private:
-
 };
