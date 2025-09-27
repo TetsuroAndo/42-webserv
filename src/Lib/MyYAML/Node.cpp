@@ -154,13 +154,12 @@ Node *Node::getMapNode(const std::string &key) const {
 		throw std::invalid_argument("Node type is not MAP");
 	}
 
-    for (std::map<std::string, Node *>::const_iterator it = _map.begin(); it != _map.end(); ++it) {
-        if (it->first == key) {
-            return it->second;
-        }
-    }
+	std::map<std::string, Node *>::const_iterator it = _map.find(key);
+	if (it != _map.end()) {
+		return it->second;
+	}
 
-	throw std::invalid_argument("Key not found");
+	return NULL;
 }
 
 void Node::terminateNode() {
