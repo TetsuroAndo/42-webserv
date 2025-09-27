@@ -1,4 +1,5 @@
 #include "RequestParserMiddleware.hpp"
+#include "../Primary/RequestParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 #include <sstream>
 
