@@ -2,6 +2,9 @@
 #include "../Core/MiddlewareProcessor.hpp"
 #include "../Core/PipelineContext.hpp"
 
+#include "../../Core/PipelineContext.hpp"
+#include "../../Core/MiddlewareProcessor.hpp"
+
 SessionMiddleware::SessionMiddleware() {}
 
 SessionMiddleware::~SessionMiddleware() {}
