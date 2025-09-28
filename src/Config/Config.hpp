@@ -68,7 +68,7 @@ private:
 
 	void setup(const std::string& configFile);
 	
-	void parseListens(Node* node);
+	void parseListens(const Node* node);
     void parseRedirects(Node* node);
     void parseLocations(Node* node);
 

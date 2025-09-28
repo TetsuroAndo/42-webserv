@@ -138,7 +138,7 @@ Config &Config::operator=(const Config &other) {
 
 Config::~Config() {}
 
-void Config::parseListens(Node* node) {
+void Config::parseListens(const Node* node) {
     if (!node) throw std::runtime_error("Config error: missing 'listens' node");
     const std::vector<Node*>& listens = node->getSeq();
     for (std::vector<Node*>::const_iterator it = listens.begin(); it != listens.end(); ++it) {
@@ -236,8 +236,8 @@ void Config::parseLocations(Node* node) {
 }
 
 void Config::setup(const std::string &configFile) {
-    MyYAML yaml(configFile);
-    Node* serversNode = yaml.getData().getMapNode("servers");
+    const MyYAML yaml(configFile);
+    const Node* serversNode = yaml.getData().getMapNode("servers");
     if (!serversNode) {
         throw std::runtime_error("Config error: missing 'servers' root node");
     }

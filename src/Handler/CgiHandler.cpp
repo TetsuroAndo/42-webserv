@@ -1,11 +1,10 @@
 #include "CgiHandler.hpp"
-#include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Core/HttpResponse.hpp"
+#include "../Http/Core/HttpStatus.hpp"
 #include "HandlerUtil.hpp"
 #include <fstream>
 #include <iostream>
 #include <sys/stat.h>
-#include <unistd.h>
 
 CgiHandler::CgiHandler() {}
 
