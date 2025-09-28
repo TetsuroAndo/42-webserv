@@ -174,13 +174,14 @@ void Config::setup(const std::string &configFile) {
 	defaultLoc.path = "/";
 	defaultLoc.root = "/tmp/www";
 	defaultLoc.errorFile = "/tmp/www/error.html";
-	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.uploadStore = "upload";
 	defaultLoc.indexFile = "/tmp/www/index.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	_locations[defaultLoc.path] = defaultLoc;
+	setIsAllowPost(true, defaultLoc.uploadStore);
 	setIsAllowHead(true, defaultLoc.path);
 	setIsAllowDelete(true);
 
@@ -189,7 +190,7 @@ void Config::setup(const std::string &configFile) {
 	_locations[uploadsLoc.path] = uploadsLoc;
 	setRoot("/tmp/uploads", uploadsLoc.path);
 
-	_maxRequestBodySize = 1024 * 1024; // 1MB
+	_maxRequestBodySize = 1024 * 1024 * 1024; // 1MB
 	_timeoutSec = 60;
 	_maxEvents = 1024;
 }
