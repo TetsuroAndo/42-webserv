@@ -17,6 +17,8 @@ static const StatusEntry statusEntries[] = {
 	{HttpStatus::MOVED_PERMANENTLY, "Moved Permanently"},
 	{HttpStatus::FOUND, "Found"},
 	{HttpStatus::SEE_OTHER, "See Other"},
+	{HttpStatus::TEMPORARY_REDIRECT, "Temporary Redirect"},
+	{HttpStatus::PERMANENT_REDIRECT, "Permanent Redirect"},
 	// Client Error
 	{HttpStatus::BAD_REQUEST, "Bad Request"},
 	{HttpStatus::UNAUTHORIZED, "Unauthorized"},

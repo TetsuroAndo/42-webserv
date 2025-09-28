@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+class Node;
+
 struct Listen {
 	std::string interface;
 	int port;
@@ -18,32 +20,27 @@ struct Redirect {
 };
 
 struct Location {
-	std::string path; // e.g., "/" or "/cgi-bin"
-	std::string root; // The root directory for this location
-	std::set<std::string>
-		allowedMethods;		 // "GET", "HEAD", "POST", "DELETE" を保持
-	bool autoindex;			 // ディレクトリリスティングの on/off
-	std::string indexFile;	 // 表示するファイル名
-	std::string errorFile;	 // エラーページ
-	std::string uploadStore; // アップロードファイルの保存先ディレクトリ
+	std::string path;
+	std::string root;
+	std::set<std::string> allowedMethods;
+	bool autoindex;
+	std::string indexFile;
+	std::string errorFile;
+	std::string uploadStore;
 	std::map<std::string, std::string> cgiConf;
-	// CGI設定 key: 拡張子 (e.g., ".php"), value: インタプリタのパス (e.g.,
-	// "/usr/bin/php-cgi")
+
+	Location() : autoindex(false) {}
 };
 
 class Config {
 private:
 	std::vector<Listen> _listens;
-	std::map<std::string, Redirect> _redirects; // key: from_path
-	std::map<std::string, Location> _locations; // key: path
+	std::map<std::string, Redirect> _redirects;
+	std::map<std::string, Location> _locations;
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
-	bool _isShowDirectoryListPage;
-	std::string _whenRequestedDirectory;
-	std::string _saveFileDirectory;
 
-	// Set Default Values
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
 	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
 	void setIndexFile(const std::string &indexFile,
@@ -53,12 +50,10 @@ private:
 	void setUploadStore(const std::string &uploadStore,
 						const std::string &locationKey = "/");
 
-	// Set Default CGI
 	void setCgiConf(const std::string &extension,
 					const std::string &interpreterPath,
 					const std::string &locationKey = "/");
 
-	// Set Default Methods
 	void setIsAllowGet(bool allow, const std::string &locationKey = "/");
 	void setIsAllowHead(bool allow, const std::string &locationKey = "/");
 	void setIsAllowPost(bool allow, const std::string &locationKey = "/");
@@ -80,6 +75,13 @@ private:
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
 
+	void initDefaults();
+	void setup(const std::string &configFile);
+
+	void parseListens(const Node *node);
+	void parseRedirects(Node *node);
+	void parseLocations(Node *node);
+
 public:
 	Config();
 	Config(const std::string &configFile);
@@ -87,9 +89,6 @@ public:
 	Config &operator=(const Config &other);
 	~Config();
 
-	void setup(const std::string &configFile = "");
-
-	// Getters
 	const std::vector<Listen> &getListens() const;
 	const std::map<std::string, Redirect> &getRedirects() const;
 	const Redirect &getRedirect(const std::string &path) const;

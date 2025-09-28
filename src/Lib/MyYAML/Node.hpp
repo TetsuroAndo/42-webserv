@@ -1,6 +1,5 @@
 #pragma once
 #include <map>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -34,6 +33,8 @@ public:
 	void fixNode();
 
 	std::size_t size() const;
+
+	std::vector<std::string> getKeys() const;
 
 private:
 	Type _type;

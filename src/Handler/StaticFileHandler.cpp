@@ -19,14 +19,14 @@ enum FileReadStatus {
 };
 
 FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
-                           const struct stat &fileStat) {
+						   const struct stat &fileStat) {
 
 	std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
 	if (!file) {
 		return FILE_READ_FORBIDDEN;
 	}
 
-	const std::streampos fileSize = fileStat.st_size;
+	std::streampos fileSize = fileStat.st_size;
 
 	outContent.resize(fileSize);
 	file.read(&outContent[0], fileSize);
@@ -59,7 +59,7 @@ void StaticFileHandler::generateDirectoryListing(
 	htmlContent += "</h1><hr><pre>";
 
 	std::vector<std::string> files;
-	dirent *entry;
+	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		files.push_back(entry->d_name);
 	}
@@ -67,7 +67,7 @@ void StaticFileHandler::generateDirectoryListing(
 	std::sort(files.begin(), files.end());
 
 	for (std::vector<std::string>::const_iterator it = files.begin();
-	     it != files.end(); ++it) {
+		 it != files.end(); ++it) {
 		std::string name = *it;
 		std::string linkPath = requestPath;
 		if (linkPath.empty() || linkPath[linkPath.length() - 1] != '/') {
@@ -85,7 +85,7 @@ void StaticFileHandler::generateDirectoryListing(
 }
 
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
-                                       const Config &config) {
+									   const Config &config) {
 	HttpResponse res(SERVER_NAME);
 
 	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
@@ -102,10 +102,10 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 	if (S_ISDIR(pathStat.st_mode)) {
 		const Location &loc = config.getLocation(req.getPath());
-		const std::string indexPath = filePath + "/" + loc.indexFile;
+		std::string indexPath = filePath + "/" + loc.indexFile;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
-		    S_ISREG(indexStat.st_mode)) {
+			S_ISREG(indexStat.st_mode)) {
 			filePath = indexPath;
 			pathStat = indexStat;
 		} else {
@@ -120,7 +120,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 	if (S_ISREG(pathStat.st_mode)) {
 		std::string fileContent;
-		const FileReadStatus readStatus =
+		FileReadStatus readStatus =
 			tryReadFile(filePath, fileContent, pathStat);
 
 		switch (readStatus) {
@@ -142,7 +142,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			break;
 		case FILE_READ_ERROR:
 			HandlerUtil::generateErrorBody(res,
-			                               HttpStatus::INTERNAL_SERVER_ERROR);
+										   HttpStatus::INTERNAL_SERVER_ERROR);
 			break;
 		}
 	} else {

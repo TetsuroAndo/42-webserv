@@ -1,0 +1,21 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      redirects:
+        - redirect:
+            from: /temp-old
+            to: /temp-new
+            code: 302
+
+      locations:
+        - location:
+            path: /
+            root: /tmp/www
+            indexFile: index.html
+            autoindex: true
+            allowedMethods:
+              - GET
