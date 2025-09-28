@@ -143,31 +143,12 @@ void Server::handleClientRead(const int clientFd) {
 		closeConnection(clientFd);
 		return;
 	}
+	_mainProcessor.handle(*ctx);
 
-	// Parse the request until complete or error
-	ParseResult parseResult = PARSE_INCOMPLETE;
-	while (parseResult == PARSE_INCOMPLETE && !ctx->recvBuffer.empty()) {
-		parseResult = ctx->parser.parse(*ctx->req, ctx->recvBuffer);
-		if (parseResult == PARSE_ERROR) {
-			// Set error status code in response and break
-			ctx->res->setStatusCode(ctx->parser.getErrorCode());
-			break;
-		}
-		if (parseResult == PARSE_COMPLETE) {
-			break;
-		}
-	}
-
-	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		// Only execute middleware if request is complete or parsing error
-		// occurred
-		_mainProcessor.handle(*ctx);
-
-		const std::string responseStr = ResponseBuilder::build(*ctx->res);
-		if (!responseStr.empty()) {
-			client->getSocket()->setSendBuffer(
-				client->getSocket()->getSendBuffer() + responseStr);
-		}
+	const std::string responseStr = ResponseBuilder::build(*ctx->res);
+	if (!responseStr.empty()) {
+		client->getSocket()->setSendBuffer(
+			client->getSocket()->getSendBuffer() + responseStr);
 	}
 
 	if (!client->getSocket()->getSendBuffer().empty()) {
