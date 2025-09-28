@@ -297,7 +297,20 @@ void Config::setup(const std::string &configFile) {
 	if (Node *redirectsNode = serverNode->getMapNode("redirects")) {
 		parseRedirects(redirectsNode);
 	}
-	parseLocations(serverNode->getMapNode("locations"));
+	if (Node *locationsNode = serverNode->getMapNode("locations")) {
+		parseLocations(locationsNode);
+	} else {
+		Location defaultLoc;
+		defaultLoc.path = "/";
+		defaultLoc.root = "/tmp/www";
+		defaultLoc.uploadStore = "/tmp/uploads";
+		defaultLoc.indexFile = "index.html";
+		defaultLoc.autoindex = true;
+		defaultLoc.allowedMethods.insert("GET");
+		defaultLoc.allowedMethods.insert("POST");
+		defaultLoc.allowedMethods.insert("DELETE");
+		_locations["/"] = defaultLoc;
+	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
 		_maxRequestBodySize = stringToInt(n->getValue());
