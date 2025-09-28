@@ -5,6 +5,7 @@
 #include "../Secondary/HandlerMiddleware.hpp"
 #include "../Secondary/SessionMiddleware.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
+#include "../../Handler/PostHandler.hpp"
 #include "../../Handler/DeleteHandler.hpp"
 // #include "../../Handler/CgiHandler.hpp"
 
