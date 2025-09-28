@@ -1,13 +1,13 @@
 #include "StaticFileHandler.hpp"
+#include "HandlerUtil.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
-#include "HandlerUtil.hpp"
 #include <algorithm>
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
 #include <vector>
+#include <sys/stat.h>
 
 namespace {
 enum FileReadStatus {
@@ -36,8 +36,11 @@ FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 }
 } // namespace
 
-StaticFileHandler::StaticFileHandler() {}
-StaticFileHandler::~StaticFileHandler() {}
+StaticFileHandler::StaticFileHandler() {
+}
+
+StaticFileHandler::~StaticFileHandler() {
+}
 
 void StaticFileHandler::generateDirectoryListing(
 	HttpResponse &res, const std::string &directoryPath,
@@ -84,11 +87,6 @@ void StaticFileHandler::generateDirectoryListing(
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 									   const Config &config) {
 	HttpResponse res(SERVER_NAME);
-
-	if (req.getMethod() != "GET") {
-		HandlerUtil::generateErrorBody(res, HttpStatus::METHOD_NOT_ALLOWED);
-		return res;
-	}
 
 	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {

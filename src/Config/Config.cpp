@@ -124,6 +124,7 @@ void Config::initDefaults() {
 	defaultLoc.indexFile = "index.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
 	_locations["/"] = defaultLoc;
