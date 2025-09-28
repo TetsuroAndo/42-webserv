@@ -1,13 +1,13 @@
 #include "StaticFileHandler.hpp"
+#include "HandlerUtil.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
-#include "HandlerUtil.hpp"
 #include <algorithm>
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
 #include <vector>
+#include <sys/stat.h>
 
 namespace {
 enum FileReadStatus {
@@ -19,7 +19,7 @@ enum FileReadStatus {
 };
 
 FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
-						   const struct stat &fileStat) {
+                           const struct stat &fileStat) {
 
 	std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
 	if (!file) {
@@ -36,11 +36,12 @@ FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 }
 } // namespace
 
-StaticFileHandler::StaticFileHandler() {}
+StaticFileHandler::StaticFileHandler() {
+}
 
-StaticFileHandler::~StaticFileHandler() {}
+StaticFileHandler::~StaticFileHandler() {
+}
 
-// Helper to generate an HTML page for directory listing
 void StaticFileHandler::generateDirectoryListing(
 	HttpResponse &res, const std::string &directoryPath,
 	const std::string &requestPath) {
@@ -66,7 +67,7 @@ void StaticFileHandler::generateDirectoryListing(
 	std::sort(files.begin(), files.end());
 
 	for (std::vector<std::string>::const_iterator it = files.begin();
-		 it != files.end(); ++it) {
+	     it != files.end(); ++it) {
 		std::string name = *it;
 		std::string linkPath = requestPath;
 		if (linkPath.empty() || linkPath[linkPath.length() - 1] != '/') {
@@ -84,13 +85,8 @@ void StaticFileHandler::generateDirectoryListing(
 }
 
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
-									   const Config &config) {
+                                       const Config &config) {
 	HttpResponse res(SERVER_NAME);
-
-	if (req.getMethod() != "GET") {
-		HandlerUtil::generateErrorBody(res, HttpStatus::METHOD_NOT_ALLOWED);
-		return res;
-	}
 
 	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
@@ -105,15 +101,15 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
-		const std::string indexPath =
-			filePath + "/" + config.getLocation("/").indexFile;
+		const Location &loc = config.getLocation(req.getPath());
+		const std::string indexPath = filePath + "/" + loc.indexFile;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
-			S_ISREG(indexStat.st_mode)) {
+		    S_ISREG(indexStat.st_mode)) {
 			filePath = indexPath;
 			pathStat = indexStat;
 		} else {
-			if (config.getLocation("/").autoindex) {
+			if (loc.autoindex) {
 				generateDirectoryListing(res, filePath, req.getPath());
 			} else {
 				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
@@ -146,7 +142,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			break;
 		case FILE_READ_ERROR:
 			HandlerUtil::generateErrorBody(res,
-										   HttpStatus::INTERNAL_SERVER_ERROR);
+			                               HttpStatus::INTERNAL_SERVER_ERROR);
 			break;
 		}
 	} else {

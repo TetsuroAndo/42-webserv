@@ -35,12 +35,10 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		}
 
 		if (currentLocation.allowedMethods.count("GET")) {
-			handlers["GET"] = new StaticFileHandler(
-				/* TODO: Implement location config for GET */);
+			handlers["GET"] = new StaticFileHandler();
 		}
 		if (currentLocation.allowedMethods.count("HEAD")) {
-			handlers["HEAD"] = new StaticFileHandler(
-				/* TODO: Implement HEAD method */);
+			handlers["HEAD"] = new StaticFileHandler();
 		}
 		// if (currentLocation.allowedMethods.count("POST")) {
 		// 	handlers["POST"] = new CgiHandler(currentLocation.cgiConf);
