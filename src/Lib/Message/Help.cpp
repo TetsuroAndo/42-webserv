@@ -6,7 +6,7 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 00:52:20 by teando            #+#    #+#             */
-/*   Updated: 2025/09/29 01:03:14 by teando           ###   ########.fr       */
+/*   Updated: 2025/09/29 01:33:06 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ void printUsage(const char* progName) {
  * @param progName プログラム名 (argv[0])
  * @param version バージョン文字列
  */
-void printVersion(const char* progName, const char* version) {
-	std::cout << progName << " version " << version << std::endl;
+void printVersion(const char* version) {
+	std::cout << "42/Webserv version " << version << std::endl;
 }
 
 /**
@@ -38,7 +38,7 @@ void printVersion(const char* progName, const char* version) {
  * 通常の出力として標準出力(std::cout)に表示します。
  */
 void printHelp(const char* progName) {
-	std::cout << progName << " - A simple HTTP Server program.\n";
+	std::cout << "42/Webserv - A simple HTTP Server program.\n";
 	std::cout << std::endl;
 	printUsage(progName);
 	std::cout << std::endl;
