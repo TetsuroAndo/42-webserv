@@ -322,7 +322,23 @@ const std::map<std::string, Redirect> &Config::getRedirects() const {
 }
 
 const Redirect &Config::getRedirect(const std::string &path) const {
-	return _redirects.at(path);
+    std::string bestMatchKey = "";
+
+    for (std::map<std::string, Redirect>::const_iterator it = _redirects.begin();
+         it != _redirects.end(); ++it) {
+        const std::string &redirectPath = it->first;
+        if (path.rfind(redirectPath, 0) == 0) {
+            if (redirectPath.length() > bestMatchKey.length()) {
+                bestMatchKey = redirectPath;
+            }
+        }
+    }
+    if (!bestMatchKey.empty()) {
+        return _redirects.at(bestMatchKey);
+    }
+    // Return a default constructed Redirect indicating no match
+    static const Redirect noMatchRedirect = {"", "", 0};
+    return noMatchRedirect;
 }
 
 const std::map<std::string, Location> &Config::getLocations() const {

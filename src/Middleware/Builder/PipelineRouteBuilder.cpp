@@ -7,6 +7,7 @@
 #include "../PipelineRouter/Session/SessionMiddleware.hpp"
 #include "../PipelineRouter/handler/HandlerMiddleware.hpp"
 #include "../RequestParser/RequestParserMiddleware.hpp"
+#include "../RedirectMiddleware.hpp"
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 
@@ -54,6 +55,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		routes[currentLocation.path] = routeProcessor;
 	}
 
+	mainProc->addMiddleware(new RedirectMiddleware(conf));
 	mainProc->addMiddleware(new RequestParserMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
 }
