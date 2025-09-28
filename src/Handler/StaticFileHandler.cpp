@@ -10,37 +10,38 @@
 #include <vector>
 
 namespace {
-	enum FileReadStatus {
-		FILE_READ_SUCCESS,
-		FILE_READ_NOT_FOUND,
-		FILE_READ_IS_DIRECTORY,
-		FILE_READ_FORBIDDEN,
-		FILE_READ_ERROR
-	};
+enum FileReadStatus {
+	FILE_READ_SUCCESS,
+	FILE_READ_NOT_FOUND,
+	FILE_READ_IS_DIRECTORY,
+	FILE_READ_FORBIDDEN,
+	FILE_READ_ERROR
+};
 
-	FileReadStatus tryReadFile(const std::string& filePath, std::string& outContent, const struct stat& fileStat) {
+FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
+						   const struct stat &fileStat) {
 
-		std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
-		if (!file) {
-			return FILE_READ_FORBIDDEN;
-		}
-
-		std::streampos fileSize = fileStat.st_size;
-
-		outContent.resize(fileSize);
-		file.read(&outContent[0], fileSize);
-		file.close();
-
-		return FILE_READ_SUCCESS;
+	std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
+	if (!file) {
+		return FILE_READ_FORBIDDEN;
 	}
+
+	std::streampos fileSize = fileStat.st_size;
+
+	outContent.resize(fileSize);
+	file.read(&outContent[0], fileSize);
+	file.close();
+
+	return FILE_READ_SUCCESS;
+}
 } // namespace
 
 StaticFileHandler::StaticFileHandler() {}
 StaticFileHandler::~StaticFileHandler() {}
 
-void StaticFileHandler::generateDirectoryListing(HttpResponse &res,
-					 const std::string &directoryPath,
-					 const std::string &requestPath) {
+void StaticFileHandler::generateDirectoryListing(
+	HttpResponse &res, const std::string &directoryPath,
+	const std::string &requestPath) {
 	DIR *dir = opendir(directoryPath.c_str());
 	if (!dir) {
 		HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
@@ -80,7 +81,8 @@ void StaticFileHandler::generateDirectoryListing(HttpResponse &res,
 	res.setBody(htmlContent);
 }
 
-HttpResponse StaticFileHandler::handle(const HttpRequest &req, const Config &config) {
+HttpResponse StaticFileHandler::handle(const HttpRequest &req,
+									   const Config &config) {
 	HttpResponse res(SERVER_NAME);
 
 	if (req.getMethod() != "GET") {
@@ -120,28 +122,30 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req, const Config &con
 
 	if (S_ISREG(pathStat.st_mode)) {
 		std::string fileContent;
-		FileReadStatus readStatus = tryReadFile(filePath, fileContent, pathStat);
+		FileReadStatus readStatus =
+			tryReadFile(filePath, fileContent, pathStat);
 
 		switch (readStatus) {
-			case FILE_READ_SUCCESS:
-				res.setStatusCode(HttpStatus::OK);
-				res.setHeader("Content-Type", MimeType::getMimeType(filePath));
-				if (req.getMethod() == "GET") {
-					res.setBody(fileContent);
-				}
-				break;
-			case FILE_READ_NOT_FOUND:
-				HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
-				break;
-			case FILE_READ_IS_DIRECTORY:
-				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
-				break;
-			case FILE_READ_FORBIDDEN:
-				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
-				break;
-			case FILE_READ_ERROR:
-				HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
-				break;
+		case FILE_READ_SUCCESS:
+			res.setStatusCode(HttpStatus::OK);
+			res.setHeader("Content-Type", MimeType::getMimeType(filePath));
+			if (req.getMethod() == "GET") {
+				res.setBody(fileContent);
+			}
+			break;
+		case FILE_READ_NOT_FOUND:
+			HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
+			break;
+		case FILE_READ_IS_DIRECTORY:
+			HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+			break;
+		case FILE_READ_FORBIDDEN:
+			HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+			break;
+		case FILE_READ_ERROR:
+			HandlerUtil::generateErrorBody(res,
+										   HttpStatus::INTERNAL_SERVER_ERROR);
+			break;
 		}
 	} else {
 		HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);

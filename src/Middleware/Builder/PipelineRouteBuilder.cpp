@@ -16,11 +16,13 @@ PipelineRouteBuilder::~PipelineRouteBuilder() {
 	}
 }
 
-void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *mainProc) {
+void PipelineRouteBuilder::buildRoute(const Config &conf,
+									  MiddlewareProcessor *mainProc) {
 	RouteMap routes;
 	const std::map<std::string, Location> &locations = conf.getLocations();
 
-	for (std::map<std::string, Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+	for (std::map<std::string, Location>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
 		const Location &currentLocation = it->second;
 		std::map<std::string, ISubHandler *> handlers;
 
@@ -28,14 +30,17 @@ void PipelineRouteBuilder::buildRoute(const Config &conf, MiddlewareProcessor *m
 		_createdProcessors.push_back(routeProcessor);
 
 		if (!currentLocation.allowedMethods.empty()) {
-			routeProcessor->addMiddleware(new SessionMiddleware( /* TODO: Implement SessionMiddleware */ ));
+			routeProcessor->addMiddleware(
+				new SessionMiddleware(/* TODO: Implement SessionMiddleware */));
 		}
 
 		if (currentLocation.allowedMethods.count("GET")) {
-			handlers["GET"] = new StaticFileHandler( /* TODO: Implement location config for GET */ );
+			handlers["GET"] = new StaticFileHandler(
+				/* TODO: Implement location config for GET */);
 		}
 		if (currentLocation.allowedMethods.count("HEAD")) {
-			handlers["HEAD"] = new StaticFileHandler( /* TODO: Implement HEAD method */ );
+			handlers["HEAD"] =
+				new StaticFileHandler(/* TODO: Implement HEAD method */);
 		}
 		if (currentLocation.allowedMethods.count("POST")) {
 			handlers["POST"] = new CgiHandler();

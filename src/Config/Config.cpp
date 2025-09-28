@@ -4,60 +4,76 @@
 #include <sstream>
 #include <stdexcept>
 
-static int stringToInt(const std::string& s) {
-    std::istringstream iss(s);
-    int i;
-    if (!(iss >> i)) {
-        throw std::runtime_error("Config error: invalid integer format");
-    }
-    return i;
+static int stringToInt(const std::string &s) {
+	std::istringstream iss(s);
+	int i;
+	if (!(iss >> i)) {
+		throw std::runtime_error("Config error: invalid integer format");
+	}
+	return i;
 }
 
 void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
 }
 
-void Config::setAutoindex(const bool autoindex, const std::string &locationKey) {
+void Config::setAutoindex(const bool autoindex,
+						  const std::string &locationKey) {
 	_locations[locationKey].autoindex = autoindex;
 }
 
-void Config::setIndexFile(const std::string &indexFile, const std::string &locationKey) {
+void Config::setIndexFile(const std::string &indexFile,
+						  const std::string &locationKey) {
 	_locations[locationKey].indexFile = indexFile;
 }
 
-void Config::setErrorFile(const std::string &errorFile, const std::string &locationKey) {
+void Config::setErrorFile(const std::string &errorFile,
+						  const std::string &locationKey) {
 	_locations[locationKey].errorFile = errorFile;
 }
 
-void Config::setUploadStore(const std::string &uploadStore, const std::string &locationKey) {
+void Config::setUploadStore(const std::string &uploadStore,
+							const std::string &locationKey) {
 	_locations[locationKey].uploadStore = uploadStore;
 }
 
-void Config::setCgiConf(const std::string &extension, const std::string &interpreterPath, const std::string &locationKey) {
+void Config::setCgiConf(const std::string &extension,
+						const std::string &interpreterPath,
+						const std::string &locationKey) {
 	_locations[locationKey].cgiConf[extension] = interpreterPath;
 }
 
 void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("GET");
-	else _locations[locationKey].allowedMethods.erase("GET");
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("GET");
+	else
+		_locations[locationKey].allowedMethods.erase("GET");
 }
 
 void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("HEAD");
-	else _locations[locationKey].allowedMethods.erase("HEAD");
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("HEAD");
+	else
+		_locations[locationKey].allowedMethods.erase("HEAD");
 }
 
 void Config::setIsAllowPost(const bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("POST");
-	else _locations[locationKey].allowedMethods.erase("POST");
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("POST");
+	else
+		_locations[locationKey].allowedMethods.erase("POST");
 }
 
-void Config::setIsAllowDelete(const bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("DELETE");
-	else _locations[locationKey].allowedMethods.erase("DELETE");
+void Config::setIsAllowDelete(const bool allow,
+							  const std::string &locationKey) {
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("DELETE");
+	else
+		_locations[locationKey].allowedMethods.erase("DELETE");
 }
 
-void Config::setAllowedMethods(const std::string &methods, const std::string &locationKey) {
+void Config::setAllowedMethods(const std::string &methods,
+							   const std::string &locationKey) {
 	std::set<std::string> methodSet;
 	std::stringstream ss(methods);
 	std::string method;
@@ -67,19 +83,19 @@ void Config::setAllowedMethods(const std::string &methods, const std::string &lo
 	_locations[locationKey].allowedMethods = methodSet;
 }
 
-void Config::setAllowedMethods(const std::set<std::string> &methods, const std::string &locationKey) {
+void Config::setAllowedMethods(const std::set<std::string> &methods,
+							   const std::string &locationKey) {
 	_locations[locationKey].allowedMethods = methods;
 }
 
-void Config::setListens(const std::vector<Listen> &lists) {
-	_listens = lists;
-}
+void Config::setListens(const std::vector<Listen> &lists) { _listens = lists; }
 
 void Config::setRedirects(const std::map<std::string, Redirect> &redirects) {
 	_redirects = redirects;
 }
 
-void Config::setRedirect(const Redirect &redirect, const std::string &redirectKey) {
+void Config::setRedirect(const Redirect &redirect,
+						 const std::string &redirectKey) {
 	_redirects[redirectKey] = redirect;
 }
 
@@ -87,7 +103,8 @@ void Config::setLocations(const std::map<std::string, Location> &locations) {
 	_locations = locations;
 }
 
-void Config::setLocation(const Location &location, const std::string &locationKey) {
+void Config::setLocation(const Location &location,
+						 const std::string &locationKey) {
 	_locations[locationKey] = location;
 }
 
@@ -95,13 +112,9 @@ void Config::setMaxRequestBodySize(unsigned int size) {
 	_maxRequestBodySize = size;
 }
 
-void Config::setTimeoutSec(unsigned int sec) {
-	_timeoutSec = sec;
-}
+void Config::setTimeoutSec(unsigned int sec) { _timeoutSec = sec; }
 
-void Config::setMaxEvents(unsigned int maxEvents) {
-	_maxEvents = maxEvents;
-}
+void Config::setMaxEvents(unsigned int maxEvents) { _maxEvents = maxEvents; }
 
 Config::Config() : _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
 	_listens.clear();
@@ -111,8 +124,8 @@ Config::Config() : _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
 }
 
 Config::Config(const std::string &configFile)
-  : _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
-    _listens.clear();
+	: _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
+	_listens.clear();
 	_redirects.clear();
 	_locations.clear();
 	setup(configFile);
@@ -138,140 +151,168 @@ Config &Config::operator=(const Config &other) {
 
 Config::~Config() {}
 
-void Config::parseListens(const Node* node) {
-    if (!node) throw std::runtime_error("Config error: missing 'listens' node");
-    const std::vector<Node*>& listens = node->getSeq();
-    for (std::vector<Node*>::const_iterator it = listens.begin(); it != listens.end(); ++it) {
-        Node* l_node = *it;
-        if (l_node->getKey() != "listen") {
-            throw std::runtime_error("Config error: missing 'listen' key in listen item");
-        }
+void Config::parseListens(const Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'listens' node");
+	const std::vector<Node *> &listens = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = listens.begin();
+		 it != listens.end(); ++it) {
+		Node *l_node = *it;
+		if (l_node->getKey() != "listen") {
+			throw std::runtime_error(
+				"Config error: missing 'listen' key in listen item");
+		}
 
-        Listen l;
-        Node* interfaceNode = l_node->getMapNode("interface");
-        if (!interfaceNode) throw std::runtime_error("Config error: missing 'interface' in listen item");
-        l.interface = interfaceNode->getValue();
+		Listen l;
+		Node *interfaceNode = l_node->getMapNode("interface");
+		if (!interfaceNode)
+			throw std::runtime_error(
+				"Config error: missing 'interface' in listen item");
+		l.interface = interfaceNode->getValue();
 
-        Node* portNode = l_node->getMapNode("port");
-        if (!portNode) throw std::runtime_error("Config error: missing 'port' in listen item");
-        int port = stringToInt(portNode->getValue());
-        if (port < 1024 || port > 65535) {
-            std::stringstream ss;
-            ss << "Config error: invalid port number " << port << ". Port must be between 1024 and 65535.";
-            throw std::runtime_error(ss.str());
-        }
-        l.port = port;
+		Node *portNode = l_node->getMapNode("port");
+		if (!portNode)
+			throw std::runtime_error(
+				"Config error: missing 'port' in listen item");
+		int port = stringToInt(portNode->getValue());
+		if (port < 1024 || port > 65535) {
+			std::stringstream ss;
+			ss << "Config error: invalid port number " << port
+			   << ". Port must be between 1024 and 65535.";
+			throw std::runtime_error(ss.str());
+		}
+		l.port = port;
 
-        _listens.push_back(l);
-    }
+		_listens.push_back(l);
+	}
 }
 
-void Config::parseRedirects(Node* node) {
-    if (!node) throw std::runtime_error("Config error: missing 'redirects' node");
-    const std::vector<Node*>& redirects = node->getSeq();
-    for (std::vector<Node*>::const_iterator it = redirects.begin(); it != redirects.end(); ++it) {
-        Node* r_node = *it;
-        if (r_node->getKey() != "redirect") {
-            continue;
-        }
+void Config::parseRedirects(Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'redirects' node");
+	const std::vector<Node *> &redirects = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = redirects.begin();
+		 it != redirects.end(); ++it) {
+		Node *r_node = *it;
+		if (r_node->getKey() != "redirect") {
+			continue;
+		}
 
-        Redirect r;
-        Node* fromNode = r_node->getMapNode("from");
-        if (!fromNode) throw std::runtime_error("Config error: missing 'from' key in redirect item");
-        r.fromPath = fromNode->getValue();
+		Redirect r;
+		Node *fromNode = r_node->getMapNode("from");
+		if (!fromNode)
+			throw std::runtime_error(
+				"Config error: missing 'from' key in redirect item");
+		r.fromPath = fromNode->getValue();
 
-        Node* toNode = r_node->getMapNode("to");
-        if (!toNode) throw std::runtime_error("Config error: missing 'to' key in redirect item");
-        r.toUrl = toNode->getValue();
+		Node *toNode = r_node->getMapNode("to");
+		if (!toNode)
+			throw std::runtime_error(
+				"Config error: missing 'to' key in redirect item");
+		r.toUrl = toNode->getValue();
 
-        Node* codeNode = r_node->getMapNode("code");
-        if (!codeNode) throw std::runtime_error("Config error: missing 'code' key in redirect item");
-        r.code = stringToInt(codeNode->getValue());
+		Node *codeNode = r_node->getMapNode("code");
+		if (!codeNode)
+			throw std::runtime_error(
+				"Config error: missing 'code' key in redirect item");
+		r.code = stringToInt(codeNode->getValue());
 
-        _redirects[r.fromPath] = r;
-    }
+		_redirects[r.fromPath] = r;
+	}
 }
 
-void Config::parseLocations(Node* node) {
-    if (!node) throw std::runtime_error("Config error: missing 'locations' node");
+void Config::parseLocations(Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'locations' node");
 
-    const char* validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
-    std::set<std::string> validMethods(validMethodsArr, validMethodsArr + 4);
+	const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
+	std::set<std::string> validMethods(validMethodsArr, validMethodsArr + 4);
 
-    const std::vector<Node*>& locations = node->getSeq();
-    for (std::vector<Node*>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
-        Node* l_node = *it;
-        if (l_node->getKey() != "location") {
-            continue;
-        }
+	const std::vector<Node *> &locations = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
+		Node *l_node = *it;
+		if (l_node->getKey() != "location") {
+			continue;
+		}
 
-        Location loc;
-        Node* pathNode = l_node->getMapNode("path");
-        if (!pathNode) throw std::runtime_error("Config error: missing 'path' key in location item");
-        loc.path = pathNode->getValue();
+		Location loc;
+		Node *pathNode = l_node->getMapNode("path");
+		if (!pathNode)
+			throw std::runtime_error(
+				"Config error: missing 'path' key in location item");
+		loc.path = pathNode->getValue();
 
-        Node* rootNode = l_node->getMapNode("root");
-        if (rootNode) loc.root = rootNode->getValue();
-        Node* errorFileNode = l_node->getMapNode("errorFile");
-        if (errorFileNode) loc.errorFile = errorFileNode->getValue();
-        Node* uploadStoreNode = l_node->getMapNode("uploadStore");
-        if (uploadStoreNode) loc.uploadStore = uploadStoreNode->getValue();
-        Node* indexNode = l_node->getMapNode("indexFile");
-        if (indexNode) loc.indexFile = indexNode->getValue();
-        Node* autoindexNode = l_node->getMapNode("autoindex");
-        if (autoindexNode) loc.autoindex = (autoindexNode->getValue() == "true");
+		Node *rootNode = l_node->getMapNode("root");
+		if (rootNode)
+			loc.root = rootNode->getValue();
+		Node *errorFileNode = l_node->getMapNode("errorFile");
+		if (errorFileNode)
+			loc.errorFile = errorFileNode->getValue();
+		Node *uploadStoreNode = l_node->getMapNode("uploadStore");
+		if (uploadStoreNode)
+			loc.uploadStore = uploadStoreNode->getValue();
+		Node *indexNode = l_node->getMapNode("indexFile");
+		if (indexNode)
+			loc.indexFile = indexNode->getValue();
+		Node *autoindexNode = l_node->getMapNode("autoindex");
+		if (autoindexNode)
+			loc.autoindex = (autoindexNode->getValue() == "true");
 
-        if (Node* allowMethodsNode = l_node->getMapNode("allowedMethods")) {
-            const std::vector<Node*>& methods = allowMethodsNode->getSeq();
-            for (std::vector<Node*>::const_iterator m_it = methods.begin(); m_it != methods.end(); ++m_it) {
-                std::string method = (*m_it)->getValue();
-                if (validMethods.find(method) == validMethods.end()) {
-                    throw std::runtime_error("Config error: invalid HTTP method '" + method + "'");
-                }
-                loc.allowedMethods.insert(method);
-            }
-        }
-        _locations[loc.path] = loc;
-    }
+		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
+			const std::vector<Node *> &methods = allowMethodsNode->getSeq();
+			for (std::vector<Node *>::const_iterator m_it = methods.begin();
+				 m_it != methods.end(); ++m_it) {
+				std::string method = (*m_it)->getValue();
+				if (validMethods.find(method) == validMethods.end()) {
+					throw std::runtime_error(
+						"Config error: invalid HTTP method '" + method + "'");
+				}
+				loc.allowedMethods.insert(method);
+			}
+		}
+		_locations[loc.path] = loc;
+	}
 }
 
 void Config::setup(const std::string &configFile) {
-    const MyYAML yaml(configFile);
-    const Node* serversNode = yaml.getData().getMapNode("servers");
-    if (!serversNode) {
-        throw std::runtime_error("Config error: missing 'servers' root node");
-    }
+	const MyYAML yaml(configFile);
+	const Node *serversNode = yaml.getData().getMapNode("servers");
+	if (!serversNode) {
+		throw std::runtime_error("Config error: missing 'servers' root node");
+	}
 
-    const std::vector<Node*>& serverList = serversNode->getSeq();
-    if (serverList.empty()) {
-        throw std::runtime_error("Config error: no servers configured");
-    }
+	const std::vector<Node *> &serverList = serversNode->getSeq();
+	if (serverList.empty()) {
+		throw std::runtime_error("Config error: no servers configured");
+	}
 
-    Node* serverNode = serverList[0];
-    if (serverNode->getKey() != "server") {
-            throw std::runtime_error("Config error: missing 'server' key in server list");
-    }
+	Node *serverNode = serverList[0];
+	if (serverNode->getKey() != "server") {
+		throw std::runtime_error(
+			"Config error: missing 'server' key in server list");
+	}
 
-    parseListens(serverNode->getMapNode("listens"));
-    if (Node* redirectsNode = serverNode->getMapNode("redirects")) {
-        parseRedirects(redirectsNode);
-    }
-    parseLocations(serverNode->getMapNode("locations"));
+	parseListens(serverNode->getMapNode("listens"));
+	if (Node *redirectsNode = serverNode->getMapNode("redirects")) {
+		parseRedirects(redirectsNode);
+	}
+	parseLocations(serverNode->getMapNode("locations"));
 
-    if (Node* n = serverNode->getMapNode("maxRequestBodySize"))
-        _maxRequestBodySize = stringToInt(n->getValue());
-    else
-        _maxRequestBodySize = 1024*1024;
+	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
+		_maxRequestBodySize = stringToInt(n->getValue());
+	else
+		_maxRequestBodySize = 1024 * 1024;
 
-    if (Node* n = serverNode->getMapNode("timeoutSec"))
-        _timeoutSec = stringToInt(n->getValue());
-    else
-        _timeoutSec = 60;
+	if (Node *n = serverNode->getMapNode("timeoutSec"))
+		_timeoutSec = stringToInt(n->getValue());
+	else
+		_timeoutSec = 60;
 
-    if (Node* n = serverNode->getMapNode("maxEvents"))
-        _maxEvents = stringToInt(n->getValue());
-    else
-        _maxEvents = 1024;
+	if (Node *n = serverNode->getMapNode("maxEvents"))
+		_maxEvents = stringToInt(n->getValue());
+	else
+		_maxEvents = 1024;
 }
 
 const std::vector<Listen> &Config::getListens() const { return _listens; }
@@ -291,8 +332,10 @@ const std::map<std::string, Location> &Config::getLocations() const {
 const Location &Config::getLocation(const std::string &path) const {
 	std::string bestMatchKey = "";
 
-	for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
-		const std::string& locPath = it->first;
+	for (std::map<std::string, Location>::const_iterator it =
+			 _locations.begin();
+		 it != _locations.end(); ++it) {
+		const std::string &locPath = it->first;
 		if (path.rfind(locPath, 0) == 0) {
 			if (locPath.length() > bestMatchKey.length()) {
 				bestMatchKey = locPath;
@@ -300,7 +343,8 @@ const Location &Config::getLocation(const std::string &path) const {
 		}
 	}
 	if (!bestMatchKey.empty()) {
-		std::map<std::string, Location>::const_iterator it = _locations.find(bestMatchKey);
+		std::map<std::string, Location>::const_iterator it =
+			_locations.find(bestMatchKey);
 		return it->second;
 	}
 	std::map<std::string, Location>::const_iterator it = _locations.find("/");
@@ -310,7 +354,9 @@ const Location &Config::getLocation(const std::string &path) const {
 	throw std::runtime_error("Config error: default location '/' not found");
 }
 
-unsigned int Config::getMaxRequestBodySize() const { return _maxRequestBodySize; }
+unsigned int Config::getMaxRequestBodySize() const {
+	return _maxRequestBodySize;
+}
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
@@ -321,30 +367,42 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "  maxEvents: " << config._maxEvents << "\n";
 
 	os << "  listens:\n";
-	for (std::vector<Listen>::const_iterator it = config._listens.begin(); it != config._listens.end(); ++it) {
+	for (std::vector<Listen>::const_iterator it = config._listens.begin();
+		 it != config._listens.end(); ++it) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
 
 	os << "  redirects:\n";
-	for (std::map<std::string, Redirect>::const_iterator it = config._redirects.begin(); it != config._redirects.end(); ++it) {
-		os << "    - from: " << it->second.fromPath << ", to: " << it->second.toUrl << ", code: " << it->second.code << "\n";
+	for (std::map<std::string, Redirect>::const_iterator it =
+			 config._redirects.begin();
+		 it != config._redirects.end(); ++it) {
+		os << "    - from: " << it->second.fromPath
+		   << ", to: " << it->second.toUrl << ", code: " << it->second.code
+		   << "\n";
 	}
 
 	os << "  locations:\n";
-	for (std::map<std::string, Location>::const_iterator it = config._locations.begin(); it != config._locations.end(); ++it) {
+	for (std::map<std::string, Location>::const_iterator it =
+			 config._locations.begin();
+		 it != config._locations.end(); ++it) {
 		os << "  - path: " << it->second.path << "\n";
 		os << "      root: " << it->second.root << "\n";
 		os << "      allowedMethods: ";
-		for (std::set<std::string>::const_iterator mit = it->second.allowedMethods.begin(); mit != it->second.allowedMethods.end(); ++mit) {
+		for (std::set<std::string>::const_iterator mit =
+				 it->second.allowedMethods.begin();
+			 mit != it->second.allowedMethods.end(); ++mit) {
 			os << *mit << " ";
 		}
 		os << "\n";
-		os << "      autoindex: " << (it->second.autoindex ? "on" : "off") << "\n";
+		os << "      autoindex: " << (it->second.autoindex ? "on" : "off")
+		   << "\n";
 		os << "      indexFile: " << it->second.indexFile << "\n";
 		os << "      errorFile: " << it->second.errorFile << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      cgiConf:\n";
-		for (std::map<std::string, std::string>::const_iterator cit = it->second.cgiConf.begin(); cit != it->second.cgiConf.end(); ++cit) {
+		for (std::map<std::string, std::string>::const_iterator cit =
+				 it->second.cgiConf.begin();
+			 cit != it->second.cgiConf.end(); ++cit) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
 		}
 	}

@@ -220,11 +220,12 @@ std::size_t Node::size() const {
 }
 
 std::vector<std::string> Node::getKeys() const {
-    std::vector<std::string> keys;
-    if (_childNodeType == NODE_MAP) {
-        for (std::map<std::string, Node *>::const_iterator it = _map.begin(); it != _map.end(); ++it) {
-            keys.push_back(it->first);
-        }
-    }
-    return keys;
+	std::vector<std::string> keys;
+	if (_childNodeType == NODE_MAP) {
+		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+			 it != _map.end(); ++it) {
+			keys.push_back(it->first);
+		}
+	}
+	return keys;
 }

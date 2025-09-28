@@ -3,17 +3,11 @@
 #include <string>
 #include <vector>
 
-enum Type {
-	NODE_MAP,
-	NODE_SEQ,
-	NODE_VAL,
-	NODE_NULL
-};
+enum Type { NODE_MAP, NODE_SEQ, NODE_VAL, NODE_NULL };
 
 class Node {
 public:
-	Node(const Type type, const std::string &key,
-	     const std::string &value);
+	Node(const Type type, const std::string &key, const std::string &value);
 
 	~Node();
 
@@ -42,8 +36,7 @@ public:
 
 	std::vector<std::string> getKeys() const;
 
-private
-:
+private:
 	Type _type;
 	Type _childNodeType;
 	const std::string _key;

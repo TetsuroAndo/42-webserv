@@ -1,10 +1,10 @@
 #pragma once
 
+#include <map>
 #include <ostream>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <map>
 
 class Node;
 
@@ -43,34 +43,43 @@ private:
 
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
 	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
-	void setIndexFile(const std::string &indexFile, const std::string &locationKey = "/");
-	void setErrorFile(const std::string &errorFile, const std::string &locationKey = "/");
-	void setUploadStore(const std::string &uploadStore, const std::string &locationKey = "/");
+	void setIndexFile(const std::string &indexFile,
+					  const std::string &locationKey = "/");
+	void setErrorFile(const std::string &errorFile,
+					  const std::string &locationKey = "/");
+	void setUploadStore(const std::string &uploadStore,
+						const std::string &locationKey = "/");
 
-	void setCgiConf(const std::string &extension, const std::string &interpreterPath, const std::string &locationKey = "/");
+	void setCgiConf(const std::string &extension,
+					const std::string &interpreterPath,
+					const std::string &locationKey = "/");
 
 	void setIsAllowGet(bool allow, const std::string &locationKey = "/");
 	void setIsAllowHead(bool allow, const std::string &locationKey = "/");
 	void setIsAllowPost(bool allow, const std::string &locationKey = "/");
 	void setIsAllowDelete(bool allow, const std::string &locationKey = "/");
-	void setAllowedMethods(const std::string &methods, const std::string &locationKey = "/");
-	void setAllowedMethods(const std::set<std::string> &methods, const std::string &locationKey = "/");
+	void setAllowedMethods(const std::string &methods,
+						   const std::string &locationKey = "/");
+	void setAllowedMethods(const std::set<std::string> &methods,
+						   const std::string &locationKey = "/");
 
 	void setListens(const std::vector<Listen> &lists);
 	void setRedirects(const std::map<std::string, Redirect> &redirects);
-	void setRedirect(const Redirect &redirect, const std::string &redirectKey = "/");
+	void setRedirect(const Redirect &redirect,
+					 const std::string &redirectKey = "/");
 	void setLocations(const std::map<std::string, Location> &locations);
-	void setLocation(const Location &location, const std::string &locationKey = "/");
+	void setLocation(const Location &location,
+					 const std::string &locationKey = "/");
 
 	void setMaxRequestBodySize(unsigned int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
 
-	void setup(const std::string& configFile);
-	
-	void parseListens(const Node* node);
-    void parseRedirects(Node* node);
-    void parseLocations(Node* node);
+	void setup(const std::string &configFile);
+
+	void parseListens(const Node *node);
+	void parseRedirects(Node *node);
+	void parseLocations(Node *node);
 
 public:
 	Config();
