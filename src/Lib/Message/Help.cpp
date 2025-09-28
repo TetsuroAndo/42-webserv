@@ -1,0 +1,48 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Help.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/29 00:52:20 by teando            #+#    #+#             */
+/*   Updated: 2025/09/29 01:03:14 by teando           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include <iostream>
+
+/**
+ * @brief プログラムの基本的な使用法を表示する
+ * @param progName プログラム名 (argv[0])
+ *
+ * エラーメッセージとして標準エラー出力(std::cerr)に表示するのが一般的です。
+ */
+void printUsage(const char* progName) {
+	std::cerr << "Usage: " << progName << " [Configuration file]" << std::endl;
+}
+
+/**
+ * @brief プログラムのバージョン情報を表示する
+ * @param progName プログラム名 (argv[0])
+ * @param version バージョン文字列
+ */
+void printVersion(const char* progName, const char* version) {
+	std::cout << progName << " version " << version << std::endl;
+}
+
+/**
+ * @brief 詳細なヘルプ情報を表示する
+ * @param progName プログラム名 (argv[0])
+ *
+ * 通常の出力として標準出力(std::cout)に表示します。
+ */
+void printHelp(const char* progName) {
+	std::cout << progName << " - A simple HTTP Server program.\n";
+	std::cout << std::endl;
+	printUsage(progName);
+	std::cout << std::endl;
+	std::cout << "Options:\n";
+	std::cout << "  -h, --help       Show this help message and exit.\n";
+	std::cout << "  -v, --version    Show program's version number and exit." << std::endl;
+}
