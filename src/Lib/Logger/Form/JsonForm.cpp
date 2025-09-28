@@ -1,4 +1,7 @@
 #include "JsonForm.hpp"
+#include "../../Http/Core/HttpRequest.hpp"
+#include "../../Http/Core/HttpResponse.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -70,5 +73,35 @@ void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 		}
 		out << "}";
 	}
+	out << "}";
+}
+
+void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
+	char timeStr[20];
+	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", localtime(&ctx.timestamp));
+
+	out << "{";
+	out << "\"timestamp\":\"" << timeStr << "\",";
+	out << "\"remote_addr\":\"" << escapeJson(ctx.remote_addr) << "\",";
+
+	if (ctx.request) {
+		out << "\"request\":{";
+		out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
+		out << "\"uri\":\"" << escapeJson(ctx.request->getPath()) << "\",";
+		out << "\"http_version\":\"" << escapeJson(ctx.request->getVersion()) << "\"";
+		out << "},";
+	} else {
+		out << "\"request\":null,";
+	}
+
+	if (ctx.response) {
+		out << "\"response\":{";
+		out << "\"status_code\":" << ctx.response->getStatusCode() << ",";
+		out << "\"status_message\":\"" << escapeJson(HttpStatus::getReason(ctx.response->getStatusCode())) << "\"";
+		out << "}";
+	} else {
+		out << "\"response\":null";
+	}
+
 	out << "}";
 }

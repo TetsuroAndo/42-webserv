@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../Http/Core/HttpRequest.hpp"
+#include "../../Http/Core/HttpResponse.hpp"
 #include <map>
 #include <string>
 
@@ -20,4 +22,11 @@ struct LogMessage {
 	int line;
 	const char *function;
 	std::map<std::string, std::string> attributes;
+};
+
+struct AccessLogContext {
+	time_t timestamp;
+	const HttpRequest* request;
+	const HttpResponse* response;
+	std::string remote_addr;
 };
