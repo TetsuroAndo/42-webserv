@@ -35,6 +35,7 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 		}
 	} else {
 		// 対応するハンドラがない場合
+		// TODO:許可されているメソッドを返す
 		ctx.res->setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
 		ctx.res->setHeader("Content-Type", "text/html");
 		ctx.res->setBody(
