@@ -2,6 +2,11 @@
 
 WEBSERV_BIN="./webserv"
 
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 # Function to sort query parameters
 sort_query_params() {
     local query_string=$1
@@ -35,9 +40,9 @@ run_test() {
 
     # Check for expected status code
     if echo "$RESPONSE_HEADERS" | grep -q "< HTTP/1.0 $expected_status"; then
-        echo "  Status code $expected_status found."
+        echo -e "  ${GREEN}Success: Status code $expected_status found.${NC}"
     else
-        echo "  Error: Status code $expected_status not found. Headers: $RESPONSE_HEADERS"
+        echo -e "  ${RED}Error: Status code $expected_status not found.${NC} Headers: $RESPONSE_HEADERS"
         kill $WEBSERV_PID
         return 1
     fi
@@ -57,12 +62,12 @@ run_test() {
 
         if [[ "$ACTUAL_PATH_PART" == "$EXPECTED_PATH_PART" ]] && \
            [[ "$SORTED_ACTUAL_QUERY" == "$SORTED_EXPECTED_QUERY" ]]; then
-            echo "  Location header '$expected_location' found (order-agnostic)."
+            echo -e "  ${GREEN}Success: Location header '$expected_location' found (order-agnostic).${NC}"
         else
-            echo "  Error: Location header mismatch."
-            echo "    Expected Path: '$EXPECTED_PATH_PART', Actual Path: '$ACTUAL_PATH_PART'"
-            echo "    Expected Query: '$SORTED_EXPECTED_QUERY', Actual Query: '$SORTED_ACTUAL_QUERY'"
-            echo "    Full Actual Location: '$ACTUAL_LOCATION'"
+            echo -e "  ${RED}Error: Location header mismatch.${NC}"
+            echo -e "    Expected Path: '$EXPECTED_PATH_PART', Actual Path: '$ACTUAL_PATH_PART'"
+            echo -e "    Expected Query: '$SORTED_EXPECTED_QUERY', Actual Query: '$SORTED_ACTUAL_QUERY'"
+            echo -e "    Full Actual Location: '$ACTUAL_LOCATION'"
             kill $WEBSERV_PID
             return 1
         fi
@@ -99,5 +104,5 @@ run_test "test/redirect_test/config_external.yaml" "External Redirect" "/externa
 run_test "test/redirect_test/config_query.yaml" "Query Params Redirect" "/query?param=value&another=test" "307 Temporary Redirect" "/new-query?param=value&another=test" || exit 1
 
 
-echo "All redirect tests passed!"
+echo -e "${GREEN}All redirect tests passed!${NC}"
 exit 0
