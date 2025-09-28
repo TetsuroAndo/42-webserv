@@ -208,4 +208,13 @@ bool decStrToSize(const std::string &str, size_t &result) {
 	}
 	return true;
 }
+
+int stringToInt(const std::string &s) {
+	std::istringstream iss(s);
+	int i;
+	if (!(iss >> i) || !iss.eof()) {
+		throw std::runtime_error("invalid integer format");
+	}
+	return i;
+}
 } // namespace StringOps

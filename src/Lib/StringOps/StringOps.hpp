@@ -19,6 +19,7 @@ void trim(std::string &s, const std::string &chars = " \t\n\r\f\v");
 void toLower(std::string &str);
 std::vector<std::string> split(const std::string &str,
 							   const std::string &delimiter);
+int stringToInt(const std::string &s);
 size_t toSize_t(const std::string &str);
 
 bool hexStrToSize(const char *str, size_t len, size_t &result);

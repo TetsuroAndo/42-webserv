@@ -20,7 +20,7 @@ private:
 	SessionManager &operator=(const SessionManager &);
 	~SessionManager();
 
-	Token token;
+	Token _token;
 	std::string generateSessionId() const;
 
 	std::map<std::string, Session *> _sessions;

@@ -1,6 +1,7 @@
 #include "SessionMiddleware.hpp"
-#include "../Core/MiddlewareProcessor.hpp"
-#include "../Core/PipelineContext.hpp"
+
+#include "../../Core/MiddlewareProcessor.hpp"
+#include "../../Core/PipelineContext.hpp"
 
 SessionMiddleware::SessionMiddleware() {}
 
