@@ -75,6 +75,7 @@ private:
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
 
+	void initDefaults();
 	void setup(const std::string &configFile);
 
 	void parseListens(const Node *node);

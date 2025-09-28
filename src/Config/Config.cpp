@@ -116,18 +116,34 @@ void Config::setTimeoutSec(unsigned int sec) { _timeoutSec = sec; }
 
 void Config::setMaxEvents(unsigned int maxEvents) { _maxEvents = maxEvents; }
 
-Config::Config() : _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
+void Config::initDefaults() {
 	_listens.clear();
 	_redirects.clear();
 	_locations.clear();
+
+	_maxRequestBodySize = 1024 * 1024;
+	_timeoutSec = 60;
+	_maxEvents = 1024;
+
+	Location defaultLoc;
+	defaultLoc.path = "/";
+	defaultLoc.root = "/tmp/www";
+	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.indexFile = "index.html";
+	defaultLoc.autoindex = true;
+	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("POST");
+	defaultLoc.allowedMethods.insert("DELETE");
+	_locations["/"] = defaultLoc;
+}
+
+Config::Config() {
+	initDefaults();
 	setup("config/default.yaml");
 }
 
-Config::Config(const std::string &configFile)
-	: _maxRequestBodySize(0), _timeoutSec(0), _maxEvents(0) {
-	_listens.clear();
-	_redirects.clear();
-	_locations.clear();
+Config::Config(const std::string &configFile) {
+	initDefaults();
 	setup(configFile);
 }
 
@@ -299,33 +315,16 @@ void Config::setup(const std::string &configFile) {
 	}
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		parseLocations(locationsNode);
-	} else {
-		Location defaultLoc;
-		defaultLoc.path = "/";
-		defaultLoc.root = "/tmp/www";
-		defaultLoc.uploadStore = "/tmp/uploads";
-		defaultLoc.indexFile = "index.html";
-		defaultLoc.autoindex = true;
-		defaultLoc.allowedMethods.insert("GET");
-		defaultLoc.allowedMethods.insert("POST");
-		defaultLoc.allowedMethods.insert("DELETE");
-		_locations["/"] = defaultLoc;
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
 		_maxRequestBodySize = stringToInt(n->getValue());
-	else
-		_maxRequestBodySize = 1024 * 1024;
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
 		_timeoutSec = stringToInt(n->getValue());
-	else
-		_timeoutSec = 60;
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
 		_maxEvents = stringToInt(n->getValue());
-	else
-		_maxEvents = 1024;
 }
 
 const std::vector<Listen> &Config::getListens() const { return _listens; }

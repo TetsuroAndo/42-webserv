@@ -1,6 +1,6 @@
 NAME = config_test
 
-SRCS = main.cpp ../Config.cpp
+SRCS = main.cpp ../Config.cpp ../../Lib/MyYAML/MyYAML.cpp ../../Lib/MyYAML/Node.cpp ../../Lib/StringOps/StringOps.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = c++
