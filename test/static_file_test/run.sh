@@ -2,6 +2,11 @@
 
 WEBSERV_BIN="./webserv"
 
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 # Function to run a test case
 run_test() {
     local config_file=$1
@@ -20,7 +25,7 @@ run_test() {
     sleep 1
 
     # Get HTTP status code
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080$path")
+    HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080$path")
 
     # Get response headers
     RESPONSE_HEADERS=$(curl -s -I "http://localhost:8080$path" 2>&1 | grep -i -E "^HTTP|^Content-Type|^Content-Length")
@@ -30,9 +35,9 @@ run_test() {
 
     # Check for expected status code
     if [[ "$HTTP_STATUS" == "$(echo "$expected_status" | cut -d' ' -f1)" ]]; then
-        echo "  Status code $expected_status found."
+        echo -e "  ${GREEN}Success: Status code $expected_status found.${NC}"
     else
-        echo "  Error: Status code $expected_status not found. Actual: $HTTP_STATUS. Headers: $RESPONSE_HEADERS"
+        echo -e "  ${RED}Error: Status code $expected_status not found. Actual: $HTTP_STATUS.${NC} Headers: $RESPONSE_HEADERS"
         kill $WEBSERV_PID
         return 1
     fi
@@ -40,9 +45,9 @@ run_test() {
     # Check for expected content (if applicable)
     if [ -n "$expected_content_grep" ]; then
         if echo "$RESPONSE_BODY" | grep -q "$expected_content_grep"; then
-            echo "  Expected content found."
+            echo -e "  ${GREEN}Success: Expected content found.${NC}"
         else
-            echo "  Error: Expected content '$expected_content_grep' not found in body. Body: $RESPONSE_BODY"
+            echo -e "  ${RED}Error: Expected content '$expected_content_grep' not found in body.${NC} Body: $RESPONSE_BODY"
             kill $WEBSERV_PID
             return 1
         fi
@@ -75,5 +80,5 @@ run_test "test/static_file_test/config_basic_get.yaml" "File Not Found" "/non-ex
 run_test "test/static_file_test/config_forbidden.yaml" "Forbidden Directory Access" "/forbidden_dir/" "500 Internal Server Error" "Internal Server Error" || exit 1
 
 
-echo "All static file tests passed!"
+echo -e "${GREEN}All static file tests passed!${NC}"
 exit 0
