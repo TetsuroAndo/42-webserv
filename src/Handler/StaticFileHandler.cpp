@@ -59,7 +59,7 @@ void StaticFileHandler::generateDirectoryListing(
 	htmlContent += "</h1><hr><pre>";
 
 	std::vector<std::string> files;
-	struct dirent *entry;
+	dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		files.push_back(entry->d_name);
 	}
@@ -102,7 +102,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 	if (S_ISDIR(pathStat.st_mode)) {
 		const Location &loc = config.getLocation(req.getPath());
-		std::string indexPath = filePath + "/" + loc.indexFile;
+		const std::string indexPath = filePath + "/" + loc.indexFile;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 		    S_ISREG(indexStat.st_mode)) {
@@ -120,7 +120,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 	if (S_ISREG(pathStat.st_mode)) {
 		std::string fileContent;
-		FileReadStatus readStatus =
+		const FileReadStatus readStatus =
 			tryReadFile(filePath, fileContent, pathStat);
 
 		switch (readStatus) {
