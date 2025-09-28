@@ -1,0 +1,52 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8081
+
+      maxRequestBodySize: 1048576
+      timeoutSec: 5
+      maxEvents: 128
+
+      locations:
+        # / (GET happy path and 405 test)
+        - location:
+            path: /
+            root: www/http_test_root
+            indexFile: index.html
+            autoindex: false
+            allowedMethods:
+              - GET
+
+        # /upload (POST/DELETE happy path and 404 test)
+        - location:
+            path: /upload
+            root: /tmp/webserv_uploads
+            uploadStore: /tmp/webserv_uploads
+            allowedMethods:
+              - POST
+              - DELETE
+
+        # /forbidden (For 403 test)
+        - location:
+            path: /forbidden
+            root: /tmp/webserv_no_perms
+            allowedMethods:
+              - GET
+
+        # /autoindex_on (For directory listing test)
+        - location:
+            path: /autoindex_on
+            root: www/http_test_root
+            autoindex: true
+            allowedMethods:
+              - GET
+
+        # /no_autoindex (For directory 403 test)
+        - location:
+            path: /no_autoindex
+            root: www/http_test_root/no_autoindex_dir
+            autoindex: false
+            allowedMethods:
+              - GET

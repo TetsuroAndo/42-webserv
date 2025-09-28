@@ -1,10 +1,10 @@
 #include "Config.hpp"
-#include <algorithm>
+#include "../Lib/MyYAML/MyYAML.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-/* ********************* Private Setters ********************* */
 void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
 }
@@ -42,7 +42,7 @@ void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
 		_locations[locationKey].allowedMethods.erase("GET");
 }
 
-void Config::setIsAllowHead(const bool allow, const std::string &locationKey) {
+void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
 	if (allow)
 		_locations[locationKey].allowedMethods.insert("HEAD");
 	else
@@ -100,32 +100,51 @@ void Config::setLocation(const Location &location,
 	_locations[locationKey] = location;
 }
 
-void Config::setMaxRequestBodySize(const unsigned int size) {
+void Config::setMaxRequestBodySize(unsigned int size) {
 	_maxRequestBodySize = size;
 }
 
-void Config::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
+void Config::setTimeoutSec(unsigned int sec) { _timeoutSec = sec; }
 
-void Config::setMaxEvents(const unsigned int maxEvents) {
-	_maxEvents = maxEvents;
-}
+void Config::setMaxEvents(unsigned int maxEvents) { _maxEvents = maxEvents; }
 
-/* ********************* Orthodox Canonical Form ********************* */
-Config::Config() {
+void Config::initDefaults() {
 	_listens.clear();
 	_redirects.clear();
 	_locations.clear();
-	setup();
+
+	_maxRequestBodySize = 1024 * 1024;
+	_timeoutSec = 60;
+	_maxEvents = 1024;
+
+	Location defaultLoc;
+	defaultLoc.path = "/";
+	defaultLoc.root = "/tmp/www";
+	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.indexFile = "index.html";
+	defaultLoc.autoindex = true;
+	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("HEAD");
+	defaultLoc.allowedMethods.insert("POST");
+	defaultLoc.allowedMethods.insert("DELETE");
+	_locations["/"] = defaultLoc;
 }
 
-Config::Config(const std::string &configFile) { setup(configFile); }
+Config::Config() {
+	initDefaults();
+	setup("config/default.yaml");
+}
+
+Config::Config(const std::string &configFile) {
+	initDefaults();
+	setup(configFile);
+}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
 	  _locations(other._locations),
 	  _maxRequestBodySize(other._maxRequestBodySize),
-	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
-	  _isShowDirectoryListPage(false) {}
+	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -141,60 +160,166 @@ Config &Config::operator=(const Config &other) {
 
 Config::~Config() {}
 
-/* ********************* Setup method ********************* */
-void Config::setup(const std::string &configFile) {
-	(void)configFile; // TODO: Implement actual file parsing
+void Config::parseListens(const Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'listens' node");
+	const std::vector<Node *> &listens = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = listens.begin();
+		 it != listens.end(); ++it) {
+		Node *l_node = *it;
+		if (l_node->getKey() != "listen") {
+			throw std::runtime_error(
+				"Config error: missing 'listen' key in listen item");
+		}
 
-	// --- Listens ---
-	Listen l1;
-	l1.interface = "0.0.0.0";
-	l1.port = 8080;
-	_listens.push_back(l1);
+		Listen l;
+		Node *interfaceNode = l_node->getMapNode("interface");
+		if (!interfaceNode)
+			throw std::runtime_error(
+				"Config error: missing 'interface' in listen item");
+		l.interface = interfaceNode->getValue();
 
-	Listen l2;
-	l2.interface = "127.0.0.1";
-	l2.port = 3000;
-	_listens.push_back(l2);
+		Node *portNode = l_node->getMapNode("port");
+		if (!portNode)
+			throw std::runtime_error(
+				"Config error: missing 'port' in listen item");
+		int port = StringOps::stringToInt(portNode->getValue());
+		if (port < 1024 || port > 65535) {
+			std::stringstream ss;
+			ss << "Config error: invalid port number " << port
+			   << ". Port must be between 1024 and 65535.";
+			throw std::runtime_error(ss.str());
+		}
+		l.port = port;
 
-	// --- Redirects ---
-	Redirect r1;
-	r1.fromPath = "/old";
-	r1.toUrl = "/new";
-	r1.code = 301;
-	_redirects[r1.fromPath] = r1;
-
-	Redirect r2;
-	r2.fromPath = "/";
-	r2.toUrl = "/tmp/www/index.html";
-	r2.code = 302;
-	_redirects[r2.fromPath] = r2;
-
-	// --- Locations ---
-	Location defaultLoc;
-	defaultLoc.path = "/";
-	defaultLoc.root = "/tmp/www";
-	defaultLoc.errorFile = "/tmp/www/error.html";
-	defaultLoc.uploadStore = "/tmp/uploads";
-	defaultLoc.indexFile = "/tmp/www/index.html";
-	defaultLoc.autoindex = true;
-	defaultLoc.allowedMethods.insert("GET");
-	defaultLoc.allowedMethods.insert("HEAD");
-	defaultLoc.allowedMethods.insert("POST");
-	_locations[defaultLoc.path] = defaultLoc;
-	setIsAllowHead(true, defaultLoc.path);
-	setIsAllowDelete(true);
-
-	Location uploadsLoc = _locations[defaultLoc.path];
-	uploadsLoc.path = "/uploads";
-	_locations[uploadsLoc.path] = uploadsLoc;
-	setRoot("/tmp/uploads", uploadsLoc.path);
-
-	_maxRequestBodySize = 1024 * 1024; // 1MB
-	_timeoutSec = 60;
-	_maxEvents = 1024;
+		_listens.push_back(l);
+	}
 }
 
-/* ********************* Public Getters ********************* */
+void Config::parseRedirects(Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'redirects' node");
+	const std::vector<Node *> &redirects = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = redirects.begin();
+		 it != redirects.end(); ++it) {
+		Node *r_node = *it;
+		if (r_node->getKey() != "redirect") {
+			continue;
+		}
+
+		Redirect r;
+		Node *fromNode = r_node->getMapNode("from");
+		if (!fromNode)
+			throw std::runtime_error(
+				"Config error: missing 'from' key in redirect item");
+		r.fromPath = fromNode->getValue();
+
+		Node *toNode = r_node->getMapNode("to");
+		if (!toNode)
+			throw std::runtime_error(
+				"Config error: missing 'to' key in redirect item");
+		r.toUrl = toNode->getValue();
+
+		Node *codeNode = r_node->getMapNode("code");
+		if (!codeNode)
+			throw std::runtime_error(
+				"Config error: missing 'code' key in redirect item");
+		r.code = StringOps::stringToInt(codeNode->getValue());
+
+		_redirects[r.fromPath] = r;
+	}
+}
+
+void Config::parseLocations(Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'locations' node");
+
+	const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
+	std::set<std::string> validMethods(validMethodsArr, validMethodsArr + 4);
+
+	const std::vector<Node *> &locations = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
+		Node *l_node = *it;
+		if (l_node->getKey() != "location") {
+			continue;
+		}
+
+		Location loc;
+		Node *pathNode = l_node->getMapNode("path");
+		if (!pathNode)
+			throw std::runtime_error(
+				"Config error: missing 'path' key in location item");
+		loc.path = pathNode->getValue();
+
+		Node *rootNode = l_node->getMapNode("root");
+		if (rootNode)
+			loc.root = rootNode->getValue();
+		Node *errorFileNode = l_node->getMapNode("errorFile");
+		if (errorFileNode)
+			loc.errorFile = errorFileNode->getValue();
+		Node *uploadStoreNode = l_node->getMapNode("uploadStore");
+		if (uploadStoreNode)
+			loc.uploadStore = uploadStoreNode->getValue();
+		Node *indexNode = l_node->getMapNode("indexFile");
+		if (indexNode)
+			loc.indexFile = indexNode->getValue();
+		Node *autoindexNode = l_node->getMapNode("autoindex");
+		if (autoindexNode)
+			loc.autoindex = (autoindexNode->getValue() == "true");
+
+		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
+			const std::vector<Node *> &methods = allowMethodsNode->getSeq();
+			for (std::vector<Node *>::const_iterator m_it = methods.begin();
+				 m_it != methods.end(); ++m_it) {
+				std::string method = (*m_it)->getValue();
+				if (validMethods.find(method) == validMethods.end()) {
+					throw std::runtime_error(
+						"Config error: invalid HTTP method '" + method + "'");
+				}
+				loc.allowedMethods.insert(method);
+			}
+		}
+		_locations[loc.path] = loc;
+	}
+}
+
+void Config::setup(const std::string &configFile) {
+	const MyYAML yaml(configFile);
+	const Node *serversNode = yaml.getData().getMapNode("servers");
+	if (!serversNode) {
+		throw std::runtime_error("Config error: missing 'servers' root node");
+	}
+
+	const std::vector<Node *> &serverList = serversNode->getSeq();
+	if (serverList.empty()) {
+		throw std::runtime_error("Config error: no servers configured");
+	}
+
+	Node *serverNode = serverList[0];
+	if (serverNode->getKey() != "server") {
+		throw std::runtime_error(
+			"Config error: missing 'server' key in server list");
+	}
+
+	parseListens(serverNode->getMapNode("listens"));
+	if (Node *redirectsNode = serverNode->getMapNode("redirects")) {
+		parseRedirects(redirectsNode);
+	}
+	if (Node *locationsNode = serverNode->getMapNode("locations")) {
+		parseLocations(locationsNode);
+	}
+
+	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
+		_maxRequestBodySize = StringOps::stringToInt(n->getValue());
+
+	if (Node *n = serverNode->getMapNode("timeoutSec"))
+		_timeoutSec = StringOps::stringToInt(n->getValue());
+
+	if (Node *n = serverNode->getMapNode("maxEvents"))
+		_maxEvents = StringOps::stringToInt(n->getValue());
+}
+
 const std::vector<Listen> &Config::getListens() const { return _listens; }
 
 const std::map<std::string, Redirect> &Config::getRedirects() const {
@@ -202,7 +327,23 @@ const std::map<std::string, Redirect> &Config::getRedirects() const {
 }
 
 const Redirect &Config::getRedirect(const std::string &path) const {
-	return _redirects.at(path);
+    std::string bestMatchKey = "";
+
+    for (std::map<std::string, Redirect>::const_iterator it = _redirects.begin();
+         it != _redirects.end(); ++it) {
+        const std::string &redirectPath = it->first;
+        if (path.rfind(redirectPath, 0) == 0) {
+            if (redirectPath.length() > bestMatchKey.length()) {
+                bestMatchKey = redirectPath;
+            }
+        }
+    }
+    if (!bestMatchKey.empty()) {
+        return _redirects.at(bestMatchKey);
+    }
+    // Return a default constructed Redirect indicating no match
+    static const Redirect noMatchRedirect = {"", "", 0};
+    return noMatchRedirect;
 }
 
 const std::map<std::string, Location> &Config::getLocations() const {
@@ -223,27 +364,23 @@ const Location &Config::getLocation(const std::string &path) const {
 		}
 	}
 	if (!bestMatchKey.empty()) {
-		const std::map<std::string, Location>::const_iterator it =
+		std::map<std::string, Location>::const_iterator it =
 			_locations.find(bestMatchKey);
 		return it->second;
 	}
-	const std::map<std::string, Location>::const_iterator it =
-		_locations.find("/");
+	std::map<std::string, Location>::const_iterator it = _locations.find("/");
 	if (it != _locations.end()) {
 		return it->second;
 	}
-	throw std::runtime_error(
-		"Default location '/' not found in configuration.");
+	throw std::runtime_error("Config error: default location '/' not found");
 }
 
 unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
 }
-
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
-/* ********************* Friend Stream Operator ********************* */
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
@@ -290,12 +427,5 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
 		}
 	}
-	os << "  isShowDirectoryListPage: " << config._isShowDirectoryListPage
-	   << "\n";
-	os << "  whenRequestedDirectory: " << config._whenRequestedDirectory
-	   << "\n";
-	os << "  saveFileDirectory: " << config._saveFileDirectory << "\n";
-	os << "  timeoutSec: " << config._timeoutSec << "\n";
-	os << "  maxEvents: " << config._maxEvents << "\n";
 	return os;
 }

@@ -1,6 +1,6 @@
 #include "HandlerMiddleware.hpp"
-#include "../../../HTTP/Core/HttpStatus.hpp"
 #include "../../../Handler/ISubHandler.hpp"
+#include "../../../Http/Core/HttpStatus.hpp"
 
 #include <map>
 #include <sstream>

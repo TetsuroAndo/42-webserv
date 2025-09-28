@@ -1,12 +1,13 @@
 #include "PipelineRouteBuilder.hpp"
+#include "../../Handler/CgiHandler.hpp"
+#include "../../Handler/DeleteHandler.hpp"
+#include "../../Handler/StaticFileHandler.hpp"
 #include "../Core/PipelineContext.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
-#include "../RequestParser/RequestParserMiddleware.hpp"
-#include "../PipelineRouter/handler/HandlerMiddleware.hpp"
 #include "../PipelineRouter/Session/SessionMiddleware.hpp"
-#include "../../Handler/StaticFileHandler.hpp"
-#include "../../Handler/DeleteHandler.hpp"
-// #include "../../Handler/CgiHandler.hpp"
+#include "../PipelineRouter/handler/HandlerMiddleware.hpp"
+#include "../RequestParser/RequestParserMiddleware.hpp"
+#include "../RedirectMiddleware.hpp"
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 
@@ -40,18 +41,17 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		if (currentLocation.allowedMethods.count("HEAD")) {
 			handlers["HEAD"] = new StaticFileHandler();
 		}
-		// if (currentLocation.allowedMethods.count("POST")) {
-		// 	handlers["POST"] = new CgiHandler(currentLocation.cgiConf);
-		// }
+		if (currentLocation.allowedMethods.count("POST")) {
+			handlers["POST"] = new CgiHandler();
+		}
 		if (currentLocation.allowedMethods.count("DELETE")) {
 			handlers["DELETE"] = new DeleteHandler();
 		}
-		if (!handlers.empty()) {
-			routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
-		}
+		routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
 		routes[currentLocation.path] = routeProcessor;
 	}
 
 	mainProc->addMiddleware(new RequestParserMiddleware());
+	mainProc->addMiddleware(new RedirectMiddleware(conf));
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
 }
