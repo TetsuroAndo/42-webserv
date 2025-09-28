@@ -1,8 +1,8 @@
 #include "DeleteHandler.hpp"
+#include "HandlerUtil.hpp"
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
-#include "HandlerUtil.hpp"
 
 #include <cstdio>
 #include <sys/stat.h>
@@ -33,18 +33,15 @@ FileDeleteStatus tryDeleteFile(const std::string &filePath) {
 }
 } // namespace
 
-DeleteHandler::DeleteHandler() {}
+DeleteHandler::DeleteHandler() {
+}
 
-DeleteHandler::~DeleteHandler() {}
+DeleteHandler::~DeleteHandler() {
+}
 
 HttpResponse DeleteHandler::handle(const HttpRequest &req,
-								   const Config &config) {
+                                   const Config &config) {
 	HttpResponse res(SERVER_NAME);
-
-	if (req.getMethod() != "DELETE") {
-		HandlerUtil::generateErrorBody(res, HttpStatus::METHOD_NOT_ALLOWED);
-		return res;
-	}
 
 	const std::string filePath =
 		HandlerUtil::resolvePath(req.getPath(), config);

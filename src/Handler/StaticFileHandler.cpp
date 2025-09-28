@@ -38,7 +38,8 @@ FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 
 StaticFileHandler::StaticFileHandler() {}
 
-StaticFileHandler::~StaticFileHandler() {}
+StaticFileHandler::~StaticFileHandler() {
+}
 
 // Helper to generate an HTML page for directory listing
 void StaticFileHandler::generateDirectoryListing(
@@ -105,15 +106,15 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
-		const std::string indexPath =
-			filePath + "/" + config.getLocation("/").indexFile;
+		const Location &loc = config.getLocation(req.getPath());
+		std::string indexPath = filePath + "/" + loc.indexFile;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode)) {
 			filePath = indexPath;
 			pathStat = indexStat;
 		} else {
-			if (config.getLocation("/").autoindex) {
+			if (loc.autoindex) {
 				generateDirectoryListing(res, filePath, req.getPath());
 			} else {
 				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
@@ -124,7 +125,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 	if (S_ISREG(pathStat.st_mode)) {
 		std::string fileContent;
-		const FileReadStatus readStatus =
+		FileReadStatus readStatus =
 			tryReadFile(filePath, fileContent, pathStat);
 
 		switch (readStatus) {
