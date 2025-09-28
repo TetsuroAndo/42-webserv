@@ -18,9 +18,10 @@ HttpResponse PostHandler::handle(const HttpRequest& req, const Config& config)
 {
 	HttpResponse response(SERVER_NAME);
 	const std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
-	std::cout << "Called!: \n"
-	<<  "    req head : " << (req.getHeader("Content-Type").empty() ? "empty": req.getHeader("Content-Type")) << std::endl
-	<< "    req body : " << (req.getBody().empty() ? 0: req.getBody().size()) << std::endl;
+	//工事現場はこちらです。
+	// std::cout << "Called!: \n"
+	// <<  "    req head : " << (req.getHeader("Content-Type").empty() ? "empty": req.getHeader("Content-Type")) << std::endl
+	// << "    req body : " << (req.getBody().empty() ? 0: req.getBody().size()) << std::endl;
 
 	// TODO:POST METHODの処理を書く
 	// リクエストのContent Typeで処理をswitchするのが良さげ？
