@@ -1,4 +1,5 @@
 #include "ElfForm.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -55,5 +56,46 @@ void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 				out << ";";
 			}
 		}
+	}
+}
+
+void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
+	if (!_headerWritten) {
+		out << getHeader() << "\n";
+		_headerWritten = true;
+	}
+	const tm *timeinfo = localtime(&ctx.timestamp);
+	char dateStr[11];
+	char timeStr[9];
+	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
+	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
+
+	out << dateStr << " " << timeStr << " ";
+	out << "INFO" << " "; // アクセスログはINFOレベルで固定
+	out << "-" << " "; // functionは不明なので'-'で埋める
+	out << "-" << " "; // file:lineも不明なので'-'で埋める
+
+	std::stringstream message;
+	if (ctx.request) {
+		message << ctx.request->getMethod() << " "
+				<< ctx.request->getPath() << " "
+				<< ctx.request->getVersion();
+	} else {
+		message << "-";
+	}
+	message << " ";
+
+	if (ctx.response) {
+		message << ctx.response->getStatusCode() << " "
+				<< HttpStatus::getReason(ctx.response->getStatusCode());
+	} else {
+		message << "- -";
+	}
+	out << sanitize(message.str()) << " ";
+
+	if (!ctx.remote_addr.empty()) {
+		out << "remote_addr=" << sanitize(ctx.remote_addr);
+	} else {
+		out << "-";
 	}
 }

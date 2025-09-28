@@ -1,6 +1,4 @@
 #include "JsonForm.hpp"
-#include "../../Http/Core/HttpRequest.hpp"
-#include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 #include <ctime>
 #include <sstream>
