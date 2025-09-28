@@ -1,6 +1,8 @@
 #include "Server/Server.hpp"
 #include <iostream>
 
+#define VERSION "0.9"
+
 int main(const int argc, char **argv) {
 	try {
 		if (argc != 2) {
