@@ -1,22 +1,45 @@
 #include "HandlerMiddleware.hpp"
+#include "../../../HTTP/Core/HttpStatus.hpp"
 #include "../../../Handler/ISubHandler.hpp"
-#include "../../../Http/Core/HttpStatus.hpp"
+
+#include <map>
 #include <sstream>
+
+std::string HandlerMiddleware::getAllowedMethods() {
+	const char *order[] = {"GET", "HEAD", "POST", "DELETE"};
+	const size_t orderSize = sizeof(order) / sizeof(order[0]);
+
+	std::stringstream ss;
+	bool first = true;
+
+	for (size_t i = 0; i < orderSize; ++i) {
+		if (_handlers.find(order[i]) != _handlers.end()) {
+			if (!first) {
+				ss << ", ";
+			}
+			ss << order[i];
+			first = false;
+		}
+	}
+	return ss.str();
+}
+
 
 HandlerMiddleware::HandlerMiddleware(
 	const std::map<std::string, ISubHandler *> &handlers)
-	: _handlers(handlers) {}
+	: _handlers(handlers) {
+}
 
 HandlerMiddleware::~HandlerMiddleware() {
 	for (std::map<std::string, ISubHandler *>::iterator it = _handlers.begin();
-		 it != _handlers.end(); ++it) {
+	     it != _handlers.end(); ++it) {
 		delete it->second;
 	}
 	_handlers.clear();
 }
 
 void HandlerMiddleware::handle(PipelineContext &ctx,
-							   MiddlewareProcessor *proc) {
+                               MiddlewareProcessor *proc) {
 	(void)proc;
 	const std::string &method = ctx.req->getMethod();
 
@@ -35,9 +58,9 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 		}
 	} else {
 		// 対応するハンドラがない場合
-		// TODO:許可されているメソッドを返す
 		ctx.res->setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
 		ctx.res->setHeader("Content-Type", "text/html");
+		ctx.res->setHeader("Allow", getAllowedMethods());
 		ctx.res->setBody(
 			"<html><body><h1>405 Method Not Allowed</h1></body></html>");
 	}
