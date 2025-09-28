@@ -6,6 +6,7 @@
 
 Session::Session(const std::string &id)
 	: _sessionId(id), _lastAccessTime(std::time(NULL)) {}
+
 Session::~Session() {}
 
 const std::string &Session::getId() const { return _sessionId; }

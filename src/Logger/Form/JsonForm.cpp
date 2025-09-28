@@ -7,7 +7,7 @@
  * @param str エスケープ対象の文字列
  * @return エスケープ後の文字列
  */
-std::string JsonForm::escapeJson(const std::string& str) const {
+std::string JsonForm::escapeJson(const std::string &str) const {
 	std::stringstream ss;
 	for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
 		switch (*it) {
@@ -45,9 +45,10 @@ std::string JsonForm::escapeJson(const std::string& str) const {
  * @param msg ログメッセージ
  * @param out 出力ストリーム
  */
-void JsonForm::format(const LogMessage& msg, std::ostream& out) {
+void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 	char timeStr[20];
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", localtime(&msg.timestamp));
+	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S",
+			 localtime(&msg.timestamp));
 
 	out << "{";
 	out << "\"timestamp\":\"" << timeStr << "\",";
@@ -58,9 +59,11 @@ void JsonForm::format(const LogMessage& msg, std::ostream& out) {
 
 	if (!msg.attributes.empty()) {
 		out << ",\"attributes\":{";
-		for (std::map<std::string, std::string>::const_iterator it = msg.attributes.begin();
+		for (std::map<std::string, std::string>::const_iterator it =
+				 msg.attributes.begin();
 			 it != msg.attributes.end();) {
-			out << "\"" << it->first << "\":\"" << escapeJson(it->second) << "\"";
+			out << "\"" << it->first << "\":\"" << escapeJson(it->second)
+				<< "\"";
 			if (++it != msg.attributes.end()) {
 				out << ",";
 			}

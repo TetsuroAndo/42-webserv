@@ -11,6 +11,6 @@ public:
 
 private:
 	static std::string _internalEncodeURILogic(const std::string &str,
-										const std::string &unescaped);
+											   const std::string &unescaped);
 	static unsigned char _parseHexByte(const std::string &str, std::size_t pos);
 };

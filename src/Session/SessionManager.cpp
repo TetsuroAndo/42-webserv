@@ -1,9 +1,12 @@
 #include "SessionManager.hpp"
+
 #include "../Lib/Token/Token.hpp"
+
 #include <ctime>
 #include <string>
 
 SessionManager::SessionManager() {}
+
 SessionManager::~SessionManager() {
 	for (std::map<std::string, Session *>::iterator it = _sessions.begin();
 		 it != _sessions.end(); ++it) {
@@ -12,7 +15,7 @@ SessionManager::~SessionManager() {
 	_sessions.clear();
 }
 
-std::string SessionManager::generateSessionId() {
+std::string SessionManager::generateSessionId() const {
 	std::string sessionId;
 	do {
 		sessionId = token.genToken(32);
@@ -26,14 +29,15 @@ SessionManager &SessionManager::getInstance() {
 }
 
 Session *SessionManager::createSession() {
-	std::string sessionId = generateSessionId();
+	const std::string sessionId = generateSessionId();
 	Session *newSession = new Session(sessionId);
 	_sessions[sessionId] = newSession;
 	return newSession;
 }
 
 Session *SessionManager::getSession(const std::string &sessionId) {
-	std::map<std::string, Session *>::iterator it = _sessions.find(sessionId);
+	const std::map<std::string, Session *>::iterator it =
+		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		it->second->updateLastAccess();
 		return it->second;
@@ -42,7 +46,8 @@ Session *SessionManager::getSession(const std::string &sessionId) {
 }
 
 bool SessionManager::destroySession(const std::string &sessionId) {
-	std::map<std::string, Session *>::iterator it = _sessions.find(sessionId);
+	const std::map<std::string, Session *>::iterator it =
+		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		delete it->second;
 		_sessions.erase(it);
@@ -52,7 +57,7 @@ bool SessionManager::destroySession(const std::string &sessionId) {
 }
 
 void SessionManager::cleanupExpiredSessions() {
-	time_t now = std::time(NULL);
+	const time_t now = std::time(NULL);
 
 	std::map<std::string, Session *>::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {

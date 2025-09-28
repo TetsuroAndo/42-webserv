@@ -1,7 +1,7 @@
 # sample setting
 servers:
-  - server :
-    listens :
+  - server:
+    listens:
       - listen:
           interface: 0.0.0.0
           port: 8080
@@ -9,18 +9,18 @@ servers:
           interface: 127.0.0.1
           port: 3000
 
-    defaultErrorPage : /tmp/www/error.html
+    defaultErrorPage: /tmp/www/error.html
 
     # 1024 x 1024
-    maxRequestBodySize : 1048576
+    maxRequestBodySize: 1048576
 
     # true / false
-    isAllowGet : true
-    isAllowPost : true
-    isAllowHead : true
-    isAllowDelete : true
+    isAllowGet: true
+    isAllowPost: true
+    isAllowHead: true
+    isAllowDelete: true
 
-    redirects :
+    redirects:
       - redirect:
         from: /old
         to: /new
@@ -30,19 +30,19 @@ servers:
         to: /tmp/www/index.html
         code: 302
 
-    locations :
-      - location :
-        path : /
-        root : /tmp/www
+    locations:
       - location:
-        path : /uploads
-        root : /tmp/uploads
+        path: /
+        root: /tmp/www
+      - location:
+        path: /uploads
+        root: /tmp/uploads
 
     # true/false
-    isShowDirectoryListPage : true
+    isShowDirectoryListPage: true
 
-    whenRequestedDirectory : /tmp/www/index.html
-    saveFileDirectory : /tmp/uploads
+    whenRequestedDirectory: /tmp/www/index.html
+    saveFileDirectory: /tmp/uploads
 
-    timeoutSec : 5
-    maxEvents : 1024
+    timeoutSec: 5
+    maxEvents: 1024

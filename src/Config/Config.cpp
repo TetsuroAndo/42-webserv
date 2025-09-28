@@ -9,47 +9,63 @@ void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
 }
 
-void Config::setAutoindex(const bool autoindex, const std::string &locationKey) {
+void Config::setAutoindex(const bool autoindex,
+						  const std::string &locationKey) {
 	_locations[locationKey].autoindex = autoindex;
 }
 
-void Config::setIndexFile(const std::string &indexFile, const std::string &locationKey) {
+void Config::setIndexFile(const std::string &indexFile,
+						  const std::string &locationKey) {
 	_locations[locationKey].indexFile = indexFile;
 }
 
-void Config::setErrorFile(const std::string &errorFile, const std::string &locationKey) {
+void Config::setErrorFile(const std::string &errorFile,
+						  const std::string &locationKey) {
 	_locations[locationKey].errorFile = errorFile;
 }
 
-void Config::setUploadStore(const std::string &uploadStore, const std::string &locationKey) {
+void Config::setUploadStore(const std::string &uploadStore,
+							const std::string &locationKey) {
 	_locations[locationKey].uploadStore = uploadStore;
 }
 
-void Config::setCgiConf(const std::string &extension, const std::string &interpreterPath, const std::string &locationKey) {
+void Config::setCgiConf(const std::string &extension,
+						const std::string &interpreterPath,
+						const std::string &locationKey) {
 	_locations[locationKey].cgiConf[extension] = interpreterPath;
 }
 
 void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("GET");
-	else _locations[locationKey].allowedMethods.erase("GET");
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("GET");
+	else
+		_locations[locationKey].allowedMethods.erase("GET");
 }
 
-void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("HEAD");
-	else _locations[locationKey].allowedMethods.erase("HEAD");
+void Config::setIsAllowHead(const bool allow, const std::string &locationKey) {
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("HEAD");
+	else
+		_locations[locationKey].allowedMethods.erase("HEAD");
 }
 
 void Config::setIsAllowPost(const bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("POST");
-	else _locations[locationKey].allowedMethods.erase("POST");
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("POST");
+	else
+		_locations[locationKey].allowedMethods.erase("POST");
 }
 
-void Config::setIsAllowDelete(const bool allow, const std::string &locationKey) {
-	if (allow) _locations[locationKey].allowedMethods.insert("DELETE");
-	else _locations[locationKey].allowedMethods.erase("DELETE");
+void Config::setIsAllowDelete(const bool allow,
+							  const std::string &locationKey) {
+	if (allow)
+		_locations[locationKey].allowedMethods.insert("DELETE");
+	else
+		_locations[locationKey].allowedMethods.erase("DELETE");
 }
 
-void Config::setAllowedMethods(const std::string &methods, const std::string &locationKey) {
+void Config::setAllowedMethods(const std::string &methods,
+							   const std::string &locationKey) {
 	std::set<std::string> methodSet;
 	std::stringstream ss(methods);
 	std::string method;
@@ -59,19 +75,19 @@ void Config::setAllowedMethods(const std::string &methods, const std::string &lo
 	_locations[locationKey].allowedMethods = methodSet;
 }
 
-void Config::setAllowedMethods(const std::set<std::string> &methods, const std::string &locationKey) {
+void Config::setAllowedMethods(const std::set<std::string> &methods,
+							   const std::string &locationKey) {
 	_locations[locationKey].allowedMethods = methods;
 }
 
-void Config::setListens(const std::vector<Listen> &lists) {
-	_listens = lists;
-}
+void Config::setListens(const std::vector<Listen> &lists) { _listens = lists; }
 
 void Config::setRedirects(const std::map<std::string, Redirect> &redirects) {
 	_redirects = redirects;
 }
 
-void Config::setRedirect(const Redirect &redirect, const std::string &redirectKey) {
+void Config::setRedirect(const Redirect &redirect,
+						 const std::string &redirectKey) {
 	_redirects[redirectKey] = redirect;
 }
 
@@ -79,19 +95,18 @@ void Config::setLocations(const std::map<std::string, Location> &locations) {
 	_locations = locations;
 }
 
-void Config::setLocation(const Location &location, const std::string &locationKey) {
+void Config::setLocation(const Location &location,
+						 const std::string &locationKey) {
 	_locations[locationKey] = location;
 }
 
-void Config::setMaxRequestBodySize(unsigned int size) {
+void Config::setMaxRequestBodySize(const unsigned int size) {
 	_maxRequestBodySize = size;
 }
 
-void Config::setTimeoutSec(unsigned int sec) {
-	_timeoutSec = sec;
-}
+void Config::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
 
-void Config::setMaxEvents(unsigned int maxEvents) {
+void Config::setMaxEvents(const unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
@@ -103,17 +118,14 @@ Config::Config() {
 	setup();
 }
 
-Config::Config(const std::string &configFile) {
-	setup(configFile);
-}
+Config::Config(const std::string &configFile) { setup(configFile); }
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
 	  _locations(other._locations),
 	  _maxRequestBodySize(other._maxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
-	  _isShowDirectoryListPage(false) {
-}
+	  _isShowDirectoryListPage(false) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -166,6 +178,7 @@ void Config::setup(const std::string &configFile) {
 	defaultLoc.indexFile = "/tmp/www/index.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	_locations[defaultLoc.path] = defaultLoc;
 	setIsAllowHead(true, defaultLoc.path);
@@ -199,8 +212,10 @@ const std::map<std::string, Location> &Config::getLocations() const {
 const Location &Config::getLocation(const std::string &path) const {
 	std::string bestMatchKey = "";
 
-	for (std::map<std::string, Location>::const_iterator it = _locations.begin(); it != _locations.end(); ++it) {
-		const std::string& locPath = it->first;
+	for (std::map<std::string, Location>::const_iterator it =
+			 _locations.begin();
+		 it != _locations.end(); ++it) {
+		const std::string &locPath = it->first;
 		if (path.rfind(locPath, 0) == 0) {
 			if (locPath.length() > bestMatchKey.length()) {
 				bestMatchKey = locPath;
@@ -208,17 +223,23 @@ const Location &Config::getLocation(const std::string &path) const {
 		}
 	}
 	if (!bestMatchKey.empty()) {
-		std::map<std::string, Location>::const_iterator it = _locations.find(bestMatchKey);
+		const std::map<std::string, Location>::const_iterator it =
+			_locations.find(bestMatchKey);
 		return it->second;
 	}
-	std::map<std::string, Location>::const_iterator it = _locations.find("/");
+	const std::map<std::string, Location>::const_iterator it =
+		_locations.find("/");
 	if (it != _locations.end()) {
 		return it->second;
 	}
-	throw std::runtime_error("Default location '/' not found in configuration.");
+	throw std::runtime_error(
+		"Default location '/' not found in configuration.");
 }
 
-unsigned int Config::getMaxRequestBodySize() const { return _maxRequestBodySize; }
+unsigned int Config::getMaxRequestBodySize() const {
+	return _maxRequestBodySize;
+}
+
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
@@ -230,36 +251,49 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "  maxEvents: " << config._maxEvents << "\n";
 
 	os << "  listens:\n";
-	for (std::vector<Listen>::const_iterator it = config._listens.begin(); it != config._listens.end(); ++it) {
+	for (std::vector<Listen>::const_iterator it = config._listens.begin();
+		 it != config._listens.end(); ++it) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
 
 	os << "  redirects:\n";
-	for (std::map<std::string, Redirect>::const_iterator it = config._redirects.begin(); it != config._redirects.end(); ++it) {
-		os << "    - from: " << it->second.fromPath << ", to: " << it->second.toUrl << ", code: " << it->second.code << "\n";
+	for (std::map<std::string, Redirect>::const_iterator it =
+			 config._redirects.begin();
+		 it != config._redirects.end(); ++it) {
+		os << "    - from: " << it->second.fromPath
+		   << ", to: " << it->second.toUrl << ", code: " << it->second.code
+		   << "\n";
 	}
 
 	os << "  locations:\n";
-	for (std::map<std::string, Location>::const_iterator it = config._locations.begin(); it != config._locations.end(); ++it) {
+	for (std::map<std::string, Location>::const_iterator it =
+			 config._locations.begin();
+		 it != config._locations.end(); ++it) {
 		os << "  - path: " << it->second.path << "\n";
 		os << "      root: " << it->second.root << "\n";
 		os << "      allowedMethods: ";
-		for (std::set<std::string>::const_iterator mit = it->second.allowedMethods.begin(); mit != it->second.allowedMethods.end(); ++mit) {
+		for (std::set<std::string>::const_iterator mit =
+				 it->second.allowedMethods.begin();
+			 mit != it->second.allowedMethods.end(); ++mit) {
 			os << *mit << " ";
 		}
 		os << "\n";
-		os << "      autoindex: " << (it->second.autoindex ? "on" : "off") << "\n";
+		os << "      autoindex: " << (it->second.autoindex ? "on" : "off")
+		   << "\n";
 		os << "      indexFile: " << it->second.indexFile << "\n";
 		os << "      errorFile: " << it->second.errorFile << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      cgiConf:\n";
-		for (std::map<std::string, std::string>::const_iterator cit = it->second.cgiConf.begin(); cit != it->second.cgiConf.end(); ++cit) {
+		for (std::map<std::string, std::string>::const_iterator cit =
+				 it->second.cgiConf.begin();
+			 cit != it->second.cgiConf.end(); ++cit) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
 		}
 	}
 	os << "  isShowDirectoryListPage: " << config._isShowDirectoryListPage
 	   << "\n";
-	os << "  whenRequestedDirectory: " << config._whenRequestedDirectory << "\n";
+	os << "  whenRequestedDirectory: " << config._whenRequestedDirectory
+	   << "\n";
 	os << "  saveFileDirectory: " << config._saveFileDirectory << "\n";
 	os << "  timeoutSec: " << config._timeoutSec << "\n";
 	os << "  maxEvents: " << config._maxEvents << "\n";

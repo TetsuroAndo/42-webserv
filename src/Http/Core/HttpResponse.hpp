@@ -38,7 +38,8 @@ public:
 
 	HttpResponse(const HttpResponse &other)
 		: _serverName(other._serverName), _statusCode(other._statusCode),
-		  _version(other._version), _headers(other._headers), _body(other._body) {}
+		  _version(other._version), _headers(other._headers),
+		  _body(other._body) {}
 
 	HttpResponse &operator=(const HttpResponse &other) {
 		if (this != &other) {

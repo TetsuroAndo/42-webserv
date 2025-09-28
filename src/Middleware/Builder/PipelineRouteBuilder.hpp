@@ -2,10 +2,10 @@
 
 #include "../../Config/Config.hpp"
 #include "../Core/MiddlewareProcessor.hpp"
-#include <string>
 #include <map>
+#include <string>
 
-typedef std::map<std::string, class MiddlewareProcessor*> RouteMap;
+typedef std::map<std::string, class MiddlewareProcessor *> RouteMap;
 
 class PipelineRouteBuilder {
 public:
@@ -21,8 +21,8 @@ public:
 	void buildRoute(const Config &conf, MiddlewareProcessor *mainProc);
 
 private:
-	std::vector<MiddlewareProcessor*> _createdProcessors;
+	std::vector<MiddlewareProcessor *> _createdProcessors;
 
-	PipelineRouteBuilder(const PipelineRouteBuilder&);
-	PipelineRouteBuilder& operator=(const PipelineRouteBuilder&);
+	PipelineRouteBuilder(const PipelineRouteBuilder &);
+	PipelineRouteBuilder &operator=(const PipelineRouteBuilder &);
 };

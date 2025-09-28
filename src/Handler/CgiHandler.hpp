@@ -7,11 +7,9 @@ public:
 	CgiHandler();
 	~CgiHandler();
 
-	HttpResponse handle(const HttpRequest& req, const Config& config);
+	HttpResponse handle(const HttpRequest &req, const Config &config);
 
 private:
-
-
-	CgiHandler(const CgiHandler&);
-	CgiHandler& operator=(const CgiHandler&);
+	CgiHandler(const CgiHandler &);
+	CgiHandler &operator=(const CgiHandler &);
 };
