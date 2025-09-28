@@ -178,6 +178,7 @@ void Config::setup(const std::string &configFile) {
 	defaultLoc.indexFile = "/tmp/www/index.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	_locations[defaultLoc.path] = defaultLoc;
 	setIsAllowHead(true, defaultLoc.path);
