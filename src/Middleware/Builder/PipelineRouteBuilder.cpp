@@ -49,9 +49,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		if (currentLocation.allowedMethods.count("DELETE")) {
 			handlers["DELETE"] = new DeleteHandler();
 		}
-		if (!handlers.empty()) {
-			routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
-		}
+		routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
 		routes[currentLocation.path] = routeProcessor;
 	}
 
