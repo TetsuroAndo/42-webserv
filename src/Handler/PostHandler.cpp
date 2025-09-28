@@ -18,6 +18,6 @@ HttpResponse PostHandler::handle(const HttpRequest& req, const Config& config)
 {
 	HttpResponse response(SERVER_NAME);
 	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
-	std::cout << filePath << std::endl;
+	std::cout << "Called!: " << filePath << std::endl;
 	return response;
 }
