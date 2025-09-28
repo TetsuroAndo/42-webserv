@@ -1,17 +1,9 @@
 #include "Config.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
-static int stringToInt(const std::string &s) {
-	std::istringstream iss(s);
-	int i;
-	if (!(iss >> i)) {
-		throw std::runtime_error("Config error: invalid integer format");
-	}
-	return i;
-}
 
 void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
@@ -190,7 +182,7 @@ void Config::parseListens(const Node *node) {
 		if (!portNode)
 			throw std::runtime_error(
 				"Config error: missing 'port' in listen item");
-		int port = stringToInt(portNode->getValue());
+		int port = StringOps::stringToInt(portNode->getValue());
 		if (port < 1024 || port > 65535) {
 			std::stringstream ss;
 			ss << "Config error: invalid port number " << port
@@ -231,7 +223,7 @@ void Config::parseRedirects(Node *node) {
 		if (!codeNode)
 			throw std::runtime_error(
 				"Config error: missing 'code' key in redirect item");
-		r.code = stringToInt(codeNode->getValue());
+		r.code = StringOps::stringToInt(codeNode->getValue());
 
 		_redirects[r.fromPath] = r;
 	}
@@ -318,13 +310,13 @@ void Config::setup(const std::string &configFile) {
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
-		_maxRequestBodySize = stringToInt(n->getValue());
+		_maxRequestBodySize = StringOps::stringToInt(n->getValue());
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
-		_timeoutSec = stringToInt(n->getValue());
+		_timeoutSec = StringOps::stringToInt(n->getValue());
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
-		_maxEvents = stringToInt(n->getValue());
+		_maxEvents = StringOps::stringToInt(n->getValue());
 }
 
 const std::vector<Listen> &Config::getListens() const { return _listens; }
