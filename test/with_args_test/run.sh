@@ -13,7 +13,7 @@ cd "$(dirname "$0")/../.."
 PROJECT_ROOT=$(pwd)
 
 WEBSERV_EXEC="$PROJECT_ROOT/webserv"
-TEST_CONF="$PROJECT_ROOT/test/http_methods_test/test.yaml"
+TEST_CONF="$PROJECT_ROOT/test/with_args_test/test.yaml"
 
 # Test directories and files
 GET_ROOT="$PROJECT_ROOT/www/http_test_root"
