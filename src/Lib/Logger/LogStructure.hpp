@@ -7,10 +7,11 @@ enum LogFormat { JSON, ELF };
 
 enum LogFilterMode {
 	GREATER_OR_EQUAL, // 指定レベル以上（デフォルト）
-	EXACT			  // 指定レベルと完全一致
+	EXACT,			  // 指定レベルと完全一致
+	ACCESS_ONLY			  // アクセスログのみ
 };
 
-enum LogLevel { DEBUG, INFO, WARNING, ERROR, FATAL };
+enum LogLevel { ACCESS, DEBUG, INFO, WARNING, ERROR, FATAL };
 
 struct LogMessage {
 	time_t timestamp;

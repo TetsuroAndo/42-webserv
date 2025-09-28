@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Form/AccessLogForm.hpp"
 #include "Form/ElfForm.hpp"
 #include "Form/JsonForm.hpp"
 #include "Form/LogForm.hpp"

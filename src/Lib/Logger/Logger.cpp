@@ -46,7 +46,9 @@ void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
 						 const size_t maxFileSize,
 						 const size_t maxBackupFiles) {
 	LogForm *form;
-	if (eFormat == JSON) {
+	if (eFormat == ACCESS) {
+		form = new AccessLogForm();
+	} else if (eFormat == JSON) {
 		form = new JsonForm();
 	} else {
 		form = new ElfForm();
@@ -61,7 +63,9 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 						 const LogFilterMode mode, const size_t maxFileSize,
 						 const size_t maxBackupFiles) {
 	LogForm *form;
-	if (eFormat == JSON) {
+	if (eFormat == ACCESS) {
+		form = new AccessLogForm();
+	} else if (eFormat == JSON) {
 		form = new JsonForm();
 	} else {
 		form = new ElfForm();
@@ -74,7 +78,9 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
 							const LogFilterMode mode) {
 	LogForm *form;
-	if (eFormat == JSON) {
+	if (eFormat == ACCESS) {
+		form = new AccessLogForm();
+	} else if (eFormat == JSON) {
 		form = new JsonForm();
 	} else {
 		form = new ElfForm();
