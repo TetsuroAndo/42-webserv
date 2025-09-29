@@ -14,7 +14,7 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	HttpResponse res(SERVER_NAME);
 
 	if (req.getMethod() != "POST") {
-		HandlerUtil::generateErrorBody(res, HttpStatus::METHOD_NOT_ALLOWED);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::METHOD_NOT_ALLOWED);
 		return res;
 	}
 
@@ -22,13 +22,13 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	std::string uploadStore = loc.uploadStore;
 
 	if (uploadStore.empty()) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
 	struct stat s;
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
@@ -37,7 +37,7 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 
 	std::ofstream ofs(fullUploadPath.c_str(), std::ios::binary);
 	if (!ofs.is_open()) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 

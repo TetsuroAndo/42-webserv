@@ -11,7 +11,8 @@ public:
 
 private:
 	void generateDirectoryListing(HttpResponse &res,
-								  const std::string &directoryPath,
+								  const HttpRequest &req,
+							      const std::string &directoryPath,
 								  const std::string &requestPath);
 
 	StaticFileHandler(const StaticFileHandler &);
