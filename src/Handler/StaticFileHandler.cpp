@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <sys/stat.h>
+#include <sstream>
 
 namespace {
 enum FileReadStatus {
@@ -111,6 +112,9 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 		} else {
 			if (loc.autoindex) {
 				generateDirectoryListing(res, filePath, req.getPath());
+				if (req.getMethod() != "GET") {
+					res.setBody("");
+				}
 			} else {
 				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
 			}
@@ -129,6 +133,10 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			res.setHeader("Content-Type", MimeType::getMimeType(filePath));
 			if (req.getMethod() == "GET") {
 				res.setBody(fileContent);
+			} else {
+				std::ostringstream oss;
+				oss << pathStat.st_size;
+				res.setHeader("Content-Length", oss.str());
 			}
 			break;
 		case FILE_READ_NOT_FOUND:
