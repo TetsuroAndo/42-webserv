@@ -1,6 +1,8 @@
 #include "PipelineRouteBuilder.hpp"
 #include "../../Handler/DeleteHandler.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
+#include "../../Handler/PostHandler.hpp"
+#include "../RedirectMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
 #include "../PipelineRouter/Session/SessionMiddleware.hpp"
 #include "../PipelineRouter/handler/HandlerMiddleware.hpp"

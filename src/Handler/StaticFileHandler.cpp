@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <sys/stat.h>
+#include <sstream>
 
 namespace {
 enum FileReadStatus {
@@ -43,11 +44,11 @@ StaticFileHandler::~StaticFileHandler() {
 }
 
 void StaticFileHandler::generateDirectoryListing(
-	HttpResponse &res, const std::string &directoryPath,
+	HttpResponse &res, const HttpRequest &req, const std::string &directoryPath,
 	const std::string &requestPath) {
 	DIR *dir = opendir(directoryPath.c_str());
 	if (!dir) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return;
 	}
 
@@ -82,6 +83,11 @@ void StaticFileHandler::generateDirectoryListing(
 	res.setStatusCode(HttpStatus::OK);
 	res.setHeader("Content-Type", "text/html");
 	res.setBody(htmlContent);
+	if(req.getMethod() == "GET") {
+		res.setBody(htmlContent);
+	} else {
+		res.setBody("");
+	}
 }
 
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
@@ -90,13 +96,13 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
 	struct stat pathStat;
 	if (stat(filePath.c_str(), &pathStat) != 0) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -110,9 +116,15 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			pathStat = indexStat;
 		} else {
 			if (loc.autoindex) {
-				generateDirectoryListing(res, filePath, req.getPath());
+				generateDirectoryListing(res, req, filePath, req.getPath());
+				if (req.getMethod() != "GET") {
+					std::ostringstream oss;
+					oss << res.getBody().length();
+					res.setHeader("Content-Length", oss.str());
+					res.setBody("");
+				}
 			} else {
-				HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+				HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			}
 			return res;
 		}
@@ -129,25 +141,28 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			res.setHeader("Content-Type", MimeType::getMimeType(filePath));
 			if (req.getMethod() == "GET") {
 				res.setBody(fileContent);
+			} else {
+				std::ostringstream oss;
+				oss << pathStat.st_size;
+				res.setHeader("Content-Length", oss.str());
 			}
 			break;
 		case FILE_READ_NOT_FOUND:
-			HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
+			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 			break;
 		case FILE_READ_IS_DIRECTORY:
-			HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_FORBIDDEN:
-			HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_ERROR:
-			HandlerUtil::generateErrorBody(res,
+			HandlerUtil::generateErrorBody(req.getMethod(), res,
 										   HttpStatus::INTERNAL_SERVER_ERROR);
 			break;
 		}
 	} else {
-		HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 	}
-
 	return res;
 }
