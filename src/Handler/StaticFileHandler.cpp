@@ -113,6 +113,9 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			if (loc.autoindex) {
 				generateDirectoryListing(res, filePath, req.getPath());
 				if (req.getMethod() != "GET") {
+					std::ostringstream oss;
+					oss << res.getBody().length();
+					res.setHeader("Content-Length", oss.str());
 					res.setBody("");
 				}
 			} else {
