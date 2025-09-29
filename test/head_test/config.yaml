@@ -1,0 +1,20 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8081
+
+      locations:
+        - location:
+            path: /
+            root: ./www/http_test_root
+            indexFile: index.html
+            allowedMethods:
+              - GET
+              - HEAD
+        - location:
+            path: /no_head
+            root: ./www/http_test_root
+            allowedMethods:
+              - GET

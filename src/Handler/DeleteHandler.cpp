@@ -46,7 +46,7 @@ HttpResponse DeleteHandler::handle(const HttpRequest &req,
 	const std::string filePath =
 		HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
-		HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -57,16 +57,16 @@ HttpResponse DeleteHandler::handle(const HttpRequest &req,
 		res.setStatusCode(HttpStatus::NO_CONTENT);
 		break;
 	case DELETE_NOT_FOUND:
-		HandlerUtil::generateErrorBody(res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		break;
 	case DELETE_IS_DIRECTORY:
-		HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 		break;
 	case DELETE_PERMISSION_DENIED:
-		HandlerUtil::generateErrorBody(res, HttpStatus::FORBIDDEN);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 		break;
 	case DELETE_UNKNOWN_ERROR:
-		HandlerUtil::generateErrorBody(res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		break;
 	}
 
