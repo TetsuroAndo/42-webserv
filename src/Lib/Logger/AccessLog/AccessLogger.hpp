@@ -1,13 +1,12 @@
 #pragma once
 
-#include "Form/ElfForm.hpp"
-#include "Form/JsonForm.hpp"
-#include "Form/LogForm.hpp"
-#include "LogBuilder.hpp"
-#include "LogStructure.hpp"
-#include "Sink/ConsoleSink.hpp"
-#include "Sink/FileSink.hpp"
-#include "Sink/LogSink.hpp"
+#include "../Form/ElfForm.hpp"
+#include "../Form/JsonForm.hpp"
+#include "../Form/LogForm.hpp"
+#include "../LogType.hpp"
+#include "../Sink/ConsoleSink.hpp"
+#include "../Sink/FileSink.hpp"
+#include "../Sink/LogSink.hpp"
 #include <string>
 #include <vector>
 
@@ -17,35 +16,29 @@
 #define _LOG_MAX_FILE_SIZE (10 * 1024 * 1024) // 10MB
 #define _LOG_MAX_BACKUPS 8
 
-class Logger {
+class AccessLogger {
 public:
-	static Logger &getInstance();
+	static AccessLogger &getInstance();
 
 	void setLogDir(const std::string &logDir);
 	void setSinkFile(const std::string &filename, LogFormat eFormat,
-					 LogLevel level, LogFilterMode mode = GREATER_OR_EQUAL,
 					 size_t maxFileSize = _LOG_MAX_FILE_SIZE,
 					 size_t maxBackupFiles = _LOG_MAX_BACKUPS);
 	void setSinkFile(const std::string &logDir, const std::string &filename,
-					 LogFormat eFormat, LogLevel level,
-					 LogFilterMode mode = GREATER_OR_EQUAL,
-					 size_t maxFileSize = _LOG_MAX_FILE_SIZE,
+					 LogFormat eFormat,	 size_t maxFileSize = _LOG_MAX_FILE_SIZE,
 					 size_t maxBackupFiles = _LOG_MAX_BACKUPS);
-	void setSinkConsole(LogFormat eFormat, LogLevel level,
-						LogFilterMode mode = GREATER_OR_EQUAL);
+	void setSinkConsole(LogFormat eFormat);
 
 	void log(const LogMessage &msg);
 	bool isLogLevelActive(LogLevel level) const;
 
 private:
-	Logger();
-	~Logger();
-	Logger(const Logger &);
-	Logger &operator=(const Logger &);
+	AccessLogger();
+	~AccessLogger();
+	AccessLogger(const AccessLogger &);
+	AccessLogger &operator=(const AccessLogger &);
 
-	void updateActiveLevelsMask();
 
 	std::string _logDir;
 	std::vector<LogSink *> _sinks;
-	unsigned int _activeLevelsMask;
 };

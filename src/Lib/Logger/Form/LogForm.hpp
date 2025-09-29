@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../LogStructure.hpp"
+#include "../LogType.hpp"
+#include "../AccessLog/AccessLogStructure.hpp"
+#include "../ErrorLog/LogStructure.hpp"
 #include <ostream>
 #include <string>
 

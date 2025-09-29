@@ -1,5 +1,5 @@
 #pragma once
-#include "LogStructure.hpp"
+
 #include "Logger.hpp"
 #include <sstream>
 #include <string>
