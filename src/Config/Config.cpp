@@ -42,7 +42,7 @@ void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
 		_locations[locationKey].allowedMethods.erase("GET");
 }
 
-void Config::setIsAllowHead(bool allow, const std::string &locationKey) {
+void Config::setIsAllowHead(const bool allow, const std::string &locationKey) {
 	if (allow)
 		_locations[locationKey].allowedMethods.insert("HEAD");
 	else
@@ -100,13 +100,15 @@ void Config::setLocation(const Location &location,
 	_locations[locationKey] = location;
 }
 
-void Config::setMaxRequestBodySize(unsigned int size) {
+void Config::setMaxRequestBodySize(const unsigned int size) {
 	_maxRequestBodySize = size;
 }
 
-void Config::setTimeoutSec(unsigned int sec) { _timeoutSec = sec; }
+void Config::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
 
-void Config::setMaxEvents(unsigned int maxEvents) { _maxEvents = maxEvents; }
+void Config::setMaxEvents(const unsigned int maxEvents) {
+	_maxEvents = maxEvents;
+}
 
 void Config::initDefaults() {
 	_listens.clear();

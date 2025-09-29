@@ -145,14 +145,15 @@ void Server::handleClientRead(const int clientFd) {
 	}
 	_mainProcessor.handle(*ctx);
 
-	const std::string responseStr = ResponseBuilder::build(*ctx->res);
-	if (!responseStr.empty()) {
-		client->getSocket()->setSendBuffer(
-			client->getSocket()->getSendBuffer() + responseStr);
-	}
-
-	if (!client->getSocket()->getSendBuffer().empty()) {
-		_manager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
+		const std::string responseStr = ResponseBuilder::build(*ctx->res);
+		if (!responseStr.empty()) {
+			client->getSocket()->setSendBuffer(
+				client->getSocket()->getSendBuffer() + responseStr);
+		}
+		if (!client->getSocket()->getSendBuffer().empty()) {
+			_manager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+		}
 	}
 }
 
