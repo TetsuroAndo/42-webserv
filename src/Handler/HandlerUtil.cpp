@@ -23,7 +23,7 @@ std::string toString(const int value) {
 	return std::string(buffer);
 }
 
-void generateErrorBody(HttpResponse &res, const int code) {
+void generateErrorBody(const std::string &method, HttpResponse &res, const int code) {
 	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string body;
@@ -38,6 +38,11 @@ void generateErrorBody(HttpResponse &res, const int code) {
 	body += "</h1></body></html>";
 	res.setBody(body);
 	res.setHeader("Content-Type", "text/html");
+	if(method == "HEAD") {
+		res.setBody("");
+	} else {
+		res.setBody(body);
+	}
 }
 
 std::string resolvePath(const std::string &requestPath, const Config &config) {
