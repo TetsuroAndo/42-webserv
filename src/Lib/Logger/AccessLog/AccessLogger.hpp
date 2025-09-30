@@ -29,8 +29,7 @@ public:
 					 size_t maxBackupFiles = _LOG_MAX_BACKUPS);
 	void setSinkConsole(LogFormat eFormat);
 
-	void log(const LogMessage &msg);
-	bool isLogLevelActive(LogLevel level) const;
+	void log(const AccessLogContext &ctx);
 
 private:
 	AccessLogger();
@@ -38,6 +37,7 @@ private:
 	AccessLogger(const AccessLogger &);
 	AccessLogger &operator=(const AccessLogger &);
 
+	void addSink(LogSink* sink);
 
 	std::string _logDir;
 	std::vector<LogSink *> _sinks;

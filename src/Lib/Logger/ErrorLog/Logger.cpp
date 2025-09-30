@@ -34,11 +34,25 @@ Logger::Logger() : _logDir(_LOG_DEFAULT_DIR), _activeLevelsMask(0) {
 }
 
 Logger::~Logger() {
-	for (std::vector<LogSink *>::iterator it = _sinks.begin();
-		 it != _sinks.end(); ++it) {
-		delete *it;
+	std::map<LogLevel, std::vector<LogSink *> >::iterator it;
+	std::vector<LogSink*>::iterator vecIt;
+	std::vector<LogSink*> deleted_sinks;
+
+	for (it = _sinksByLevel.begin(); it != _sinksByLevel.end(); ++it) {
+		for (vecIt = it->second.begin(); vecIt != it->second.end(); ++vecIt) {
+			bool found = false;
+			for(size_t i = 0; i < deleted_sinks.size(); ++i) {
+				if (deleted_sinks[i] == *vecIt) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				delete *vecIt;
+				deleted_sinks.push_back(*vecIt);
+			}
+		}
 	}
-	_sinks.clear();
 }
 
 void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
@@ -51,9 +65,7 @@ void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new FileSink(_logDir, filename, form, level, mode,
-								  maxFileSize, maxBackupFiles));
-	updateActiveLevelsMask();
+	addSink(level, mode, new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
@@ -66,9 +78,8 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new FileSink(logDir, filename, form, level, mode,
-								  maxFileSize, maxBackupFiles));
-	updateActiveLevelsMask();
+	addSink(level, mode, new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
+
 }
 
 void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
@@ -79,23 +90,30 @@ void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new ConsoleSink(form, level, mode));
+	addSink(level, mode, new ConsoleSink(form));
+}
+
+void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink* sink) {
+	if (mode == GREATER_OR_EQUAL) {
+		for (int i = level; i <= FATAL; ++i) {
+			_sinksByLevel[static_cast<LogLevel>(i)].push_back(sink);
+		}
+	} else {
+		_sinksByLevel[level].push_back(sink);
+	}
 	updateActiveLevelsMask();
 }
 
 void Logger::log(const LogMessage &msg) {
-	for (std::vector<LogSink *>::iterator it = _sinks.begin();
-		 it != _sinks.end(); ++it) {
-		LogSink *sink = *it;
-		if ((sink->getFilterMode() == EXACT &&
-			 msg.level == sink->getLogLevel()) ||
-			(sink->getFilterMode() == GREATER_OR_EQUAL &&
-			 msg.level >= sink->getLogLevel())) {
+	std::map<LogLevel, std::vector<LogSink *> >::iterator it = _sinksByLevel.find(msg.level);
+
+	if (it != _sinksByLevel.end()) {
+		std::vector<LogSink *>& sinks = it->second;
+		for (std::vector<LogSink *>::iterator sinkIt = sinks.begin(); sinkIt != sinks.end(); ++sinkIt) {
 			try {
-				sink->log(msg);
+				(*sinkIt)->log(msg);
 			} catch (const std::exception &e) {
-				std::cerr << "[ ERROR ] Logger: Failed to write log: "
-						  << e.what() << std::endl;
+				std::cerr << "Logger: Failed to write log: " << e.what() << std::endl;
 			}
 		}
 	}
@@ -107,15 +125,11 @@ bool Logger::isLogLevelActive(const LogLevel level) const {
 
 void Logger::updateActiveLevelsMask() {
 	_activeLevelsMask = 0;
-	for (std::vector<LogSink *>::const_iterator it = _sinks.begin();
-		 it != _sinks.end(); ++it) {
-		const LogLevel level = (*it)->getLogLevel();
-		if ((*it)->getFilterMode() == GREATER_OR_EQUAL) {
-			for (int i = level; i <= FATAL; ++i) {
-				_activeLevelsMask |= 1 << i;
-			}
-		} else {
-			_activeLevelsMask |= 1 << level;
+
+	std::map<LogLevel, std::vector<LogSink *> >::iterator it;
+	for (it = _sinksByLevel.begin(); it != _sinksByLevel.end(); ++it) {
+		if (!it->second.empty()) {
+			_activeLevelsMask |= (1 << it->first);
 		}
 	}
 }

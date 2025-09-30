@@ -8,6 +8,7 @@
 #include "../Sink/FileSink.hpp"
 #include "../Sink/LogSink.hpp"
 #include "LogBuilder.hpp"
+#include <map>
 #include <string>
 #include <vector>
 
@@ -43,9 +44,10 @@ private:
 	Logger(const Logger &);
 	Logger &operator=(const Logger &);
 
+	void addSink(LogLevel level, LogFilterMode mode, LogSink* sink);
 	void updateActiveLevelsMask();
 
 	std::string _logDir;
-	std::vector<LogSink *> _sinks;
+	std::map<LogLevel, std::vector<LogSink *> > _sinksByLevel;
 	unsigned int _activeLevelsMask;
 };

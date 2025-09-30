@@ -50,7 +50,7 @@ void AccessLogger::setSinkFile(const std::string &filename, const LogFormat eFor
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new FileSink(_logDir, filename, form,
+	addSink(new FileSink(_logDir, filename, form,
 								  maxFileSize, maxBackupFiles));
 }
 
@@ -63,7 +63,7 @@ void AccessLogger::setSinkFile(const std::string &logDir, const std::string &fil
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
+	addSink(new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void AccessLogger::setSinkConsole(const LogFormat eFormat) {
@@ -73,23 +73,21 @@ void AccessLogger::setSinkConsole(const LogFormat eFormat) {
 	} else {
 		form = new ElfForm();
 	}
-	_sinks.push_back(new ConsoleSink(form));
+	addSink(new ConsoleSink(form));
 }
 
-void AccessLogger::log(const LogMessage &msg) {
+void AccessLogger::log(const AccessLogContext &ctx) {
 	for (std::vector<LogSink *>::iterator it = _sinks.begin();
 		 it != _sinks.end(); ++it) {
-		LogSink *sink = *it;
-		if ((sink->getFilterMode() == EXACT &&
-			 msg.level == sink->getLogLevel()) ||
-			(sink->getFilterMode() == GREATER_OR_EQUAL &&
-			 msg.level >= sink->getLogLevel())) {
-			try {
-				sink->log(msg);
-			} catch (const std::exception &e) {
-				std::cerr << "[ ERROR ] AccessLogger: Failed to write log: "
-						  << e.what() << std::endl;
-			}
+		try {
+			(*it)->logAccess(ctx);
+		} catch (const std::exception &e) {
+			std::cerr << "[ ERROR ] AccessLogger: Failed to write log: "
+						<< e.what() << std::endl;
 		}
 	}
+}
+
+void AccessLogger::addSink(LogSink* sink) {
+	_sinks.push_back(sink);
 }
