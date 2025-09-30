@@ -47,7 +47,10 @@ private:
 	void addSink(LogLevel level, LogFilterMode mode, LogSink* sink);
 	void updateActiveLevelsMask();
 
+	static const int NUM_LOG_LEVELS = FATAL + 1;
+
 	std::string _logDir;
-	std::map<LogLevel, std::vector<LogSink *> > _sinksByLevel;
+	std::vector<LogSink *> _sinksByLevel[NUM_LOG_LEVELS];
+	std::vector<LogSink *> _ownedSinks;
 	unsigned int _activeLevelsMask;
 };

@@ -34,24 +34,9 @@ Logger::Logger() : _logDir(_LOG_DEFAULT_DIR), _activeLevelsMask(0) {
 }
 
 Logger::~Logger() {
-	std::map<LogLevel, std::vector<LogSink *> >::iterator it;
-	std::vector<LogSink*>::iterator vecIt;
-	std::vector<LogSink*> deleted_sinks;
-
-	for (it = _sinksByLevel.begin(); it != _sinksByLevel.end(); ++it) {
-		for (vecIt = it->second.begin(); vecIt != it->second.end(); ++vecIt) {
-			bool found = false;
-			for(size_t i = 0; i < deleted_sinks.size(); ++i) {
-				if (deleted_sinks[i] == *vecIt) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				delete *vecIt;
-				deleted_sinks.push_back(*vecIt);
-			}
-		}
+	for (std::vector<LogSink *>::iterator it = _ownedSinks.begin();
+		 it != _ownedSinks.end(); ++it) {
+		delete *it;
 	}
 }
 
@@ -94,9 +79,11 @@ void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
 }
 
 void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink* sink) {
+	_ownedSinks.push_back(sink);
+
 	if (mode == GREATER_OR_EQUAL) {
 		for (int i = level; i <= FATAL; ++i) {
-			_sinksByLevel[static_cast<LogLevel>(i)].push_back(sink);
+			_sinksByLevel[i].push_back(sink);
 		}
 	} else {
 		_sinksByLevel[level].push_back(sink);
@@ -105,31 +92,28 @@ void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink* sink) {
 }
 
 void Logger::log(const LogMessage &msg) {
-	std::map<LogLevel, std::vector<LogSink *> >::iterator it = _sinksByLevel.find(msg.level);
+	const std::vector<LogSink *>& sinks = _sinksByLevel[msg.level];
 
-	if (it != _sinksByLevel.end()) {
-		std::vector<LogSink *>& sinks = it->second;
-		for (std::vector<LogSink *>::iterator sinkIt = sinks.begin(); sinkIt != sinks.end(); ++sinkIt) {
-			try {
-				(*sinkIt)->log(msg);
-			} catch (const std::exception &e) {
-				std::cerr << "Logger: Failed to write log: " << e.what() << std::endl;
-			}
+	for (std::vector<LogSink *>::const_iterator sinkIt = sinks.begin();
+		 sinkIt != sinks.end(); ++sinkIt) {
+		try {
+			(*sinkIt)->log(msg);
+		} catch (const std::exception &e) {
+			std::cerr << "Logger: Failed to write log: " << e.what() << std::endl;
 		}
 	}
 }
 
 bool Logger::isLogLevelActive(const LogLevel level) const {
-	return _activeLevelsMask >> level & 1;
+	return (_activeLevelsMask >> level) & 1;
 }
 
 void Logger::updateActiveLevelsMask() {
 	_activeLevelsMask = 0;
 
-	std::map<LogLevel, std::vector<LogSink *> >::iterator it;
-	for (it = _sinksByLevel.begin(); it != _sinksByLevel.end(); ++it) {
-		if (!it->second.empty()) {
-			_activeLevelsMask |= (1 << it->first);
+	for (int i = 0; i < NUM_LOG_LEVELS; ++i) {
+		if (!_sinksByLevel[i].empty()) {
+			_activeLevelsMask |= (1 << i);
 		}
 	}
 }
