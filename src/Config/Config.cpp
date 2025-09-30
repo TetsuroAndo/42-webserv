@@ -133,6 +133,7 @@ void Config::initDefaults() {
 
 	AccessLog defaultAccessLog;
 	defaultAccessLog.isDisable = false;
+	defaultAccessLog.sink = "file";
 	defaultAccessLog.filename = "access.log";
 	defaultAccessLog.logDir = "./log";
 	defaultAccessLog.format = "ELF";
@@ -142,6 +143,7 @@ void Config::initDefaults() {
 
 	ErrorLog defaultErrorLog;
 	defaultErrorLog.isDisable = false;
+	defaultErrorLog.sink = "file";
 	defaultErrorLog.filename = "error.log";
 	defaultErrorLog.logDir = "./log";
 	defaultErrorLog.format = "ELF";
