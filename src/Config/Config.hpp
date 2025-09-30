@@ -32,11 +32,33 @@ struct Location {
 	Location() : autoindex(false) {}
 };
 
+struct AccessLog {
+	bool isDisable;
+	std::string filename;
+	std::string logDir;
+	std::string format;
+	size_t maxFileSize;
+	size_t maxBackupFiles;
+};
+
+struct ErrorLog {
+	bool isDisable;
+	std::string filename;
+	std::string logDir;
+	std::string format;
+	std::string level;
+	std::string filterMode;
+	size_t maxFileSize;
+	size_t maxBackupFiles;
+};
+
 class Config {
 private:
 	std::vector<Listen> _listens;
 	std::map<std::string, Redirect> _redirects;
 	std::map<std::string, Location> _locations;
+	std::vector<AccessLog> _accessLogs;
+	std::vector<ErrorLog> _errorLogs;
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
@@ -81,6 +103,8 @@ private:
 	void parseListens(const Node *node);
 	void parseRedirects(Node *node);
 	void parseLocations(Node *node);
+	void parseAccessLogs(Node *node);
+	void parseErrorLogs(Node *node);
 
 public:
 	Config();

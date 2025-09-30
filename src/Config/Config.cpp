@@ -130,6 +130,26 @@ void Config::initDefaults() {
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
 	_locations["/"] = defaultLoc;
+
+	AccessLog defaultAccessLog;
+	defaultAccessLog.isDisable = false;
+	defaultAccessLog.filename = "access.log";
+	defaultAccessLog.logDir = "./log";
+	defaultAccessLog.format = "ELF";
+	defaultAccessLog.maxFileSize = 10 * 1024 * 1024;
+	defaultAccessLog.maxBackupFiles = 5;
+	_accessLogs.push_back(defaultAccessLog);
+
+	ErrorLog defaultErrorLog;
+	defaultErrorLog.isDisable = false;
+	defaultErrorLog.filename = "error.log";
+	defaultErrorLog.logDir = "./log";
+	defaultErrorLog.format = "ELF";
+	defaultErrorLog.level = "error";
+	defaultErrorLog.filterMode = "greater_or_equal";
+	defaultErrorLog.maxFileSize = 10 * 1024 * 1024;
+	defaultErrorLog.maxBackupFiles = 5;
+	_errorLogs.push_back(defaultErrorLog);
 }
 
 Config::Config() {
@@ -284,6 +304,14 @@ void Config::parseLocations(Node *node) {
 		}
 		_locations[loc.path] = loc;
 	}
+}
+
+void parseAccessLogs(Node *node) {
+
+}
+
+void parseErrorLogs(Node *node) {
+
 }
 
 void Config::setup(const std::string &configFile) {
