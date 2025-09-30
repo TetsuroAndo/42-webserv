@@ -1,6 +1,8 @@
-NAME = logger_test
+NAME = log_test.out
 
-SRCS = $(shell find ../ -name "*.cpp")
+SRCS = $(shell find ../ -name "*.cpp") \
+	   $(shell find ../../../Http/Core -name "*.cpp") \
+	   $(shell find ../../StringOps -name "StringOps.cpp") \
 
 OBJS = $(SRCS:.cpp=.o)
 

@@ -45,7 +45,7 @@ void ElfForm::getErrorHeader(std::ostream &out) {
 
 void ElfForm::getAccessHeader(std::ostream &out) {
 	char timeStr[21];
-	time_t now = time(NULL);
+	time_t now = time(NULL); // TODO: キャッシュから呼び出すようにする
 	strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%SZ", gmtime(&now));
 	out << "#Version: 1.0\n";
 	out << "#Date: " << timeStr << "\n";
@@ -56,7 +56,7 @@ void ElfForm::getAccessHeader(std::ostream &out) {
 
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (!_headerWritten) getErrorHeader(out);
-	const tm *timeinfo = localtime(&msg.timestamp);
+	const tm *timeinfo = localtime(&msg.timestamp);  // TODO: キャッシュから呼び出すようにする
 	char dateStr[11];
 	char timeStr[9];
 	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
@@ -88,7 +88,7 @@ void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 	if (!_headerWritten) getAccessHeader(out);
 
-	const tm* timeinfo = gmtime(&ctx.timestamp);
+	const tm* timeinfo = gmtime(&ctx.timestamp); // TODO: キャッシュから呼び出すようにする
 	char dateStr[11];
 	char timeStr[9];
 	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);

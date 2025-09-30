@@ -88,6 +88,22 @@ void AccessLogger::log(const AccessLogContext &ctx) {
 	}
 }
 
+void AccessLogger::log(const HttpRequest* request,
+				 const HttpResponse* response,
+				 std::string remote_addr,
+				 int client_port,
+				 std::string session_id) {
+	AccessLogContext ctx = {
+		std::time(NULL), // TODO: キャッシュから呼び出すようにする
+		request,
+		response,
+		remote_addr,
+		client_port,
+		session_id
+	};
+	this->log(ctx);
+}
+
 void AccessLogger::addSink(LogSink* sink) {
 	_sinks.push_back(sink);
 }

@@ -49,7 +49,7 @@ std::string JsonForm::escapeJson(const std::string &str) const {
 void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 	char timeStr[20];
 	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S",
-			 localtime(&msg.timestamp));
+			 localtime(&msg.timestamp)); // TODO: キャッシュから呼び出すようにする
 
 	out << "{";
 	out << "\"timestamp\":\"" << timeStr << "\",";
@@ -80,7 +80,7 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 
 	char timeStr[21];
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&ctx.timestamp));
+	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&ctx.timestamp)); // TODO: キャッシュから呼び出すようにする
 
 	std::string uri = ctx.request->getPath();
 	const std::map<std::string, std::string>& queries = ctx.request->getQueries();

@@ -30,6 +30,11 @@ public:
 	void setSinkConsole(LogFormat eFormat);
 
 	void log(const AccessLogContext &ctx);
+	void log(const HttpRequest* request,
+			 const HttpResponse* response,
+			 std::string remote_addr,
+			 int client_port,
+			 std::string session_id);
 
 private:
 	AccessLogger();
