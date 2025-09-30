@@ -2,6 +2,7 @@
 
 #include "../LogType.hpp"
 #include "../AccessLog/AccessLogStructure.hpp"
+#include "../ErrorLog/LogStructure.hpp"
 
 class LogForm;
 
