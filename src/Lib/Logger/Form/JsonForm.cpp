@@ -75,31 +75,41 @@ void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 }
 
 void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
-	char timeStr[20];
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", localtime(&ctx.timestamp));
+	if (!ctx.request || !ctx.response) {
+		return;
+	}
+
+	char timeStr[21];
+	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&ctx.timestamp));
+
+	std::string uri = ctx.request->getPath();
+	const std::map<std::string, std::string>& queries = ctx.request->getQueries();
+	if (!queries.empty()) {
+		uri += "?";
+		for (std::map<std::string, std::string>::const_iterator it = queries.begin(); it != queries.end();) {
+			uri += it->first + "=" + it->second;
+			if (++it != queries.end()) {
+				uri += "&";
+			}
+		}
+	}
 
 	out << "{";
 	out << "\"timestamp\":\"" << timeStr << "\",";
 	out << "\"remote_addr\":\"" << escapeJson(ctx.remote_addr) << "\",";
+	out << "\"remote_port\":" << ctx.client_port << ",";
+	out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
+	out << "\"uri\":\"" << escapeJson(uri) << "\",";
+	out << "\"version\":\"" << escapeJson(ctx.request->getVersion()) << "\",";
+	out << "\"status\":" << ctx.response->getStatusCode() << ",";
+	out << "\"bytes_sent\":" << ctx.response->getBody().length() << ",";
+	
+	const std::string& referer = ctx.request->getHeader("Referer");
+	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer)) << "\",";
 
-	if (ctx.request) {
-		out << "\"request\":{";
-		out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
-		out << "\"uri\":\"" << escapeJson(ctx.request->getPath()) << "\",";
-		out << "\"http_version\":\"" << escapeJson(ctx.request->getVersion()) << "\"";
-		out << "},";
-	} else {
-		out << "\"request\":null,";
-	}
+	const std::string& userAgent = ctx.request->getHeader("User-Agent");
+	out << "\"user_agent\":\"" << (userAgent.empty() ? "-" : escapeJson(userAgent)) << "\",";
 
-	if (ctx.response) {
-		out << "\"response\":{";
-		out << "\"status_code\":" << ctx.response->getStatusCode() << ",";
-		out << "\"status_message\":\"" << escapeJson(HttpStatus::getReason(ctx.response->getStatusCode())) << "\"";
-		out << "}";
-	} else {
-		out << "\"response\":null";
-	}
-
+	out << "\"session_id\":\"" << (ctx.session_id.empty() ? "-" : escapeJson(ctx.session_id)) << "\"";
 	out << "}";
 }

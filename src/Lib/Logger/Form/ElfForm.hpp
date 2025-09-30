@@ -10,8 +10,8 @@ public:
 	virtual void formatAccess(const AccessLogContext& ctx, std::ostream& out);
 
 private:
-	std::string getHeader();
-	std::string sanitize(const std::string &str) const;
+	void getErrorHeader(std::ostream &out);
+	void getAccessHeader(std::ostream &out);
 
 	bool _headerWritten;
 };

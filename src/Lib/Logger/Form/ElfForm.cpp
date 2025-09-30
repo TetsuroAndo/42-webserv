@@ -1,5 +1,6 @@
 #include "ElfForm.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "../../StringOps/StringOps.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -10,29 +11,51 @@
  * https://docs.aws.amazon.com/ja_jp/athena/latest/ug/querying-iis-logs-w3c-extended-log-file-format.html
  */
 
-ElfForm::ElfForm() : _headerWritten(false) {}
+namespace {
+/**
+ * @brief W3C-ELF形式のログメッセージフォーマットで使用するための文字列のサニタイズ
+ */
+std::string sanitize(const std::string& str) {
+	if (str.empty()) {
+		return "-";
+	}
+	if (str.find(' ') == std::string::npos && str.find('"') == std::string::npos) {
+		return str;
+	}
 
-// スペースや特殊文字を '-' に置換
-std::string ElfForm::sanitize(const std::string &str) const {
-	std::string sanitized = str;
-	for (size_t i = 0; i < sanitized.length(); ++i) {
-		if (sanitized[i] == ' ' || sanitized[i] == '\t' ||
-			sanitized[i] == '\n' || sanitized[i] == '\r') {
-			sanitized[i] = '-';
+	std::string result = "\"";
+	for (size_t i = 0; i < str.length(); ++i) {
+		if (str[i] == '"') {
+			result += "\"\"";
+		} else {
+			result += str[i];
 		}
 	}
-	return sanitized;
+	result += '"';
+	return result;
+}
+} // namespace
+
+ElfForm::ElfForm() : _headerWritten(false) {}
+
+void ElfForm::getErrorHeader(std::ostream &out) {
+	out << "#Fields: date time level function file:line message attributes\n";
+	_headerWritten = true;
 }
 
-std::string ElfForm::getHeader() {
-	return "#Fields: date time level function file:line message attributes";
+void ElfForm::getAccessHeader(std::ostream &out) {
+	char timeStr[21];
+	time_t now = time(NULL);
+	strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%SZ", gmtime(&now));
+	out << "#Version: 1.0\n";
+	out << "#Date: " << timeStr << "\n";
+	out << "#Software: webserv/42\n";
+	out << "#Fields: date time c-ip c-port cs-method cs-uri-stem cs-uri-query sc-status sc-bytes cs-version cs(User-Agent) cs(Referer) x-session-id\n";
+	_headerWritten = true;
 }
 
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
-	if (!_headerWritten) {
-		out << getHeader() << "\n";
-		_headerWritten = true;
-	}
+	if (!_headerWritten) getErrorHeader(out);
 	const tm *timeinfo = localtime(&msg.timestamp);
 	char dateStr[11];
 	char timeStr[9];
@@ -60,42 +83,42 @@ void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 }
 
 void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
-	if (!_headerWritten) {
-		out << getHeader() << "\n";
-		_headerWritten = true;
+	if (!ctx.request || !ctx.response) {
+		return;
 	}
-	const tm *timeinfo = localtime(&ctx.timestamp);
+	if (!_headerWritten) getAccessHeader(out);
+
+	const tm* timeinfo = gmtime(&ctx.timestamp);
 	char dateStr[11];
 	char timeStr[9];
 	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
 	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
 
 	out << dateStr << " " << timeStr << " ";
-	out << "INFO" << " "; // アクセスログはINFOレベルで固定
-	out << "-" << " "; // functionは不明なので'-'で埋める
-	out << "-" << " "; // file:lineも不明なので'-'で埋める
+	out << (ctx.remote_addr.empty() ? "-" : ctx.remote_addr) << " ";
+	out << ctx.client_port << " ";
+	out << (ctx.request->getMethod().empty() ? "-" : ctx.request->getMethod()) << " ";
+	out << (ctx.request->getPath().empty() ? "-" : ctx.request->getPath()) << " ";
 
-	std::stringstream message;
-	if (ctx.request) {
-		message << ctx.request->getMethod() << " "
-				<< ctx.request->getPath() << " "
-				<< ctx.request->getVersion();
+	const std::map<std::string, std::string>& queries = ctx.request->getQueries();
+	if (queries.empty()) {
+		out << "- ";
 	} else {
-		message << "-";
+		std::string queryString;
+		for (std::map<std::string, std::string>::const_iterator it = queries.begin(); it != queries.end();) {
+			queryString += it->first + "=" + it->second;
+			if (++it != queries.end()) {
+				queryString += "&";
+			}
+		}
+		out << queryString << " ";
 	}
-	message << " ";
 
-	if (ctx.response) {
-		message << ctx.response->getStatusCode() << " "
-				<< HttpStatus::getReason(ctx.response->getStatusCode());
-	} else {
-		message << "- -";
-	}
-	out << sanitize(message.str()) << " ";
+	out << ctx.response->getStatusCode() << " ";
+	out << ctx.response->getBody().length() << " ";
+	out << (ctx.request->getVersion().empty() ? "-" : ctx.request->getVersion()) << " ";
 
-	if (!ctx.remote_addr.empty()) {
-		out << "remote_addr=" << sanitize(ctx.remote_addr);
-	} else {
-		out << "-";
-	}
+	out << sanitize(ctx.request->getHeader("User-Agent")) << " ";
+	out << sanitize(ctx.request->getHeader("Referer")) << " ";
+	out << (ctx.session_id.empty() ? "-" : sanitize(ctx.session_id));
 }
