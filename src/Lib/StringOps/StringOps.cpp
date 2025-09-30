@@ -153,7 +153,7 @@ std::vector<std::string> split(const std::string &str,
  * @throw std::invalid_argument 変換できない文字が含まれる場合
  * @throw std::out_of_range      数値がsize_tの範囲を超える場合
  */
-size_t toSize_t(const std::string &str) {
+size_t toSizeT(const std::string &str) {
 	std::stringstream ss(str);
 	size_t res;
 	ss >> res;
@@ -217,4 +217,40 @@ int stringToInt(const std::string &s) {
 	}
 	return i;
 }
+
+size_t sizeStrToBytes(const std::string &sizeStr) {
+	if (sizeStr.empty()) {
+		throw std::runtime_error("Config error: size string is empty.");
+	}
+	std::stringstream ss(sizeStr);
+	long long number;
+	ss >> number;
+	std::string unit;
+	ss >> unit;
+
+	if (ss.fail() && !ss.eof()) {
+		throw std::runtime_error("Config error: invalid size format '" + sizeStr + "'.");
+	}
+
+	for (size_t i = 0; i < unit.length(); ++i) {
+		unit[i] = std::toupper(unit[i]);
+	}
+
+	if (unit.empty() || unit == "B") {
+		return static_cast<size_t>(number);
+	} else if (unit == "KB") {
+		return static_cast<size_t>(number * 1024);
+	} else if (unit == "MB") {
+		return static_cast<size_t>(number * 1024 * 1024);
+	} else if (unit == "GB") {
+		return static_cast<size_t>(number * 1024 * 1024 * 1024);
+	} else {
+		throw std::runtime_error("Config error: unknown size unit '" + unit + "'. Use KB, MB, or GB.");
+	}
+}
+
+unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
+	return static_cast<unsigned int>(sizeStrToBytes(sizeStr));
+}
+
 } // namespace StringOps

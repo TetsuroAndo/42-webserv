@@ -1,5 +1,10 @@
 #pragma once
 
+enum LogSinkType {
+	File,
+	Console
+};
+
 enum LogType {
 	errorLog,
 	accessLog

@@ -1,6 +1,7 @@
 #include "Config.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
+#include "../Lib/Logger/LogType.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -114,6 +115,8 @@ void Config::initDefaults() {
 	_listens.clear();
 	_redirects.clear();
 	_locations.clear();
+	_accessLogs.clear();
+	_errorLogs.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
 	_timeoutSec = 60;
@@ -131,27 +134,8 @@ void Config::initDefaults() {
 	defaultLoc.allowedMethods.insert("DELETE");
 	_locations["/"] = defaultLoc;
 
-	AccessLog defaultAccessLog;
-	defaultAccessLog.isDisable = false;
-	defaultAccessLog.sink = "file";
-	defaultAccessLog.filename = "access.log";
-	defaultAccessLog.logDir = "./log";
-	defaultAccessLog.format = "ELF";
-	defaultAccessLog.maxFileSize = 10 * 1024 * 1024;
-	defaultAccessLog.maxBackupFiles = 5;
-	_accessLogs.push_back(defaultAccessLog);
-
-	ErrorLog defaultErrorLog;
-	defaultErrorLog.isDisable = false;
-	defaultErrorLog.sink = "file";
-	defaultErrorLog.filename = "error.log";
-	defaultErrorLog.logDir = "./log";
-	defaultErrorLog.format = "ELF";
-	defaultErrorLog.level = "error";
-	defaultErrorLog.filterMode = "greater_or_equal";
-	defaultErrorLog.maxFileSize = 10 * 1024 * 1024;
-	defaultErrorLog.maxBackupFiles = 5;
-	_errorLogs.push_back(defaultErrorLog);
+	_accessLogs.push_back(AccessLog());
+	_errorLogs.push_back(ErrorLog());
 }
 
 Config::Config() {
@@ -309,99 +293,149 @@ void Config::parseLocations(Node *node) {
 }
 
 void Config::parseAccessLogs(Node *node) {
-	if (!node)
-		throw std::runtime_error("Config error: missing 'accessLogs' node");
+	if (!node) return;
 
+	std::vector<AccessLog> configuredLogs;
 	const std::vector<Node *> &logs = node->getSeq();
+
 	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
 		Node *logNode = *it;
-		if (logNode->getKey() != "accessLog") {
+		if (logNode->getKey() != "access_log") {
 			continue;
 		}
 
 		AccessLog log;
+
 		Node *disableNode = logNode->getMapNode("disable");
-		if (disableNode)
-			log.isDisable = (disableNode->getValue() == "true");
-
 		Node *sinkNode = logNode->getMapNode("sink");
-		if (sinkNode)
-			log.sink = sinkNode->getValue();
-
 		Node *filenameNode = logNode->getMapNode("filename");
-		if (filenameNode)
-			log.filename = filenameNode->getValue();
-
 		Node *logDirNode = logNode->getMapNode("logDir");
-		if (logDirNode)
+		Node *formatNode = logNode->getMapNode("format");
+		Node *maxSizeNode = logNode->getMapNode("maxSize");
+		Node *maxBackupNode = logNode->getMapNode("maxBackup");
+
+		bool isDisabled = disableNode && disableNode->getValue() == "true";
+
+		if (isDisabled) {
+			if (sinkNode || filenameNode || logDirNode || formatNode || maxSizeNode || maxBackupNode) {
+				throw std::runtime_error("Config error in access_log: When 'disable' is true, other directives are not allowed.");
+			}
+			log.isDisable = true;
+			configuredLogs.push_back(log);
+			continue;
+		}
+
+		log.isDisable = false;
+
+		if (!sinkNode) throw std::runtime_error("Config error in access_log: 'sink' is required.");
+		if (sinkNode->getValue() == "file") log.sink = File;
+		else if (sinkNode->getValue() == "console") log.sink = Console;
+		else throw std::runtime_error("Config error in access_log: 'sink' must be 'file' or 'console'.");
+
+		if (!formatNode) throw std::runtime_error("Config error in access_log: 'format' is required.");
+		if (formatNode->getValue() == "JSON") log.format = JSON;
+		else if (formatNode->getValue() == "ELF") log.format = ELF;
+		else throw std::runtime_error("Config error in access_log: invalid format type.");
+
+		if (sinkNode->getValue() == "file") {
+			if (!filenameNode) throw std::runtime_error("Config error in access_log: 'filename' is required for 'file' sink.");
+			if (!logDirNode) throw std::runtime_error("Config error in access_log: 'logDir' is required for 'file' sink.");
+			
+			log.filename = filenameNode->getValue();
 			log.logDir = logDirNode->getValue();
 
-		Node *formatNode = logNode->getMapNode("format");
-		if (formatNode)
-			log.format = formatNode->getValue();
-
-		Node *maxFileSizeNode = logNode->getMapNode("maxFileSize");
-		if (maxFileSizeNode)
-			log.maxFileSize = StringOps::stringToInt(maxFileSizeNode->getValue());
-
-		Node *maxBackupFilesNode = logNode->getMapNode("maxBackupFiles");
-		if (maxBackupFilesNode)
-			log.maxBackupFiles = StringOps::stringToInt(maxBackupFilesNode->getValue());
-
-		_accessLogs.push_back(log);
+			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
+			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
+		} else {
+			if (filenameNode) throw std::runtime_error("Config error in access_log: 'filename' is not allowed for 'console' sink.");
+			if (logDirNode) throw std::runtime_error("Config error in access_log: 'logDir' is not allowed for 'console' sink.");
+			if (maxSizeNode) throw std::runtime_error("Config error in access_log: 'maxSize' is not allowed for 'console' sink.");
+			if (maxBackupNode) throw std::runtime_error("Config error in access_log: 'maxBackup' is not allowed for 'console' sink.");
+		}
+		configuredLogs.push_back(log);
 	}
+	_accessLogs = configuredLogs;
 }
 
 void Config::parseErrorLogs(Node *node) {
-	if (!node)
-		throw std::runtime_error("Config error: missing 'errorLogs' node");
+	if (!node) return;
 
+	std::vector<ErrorLog> configuredLogs;
 	const std::vector<Node *> &logs = node->getSeq();
+
 	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
 		Node *logNode = *it;
-		if (logNode->getKey() != "errorLog") {
+		if (logNode->getKey() != "error_log") {
 			continue;
 		}
 
 		ErrorLog log;
+
 		Node *disableNode = logNode->getMapNode("disable");
-		if (disableNode)
-			log.isDisable = (disableNode->getValue() == "true");
-
 		Node *sinkNode = logNode->getMapNode("sink");
-		if (sinkNode)
-			log.sink = sinkNode->getValue();
-
 		Node *filenameNode = logNode->getMapNode("filename");
-		if (filenameNode)
-			log.filename = filenameNode->getValue();
-
 		Node *logDirNode = logNode->getMapNode("logDir");
-		if (logDirNode)
+		Node *formatNode = logNode->getMapNode("format");
+		Node *levelNode = logNode->getMapNode("level");
+		Node *modeNode = logNode->getMapNode("mode");
+		Node *maxSizeNode = logNode->getMapNode("maxSize");
+		Node *maxBackupNode = logNode->getMapNode("maxBackup");
+
+		bool isDisabled = disableNode && disableNode->getValue() == "true";
+
+		if (isDisabled) {
+			if (sinkNode || filenameNode || logDirNode || formatNode || levelNode || modeNode || maxSizeNode || maxBackupNode) {
+				throw std::runtime_error("Config error in error_log: When 'disable' is true, other directives are not allowed.");
+			}
+			log.isDisable = true;
+			configuredLogs.push_back(log);
+			continue;
+		}
+
+		log.isDisable = false;
+
+		if (!sinkNode) throw std::runtime_error("Config error in error_log: 'sink' is required.");
+		if (sinkNode->getValue() == "file") log.sink = File;
+		else if (sinkNode->getValue() == "console") log.sink = Console;
+		else throw std::runtime_error("Config error in error_log: 'sink' must be 'file' or 'console'.");
+
+		if (!formatNode) throw std::runtime_error("Config error in error_log: 'format' is required.");
+		if (formatNode->getValue() == "JSON") log.format = JSON;
+		else if (formatNode->getValue() == "ELF") log.format = ELF;
+		else throw std::runtime_error("Config error in error_log: invalid format type.");
+		
+		if (!levelNode) throw std::runtime_error("Config error in error_log: 'level' is required.");
+		if (levelNode->getValue() == "DEBUG") log.level = DEBUG;
+		else if (levelNode->getValue() == "INFO") log.level = INFO;
+		else if (levelNode->getValue() == "WARNING") log.level = WARNING;
+		else if (levelNode->getValue() == "ERROR") log.level = ERROR;
+		else if (levelNode->getValue() == "FATAL") log.level = FATAL;
+		else throw std::runtime_error("Config error in error_log: invalid log level.");
+
+		if (modeNode) {
+			if (modeNode->getValue() == "greater_or_equal") log.filterMode = GREATER_OR_EQUAL;
+			else if (modeNode->getValue() == "exact") log.filterMode = EXACT;
+			else throw std::runtime_error("Config error in error_log: invalid filter mode.");
+		}
+
+		if (sinkNode->getValue() == "file") {
+			if (!filenameNode) throw std::runtime_error("Config error in error_log: 'filename' is required for 'file' sink.");
+			if (!logDirNode) throw std::runtime_error("Config error in error_log: 'logDir' is required for 'file' sink.");
+			
+			log.filename = filenameNode->getValue();
 			log.logDir = logDirNode->getValue();
 
-		Node *formatNode = logNode->getMapNode("format");
-		if (formatNode)
-			log.format = formatNode->getValue();
-
-		Node *levelNode = logNode->getMapNode("level");
-		if (levelNode)
-			log.level = levelNode->getValue();
-
-		Node *filterModeNode = logNode->getMapNode("filterMode");
-		if (filterModeNode)
-			log.filterMode = filterModeNode->getValue();
-
-		Node *maxFileSizeNode = logNode->getMapNode("maxFileSize");
-		if (maxFileSizeNode)
-			log.maxFileSize = StringOps::stringToInt(maxFileSizeNode->getValue());
-
-		Node *maxBackupFilesNode = logNode->getMapNode("maxBackupFiles");
-		if (maxBackupFilesNode)
-			log.maxBackupFiles = StringOps::stringToInt(maxBackupFilesNode->getValue());
-
-		_errorLogs.push_back(log);
+			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
+			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
+		} else {
+			if (filenameNode) throw std::runtime_error("Config error in error_log: 'filename' is not allowed for 'console' sink.");
+			if (logDirNode) throw std::runtime_error("Config error in error_log: 'logDir' is not allowed for 'console' sink.");
+			if (maxSizeNode) throw std::runtime_error("Config error in error_log: 'maxSize' is not allowed for 'console' sink.");
+			if (maxBackupNode) throw std::runtime_error("Config error in error_log: 'maxBackup' is not allowed for 'console' sink.");
+		}
+		configuredLogs.push_back(log);
 	}
+	_errorLogs = configuredLogs;
 }
 
 void Config::setup(const std::string &configFile) {

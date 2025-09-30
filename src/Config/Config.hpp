@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Lib/Logger/LogType.hpp"
+#include "../Lib/Logger/ErrorLog/LogStructure.hpp"
 #include <map>
 #include <ostream>
 #include <set>
@@ -34,24 +36,28 @@ struct Location {
 
 struct AccessLog {
 	bool isDisable;
-	std::string sink;
+	LogSinkType sink;
 	std::string filename;
 	std::string logDir;
-	std::string format;
+	LogFormat format;
 	size_t maxFileSize;
 	size_t maxBackupFiles;
+
+	AccessLog() : isDisable(false), sink(File), filename("access.log"), logDir("./log"), format(ELF), maxFileSize(10 * 1024 * 1024), maxBackupFiles(5) {}
 };
 
 struct ErrorLog {
 	bool isDisable;
-	std::string sink;
+	LogSinkType sink;
 	std::string filename;
 	std::string logDir;
-	std::string format;
-	std::string level;
-	std::string filterMode;
+	LogFormat format;
+	LogLevel level;
+	LogFilterMode filterMode;
 	size_t maxFileSize;
 	size_t maxBackupFiles;
+
+	ErrorLog() : isDisable(false), sink(File), filename("error.log"), logDir("./log"), format(ELF), level(WARNING), filterMode(GREATER_OR_EQUAL), maxFileSize(10 * 1024 * 1024), maxBackupFiles(5) {}
 };
 
 class Config {
