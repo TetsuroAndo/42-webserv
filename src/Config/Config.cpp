@@ -306,12 +306,100 @@ void Config::parseLocations(Node *node) {
 	}
 }
 
-void parseAccessLogs(Node *node) {
+void Config::parseAccessLogs(Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'accessLogs' node");
 
+	const std::vector<Node *> &logs = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
+		Node *logNode = *it;
+		if (logNode->getKey() != "accessLog") {
+			continue;
+		}
+
+		AccessLog log;
+		Node *disableNode = logNode->getMapNode("disable");
+		if (disableNode)
+			log.isDisable = (disableNode->getValue() == "true");
+
+		Node *sinkNode = logNode->getMapNode("sink");
+		if (sinkNode)
+			log.sink = sinkNode->getValue();
+
+		Node *filenameNode = logNode->getMapNode("filename");
+		if (filenameNode)
+			log.filename = filenameNode->getValue();
+
+		Node *logDirNode = logNode->getMapNode("logDir");
+		if (logDirNode)
+			log.logDir = logDirNode->getValue();
+
+		Node *formatNode = logNode->getMapNode("format");
+		if (formatNode)
+			log.format = formatNode->getValue();
+
+		Node *maxFileSizeNode = logNode->getMapNode("maxFileSize");
+		if (maxFileSizeNode)
+			log.maxFileSize = StringOps::stringToInt(maxFileSizeNode->getValue());
+
+		Node *maxBackupFilesNode = logNode->getMapNode("maxBackupFiles");
+		if (maxBackupFilesNode)
+			log.maxBackupFiles = StringOps::stringToInt(maxBackupFilesNode->getValue());
+
+		_accessLogs.push_back(log);
+	}
 }
 
-void parseErrorLogs(Node *node) {
+void Config::parseErrorLogs(Node *node) {
+	if (!node)
+		throw std::runtime_error("Config error: missing 'errorLogs' node");
 
+	const std::vector<Node *> &logs = node->getSeq();
+	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
+		Node *logNode = *it;
+		if (logNode->getKey() != "errorLog") {
+			continue;
+		}
+
+		ErrorLog log;
+		Node *disableNode = logNode->getMapNode("disable");
+		if (disableNode)
+			log.isDisable = (disableNode->getValue() == "true");
+
+		Node *sinkNode = logNode->getMapNode("sink");
+		if (sinkNode)
+			log.sink = sinkNode->getValue();
+
+		Node *filenameNode = logNode->getMapNode("filename");
+		if (filenameNode)
+			log.filename = filenameNode->getValue();
+
+		Node *logDirNode = logNode->getMapNode("logDir");
+		if (logDirNode)
+			log.logDir = logDirNode->getValue();
+
+		Node *formatNode = logNode->getMapNode("format");
+		if (formatNode)
+			log.format = formatNode->getValue();
+
+		Node *levelNode = logNode->getMapNode("level");
+		if (levelNode)
+			log.level = levelNode->getValue();
+
+		Node *filterModeNode = logNode->getMapNode("filterMode");
+		if (filterModeNode)
+			log.filterMode = filterModeNode->getValue();
+
+		Node *maxFileSizeNode = logNode->getMapNode("maxFileSize");
+		if (maxFileSizeNode)
+			log.maxFileSize = StringOps::stringToInt(maxFileSizeNode->getValue());
+
+		Node *maxBackupFilesNode = logNode->getMapNode("maxBackupFiles");
+		if (maxBackupFilesNode)
+			log.maxBackupFiles = StringOps::stringToInt(maxBackupFilesNode->getValue());
+
+		_errorLogs.push_back(log);
+	}
 }
 
 void Config::setup(const std::string &configFile) {
@@ -338,6 +426,12 @@ void Config::setup(const std::string &configFile) {
 	}
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		parseLocations(locationsNode);
+	}
+	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
+		parseAccessLogs(accessLogsNode);
+	}
+	if (Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
+		parseErrorLogs(errorLogsNode);
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))

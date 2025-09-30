@@ -34,6 +34,7 @@ struct Location {
 
 struct AccessLog {
 	bool isDisable;
+	std::string sink;
 	std::string filename;
 	std::string logDir;
 	std::string format;
@@ -43,6 +44,7 @@ struct AccessLog {
 
 struct ErrorLog {
 	bool isDisable;
+	std::string sink;
 	std::string filename;
 	std::string logDir;
 	std::string format;
