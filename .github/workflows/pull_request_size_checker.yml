@@ -62,14 +62,14 @@ jobs:
           if [ $((${CHANGED_LINES})) -gt $((${PULL_REQUEST_LIMIT_LINES})) ]; then
             echo "**[Warning]差分行数が多いので分割を検討してください！(LIMIT: ${PULL_REQUEST_LIMIT_LINES})**" >> comments;
           else
-            echo "差分行数問題なし:+1:" >> comments
+            echo "差分行数問題なし :+1:" >> comments
           fi
 
           # ファイル数による分岐
           if [ $((${CHANGED_FILES})) -gt $((${PULL_REQUEST_LIMIT_FILES})) ]; then
             echo "**[Warning]差分ファイル数が多いので分割を検討してください！(LIMIT: ${PULL_REQUEST_LIMIT_FILES})**" >> comments;
           else
-            echo "差分ファイル数問題なし:+1:" >> comments
+            echo "差分ファイル数問題なし :+1:" >> comments
           fi
 
       - name: Post comments
