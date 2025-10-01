@@ -4,6 +4,9 @@ on: pull_request
 jobs:
   pull_request_size_checker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       # プルリクサイズの取得
       - uses: actions/checkout@v3
