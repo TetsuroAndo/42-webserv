@@ -126,6 +126,8 @@ public:
 	const Redirect &getRedirect(const std::string &path) const;
 	const std::map<std::string, Location> &getLocations() const;
 	const Location &getLocation(const std::string &path) const;
+	const std::vector<AccessLog> &getAccessLogs() const;
+	const std::vector<ErrorLog> &getErrorLogs() const;
 
 	unsigned int getMaxRequestBodySize() const;
 	unsigned int getTimeoutSec() const;

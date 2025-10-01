@@ -298,6 +298,9 @@ void Config::parseAccessLogs(Node *node) {
 	std::vector<AccessLog> configuredLogs;
 	const std::vector<Node *> &logs = node->getSeq();
 
+	bool isDisabledFound = false;
+	bool isEnabledFound = false;
+
 	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
 		Node *logNode = *it;
 		if (logNode->getKey() != "access_log") {
@@ -315,6 +318,12 @@ void Config::parseAccessLogs(Node *node) {
 		Node *maxBackupNode = logNode->getMapNode("maxBackup");
 
 		bool isDisabled = disableNode && disableNode->getValue() == "true";
+
+		if (isDisabled) {
+			isDisabledFound = true;
+		} else {
+			isEnabledFound = true;
+		}
 
 		if (isDisabled) {
 			if (sinkNode || filenameNode || logDirNode || formatNode || maxSizeNode || maxBackupNode) {
@@ -354,7 +363,12 @@ void Config::parseAccessLogs(Node *node) {
 		}
 		configuredLogs.push_back(log);
 	}
-	_accessLogs = configuredLogs;
+	if (isDisabledFound && isEnabledFound) {
+		throw std::runtime_error("Config error in access_log: Cannot mix 'disable: true' with other valid access log configurations.");
+	}
+	if (!configuredLogs.empty()) {
+		_accessLogs = configuredLogs;
+	}
 }
 
 void Config::parseErrorLogs(Node *node) {
@@ -362,6 +376,9 @@ void Config::parseErrorLogs(Node *node) {
 
 	std::vector<ErrorLog> configuredLogs;
 	const std::vector<Node *> &logs = node->getSeq();
+
+	bool isDisabledFound = false;
+	bool isEnabledFound = false;
 
 	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
 		Node *logNode = *it;
@@ -382,6 +399,12 @@ void Config::parseErrorLogs(Node *node) {
 		Node *maxBackupNode = logNode->getMapNode("maxBackup");
 
 		bool isDisabled = disableNode && disableNode->getValue() == "true";
+
+		if (isDisabled) {
+			isDisabledFound = true;
+		} else {
+			isEnabledFound = true;
+		}
 
 		if (isDisabled) {
 			if (sinkNode || filenameNode || logDirNode || formatNode || levelNode || modeNode || maxSizeNode || maxBackupNode) {
@@ -435,7 +458,12 @@ void Config::parseErrorLogs(Node *node) {
 		}
 		configuredLogs.push_back(log);
 	}
-	_errorLogs = configuredLogs;
+	if (isDisabledFound && isEnabledFound) {
+		throw std::runtime_error("Config error in error_log: Cannot mix 'disable: true' with other valid error log configurations.");
+	}
+	if (!configuredLogs.empty()) {
+		_errorLogs = configuredLogs;
+	}
 }
 
 void Config::setup(const std::string &configFile) {
@@ -533,6 +561,14 @@ const Location &Config::getLocation(const std::string &path) const {
 		return it->second;
 	}
 	throw std::runtime_error("Config error: default location '/' not found");
+}
+
+const std::vector<AccessLog> &Config::getAccessLogs() const {
+	return _accessLogs;
+}
+
+const std::vector<ErrorLog> &Config::getErrorLogs() const {
+	return _errorLogs;
 }
 
 unsigned int Config::getMaxRequestBodySize() const {
