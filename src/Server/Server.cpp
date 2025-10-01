@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
+#include "Logging/Logging.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <fcntl.h>
@@ -9,11 +10,13 @@
 #include <unistd.h>
 
 Server::Server() : _config(Config()) {
+	Logging::setupLoggers(_config);
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 }
 
 Server::Server(const Config &config) : _config(config) {
+	Logging::setupLoggers(_config);
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 }
