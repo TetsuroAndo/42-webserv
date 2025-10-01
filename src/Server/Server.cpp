@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
+#include "../Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include "Logging/Logging.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
@@ -74,6 +75,7 @@ void Server::setupListenSockets() {
 }
 
 void Server::run() {
+	LOG(INFO) << "Server is running.";
 	while (true) {
 		const int nEvents = _manager.wait(-1);
 		if (nEvents < 0) {

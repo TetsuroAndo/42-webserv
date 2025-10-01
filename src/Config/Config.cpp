@@ -2,6 +2,7 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Lib/Logger/LogType.hpp"
+#include "../Lib/Logger/ErrorLog/Logger.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -467,6 +468,7 @@ void Config::parseErrorLogs(Node *node) {
 }
 
 void Config::setup(const std::string &configFile) {
+	LOG(INFO) << "Loading configuration from: " << configFile;
 	const MyYAML yaml(configFile);
 	const Node *serversNode = yaml.getData().getMapNode("servers");
 	if (!serversNode) {
@@ -491,9 +493,8 @@ void Config::setup(const std::string &configFile) {
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		parseLocations(locationsNode);
 	}
-	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
-		parseAccessLogs(accessLogsNode);
-	}
+	Node *accessLogsNode = serverNode->getMapNode("access_logs");
+	parseAccessLogs(accessLogsNode);
 	if (Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
 		parseErrorLogs(errorLogsNode);
 	}
