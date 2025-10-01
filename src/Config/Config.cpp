@@ -321,7 +321,8 @@ void Config::parseAccessLogs(Node *node) {
 		Node *maxSizeNode = logNode->getMapNode("maxSize");
 		Node *maxBackupNode = logNode->getMapNode("maxBackup");
 
-		bool isDisabled = disableNode && disableNode->getValue() == "true";
+		const bool isDisabled = disableNode && StringOps::equalsIgnoreCase(
+											 disableNode->getValue(), "true");
 
 		if (isDisabled) {
 			isDisabledFound = true;
@@ -341,21 +342,23 @@ void Config::parseAccessLogs(Node *node) {
 		log.isDisable = false;
 
 		if (!sinkNode) throw std::runtime_error("Config error in access_log: 'sink' is required.");
-		if (sinkNode->getValue() == "file") log.sink = File;
-		else if (sinkNode->getValue() == "console") log.sink = Console;
+		const std::string sinkValue = StringOps::toUpper(sinkNode->getValue());
+		if (sinkValue == "FILE") log.sink = File;
+		else if (sinkValue == "CONSOLE") log.sink = Console;
 		else throw std::runtime_error("Config error in access_log: 'sink' must be 'file' or 'console'.");
 
-		if (!formatNode) throw std::runtime_error("Config error in access_log: 'format' is required.");
-		if (formatNode->getValue() == "JSON") log.format = JSON;
-		else if (formatNode->getValue() == "ELF") log.format = ELF;
-		else throw std::runtime_error("Config error in access_log: invalid format type.");
+		if (formatNode) {
+			const std::string formatValue = StringOps::toUpper(formatNode->getValue());
+			if (formatValue == "JSON") log.format = JSON;
+			else if (formatValue == "ELF") log.format = ELF;
+			else throw std::runtime_error("Config error in access_log: invalid format type.");
+		}
 
-		if (sinkNode->getValue() == "file") {
-			if (!filenameNode) throw std::runtime_error("Config error in access_log: 'filename' is required for 'file' sink.");
-			if (!logDirNode) throw std::runtime_error("Config error in access_log: 'logDir' is required for 'file' sink.");
-
-			log.filename = filenameNode->getValue();
-			log.logDir = logDirNode->getValue();
+		if (sinkValue == "FILE") {
+			if (filenameNode)
+				log.filename = filenameNode->getValue();
+			if (logDirNode)
+				log.logDir = logDirNode->getValue();
 
 			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
 			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
@@ -402,7 +405,8 @@ void Config::parseErrorLogs(Node *node) {
 		Node *maxSizeNode = logNode->getMapNode("maxSize");
 		Node *maxBackupNode = logNode->getMapNode("maxBackup");
 
-		bool isDisabled = disableNode && disableNode->getValue() == "true";
+		const bool isDisabled = disableNode && StringOps::equalsIgnoreCase(
+											 disableNode->getValue(), "true");
 
 		if (isDisabled) {
 			isDisabledFound = true;
@@ -422,35 +426,40 @@ void Config::parseErrorLogs(Node *node) {
 		log.isDisable = false;
 
 		if (!sinkNode) throw std::runtime_error("Config error in error_log: 'sink' is required.");
-		if (sinkNode->getValue() == "file") log.sink = File;
-		else if (sinkNode->getValue() == "console") log.sink = Console;
+		const std::string sinkValue = StringOps::toUpper(sinkNode->getValue());
+		if (sinkValue == "FILE") log.sink = File;
+		else if (sinkValue == "CONSOLE") log.sink = Console;
 		else throw std::runtime_error("Config error in error_log: 'sink' must be 'file' or 'console'.");
 
-		if (!formatNode) throw std::runtime_error("Config error in error_log: 'format' is required.");
-		if (formatNode->getValue() == "JSON") log.format = JSON;
-		else if (formatNode->getValue() == "ELF") log.format = ELF;
-		else throw std::runtime_error("Config error in error_log: invalid format type.");
+		if (formatNode) {
+			const std::string formatValue = StringOps::toUpper(formatNode->getValue());
+			if (formatValue == "JSON") log.format = JSON;
+			else if (formatValue == "ELF") log.format = ELF;
+			else throw std::runtime_error("Config error in error_log: invalid format type.");
+		}
 
-		if (!levelNode) throw std::runtime_error("Config error in error_log: 'level' is required.");
-		if (levelNode->getValue() == "DEBUG") log.level = DEBUG;
-		else if (levelNode->getValue() == "INFO") log.level = INFO;
-		else if (levelNode->getValue() == "WARNING") log.level = WARNING;
-		else if (levelNode->getValue() == "ERROR") log.level = ERROR;
-		else if (levelNode->getValue() == "FATAL") log.level = FATAL;
-		else throw std::runtime_error("Config error in error_log: invalid log level.");
+		if (levelNode) {
+			const std::string levelValue = StringOps::toUpper(levelNode->getValue());
+			if (levelValue == "DEBUG") log.level = DEBUG;
+			else if (levelValue == "INFO") log.level = INFO;
+			else if (levelValue == "WARNING") log.level = WARNING;
+			else if (levelValue == "ERROR") log.level = ERROR;
+			else if (levelValue == "FATAL") log.level = FATAL;
+			else throw std::runtime_error("Config error in error_log: invalid log level.");
+		}
 
 		if (modeNode) {
-			if (modeNode->getValue() == "greater_or_equal") log.filterMode = GREATER_OR_EQUAL;
-			else if (modeNode->getValue() == "exact") log.filterMode = EXACT;
+			const std::string modeValue = StringOps::toUpper(modeNode->getValue());
+			if (modeValue == "GREATER_OR_EQUAL") log.filterMode = GREATER_OR_EQUAL;
+			else if (modeValue == "EXACT") log.filterMode = EXACT;
 			else throw std::runtime_error("Config error in error_log: invalid filter mode.");
 		}
 
-		if (sinkNode->getValue() == "file") {
-			if (!filenameNode) throw std::runtime_error("Config error in error_log: 'filename' is required for 'file' sink.");
-			if (!logDirNode) throw std::runtime_error("Config error in error_log: 'logDir' is required for 'file' sink.");
-
-			log.filename = filenameNode->getValue();
-			log.logDir = logDirNode->getValue();
+		if (sinkValue == "FILE") {
+			if (filenameNode)
+				log.filename = filenameNode->getValue();
+			if (logDirNode)
+				log.logDir = logDirNode->getValue();
 
 			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
 			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
@@ -496,8 +505,9 @@ void Config::setup(const std::string &configFile) {
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		parseLocations(locationsNode);
 	}
-	Node *accessLogsNode = serverNode->getMapNode("access_logs");
-	parseAccessLogs(accessLogsNode);
+	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
+		parseAccessLogs(accessLogsNode);
+	}
 	if (Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
 		parseErrorLogs(errorLogsNode);
 	}
@@ -626,6 +636,53 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 			 cit != it->second.cgiConf.end(); ++cit) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
 		}
+	}
+
+	os << "  accessLogs:\n";
+	for (std::vector<AccessLog>::const_iterator it = config._accessLogs.begin();
+		 it != config._accessLogs.end(); ++it) {
+		os << "    - isDisable: " << (it->isDisable ? "true" : "false") << "\n";
+		os << "      sink: " << (it->sink == File ? "file" : "console") << "\n";
+		os << "      filename: " << it->filename << "\n";
+		os << "      logDir: " << it->logDir << "\n";
+		os << "      format: " << (it->format == JSON ? "json" : "elf") << "\n";
+		os << "      maxFileSize: " << it->maxFileSize << "\n";
+		os << "      maxBackupFiles: " << it->maxBackupFiles << "\n";
+	}
+
+	os << "  errorLogs:\n";
+	for (std::vector<ErrorLog>::const_iterator it = config._errorLogs.begin();
+		 it != config._errorLogs.end(); ++it) {
+		os << "    - isDisable: " << (it->isDisable ? "true" : "false") << "\n";
+		os << "      sink: " << (it->sink == File ? "FILE" : "CONSOLE") << "\n";
+		os << "      filename: " << it->filename << "\n";
+		os << "      logDir: " << it->logDir << "\n";
+		os << "      format: " << (it->format == JSON ? "JSON" : "ELF") << "\n";
+		os << "      level: ";
+		switch (it->level) {
+		case DEBUG:
+			os << "DEBUG";
+			break;
+		case INFO:
+			os << "INFO";
+			break;
+		case WARNING:
+			os << "WARNING";
+			break;
+		case ERROR:
+			os << "ERROR";
+			break;
+		case FATAL:
+			os << "FATAL";
+			break;
+		}
+		os << "\n";
+		os << "      filterMode: "
+		   << (it->filterMode == GREATER_OR_EQUAL ? "GREATER_OR_EQUAL"
+												  : "EXACT")
+		   << "\n";
+		os << "      maxFileSize: " << it->maxFileSize << "\n";
+		os << "      maxBackupFiles: " << it->maxBackupFiles << "\n";
 	}
 	return os;
 }
