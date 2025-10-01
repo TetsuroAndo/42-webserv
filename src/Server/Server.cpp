@@ -12,12 +12,18 @@
 
 Server::Server() : _config(Config()) {
 	Logging::setupLoggers(_config);
+	std::ostringstream oss;
+	oss << _config;
+	LOG(DEBUG) << oss.str();
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 }
 
 Server::Server(const Config &config) : _config(config) {
 	Logging::setupLoggers(_config);
+	std::ostringstream oss;
+	oss << _config;
+	LOG(DEBUG) << oss.str();
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 }
