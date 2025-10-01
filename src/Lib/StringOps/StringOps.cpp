@@ -218,34 +218,68 @@ int stringToInt(const std::string &s) {
 	return i;
 }
 
+
 size_t sizeStrToBytes(const std::string &sizeStr) {
 	if (sizeStr.empty()) {
 		throw std::runtime_error("Config error: size string is empty.");
 	}
-	std::stringstream ss(sizeStr);
-	long long number;
+
+	std::string num_part;
+	std::string unit_part;
+	size_t i = 0;
+
+	// 負の数(-記号)のチェックと数字部分の抽出
+	while (i < sizeStr.length() && std::isspace(sizeStr[i])) {
+		i++;
+	}
+	if (i < sizeStr.length() && sizeStr[i] == '-') {
+		throw std::runtime_error("Config error: size must be a non-negative value in '" + sizeStr + "'.");
+	}
+
+	// 数字部分の抽出
+	while (i < sizeStr.length() && std::isdigit(sizeStr[i])) {
+		num_part += sizeStr[i];
+		i++;
+	}
+	if (num_part.empty()) {
+		throw std::runtime_error("Config error: invalid size format, missing number in '" + sizeStr + "'.");
+	}
+
+	// 数字部分をsize_tに変換
+	std::stringstream ss(num_part);
+	size_t number;
 	ss >> number;
-	std::string unit;
-	ss >> unit;
-
-	if (ss.fail() && !ss.eof()) {
-		throw std::runtime_error("Config error: invalid size format '" + sizeStr + "'.");
+	if (ss.fail() || !ss.eof()) {
+		throw std::runtime_error("Config error: invalid size number format in '" + sizeStr + "'.");
 	}
 
-	for (size_t i = 0; i < unit.length(); ++i) {
-		unit[i] = std::toupper(unit[i]);
+	// 単位部分の抽出
+	unit_part = sizeStr.substr(i);
+	trim(unit_part);
+	for (size_t j = 0; j < unit_part.length(); ++j) {
+		unit_part[j] = std::toupper(unit_part[j]);
 	}
 
-	if (unit.empty() || unit == "B") {
-		return static_cast<size_t>(number);
-	} else if (unit == "KB") {
-		return static_cast<size_t>(number * 1024);
-	} else if (unit == "MB") {
-		return static_cast<size_t>(number * 1024 * 1024);
-	} else if (unit == "GB") {
-		return static_cast<size_t>(number * 1024 * 1024 * 1024);
+	const size_t max_size_t = std::numeric_limits<size_t>::max();
+	if (unit_part.empty() || unit_part == "B") {
+		return number;
+	} else if (unit_part == "KB") {
+		if (number > max_size_t / 1024) {
+			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+		}
+		return number * 1024;
+	} else if (unit_part == "MB") {
+		if (number > max_size_t / (1024 * 1024)) {
+			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+		}
+		return number * 1024 * 1024;
+	} else if (unit_part == "GB") {
+		if (number > max_size_t / (1024 * 1024 * 1024)) {
+			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+		}
+		return number * 1024 * 1024 * 1024;
 	} else {
-		throw std::runtime_error("Config error: unknown size unit '" + unit + "'. Use KB, MB, or GB.");
+		throw std::runtime_error("Config error: unknown size unit '" + unit_part + "'. Use B, KB, MB, or GB.");
 	}
 }
 
