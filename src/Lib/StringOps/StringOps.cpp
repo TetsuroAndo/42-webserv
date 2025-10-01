@@ -219,7 +219,7 @@ int stringToInt(const std::string &s) {
 }
 
 
-size_t sizeStrToBytes(const std::string &sizeStr) {
+size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 	if (sizeStr.empty()) {
 		throw std::runtime_error("Config error: size string is empty.");
 	}
@@ -284,7 +284,7 @@ size_t sizeStrToBytes(const std::string &sizeStr) {
 }
 
 unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
-	return static_cast<unsigned int>(sizeStrToBytes(sizeStr));
+	return static_cast<unsigned int>(sizeByteStrToSizeT(sizeStr));
 }
 
 } // namespace StringOps
