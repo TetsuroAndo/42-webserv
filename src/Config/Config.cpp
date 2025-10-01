@@ -297,12 +297,7 @@ void Config::parseLocations(Node *node) {
 }
 
 void Config::parseAccessLogs(Node *node) {
-	if (!node) {
-		std::cerr << "Debug: No 'access_logs' node found." << std::endl;
-		return;
-	}
-
-	std::cerr << "Debug: Parsing 'access_logs' node." << std::endl;
+	if (!node) return;
 
 	std::vector<AccessLog> configuredLogs;
 	const std::vector<Node *> &logs = node->getSeq();
@@ -310,15 +305,11 @@ void Config::parseAccessLogs(Node *node) {
 	bool isDisabledFound = false;
 	bool isEnabledFound = false;
 
-	for (std::vector<Node *>::const_iterator it = logs.begin();
-		 it != logs.end(); ++it) {
+	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
 		Node *logNode = *it;
 		if (logNode->getKey() != "access_log") {
-			std::cerr << "Debug: Skipping non 'access_log' node." << std::endl;
 			continue;
 		}
-
-		std::cerr << "Debug: Found 'access_log' node." << std::endl;
 
 		AccessLog log;
 
@@ -333,21 +324,14 @@ void Config::parseAccessLogs(Node *node) {
 		bool isDisabled = disableNode && disableNode->getValue() == "true";
 
 		if (isDisabled) {
-			std::cerr << "Debug: 'disable' is true for this access log."
-					  << std::endl;
 			isDisabledFound = true;
 		} else {
-			std::cerr << "Debug: 'disable' is false for this access log."
-					  << std::endl;
 			isEnabledFound = true;
 		}
 
 		if (isDisabled) {
-			if (sinkNode || filenameNode || logDirNode || formatNode ||
-				maxSizeNode || maxBackupNode) {
-				throw std::runtime_error(
-					"Config error in access_log: When 'disable' is true, other "
-					"directives are not allowed.");
+			if (sinkNode || filenameNode || logDirNode || formatNode || maxSizeNode || maxBackupNode) {
+				throw std::runtime_error("Config error in access_log: When 'disable' is true, other directives are not allowed.");
 			}
 			log.isDisable = true;
 			configuredLogs.push_back(log);
@@ -356,88 +340,37 @@ void Config::parseAccessLogs(Node *node) {
 
 		log.isDisable = false;
 
-		if (!sinkNode)
-			throw std::runtime_error(
-				"Config error in access_log: 'sink' is required.");
-		std::cerr << "Debug: 'sink' value: " << sinkNode->getValue()
-				  << std::endl;
+		if (!sinkNode) throw std::runtime_error("Config error in access_log: 'sink' is required.");
+		if (sinkNode->getValue() == "file") log.sink = File;
+		else if (sinkNode->getValue() == "console") log.sink = Console;
+		else throw std::runtime_error("Config error in access_log: 'sink' must be 'file' or 'console'.");
 
-		if (sinkNode->getValue() == "file")
-			log.sink = File;
-		else if (sinkNode->getValue() == "console")
-			log.sink = Console;
-		else
-			throw std::runtime_error("Config error in access_log: 'sink' must "
-									 "be 'file' or 'console'.");
-
-		if (!formatNode)
-			throw std::runtime_error(
-				"Config error in access_log: 'format' is required.");
-		std::cerr << "Debug: 'format' value: " << formatNode->getValue()
-				  << std::endl;
-
-		if (formatNode->getValue() == "JSON")
-			log.format = JSON;
-		else if (formatNode->getValue() == "ELF")
-			log.format = ELF;
-		else
-			throw std::runtime_error(
-				"Config error in access_log: invalid format type.");
+		if (!formatNode) throw std::runtime_error("Config error in access_log: 'format' is required.");
+		if (formatNode->getValue() == "JSON") log.format = JSON;
+		else if (formatNode->getValue() == "ELF") log.format = ELF;
+		else throw std::runtime_error("Config error in access_log: invalid format type.");
 
 		if (sinkNode->getValue() == "file") {
-			if (!filenameNode)
-				throw std::runtime_error(
-					"Config error in access_log: 'filename' is required for "
-					"'file' sink.");
-			if (!logDirNode)
-				throw std::runtime_error("Config error in access_log: 'logDir' "
-										 "is required for 'file' sink.");
+			if (!filenameNode) throw std::runtime_error("Config error in access_log: 'filename' is required for 'file' sink.");
+			if (!logDirNode) throw std::runtime_error("Config error in access_log: 'logDir' is required for 'file' sink.");
 
 			log.filename = filenameNode->getValue();
 			log.logDir = logDirNode->getValue();
 
-			std::cerr << "Debug: 'filename' value: " << log.filename
-					  << std::endl;
-			std::cerr << "Debug: 'logDir' value: " << log.logDir << std::endl;
-
-			if (maxSizeNode) {
-				log.maxFileSize =
-					StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
-				std::cerr << "Debug: 'maxSize' value: " << log.maxFileSize
-						  << std::endl;
-			}
-			if (maxBackupNode) {
-				log.maxBackupFiles =
-					StringOps::toSizeT(maxBackupNode->getValue());
-				std::cerr << "Debug: 'maxBackup' value: " << log.maxBackupFiles
-						  << std::endl;
-			}
+			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
+			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
 		} else {
-			if (filenameNode)
-				throw std::runtime_error(
-					"Config error in access_log: 'filename' is not allowed for "
-					"'console' sink.");
-			if (logDirNode)
-				throw std::runtime_error("Config error in access_log: 'logDir' "
-										 "is not allowed for 'console' sink.");
-			if (maxSizeNode)
-				throw std::runtime_error(
-					"Config error in access_log: 'maxSize' is not allowed for "
-					"'console' sink.");
-			if (maxBackupNode)
-				throw std::runtime_error(
-					"Config error in access_log: 'maxBackup' is not allowed "
-					"for 'console' sink.");
+			if (filenameNode) throw std::runtime_error("Config error in access_log: 'filename' is not allowed for 'console' sink.");
+			if (logDirNode) throw std::runtime_error("Config error in access_log: 'logDir' is not allowed for 'console' sink.");
+			if (maxSizeNode) throw std::runtime_error("Config error in access_log: 'maxSize' is not allowed for 'console' sink.");
+			if (maxBackupNode) throw std::runtime_error("Config error in access_log: 'maxBackup' is not allowed for 'console' sink.");
 		}
 		configuredLogs.push_back(log);
 	}
 	if (isDisabledFound && isEnabledFound) {
-		throw std::runtime_error(
-			"Config error in access_log: Cannot mix 'disable: true' with other "
-			"valid access log configurations.");
+		throw std::runtime_error("Config error in access_log: Cannot mix 'disable: true' with other valid access log configurations.");
 	}
 	if (!configuredLogs.empty()) {
-		std::cerr << "Debug: Successfully parsed access logs." << std::endl;
 		_accessLogs = configuredLogs;
 	}
 }
