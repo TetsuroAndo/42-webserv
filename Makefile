@@ -50,7 +50,7 @@ f: c
 r: f all
 
 clog:
-	$(RM) log/*.log*
+	$(RM) logs/*.log*
 
 # Debug build
 debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address
