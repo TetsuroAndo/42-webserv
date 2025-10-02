@@ -16,7 +16,7 @@ servers:
         - access_log:
             sink: file
             filename: access.log
-            logDir: ./log
+            logDir: ./logs
             format: ELF
             maxSize: 100KB
             maxBackup: 5
@@ -25,7 +25,7 @@ servers:
         - error_log:
             sink: file
             filename: error.log
-            logDir: ./log
+            logDir: ./logs
             format: JSON
             level: info
             filterMode: GREATER_OR_EQUAL

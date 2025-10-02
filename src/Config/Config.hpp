@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Lib/Logger/LogType.hpp"
 #include "../Lib/Logger/ErrorLog/LogStructure.hpp"
+#include "../Lib/Logger/LogType.hpp"
 #include <map>
 #include <ostream>
 #include <set>
@@ -43,7 +43,10 @@ struct AccessLog {
 	size_t maxFileSize;
 	size_t maxBackupFiles;
 
-	AccessLog() : isDisable(false), sink(File), filename("access.log"), logDir("./log"), format(ELF), maxFileSize(10 * 1024 * 1024), maxBackupFiles(5) {}
+	AccessLog()
+		: isDisable(false), sink(File), filename("access.log"),
+		  logDir("./logs"), format(ELF), maxFileSize(10 * 1024 * 1024),
+		  maxBackupFiles(5) {}
 };
 
 struct ErrorLog {
@@ -57,7 +60,10 @@ struct ErrorLog {
 	size_t maxFileSize;
 	size_t maxBackupFiles;
 
-	ErrorLog() : isDisable(false), sink(File), filename("error.log"), logDir("./log"), format(ELF), level(WARNING), filterMode(GREATER_OR_EQUAL), maxFileSize(10 * 1024 * 1024), maxBackupFiles(5) {}
+	ErrorLog()
+		: isDisable(false), sink(File), filename("error.log"), logDir("./logs"),
+		  format(ELF), level(WARNING), filterMode(GREATER_OR_EQUAL),
+		  maxFileSize(10 * 1024 * 1024), maxBackupFiles(5) {}
 };
 
 class Config {
