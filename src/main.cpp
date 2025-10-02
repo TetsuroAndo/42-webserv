@@ -11,7 +11,6 @@ int main(const int argc, char **argv) {
 			case 1: {
 				Config config;
 				Server server(config);
-				LOG(INFO) << "Webserv version " << VERSION << " starting...";
 				server.run();
 				break;
 			}
@@ -24,7 +23,6 @@ int main(const int argc, char **argv) {
 				} else {
 					Config config(argv[1]);
 					Server server(config);
-					LOG(INFO) << "Webserv version " << VERSION << " starting...";
 					server.run();
 				}
 				break;
@@ -38,6 +36,5 @@ int main(const int argc, char **argv) {
 		std::cerr << "[42/Webserv Error] " << e.what() << std::endl;
 		return 1;
 	}
-	LOG(INFO) << "42/Webserv shutting down gracefully.";
 	return 0;
 }
