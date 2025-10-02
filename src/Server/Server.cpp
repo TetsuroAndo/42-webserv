@@ -1,31 +1,54 @@
 #include "Server.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
+#include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
-#include "../Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include "Logging/Logging.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
 
 Server::Server() : _config(Config()) {
+	LOG(INFO) << "Initializing server with default configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
+	/*
+	LOG(INFO) << "Setting up listening sockets...";
+	LOG(WARNING)
+		<< "Warning: Using default configuration. It is recommended to provide a custom configuration file.";
+	LOG(ERROR)
+		<< "Error: No configuration file provided. Using default settings may lead to unexpected behavior.";
+	LOG(FATAL)
+		<< "Fatal: Critical error in configuration. Server may not function as expected.";
+	*/
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
+	LOG(INFO) << "Server initialized successfully.";
 }
 
 Server::Server(const Config &config) : _config(config) {
+	LOG(INFO) << "Initializing server with default configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
+	/*
+	LOG(INFO) << "Setting up listening sockets...";
+	LOG(WARNING) << "Warning: Using default configuration. It is recommended "
+					"to provide a custom configuration file.";
+	LOG(ERROR) << "Error: No configuration file provided. Using default "
+				  "settings may lead to unexpected behavior.";
+	LOG(FATAL) << "Fatal: Critical error in configuration. Server may not "
+				  "function as expected.";
+	*/
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
+	LOG(INFO) << "Server initialized successfully.";
 }
 
 Server::~Server() {
@@ -48,6 +71,7 @@ void Server::setupListenSockets() {
 
 		int listenFd = socket(AF_INET, SOCK_STREAM, 0);
 		if (listenFd < 0) {
+			LOG(FATAL) << "socket() failed: " << strerror(errno);
 			throw std::runtime_error("socket() failed");
 		}
 
@@ -65,26 +89,31 @@ void Server::setupListenSockets() {
 		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) <
 			0) {
 			close(listenFd);
-			throw std::runtime_error("bind() failed for port ");
+			LOG(FATAL) << "bind() failed for " << interfaceAddr << ":" << port
+					   << ": " << strerror(errno);
+			throw std::runtime_error("bind() failed");
 		}
 		if (listen(listenFd, SOMAXCONN) < 0) {
 			close(listenFd);
-			throw std::runtime_error("listen() failed for port ");
+			LOG(FATAL) << "listen() failed for " << interfaceAddr << ":" << port
+					   << ": " << strerror(errno);
+			throw std::runtime_error("listen() failed");
 		}
 
 		Socket *sock = new Socket(listenFd, addr);
 		_listenSockets[listenFd] = sock;
 		_manager.registerSocket(listenFd, EPOLLIN);
-		std::cout << "Listening on " << interfaceAddr << ":" << port
-				  << std::endl;
+		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
+				  << attr("fd", listenFd);
 	}
 }
 
 void Server::run() {
-	LOG(INFO) << "Server is running.";
+	LOG(INFO) << "Server is running and waiting for events.";
 	while (true) {
 		const int nEvents = _manager.wait(-1);
 		if (nEvents < 0) {
+			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
@@ -95,6 +124,7 @@ void Server::run() {
 			const uint32_t eventTypes = events[i].events;
 
 			if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
+				LOG(WARNING) << "EPOLLERR or EPOLLHUP for fd: " << fd;
 				closeConnection(fd);
 				continue;
 			}
@@ -120,24 +150,32 @@ void Server::handleNewConnection(const int listenFd) {
 		listenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
 
 	if (clientFd < 0) {
+		LOG(ERROR) << "accept() failed: " << strerror(errno);
 		return;
 	}
 
 	const int flags = fcntl(clientFd, F_GETFL, 0);
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
+	char clientIp[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
+	int clientPort = ntohs(clientAddr.sin_port);
+
+	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
+			  << attr("client_port", clientPort) << attr("fd", clientFd);
+
 	try {
 		Client *client = new Client(clientFd, clientAddr, _config);
 		_clients[clientFd] = client;
 		_manager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {
-		std::cerr << "Failed to allocate Client object: " << e.what()
-				  << std::endl;
-		close(clientFd); // Close the newly accepted socket
+		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
+				   << attr("fd", clientFd);
+		close(clientFd);
 	} catch (const std::exception &e) {
-		std::cerr << "An unexpected error occurred during client creation: "
-				  << e.what() << std::endl;
-		close(clientFd); // Close the newly accepted socket
+		LOG(ERROR) << "Unexpected error during client creation: " << e.what()
+				   << attr("fd", clientFd);
+		close(clientFd);
 	}
 }
 
@@ -150,8 +188,15 @@ void Server::handleClientRead(const int clientFd) {
 
 	if (bytesRead > 0) {
 		ctx->recvBuffer.append(buffer, bytesRead);
-	} else {
+	} else if (bytesRead == 0) {
 		closeConnection(clientFd);
+		return;
+	} else {
+		if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			LOG(ERROR) << "recv() failed" << attr("fd", clientFd)
+					   << attr("error", strerror(errno));
+			closeConnection(clientFd);
+		}
 		return;
 	}
 	_mainProcessor.handle(*ctx);
@@ -188,6 +233,8 @@ void Server::handleClientWrite(const int clientFd) {
 		}
 	} else {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			LOG(ERROR) << "send() failed" << attr("fd", clientFd)
+					   << attr("error", strerror(errno));
 			closeConnection(clientFd);
 		}
 	}
@@ -197,9 +244,14 @@ void Server::closeConnection(const int clientFd) {
 	_manager.unregisterSocket(clientFd);
 	const std::map<int, Client *>::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
+		LOG(INFO) << "Closing connection"
+				  << attr("fd", clientFd);
 		delete it->second;
 		_clients.erase(it);
 	} else {
+		LOG(ERROR)
+			<< "Attempted to close a non-existent client connection for fd: "
+			<< clientFd;
 	}
 	close(clientFd);
 }
