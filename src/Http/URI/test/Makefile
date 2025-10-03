@@ -1,6 +1,6 @@
 NAME = uri_test
 
-SRCS = main.cpp ../decodeURI.cpp ../encodeURI.cpp ../decodeURIComponent.cpp ../encodeURIComponent.cpp
+SRCS = main.cpp ../URI.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = g++

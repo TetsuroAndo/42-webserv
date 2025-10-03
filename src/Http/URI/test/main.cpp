@@ -1,4 +1,4 @@
-#include "../uri.hpp"
+#include "../URI.hpp"
 #include <iostream>
 
 #include <iterator>
