@@ -1,9 +1,8 @@
 #pragma once
 
+#include <ctime>
 #include <map>
 #include <string>
-
-enum LogFormat { JSON, ELF };
 
 enum LogFilterMode {
 	GREATER_OR_EQUAL, // 指定レベル以上（デフォルト）

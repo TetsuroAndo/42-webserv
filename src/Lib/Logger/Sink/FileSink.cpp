@@ -57,13 +57,16 @@ size_t getMaxBackupIndex(const std::string &logDir,
 } // namespace
 
 FileSink::FileSink(const std::string &logDir, const std::string &filename,
-				   LogForm *form, const LogLevel level,
-				   const LogFilterMode mode, const size_t maxFileSize,
+				   LogForm *form, const size_t maxFileSize,
 				   const size_t maxBackupFiles)
-	: LogSink(form, level, mode), _dir(logDir), _fileName(filename),
+	: LogSink(form),
+	  _dir(logDir),
+	  _fileName(filename),
 	  _fileStream((logDir + "/" + filename).c_str(),
 				  std::ios::out | std::ios::app),
-	  _maxFileSize(maxFileSize), _maxBackupFiles(maxBackupFiles) {
+	  _maxFileSize(maxFileSize),
+	  _maxBackupFiles(maxBackupFiles)
+{
 	if (!_fileStream.is_open()) {
 		throw std::runtime_error("Logger: Failed to open log file: " +
 								 filename);
@@ -112,6 +115,14 @@ void FileSink::log(const LogMessage &msg) {
 			_fileStream.open(baseFilepath.c_str(),
 							 std::ios::out | std::ios::app);
 		}
+		_fileStream.flush();
+	}
+}
+
+void FileSink::logAccess(const AccessLogContext& ctx) {
+	if (_fileStream.is_open()) {
+		_form->formatAccess(ctx, _fileStream);
+		_fileStream << '\n';
 		_fileStream.flush();
 	}
 }

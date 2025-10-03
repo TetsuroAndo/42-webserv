@@ -1,11 +1,11 @@
 .DS_Store
 .vscode
+.mailmap
 *.swp
 *.log
 *.log.*
 *.db
 *.pdf
-logs/*
 *venv*
 out
 obj
@@ -13,7 +13,6 @@ outs
 objs
 .env
 *libft/*
-parser_tests
 *.conf
 Webserv
 webserv

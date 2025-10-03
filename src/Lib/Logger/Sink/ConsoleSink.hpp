@@ -5,6 +5,8 @@
 
 class ConsoleSink : public LogSink {
 public:
-	ConsoleSink(LogForm *form, LogLevel level, LogFilterMode mode);
+	ConsoleSink(LogForm *form);
+
 	virtual void log(const LogMessage &msg);
+	virtual void logAccess(const AccessLogContext& ctx);
 };

@@ -7,12 +7,11 @@
 class FileSink : public LogSink {
 public:
 	FileSink(const std::string &logDir, const std::string &filename,
-			 LogForm *form, LogLevel level, LogFilterMode mode,
-			 size_t maxFileSize, size_t maxBackupFiles);
+			 LogForm *form, size_t maxFileSize, size_t maxBackupFiles);
 	virtual ~FileSink();
 
 	virtual void log(const LogMessage &msg);
-
+	virtual void logAccess(const AccessLogContext& ctx);
 private:
 	std::string _dir;
 	std::string _fileName;

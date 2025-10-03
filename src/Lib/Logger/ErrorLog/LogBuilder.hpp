@@ -1,5 +1,5 @@
 #pragma once
-#include "LogStructure.hpp"
+
 #include "Logger.hpp"
 #include <sstream>
 #include <string>
@@ -38,6 +38,5 @@ private:
 };
 
 #define LOG(level)                                                             \
-	if (!Logger::getInstance().isLogLevelActive(level)) {                      \
-	} else                                                                     \
+	if (Logger::getInstance().isLogLevelActive(level))                         \
 		LogBuilder(level, __FILE__, __LINE__, __func__)

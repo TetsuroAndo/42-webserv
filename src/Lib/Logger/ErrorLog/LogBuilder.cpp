@@ -4,7 +4,7 @@
 
 LogBuilder::LogBuilder(const LogLevel level, const char *file, const int line,
 					   const char *func) {
-	_msg.timestamp = std::time(NULL);
+	_msg.timestamp = std::time(NULL); // TODO: キャッシュから呼び出すようにする
 	_msg.level = level;
 	_msg.file = file;
 	_msg.line = line;

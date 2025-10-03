@@ -21,6 +21,12 @@ struct CharEqualIgnoreCase {
 	}
 };
 
+struct CharToUpper {
+	char operator()(const char c) const {
+		return std::toupper(static_cast<unsigned char>(c));
+	}
+};
+
 struct CharToLower {
 	char operator()(const char c) const {
 		return std::tolower(static_cast<unsigned char>(c));
@@ -124,11 +130,42 @@ void trim(std::string &s, const std::string &chars) {
 	s = s.substr(start, end - start);
 }
 
+std::string trim(const std::string &s, const std::string &chars) {
+	std::string result = s;
+	trim(result, chars);
+	return result;
+}
+
+/**
+ * @brief 文字列を大文字に変換する
+ */
+void toUpper(std::string &str) {
+	std::transform(str.begin(), str.end(), str.begin(), CharToUpper());
+}
+
 /**
  * @brief 文字列を小文字に変換する
  */
 void toLower(std::string &str) {
 	std::transform(str.begin(), str.end(), str.begin(), CharToLower());
+}
+
+/**
+ * @brief 大文字に変換した新しい文字列を返す
+ */
+std::string toUpper(const std::string &str) {
+	std::string result = str;
+	toUpper(result);
+	return result;
+}
+
+/**
+ * @brief 小文字に変換した新しい文字列を返す
+ */
+std::string toLower(const std::string &str) {
+	std::string result = str;
+	toLower(result);
+	return result;
 }
 
 /**
@@ -153,7 +190,7 @@ std::vector<std::string> split(const std::string &str,
  * @throw std::invalid_argument 変換できない文字が含まれる場合
  * @throw std::out_of_range      数値がsize_tの範囲を超える場合
  */
-size_t toSize_t(const std::string &str) {
+size_t toSizeT(const std::string &str) {
 	std::stringstream ss(str);
 	size_t res;
 	ss >> res;
@@ -217,4 +254,70 @@ int stringToInt(const std::string &s) {
 	}
 	return i;
 }
+
+
+size_t sizeByteStrToSizeT(const std::string &sizeStr) {
+	if (sizeStr.empty()) {
+		throw std::runtime_error("Config error: size string is empty.");
+	}
+
+	std::string num_part;
+	std::string unit_part;
+	size_t i = 0;
+
+	// 負の数(-記号)のチェックと数字部分の抽出
+	while (i < sizeStr.length() && std::isspace(sizeStr[i])) {
+		i++;
+	}
+	if (i < sizeStr.length() && sizeStr[i] == '-') {
+		throw std::runtime_error("Config error: size must be a non-negative value in '" + sizeStr + "'.");
+	}
+
+	// 数字部分の抽出
+	while (i < sizeStr.length() && std::isdigit(sizeStr[i])) {
+		num_part += sizeStr[i];
+		i++;
+	}
+	if (num_part.empty()) {
+		throw std::runtime_error("Config error: invalid size format, missing number in '" + sizeStr + "'.");
+	}
+
+	// 数字部分をsize_tに変換
+	std::stringstream ss(num_part);
+	size_t number;
+	ss >> number;
+	if (ss.fail() || !ss.eof()) {
+		throw std::runtime_error("Config error: invalid size number format in '" + sizeStr + "'.");
+	}
+
+	// 単位部分の抽出
+	unit_part = toUpper(trim(sizeStr.substr(i)));
+
+	const size_t max_size_t = std::numeric_limits<size_t>::max();
+	if (unit_part.empty() || unit_part == "B") {
+		return number;
+	} else if (unit_part == "KB") {
+		if (number > max_size_t / 1024) {
+			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+		}
+		return number * 1024;
+	} else if (unit_part == "MB") {
+		if (number > max_size_t / (1024 * 1024)) {
+			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+		}
+		return number * 1024 * 1024;
+	} else if (unit_part == "GB") {
+		if (number > max_size_t / (1024 * 1024 * 1024)) {
+			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+		}
+		return number * 1024 * 1024 * 1024;
+	} else {
+		throw std::runtime_error("Config error: unknown size unit '" + unit_part + "'. Use B, KB, MB, or GB.");
+	}
+}
+
+unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
+	return static_cast<unsigned int>(sizeByteStrToSizeT(sizeStr));
+}
+
 } // namespace StringOps
