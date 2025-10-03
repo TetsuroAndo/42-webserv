@@ -23,7 +23,7 @@ Server::Server() : _config(Config()) {
 }
 
 Server::Server(const Config &config) : _config(config) {
-	LOG(INFO) << "Initializing server with default configuration...";
+	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
 	oss << _config;
@@ -162,7 +162,7 @@ void Server::handleNewConnection(const int listenFd) {
 }
 
 void Server::handleClientRead(const int clientFd) {
-	const Client *client = _clients[clientFd];
+	Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	char buffer[4096];
 
@@ -184,6 +184,8 @@ void Server::handleClientRead(const int clientFd) {
 	_mainProcessor.handle(*ctx);
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
+		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
+									  client->getPort(), "");
 		const std::string responseStr = ResponseBuilder::build(*ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
@@ -196,7 +198,7 @@ void Server::handleClientRead(const int clientFd) {
 }
 
 void Server::handleClientWrite(const int clientFd) {
-	const Client *client = _clients[clientFd];
+	Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
 	const std::string &sendBuffer = sock->getSendBuffer();
 
@@ -227,6 +229,7 @@ void Server::closeConnection(const int clientFd) {
 	const std::map<int, Client *>::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"
+				  << attr("client_ip", it->second->getIp())
 				  << attr("fd", clientFd);
 		delete it->second;
 		_clients.erase(it);
