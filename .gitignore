@@ -6,7 +6,6 @@
 *.log.*
 *.db
 *.pdf
-logs/*
 *venv*
 out
 obj

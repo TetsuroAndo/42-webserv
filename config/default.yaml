@@ -12,6 +12,34 @@ servers:
       timeoutSec: 60
       maxEvents: 1024
 
+      access_logs:
+        - access_log:
+            sink: file
+            filename: access.log
+            logDir: ./logs
+            format: ELF
+            maxSize: 100KB
+            maxBackup: 5
+
+      error_logs:
+        - error_log:
+            sink: file
+            filename: error.log
+            logDir: ./logs
+            format: JSON
+            level: info
+            filterMode: GREATER_OR_EQUAL
+            maxSize: 1MB
+            maxBackup: 3
+        - error_log:
+            sink: file
+            filename: debug.log
+            format: ELF
+            level: debug
+            filterMode: exact
+            maxSize: 1MB
+            maxBackup: 3
+
       locations:
         # Default location, allows most things, autoindex on
         - location:

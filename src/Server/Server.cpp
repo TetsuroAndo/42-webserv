@@ -1,6 +1,8 @@
 #include "Server.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
+#include "../Lib/Logger/ErrorLog/LogBuilder.hpp"
+#include "Logging/Logging.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <fcntl.h>
@@ -9,11 +11,19 @@
 #include <unistd.h>
 
 Server::Server() : _config(Config()) {
+	Logging::setupLoggers(_config);
+	std::ostringstream oss;
+	oss << _config;
+	LOG(DEBUG) << oss.str();
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 }
 
 Server::Server(const Config &config) : _config(config) {
+	Logging::setupLoggers(_config);
+	std::ostringstream oss;
+	oss << _config;
+	LOG(DEBUG) << oss.str();
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 }
@@ -71,6 +81,7 @@ void Server::setupListenSockets() {
 }
 
 void Server::run() {
+	LOG(INFO) << "Server is running.";
 	while (true) {
 		const int nEvents = _manager.wait(-1);
 		if (nEvents < 0) {
