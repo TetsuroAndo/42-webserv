@@ -33,6 +33,7 @@ int main(const int argc, char **argv) {
 		}
 	} catch (const std::exception &e) {
 		LOG(FATAL) << "Server failed to start: " << e.what();
+		std::cerr << "[ FATAL ] " << e.what() << std::endl;
 		return 1;
 	}
 	return 0;

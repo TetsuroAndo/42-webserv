@@ -1,11 +1,6 @@
 NAME		:= webserv
 
 UNAME_S 		:= $(shell uname -s)
-ifeq ($(UNAME_S),Darwin) # MacOS
-	CONF			:= $(CONF_DIR)/default.conf
-else # Linux
-	CONF			:= $(CONF_DIR)/default.conf
-endif
 
 CXX			:= c++
 CXXFLAG		:= -Wall -Wextra -Werror -std=c++98 -pedantic
@@ -17,7 +12,7 @@ ROOT_DIR		:= .
 SRC_DIR			:= $(ROOT_DIR)/src
 OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
-CONF			:= $(CONF_DIR)/default.conf
+CONF			:= $(CONF_DIR)/default.yaml
 
 SRC := $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 
