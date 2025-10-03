@@ -39,7 +39,7 @@ re: fclean all
 # =========== ORIGINAL RULES ============
 
 # Build and run
-run: all
+run: $(NAME)
 	./$(NAME) $(CONF)
 
 # Clean log files
