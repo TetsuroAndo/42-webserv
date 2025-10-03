@@ -39,24 +39,47 @@ re: fclean all
 # =========== ORIGINAL RULES ============
 
 # Build and run
-run:
+run: all
 	./$(NAME) $(CONF)
 
+# Clean log files
+clog:
+	$(RM) logs/*.log*
+
 # Aliases
-c:
+c: clog
 	$(RM) $(OBJ_DIR)
 f: c
 	$(RM) $(NAME)
 r: f all
-
-clog:
-	$(RM) logs/*.log*
 
 # Debug build
 debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
 	$(MAKE) $(NAME) -j $(shell nproc)
+
+# ============= STATIC ANALYSIS =============
+
+# clang-tidy rule
+TIDY := clang-tidy
+TIDYFLAGS := --warnings-as-errors=* -checks=*
+
+tidy: $(SRC)
+	$(TIDY) $(TIDYFLAGS) $^ -- -std=c++98 $(CXXFLAG)
+	@echo "================================"
+	@echo "== Static Analysis Complete! =="
+	@echo "================================"
+
+# cppcheck rule
+CPPCHECK := cppcheck
+CPPCHECKFLAGS := --enable=all --inconclusive --std=c++98 --force --quiet
+
+check:
+	@$(CPPCHECK) $(CPPCHECKFLAGS) $(SRC)
+	@echo "================================"
+	@echo "== Static Analysis Complete! =="
+	@echo "================================"
 
 # ============= BUILD RULES =============
 
@@ -108,7 +131,13 @@ help:
 	@echo "  clean		Clean object files"
 	@echo "  fclean		Fully clean (clean + remove executable)"
 	@echo "  re			Rebuild (fclean + all)"
+	@echo "  clog		Clean log files"
+	@echo "  c			Alias for 'clean' and 'clog'"
+	@echo "  f			Alias for 'fclean' and 'clog'"
+	@echo "  r			Alias for 're' (fclean + all) and 'clog'"
 	@echo "  debug		Build with debug flags"
+	@echo "  tidy		Run static analysis using clang-tidy"
+	@echo "  check		Run static analysis using cppcheck"
 	@echo "  nm			List undefined symbols in object files"
 	@echo "  nmbin		List undefined symbols in the executable"
 	@echo "  printsrc	Print source files"
@@ -117,4 +146,4 @@ help:
 	@echo "  view		View source code"
 	@echo "  help		Print this help message"
 
-.PHONY:
+.PHONY: all clean fclean re run clog c f r debug tidy check nm nmbin printsrc printobj fill view help
