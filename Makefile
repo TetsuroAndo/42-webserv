@@ -49,6 +49,9 @@ f: c
 	$(RM) $(NAME)
 r: f all
 
+clog:
+	$(RM) logs/*.log*
+
 # Debug build
 debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL

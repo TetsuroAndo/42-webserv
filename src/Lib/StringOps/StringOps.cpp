@@ -21,6 +21,12 @@ struct CharEqualIgnoreCase {
 	}
 };
 
+struct CharToUpper {
+	char operator()(const char c) const {
+		return std::toupper(static_cast<unsigned char>(c));
+	}
+};
+
 struct CharToLower {
 	char operator()(const char c) const {
 		return std::tolower(static_cast<unsigned char>(c));
@@ -124,11 +130,42 @@ void trim(std::string &s, const std::string &chars) {
 	s = s.substr(start, end - start);
 }
 
+std::string trim(const std::string &s, const std::string &chars) {
+	std::string result = s;
+	trim(result, chars);
+	return result;
+}
+
+/**
+ * @brief 文字列を大文字に変換する
+ */
+void toUpper(std::string &str) {
+	std::transform(str.begin(), str.end(), str.begin(), CharToUpper());
+}
+
 /**
  * @brief 文字列を小文字に変換する
  */
 void toLower(std::string &str) {
 	std::transform(str.begin(), str.end(), str.begin(), CharToLower());
+}
+
+/**
+ * @brief 大文字に変換した新しい文字列を返す
+ */
+std::string toUpper(const std::string &str) {
+	std::string result = str;
+	toUpper(result);
+	return result;
+}
+
+/**
+ * @brief 小文字に変換した新しい文字列を返す
+ */
+std::string toLower(const std::string &str) {
+	std::string result = str;
+	toLower(result);
+	return result;
 }
 
 /**
@@ -254,11 +291,7 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 	}
 
 	// 単位部分の抽出
-	unit_part = sizeStr.substr(i);
-	trim(unit_part);
-	for (size_t j = 0; j < unit_part.length(); ++j) {
-		unit_part[j] = std::toupper(unit_part[j]);
-	}
+	unit_part = toUpper(trim(sizeStr.substr(i)));
 
 	const size_t max_size_t = std::numeric_limits<size_t>::max();
 	if (unit_part.empty() || unit_part == "B") {

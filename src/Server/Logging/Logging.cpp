@@ -2,6 +2,7 @@
 #include "../../Lib/Logger/AccessLog/AccessLogger.hpp"
 #include "../../Lib/Logger/ErrorLog/Logger.hpp"
 #include <vector>
+#include <iostream>
 
 namespace {
 
