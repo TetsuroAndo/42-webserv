@@ -73,7 +73,7 @@ tidy: $(SRC)
 
 # cppcheck rule
 CPPCHECK := cppcheck
-CPPCHECKFLAGS := --enable=all --inconclusive --std=c++98 --force --quiet
+CPPCHECKFLAGS := --enable=all --inconclusive --std=c++03 --force --quiet
 
 check:
 	@$(CPPCHECK) $(CPPCHECKFLAGS) $(SRC)
