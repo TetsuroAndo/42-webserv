@@ -17,7 +17,6 @@ Server::Server() : _config(Config()) {
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
-	/*
 	LOG(INFO) << "Setting up listening sockets...";
 	LOG(WARNING)
 		<< "Warning: Using default configuration. It is recommended to provide a custom configuration file.";
@@ -25,7 +24,6 @@ Server::Server() : _config(Config()) {
 		<< "Error: No configuration file provided. Using default settings may lead to unexpected behavior.";
 	LOG(FATAL)
 		<< "Fatal: Critical error in configuration. Server may not function as expected.";
-	*/
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";
@@ -37,7 +35,6 @@ Server::Server(const Config &config) : _config(config) {
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
-	/*
 	LOG(INFO) << "Setting up listening sockets...";
 	LOG(WARNING) << "Warning: Using default configuration. It is recommended "
 					"to provide a custom configuration file.";
@@ -45,7 +42,6 @@ Server::Server(const Config &config) : _config(config) {
 				  "settings may lead to unexpected behavior.";
 	LOG(FATAL) << "Fatal: Critical error in configuration. Server may not "
 				  "function as expected.";
-	*/
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";
