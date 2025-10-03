@@ -162,7 +162,7 @@ void Server::handleNewConnection(const int listenFd) {
 }
 
 void Server::handleClientRead(const int clientFd) {
-	Client *client = _clients[clientFd];
+	const Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	char buffer[4096];
 
@@ -198,7 +198,7 @@ void Server::handleClientRead(const int clientFd) {
 }
 
 void Server::handleClientWrite(const int clientFd) {
-	Client *client = _clients[clientFd];
+	const Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
 	const std::string &sendBuffer = sock->getSendBuffer();
 
