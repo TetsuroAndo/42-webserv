@@ -1,0 +1,82 @@
+name: pull_request_size_checker
+on: pull_request
+
+jobs:
+  pull_request_size_checker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # プルリクサイズの取得
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Get Pull Request Size
+        env:
+          EXCLUDE_PATH: "node_modules|dist|playground|*.log|*.md|*.txt|*.json|*.yml|*.yaml|*.xml|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico|*.pdf"
+        run: |
+          base_branch_name=${{ github.base_ref }}
+          echo "base_branch_name: $base_branch_name"
+          head_branch_name=${{ github.head_ref }}
+          echo "head_branch_name: $head_branch_name"
+          base_commit=$(git merge-base origin/$head_branch_name origin/$base_branch_name)
+          echo "base_commit: $base_commit"
+          head_commit=$(git rev-parse origin/$head_branch_name)
+          echo "head_commit: $head_commit"
+
+          # 追加した行数
+          add_lines=$(git diff $base_commit...$head_commit --numstat ":(exclude)*${EXCLUDE_PATH}*" | awk '{ additions+=$1 } END { printf "%d", additions }')
+          # 消した行数
+          delete_lines=$(git diff $base_commit...$head_commit --numstat ":(exclude)*${EXCLUDE_PATH}*" | awk '{ additions+=$2 } END { printf "%d", additions }')
+          changed_lines=$(($add_lines+$delete_lines))
+          echo "add_lines: $add_lines"
+          echo "delete_lines: $delete_lines"
+          echo "changed_lines: $changed_lines"
+
+          # 差分ファイル数の取得
+          changed_files=$(git diff $base_commit...$head_commit --name-only ":(exclude)*${EXCLUDE_PATH}*" | wc -l)
+          echo "changed_files: $changed_files"
+
+          # 環境変数に保持（グローバルなところに保持し次のアクションでも参照できるようにしている）
+          echo "CHANGED_LINES=$changed_lines" >> $GITHUB_ENV
+          echo "CHANGED_FILES=$changed_files" >> $GITHUB_ENV
+
+      - name: Create comments
+        env:
+          CHANGED_LINES: ${{env.CHANGED_LINES}}
+          CHANGED_FILES: ${{env.CHANGED_FILES}}
+          # warningを出す閾値です。
+          # 状況に応じて調整してください。
+          # 調整しやすいようにENVから渡しています。
+          # 調整する時はこちらから調整してください。
+          # @see /settings/variables/actions
+          PULL_REQUEST_LIMIT_LINES: 512
+          PULL_REQUEST_LIMIT_FILES: 24
+        run: |
+          cat << EOF > comments
+          プルリク差分行数 ${CHANGED_LINES} 行
+          プルリク差分ファイル数 ${CHANGED_FILES} ファイル
+          EOF
+          # 行数による分岐
+          if [ $((${CHANGED_LINES})) -gt $((${PULL_REQUEST_LIMIT_LINES})) ]; then
+            echo "**[Warning]差分行数が多いので分割を検討してください！(LIMIT: ${PULL_REQUEST_LIMIT_LINES})**" >> comments;
+          else
+            echo "差分行数問題なし :+1:" >> comments
+          fi
+
+          # ファイル数による分岐
+          if [ $((${CHANGED_FILES})) -gt $((${PULL_REQUEST_LIMIT_FILES})) ]; then
+            echo "**[Warning]差分ファイル数が多いので分割を検討してください！(LIMIT: ${PULL_REQUEST_LIMIT_FILES})**" >> comments;
+          else
+            echo "差分ファイル数問題なし :+1:" >> comments
+          fi
+
+      - name: Post comments
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          URL: ${{ github.event.pull_request.html_url }}
+        run:
+          # OPTIMIZE: 今は変更がある度に差分が問題ないかを計算して必ずコメントをするようになっています。
+          # 問題ない場合はコメントしない、などが必要であればここで条件分岐してください。
+          gh pr comment -F ./comments "${URL}"

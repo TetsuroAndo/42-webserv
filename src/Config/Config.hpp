@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Lib/Logger/ErrorLog/LogStructure.hpp"
+#include "../Lib/Logger/LogType.hpp"
 #include <map>
 #include <ostream>
 #include <set>
@@ -32,11 +34,45 @@ struct Location {
 	Location() : autoindex(false) {}
 };
 
+struct AccessLog {
+	bool isDisable;
+	LogSinkType sink;
+	std::string filename;
+	std::string logDir;
+	LogFormat format;
+	size_t maxFileSize;
+	size_t maxBackupFiles;
+
+	AccessLog()
+		: isDisable(false), sink(File), filename("access.log"),
+		  logDir("./logs"), format(ELF), maxFileSize(10 * 1024 * 1024),
+		  maxBackupFiles(5) {}
+};
+
+struct ErrorLog {
+	bool isDisable;
+	LogSinkType sink;
+	std::string filename;
+	std::string logDir;
+	LogFormat format;
+	LogLevel level;
+	LogFilterMode filterMode;
+	size_t maxFileSize;
+	size_t maxBackupFiles;
+
+	ErrorLog()
+		: isDisable(false), sink(File), filename("error.log"), logDir("./logs"),
+		  format(ELF), level(WARNING), filterMode(GREATER_OR_EQUAL),
+		  maxFileSize(10 * 1024 * 1024), maxBackupFiles(5) {}
+};
+
 class Config {
 private:
 	std::vector<Listen> _listens;
 	std::map<std::string, Redirect> _redirects;
 	std::map<std::string, Location> _locations;
+	std::vector<AccessLog> _accessLogs;
+	std::vector<ErrorLog> _errorLogs;
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
@@ -81,6 +117,8 @@ private:
 	void parseListens(const Node *node);
 	void parseRedirects(Node *node);
 	void parseLocations(Node *node);
+	void parseAccessLogs(Node *node);
+	void parseErrorLogs(Node *node);
 
 public:
 	Config();
@@ -94,6 +132,8 @@ public:
 	const Redirect &getRedirect(const std::string &path) const;
 	const std::map<std::string, Location> &getLocations() const;
 	const Location &getLocation(const std::string &path) const;
+	const std::vector<AccessLog> &getAccessLogs() const;
+	const std::vector<ErrorLog> &getErrorLogs() const;
 
 	unsigned int getMaxRequestBodySize() const;
 	unsigned int getTimeoutSec() const;

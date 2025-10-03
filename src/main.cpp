@@ -1,5 +1,6 @@
 #include "Server/Server.hpp"
 #include "Lib/Message/Help.hpp"
+#include "Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include <iostream>
 
 #define VERSION "0.9"
@@ -31,7 +32,7 @@ int main(const int argc, char **argv) {
 				return 1;
 		}
 	} catch (const std::exception &e) {
-		std::cerr << "[42/Webserv Error] " << e.what() << std::endl;
+		LOG(FATAL) << "Server failed to start: " << e.what();
 		return 1;
 	}
 	return 0;

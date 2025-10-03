@@ -1,6 +1,8 @@
 #include "Config.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
+#include "../Lib/Logger/LogType.hpp"
+#include "../Lib/Logger/ErrorLog/Logger.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -114,6 +116,8 @@ void Config::initDefaults() {
 	_listens.clear();
 	_redirects.clear();
 	_locations.clear();
+	_accessLogs.clear();
+	_errorLogs.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
 	_timeoutSec = 60;
@@ -130,6 +134,9 @@ void Config::initDefaults() {
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
 	_locations["/"] = defaultLoc;
+
+	_accessLogs.push_back(AccessLog());
+	_errorLogs.push_back(ErrorLog());
 }
 
 Config::Config() {
@@ -144,7 +151,8 @@ Config::Config(const std::string &configFile) {
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
-	  _locations(other._locations),
+	  _locations(other._locations), _accessLogs(other._accessLogs),
+	  _errorLogs(other._errorLogs),
 	  _maxRequestBodySize(other._maxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
 
@@ -153,6 +161,8 @@ Config &Config::operator=(const Config &other) {
 		_listens = other._listens;
 		_redirects = other._redirects;
 		_locations = other._locations;
+		_accessLogs = other._accessLogs;
+		_errorLogs = other._errorLogs;
 		_maxRequestBodySize = other._maxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
@@ -286,7 +296,191 @@ void Config::parseLocations(Node *node) {
 	}
 }
 
+void Config::parseAccessLogs(Node *node) {
+	if (!node) return;
+
+	std::vector<AccessLog> configuredLogs;
+	const std::vector<Node *> &logs = node->getSeq();
+
+	bool isDisabledFound = false;
+	bool isEnabledFound = false;
+
+	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
+		Node *logNode = *it;
+		if (logNode->getKey() != "access_log") {
+			continue;
+		}
+
+		AccessLog log;
+
+		Node *disableNode = logNode->getMapNode("disable");
+		Node *sinkNode = logNode->getMapNode("sink");
+		Node *filenameNode = logNode->getMapNode("filename");
+		Node *logDirNode = logNode->getMapNode("logDir");
+		Node *formatNode = logNode->getMapNode("format");
+		Node *maxSizeNode = logNode->getMapNode("maxSize");
+		Node *maxBackupNode = logNode->getMapNode("maxBackup");
+
+		const bool isDisabled = disableNode && StringOps::equalsIgnoreCase(
+											 disableNode->getValue(), "true");
+
+		if (isDisabled) {
+			isDisabledFound = true;
+		} else {
+			isEnabledFound = true;
+		}
+
+		if (isDisabled) {
+			if (sinkNode || filenameNode || logDirNode || formatNode || maxSizeNode || maxBackupNode) {
+				throw std::runtime_error("Config error in access_log: When 'disable' is true, other directives are not allowed.");
+			}
+			log.isDisable = true;
+			configuredLogs.push_back(log);
+			continue;
+		}
+
+		log.isDisable = false;
+
+		if (!sinkNode) throw std::runtime_error("Config error in access_log: 'sink' is required.");
+		const std::string sinkValue = StringOps::toUpper(sinkNode->getValue());
+		if (sinkValue == "FILE") log.sink = File;
+		else if (sinkValue == "CONSOLE") log.sink = Console;
+		else throw std::runtime_error("Config error in access_log: 'sink' must be 'file' or 'console'.");
+
+		if (formatNode) {
+			const std::string formatValue = StringOps::toUpper(formatNode->getValue());
+			if (formatValue == "JSON") log.format = JSON;
+			else if (formatValue == "ELF") log.format = ELF;
+			else throw std::runtime_error("Config error in access_log: invalid format type.");
+		}
+
+		if (sinkValue == "FILE") {
+			if (filenameNode)
+				log.filename = filenameNode->getValue();
+			if (logDirNode)
+				log.logDir = logDirNode->getValue();
+
+			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
+			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
+		} else {
+			if (filenameNode) throw std::runtime_error("Config error in access_log: 'filename' is not allowed for 'console' sink.");
+			if (logDirNode) throw std::runtime_error("Config error in access_log: 'logDir' is not allowed for 'console' sink.");
+			if (maxSizeNode) throw std::runtime_error("Config error in access_log: 'maxSize' is not allowed for 'console' sink.");
+			if (maxBackupNode) throw std::runtime_error("Config error in access_log: 'maxBackup' is not allowed for 'console' sink.");
+		}
+		configuredLogs.push_back(log);
+	}
+	if (isDisabledFound && isEnabledFound) {
+		throw std::runtime_error("Config error in access_log: Cannot mix 'disable: true' with other valid access log configurations.");
+	}
+	if (!configuredLogs.empty()) {
+		_accessLogs = configuredLogs;
+	}
+}
+
+void Config::parseErrorLogs(Node *node) {
+	if (!node) return;
+
+	std::vector<ErrorLog> configuredLogs;
+	const std::vector<Node *> &logs = node->getSeq();
+
+	bool isDisabledFound = false;
+	bool isEnabledFound = false;
+
+	for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
+		Node *logNode = *it;
+		if (logNode->getKey() != "error_log") {
+			continue;
+		}
+
+		ErrorLog log;
+
+		Node *disableNode = logNode->getMapNode("disable");
+		Node *sinkNode = logNode->getMapNode("sink");
+		Node *filenameNode = logNode->getMapNode("filename");
+		Node *logDirNode = logNode->getMapNode("logDir");
+		Node *formatNode = logNode->getMapNode("format");
+		Node *levelNode = logNode->getMapNode("level");
+		Node *modeNode = logNode->getMapNode("mode");
+		Node *maxSizeNode = logNode->getMapNode("maxSize");
+		Node *maxBackupNode = logNode->getMapNode("maxBackup");
+
+		const bool isDisabled = disableNode && StringOps::equalsIgnoreCase(
+											 disableNode->getValue(), "true");
+
+		if (isDisabled) {
+			isDisabledFound = true;
+		} else {
+			isEnabledFound = true;
+		}
+
+		if (isDisabled) {
+			if (sinkNode || filenameNode || logDirNode || formatNode || levelNode || modeNode || maxSizeNode || maxBackupNode) {
+				throw std::runtime_error("Config error in error_log: When 'disable' is true, other directives are not allowed.");
+			}
+			log.isDisable = true;
+			configuredLogs.push_back(log);
+			continue;
+		}
+
+		log.isDisable = false;
+
+		if (!sinkNode) throw std::runtime_error("Config error in error_log: 'sink' is required.");
+		const std::string sinkValue = StringOps::toUpper(sinkNode->getValue());
+		if (sinkValue == "FILE") log.sink = File;
+		else if (sinkValue == "CONSOLE") log.sink = Console;
+		else throw std::runtime_error("Config error in error_log: 'sink' must be 'file' or 'console'.");
+
+		if (formatNode) {
+			const std::string formatValue = StringOps::toUpper(formatNode->getValue());
+			if (formatValue == "JSON") log.format = JSON;
+			else if (formatValue == "ELF") log.format = ELF;
+			else throw std::runtime_error("Config error in error_log: invalid format type.");
+		}
+
+		if (levelNode) {
+			const std::string levelValue = StringOps::toUpper(levelNode->getValue());
+			if (levelValue == "DEBUG") log.level = DEBUG;
+			else if (levelValue == "INFO") log.level = INFO;
+			else if (levelValue == "WARNING") log.level = WARNING;
+			else if (levelValue == "ERROR") log.level = ERROR;
+			else if (levelValue == "FATAL") log.level = FATAL;
+			else throw std::runtime_error("Config error in error_log: invalid log level.");
+		}
+
+		if (modeNode) {
+			const std::string modeValue = StringOps::toUpper(modeNode->getValue());
+			if (modeValue == "GREATER_OR_EQUAL") log.filterMode = GREATER_OR_EQUAL;
+			else if (modeValue == "EXACT") log.filterMode = EXACT;
+			else throw std::runtime_error("Config error in error_log: invalid filter mode.");
+		}
+
+		if (sinkValue == "FILE") {
+			if (filenameNode)
+				log.filename = filenameNode->getValue();
+			if (logDirNode)
+				log.logDir = logDirNode->getValue();
+
+			if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
+			if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
+		} else {
+			if (filenameNode) throw std::runtime_error("Config error in error_log: 'filename' is not allowed for 'console' sink.");
+			if (logDirNode) throw std::runtime_error("Config error in error_log: 'logDir' is not allowed for 'console' sink.");
+			if (maxSizeNode) throw std::runtime_error("Config error in error_log: 'maxSize' is not allowed for 'console' sink.");
+			if (maxBackupNode) throw std::runtime_error("Config error in error_log: 'maxBackup' is not allowed for 'console' sink.");
+		}
+		configuredLogs.push_back(log);
+	}
+	if (isDisabledFound && isEnabledFound) {
+		throw std::runtime_error("Config error in error_log: Cannot mix 'disable: true' with other valid error log configurations.");
+	}
+	if (!configuredLogs.empty()) {
+		_errorLogs = configuredLogs;
+	}
+}
+
 void Config::setup(const std::string &configFile) {
+	LOG(INFO) << "Loading configuration from: " << configFile;
 	const MyYAML yaml(configFile);
 	const Node *serversNode = yaml.getData().getMapNode("servers");
 	if (!serversNode) {
@@ -310,6 +504,12 @@ void Config::setup(const std::string &configFile) {
 	}
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		parseLocations(locationsNode);
+	}
+	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
+		parseAccessLogs(accessLogsNode);
+	}
+	if (Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
+		parseErrorLogs(errorLogsNode);
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
@@ -377,6 +577,14 @@ const Location &Config::getLocation(const std::string &path) const {
 	throw std::runtime_error("Config error: default location '/' not found");
 }
 
+const std::vector<AccessLog> &Config::getAccessLogs() const {
+	return _accessLogs;
+}
+
+const std::vector<ErrorLog> &Config::getErrorLogs() const {
+	return _errorLogs;
+}
+
 unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
 }
@@ -428,6 +636,53 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 			 cit != it->second.cgiConf.end(); ++cit) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
 		}
+	}
+
+	os << "  accessLogs:\n";
+	for (std::vector<AccessLog>::const_iterator it = config._accessLogs.begin();
+		 it != config._accessLogs.end(); ++it) {
+		os << "    - isDisable: " << (it->isDisable ? "true" : "false") << "\n";
+		os << "      sink: " << (it->sink == File ? "file" : "console") << "\n";
+		os << "      filename: " << it->filename << "\n";
+		os << "      logDir: " << it->logDir << "\n";
+		os << "      format: " << (it->format == JSON ? "json" : "elf") << "\n";
+		os << "      maxFileSize: " << it->maxFileSize << "\n";
+		os << "      maxBackupFiles: " << it->maxBackupFiles << "\n";
+	}
+
+	os << "  errorLogs:\n";
+	for (std::vector<ErrorLog>::const_iterator it = config._errorLogs.begin();
+		 it != config._errorLogs.end(); ++it) {
+		os << "    - isDisable: " << (it->isDisable ? "true" : "false") << "\n";
+		os << "      sink: " << (it->sink == File ? "FILE" : "CONSOLE") << "\n";
+		os << "      filename: " << it->filename << "\n";
+		os << "      logDir: " << it->logDir << "\n";
+		os << "      format: " << (it->format == JSON ? "JSON" : "ELF") << "\n";
+		os << "      level: ";
+		switch (it->level) {
+		case DEBUG:
+			os << "DEBUG";
+			break;
+		case INFO:
+			os << "INFO";
+			break;
+		case WARNING:
+			os << "WARNING";
+			break;
+		case ERROR:
+			os << "ERROR";
+			break;
+		case FATAL:
+			os << "FATAL";
+			break;
+		}
+		os << "\n";
+		os << "      filterMode: "
+		   << (it->filterMode == GREATER_OR_EQUAL ? "GREATER_OR_EQUAL"
+												  : "EXACT")
+		   << "\n";
+		os << "      maxFileSize: " << it->maxFileSize << "\n";
+		os << "      maxBackupFiles: " << it->maxBackupFiles << "\n";
 	}
 	return os;
 }
