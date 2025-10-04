@@ -292,6 +292,26 @@ void Config::parseLocations(Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
+
+		if (Node *cgiNode = l_node->getMapNode("cgi")) {
+			const std::vector<std::string> extensions = cgiNode->getKeys();
+			for (std::vector<std::string>::const_iterator ext_it = extensions.begin();
+				 ext_it != extensions.end(); ++ext_it) {
+				const std::string& extension = *ext_it;
+				Node *interpreterNode = cgiNode->getMapNode(extension);
+				const std::string& interpreterPath = interpreterNode->getValue();
+
+				if (extension.empty() || extension[0] != '.') {
+					throw std::runtime_error("Config error: CGI extension must start with a '.'. Found: " + extension);
+				}
+				if (interpreterPath.empty()) {
+					throw std::runtime_error("Config error: CGI interpreter path cannot be empty for extension " + extension);
+				}
+
+				loc.cgiConf[extension] = interpreterPath;
+			}
+		}
+
 		_locations[loc.path] = loc;
 	}
 }
