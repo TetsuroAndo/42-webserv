@@ -1,14 +1,16 @@
 #include "StaticFileHandler.hpp"
-#include "HandlerUtil.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
+#include "../Lib/Logger/Log.hpp"
+#include "HandlerUtil.hpp"
 #include <algorithm>
+#include <cstring>
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
-#include <vector>
-#include <sys/stat.h>
 #include <sstream>
+#include <sys/stat.h>
+#include <vector>
 
 namespace {
 enum FileReadStatus {
@@ -24,6 +26,8 @@ FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 
 	std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
 	if (!file) {
+		LOG(ERROR) << "Failed to open file" << attr("path", filePath)
+				   << attr("error", strerror(errno));
 		return FILE_READ_FORBIDDEN;
 	}
 
@@ -48,7 +52,11 @@ void StaticFileHandler::generateDirectoryListing(
 	const std::string &requestPath) {
 	DIR *dir = opendir(directoryPath.c_str());
 	if (!dir) {
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		LOG(ERROR) << "Failed to open directory for listing"
+				   << attr("path", directoryPath)
+				   << attr("error", strerror(errno));
+		HandlerUtil::generateErrorBody(req.getMethod(), res,
+									   HttpStatus::INTERNAL_SERVER_ERROR);
 		return;
 	}
 
@@ -93,15 +101,22 @@ void StaticFileHandler::generateDirectoryListing(
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 									   const Config &config) {
 	HttpResponse res(SERVER_NAME);
+	LOG(INFO) << "StaticFileHandler processing request"
+			  << attr("method", req.getMethod())
+			  << attr("uri", req.getPath());
 
 	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
+		LOG(WARNING) << "No matching location found for URI"
+					 << attr("uri", req.getPath());
 		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
 	struct stat pathStat;
 	if (stat(filePath.c_str(), &pathStat) != 0) {
+		LOG(WARNING) << "File or directory not found" << attr("path", filePath)
+					 << attr("error", strerror(errno));
 		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
@@ -112,10 +127,13 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode)) {
+			LOG(DEBUG) << "Serving index file" << attr("path", indexPath);
 			filePath = indexPath;
 			pathStat = indexStat;
 		} else {
 			if (loc.autoindex) {
+				LOG(INFO) << "Generating directory listing for"
+						  << attr("path", filePath);
 				generateDirectoryListing(res, req, filePath, req.getPath());
 				if (req.getMethod() != "GET") {
 					std::ostringstream oss;
@@ -124,6 +142,8 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 					res.setBody("");
 				}
 			} else {
+				LOG(WARNING) << "Directory listing is disabled for"
+							 << attr("path", filePath);
 				HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			}
 			return res;
@@ -146,6 +166,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 				oss << pathStat.st_size;
 				res.setHeader("Content-Length", oss.str());
 			}
+			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
 			break;
 		case FILE_READ_NOT_FOUND:
 			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
@@ -162,6 +183,8 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			break;
 		}
 	} else {
+		LOG(WARNING) << "Requested path is not a regular file or directory"
+					 << attr("path", filePath);
 		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 	}
 	return res;

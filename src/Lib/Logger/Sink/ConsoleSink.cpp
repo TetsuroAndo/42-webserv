@@ -5,5 +5,12 @@
 ConsoleSink::ConsoleSink(LogForm *form)
 	: LogSink(form) {}
 
-void ConsoleSink::log(const LogMessage &msg) { _form->format(msg, std::cout); }
-void ConsoleSink::logAccess(const AccessLogContext& ctx) { _form->formatAccess(ctx, std::cout); }
+void ConsoleSink::log(const LogMessage &msg) {
+	_form->format(msg, std::cout);
+	std::cout << std::endl;
+}
+
+void ConsoleSink::logAccess(const AccessLogContext& ctx) {
+	_form->formatAccess(ctx, std::cout);
+	std::cout << std::endl;
+}

@@ -2,8 +2,9 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "../Lib/Logger/Log.hpp"
 #include "HandlerUtil.hpp"
-
+#include <cstring>
 #include <iostream>
 
 PostHandler::PostHandler()
@@ -17,6 +18,10 @@ PostHandler::~PostHandler()
 HttpResponse PostHandler::handle(const HttpRequest& req, const Config& config)
 {
 	HttpResponse response(SERVER_NAME);
+	LOG(INFO) << "PostHandler processing request"
+			  << attr("method", req.getMethod())
+			  << attr("uri", req.getPath());
+
 	const std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
 	//工事現場はこちらです。
 	// std::cout << "Called!: \n"
