@@ -2,6 +2,16 @@
 #include "TimeFormatter.hpp"
 #include <ctime>
 
+time_t TimeCache::_lastUpdateTime = 0;
+std::string TimeCache::_cachedGmtTime;
+std::string TimeCache::_cachedGmtDate;
+std::string TimeCache::_cachedLocalTime;
+std::string TimeCache::_cachedLocalDate;
+std::string TimeCache::_cachedHeaderTimestamp;
+std::string TimeCache::_cachedLocalTimestamp;
+std::string TimeCache::_cachedUtcTimestamp;
+std::string TimeCache::_cachedIsoTimestamp;
+
 void TimeCache::update() {
 	const time_t now = time(0);
 	if(now == _lastUpdateTime) {
