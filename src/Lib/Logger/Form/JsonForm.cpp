@@ -1,5 +1,6 @@
 #include "JsonForm.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
+#include "../../Time/TimeFormatter.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -47,9 +48,8 @@ std::string JsonForm::escapeJson(const std::string &str) const {
  * @param out 出力ストリーム
  */
 void JsonForm::format(const LogMessage &msg, std::ostream &out) {
-	char timeStr[20];
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S",
-			 localtime(&msg.timestamp)); // TODO: キャッシュから呼び出すようにする
+	std::string timeStr;
+	TimeFormatter::getLocalTimestamp(timeStr, *localtime(&msg.timestamp));
 
 	out << "{";
 	out << "\"timestamp\":\"" << timeStr << "\",";
@@ -79,8 +79,8 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 		return;
 	}
 
-	char timeStr[21];
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&ctx.timestamp)); // TODO: キャッシュから呼び出すようにする
+	std::string timeStr;
+	TimeFormatter::getIsoTimestamp(timeStr, *gmtime(&ctx.timestamp));
 
 	std::string uri = ctx.request->getPath();
 	const std::map<std::string, std::string>& queries = ctx.request->getQueries();

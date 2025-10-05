@@ -33,7 +33,7 @@ std::string ResponseBuilder::build(HttpResponse &res) {
 
 void ResponseBuilder::addDateHeader(HttpResponse &res) {
 	if (!res.hasHeader("Date")) {
-		res.setHeader("Date", TimeCache::getGmtTime());
+		res.setHeader("Date", TimeCache::getHeaderTimestamp());
 	}
 }
 

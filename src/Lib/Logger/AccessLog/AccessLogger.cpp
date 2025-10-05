@@ -94,7 +94,7 @@ void AccessLogger::log(const HttpRequest* request,
 				 int client_port,
 				 std::string session_id) {
 	AccessLogContext ctx = {
-		std::time(NULL), // TODO: キャッシュから呼び出すようにする
+		std::time(NULL),
 		request,
 		response,
 		remote_addr,

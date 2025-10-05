@@ -1,4 +1,5 @@
 #include "TimeCache.hpp"
+#include "TimeFormatter.hpp"
 #include <ctime>
 
 void TimeCache::update() {
@@ -10,15 +11,17 @@ void TimeCache::update() {
 
 	struct tm gmt;
 	gmtime_r(&now, &gmt);
-	char gmtBuf[64];
-	strftime(gmtBuf, sizeof(gmtBuf), "%a, %d %b %Y %H:%M:%S GMT", &gmt);
-	_cachedGmtTime = gmtBuf;
+	TimeFormatter::getTime(_cachedGmtTime, gmt);
+	TimeFormatter::getDate(_cachedGmtDate, gmt);
+	TimeFormatter::getUtcTimestamp(_cachedUtcTimestamp, gmt);
+	TimeFormatter::getIsoTimestamp(_cachedIsoTimestamp, gmt);
+	TimeFormatter::getHeaderTimestamp(_cachedHeaderTimestamp, gmt);
 
 	struct tm local;
 	localtime_r(&now, &local);
-	char localBuf[64];
-	strftime(localBuf, sizeof(localBuf), "%Y-%m-%d %H:%M:%S %Z", &local);
-	_cachedLocalTime = localBuf;
+	TimeFormatter::getTime(_cachedLocalTime, local);
+	TimeFormatter::getDate(_cachedLocalDate, local);
+	TimeFormatter::getLocalTimestamp(_cachedLocalTimestamp, local);
 }
 
 const std::string &TimeCache::getGmtTime() {
@@ -26,7 +29,37 @@ const std::string &TimeCache::getGmtTime() {
 	return _cachedGmtTime;
 }
 
+const std::string &TimeCache::getGmtDate() {
+	update();
+	return _cachedGmtDate;
+}
+
 const std::string &TimeCache::getLocalTime() {
 	update();
 	return _cachedLocalTime;
+}
+
+const std::string &TimeCache::getLocalDate() {
+	update();
+	return _cachedLocalDate;
+}
+
+const std::string &TimeCache::getLocalTimestamp() {
+	update();
+	return _cachedLocalTimestamp;
+}
+
+const std::string &TimeCache::getUtcTimestamp() {
+	update();
+	return _cachedUtcTimestamp;
+}
+
+const std::string &TimeCache::getIsoTimestamp() {
+	update();
+	return _cachedIsoTimestamp;
+}
+
+const std::string &TimeCache::getHeaderTimestamp() {
+	update();
+	return _cachedHeaderTimestamp;
 }

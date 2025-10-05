@@ -1,6 +1,8 @@
 #include "ElfForm.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
 #include "../../StringOps/StringOps.hpp"
+#include "../../Time/TimeCache.hpp"
+#include "../../Time/TimeFormatter.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -44,9 +46,7 @@ void ElfForm::getErrorHeader(std::ostream &out) {
 }
 
 void ElfForm::getAccessHeader(std::ostream &out) {
-	char timeStr[21];
-	time_t now = time(NULL); // TODO: キャッシュから呼び出すようにする
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%SZ", gmtime(&now));
+	std::string timeStr = TimeCache::getUtcTimestamp();	
 	out << "#Version: 1.0\n";
 	out << "#Date: " << timeStr << "\n";
 	out << "#Software: webserv/42\n";
@@ -56,11 +56,11 @@ void ElfForm::getAccessHeader(std::ostream &out) {
 
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (!_headerWritten) getErrorHeader(out);
-	const tm *timeinfo = localtime(&msg.timestamp);  // TODO: キャッシュから呼び出すようにする
-	char dateStr[11];
-	char timeStr[9];
-	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
-	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
+	const tm *timeinfo = localtime(&msg.timestamp);
+	std::string dateStr;
+	TimeFormatter::getDate(dateStr, *timeinfo);
+	std::string timeStr;
+	TimeFormatter::getTime(timeStr, *timeinfo);
 
 	out << dateStr << " " << timeStr << " ";
 	out << LogForm::levelToString(msg.level) << " ";
@@ -87,12 +87,11 @@ void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 		return;
 	}
 	if (!_headerWritten) getAccessHeader(out);
-
-	const tm* timeinfo = gmtime(&ctx.timestamp); // TODO: キャッシュから呼び出すようにする
-	char dateStr[11];
-	char timeStr[9];
-	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
-	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
+	const tm *timeinfo = gmtime(&ctx.timestamp);
+	std::string dateStr;
+	TimeFormatter::getDate(dateStr, *timeinfo);
+	std::string timeStr;
+	TimeFormatter::getTime(timeStr, *timeinfo);
 
 	out << dateStr << " " << timeStr << " ";
 	out << (ctx.remote_addr.empty() ? "-" : ctx.remote_addr) << " ";

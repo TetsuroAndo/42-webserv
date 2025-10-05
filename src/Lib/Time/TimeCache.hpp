@@ -17,12 +17,24 @@ public:
 	 * @return キャッシュされた現在時刻の文字列
 	 */
 	static const std::string &getGmtTime();
+	static const std::string &getGmtDate();
 	static const std::string &getLocalTime();
+	static const std::string &getLocalDate();
+	static const std::string &getLocalTimestamp();
+	static const std::string &getIsoTimestamp();
+	static const std::string &getUtcTimestamp();
+	static const std::string &getHeaderTimestamp();
 
 private:
 	static time_t _lastUpdateTime;
 	static std::string _cachedGmtTime;
+	static std::string _cachedGmtDate;
 	static std::string _cachedLocalTime;
+	static std::string _cachedLocalDate;
+	static std::string _cachedHeaderTimestamp;
+	static std::string _cachedLocalTimestamp;
+	static std::string _cachedUtcTimestamp;
+	static std::string _cachedIsoTimestamp;
 
 	TimeCache();
 	TimeCache(const TimeCache &);
