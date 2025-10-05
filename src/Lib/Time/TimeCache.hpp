@@ -16,10 +16,13 @@ public:
 	 * キャッシュが古い場合は更新されます。
 	 * @return キャッシュされた現在時刻の文字列
 	 */
-	static const std::string &getCurrentTime();
+	static const std::string &getGmtTime();
+	static const std::string &getLocalTime();
 
 private:
-	static std::string _cachedTime;
+	static time_t _lastUpdateTime;
+	static std::string _cachedGmtTime;
+	static std::string _cachedLocalTime;
 
 	TimeCache();
 	TimeCache(const TimeCache &);
