@@ -3,15 +3,17 @@
 usage() {
 	echo "Usage: $0 [options] [path]"
 	echo "Options:"
-	echo "  -h, --help     Show this help message"
-	echo "  -t, --tree     Only show directory tree"
-	echo "  -v, --view     Only show file contents"
+	echo "  -h, --help         Show this help message"
+	echo "  -t, --tree         Only show directory tree"
+	echo "  -v, --view         Only show file contents"
+	echo "  -nc, --no-comments Do not remove comments from files"
 	echo "If no path is provided, the current directory will be used."
 }
 
 # Default options
 SHOW_TREE=true
 SHOW_VIEW=true
+REMOVE_COMMENTS=true
 TARGET_PATH="."
 
 # Parse command line arguments
@@ -29,6 +31,10 @@ while [[ $# -gt 0 ]]; do
 		-v|--view)
 			SHOW_TREE=false
 			SHOW_VIEW=true
+			shift
+			;;
+		-nc|--no-comments)
+			REMOVE_COMMENTS=false
 			shift
 			;;
 		-*)
@@ -135,28 +141,28 @@ if [[ "$SHOW_VIEW" == true ]]; then
 		local input_file="$1"
 		local relative_path="${input_file#$TARGET_PATH/}"
 		local file_ext="${input_file##*.}"
-		# libftディレクトリはスキップ
-		if [[ "$input_file" == *"/lib/libft/"* || "$input_file" == *"/lib/minilibx/"* ]]; then
-			return
-		fi
 		{
 			echo "----------------------------------------"
 			echo "File: $relative_path"
 			echo "----------------------------------------"
-			
-			if [[ "$relative_path" == *"Makefile"* ]]; then
-				sed 's/#.*$//' "$input_file" | awk 'NF'
+
+			if [[ "$REMOVE_COMMENTS" == true ]]; then
+				if [[ "$relative_path" == *"Makefile"* ]]; then
+					sed 's/#.*$//' "$input_file" | awk 'NF'
+				else
+					sed '
+						# 1行内で完結するブロックコメント /* ... */ を削除
+						s/\/\*.*\*\///g; 
+						# 複数行にまたがるブロックコメントを削除
+						/\/\*.*/,/.*\*\//d; 
+						# 行末コメント // ... を削除（コード部分は残す）
+						s/\/\/.*$//
+					' "$input_file" | awk 'NF'
+				fi
 			else
-				sed '
-					# 1行内で完結するブロックコメント /* ... */ を削除
-					s/\/\*.*\*\///g; 
-					# 複数行にまたがるブロックコメントを削除
-					/\/\*.*/,/.*\*\//d; 
-					# 行末コメント // ... を削除（コード部分は残す）
-					s/\/\/.*$//
-				' "$input_file" | awk 'NF'
+				cat "$input_file"
 			fi
-			
+
 			echo "----------------------------------------"
 			echo
 		} >> "$TMP_OUTPUT"
