@@ -10,17 +10,18 @@
 #include "../Config/Config.hpp"
 #include "ParseCgiResponse.hpp"
 
-enum CgiState {
-	CGI_SENDING_BODY,
-	CGI_RECEIVING_HEADERS,
-	CGI_RECEIVING_BODY,
-	CGI_COMPLETE,
-	CGI_ERROR,
-	CGI_TIMEOUT
-};
-
 class CgiWorker {
 public:
+	enum CgiState {
+		CGI_INIT,
+		CGI_SENDING_BODY,
+		CGI_RECEIVING_HEADERS,
+		CGI_RECEIVING_BODY,
+		CGI_COMPLETE,
+		CGI_ERROR,
+		CGI_TIMEOUT
+	};
+
 	CgiWorker(const HttpRequest &req, const Location &locConf, const std::string &scriptPath, const std::string &interpreterPath);
 	~CgiWorker();
 
@@ -57,7 +58,7 @@ private:
 	std::vector<std::string> _envp_strs;
 
 	time_t              _last_activity_time;
-	static const int    TIMEOUT_SECONDS = 30;
+	static const int    TIMEOUT_SECONDS; // TODO: タイムアウトオブジェクトに入れ替える
 
 	void _setupEnvironment(const HttpRequest &req, const Location &locConf);
 	void _closePipe(int &fd);

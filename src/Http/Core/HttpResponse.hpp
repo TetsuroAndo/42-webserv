@@ -20,6 +20,10 @@ public:
 	int getStatusCode() const;
 	void setStatusCode(int code);
 
+	// Status Message
+	const std::string &getStatusMessage() const;
+	void setStatusMessage(const std::string &message);
+
 	// HTTP Version
 	const std::string &getVersion() const;
 	void setVersion(const std::string &version);
@@ -55,6 +59,7 @@ public:
 private:
 	std::string _serverName;
 	int _statusCode;
+	std::string _statusMessage;
 	std::string _version;
 	std::map<std::string, std::string> _headers;
 	std::string _body;

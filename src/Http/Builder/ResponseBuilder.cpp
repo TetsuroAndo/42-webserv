@@ -16,7 +16,7 @@ std::string ResponseBuilder::build(HttpResponse &res) {
 
 	// Status Line
 	oss << res.getVersion() << " " << res.getStatusCode() << " "
-		<< HttpStatus::getReason(res.getStatusCode()) << "\r\n";
+		<< (res.getStatusMessage().empty() ? HttpStatus::getReason(res.getStatusCode()) : res.getStatusMessage()) << "\r\n";
 
 	// Headers
 	const std::map<std::string, std::string> &headers = res.getHeaders();

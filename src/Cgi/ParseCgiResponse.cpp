@@ -11,7 +11,7 @@ void CgiResponseParser::parse(const std::string& rawResponse) {
 
 	if (header_end_pos == std::string::npos) {
 		// ヘッダとボディの区切りが見つからない場合、すべてがボディである可能性がある
-		// (non-parsed-header CGI)
+		// non-parsed-header CGI
 		_cgiBodyStr = rawResponse;
 	} else {
 		_cgiHeadersStr = rawResponse.substr(0, header_end_pos);
@@ -20,7 +20,6 @@ void CgiResponseParser::parse(const std::string& rawResponse) {
 	}
 }
 
-// CGIレスポンスから生成したHttpResponseオブジェクトをセットする
 void CgiResponseParser::setResponse(HttpResponse& httpResponse) {
 	httpResponse.setStatusCode(_statusCode);
 	httpResponse.setStatusMessage(_statusMessage);
@@ -38,7 +37,6 @@ void CgiResponseParser::setResponse(HttpResponse& httpResponse) {
 	}
 }
 
-// CGIヘッダをパースするプライベートメソッド
 void CgiResponseParser::_parseHeaders() {
 	std::stringstream ss(_cgiHeadersStr);
 	std::string line;

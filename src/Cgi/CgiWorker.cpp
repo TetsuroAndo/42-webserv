@@ -8,12 +8,12 @@
 #include <sstream>
 #include <iostream>
 
-// C++98 standard: Define and initialize static const member in the .cpp file
+// TODO: TIMEOUT_SECONDSをタイムアウトオブジェクトに置き換える
 const int CgiWorker::TIMEOUT_SECONDS = 30;
 
 CgiWorker::CgiWorker(const HttpRequest &req, const Location &locConf,
 					 const std::string &scriptPath, const std::string &interpreterPath)
-	: _pid(-1), _state(CGI_START), _request_body(req.getBody()),
+	: _pid(-1), _state(CGI_INIT), _request_body(req.getBody()),
 	  _bytes_sent(0), _interpreter_path(interpreterPath),
 	  _script_path(scriptPath)
 {
@@ -57,7 +57,7 @@ void CgiWorker::execute() {
 		throw std::runtime_error("fcntl() failed");
 	}
 	
-	_state = _request_body.empty() ? CGI_RECEIVING : CGI_SENDING_BODY;
+	_state = _request_body.empty() ? CGI_RECEIVING_HEADERS : CGI_SENDING_BODY;
 }
 
 void CgiWorker::_childProcess() {
@@ -94,7 +94,6 @@ void CgiWorker::_childProcess() {
 	exit(EXIT_FAILURE);
 }
 
-
 void CgiWorker::handleWrite() {
 	if (_state != CGI_SENDING_BODY) return;
 	_updateLastActivityTime();
@@ -107,7 +106,7 @@ void CgiWorker::handleWrite() {
 
 	if (_bytes_sent >= _request_body.length()) {
 		_closePipe(_pipe_in[1]);
-		_state = CGI_RECEIVING;
+		_state = CGI_RECEIVING_HEADERS;
 	} else if (bytes < 0) {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
 			_state = CGI_ERROR;
@@ -117,7 +116,8 @@ void CgiWorker::handleWrite() {
 }
 
 void CgiWorker::handleRead() {
-	if (_state != CGI_RECEIVING) return;
+	// Can now be called in both RECEIVING_HEADERS and RECEIVING_BODY states
+	if (_state != CGI_RECEIVING_HEADERS && _state != CGI_RECEIVING_BODY) return;
 	_updateLastActivityTime();
 
 	char buffer[4096];
@@ -125,6 +125,9 @@ void CgiWorker::handleRead() {
 
 	if (bytes_read > 0) {
 		_response_buffer.append(buffer, bytes_read);
+		if (_state == CGI_RECEIVING_HEADERS) {
+			_processResponseBuffer(); // Try to find header-body separator
+		}
 	} else if (bytes_read == 0) { // EOF
 		_state = CGI_COMPLETE;
 		_closePipe(_pipe_out[0]);
@@ -135,6 +138,16 @@ void CgiWorker::handleRead() {
 		}
 	}
 }
+
+int CgiWorker::getReadFd() const { return _pipe_out[0]; }
+int CgiWorker::getWriteFd() const { return _pipe_in[1]; }
+pid_t CgiWorker::getPid() const { return _pid; }
+CgiWorker::CgiState CgiWorker::getState() const { return _state; }
+
+void CgiWorker::setState(CgiState newState) { _state = newState; }
+
+bool CgiWorker::isTimeout() const { return (time(NULL) - _last_activity_time) > TIMEOUT_SECONDS; }
+bool CgiWorker::isFinished() const { return _state == CGI_COMPLETE || _state == CGI_ERROR || _state == CGI_TIMEOUT; }
 
 void CgiWorker::createHttpResponse(HttpResponse &res) {
 	if (_state == CGI_COMPLETE) {
@@ -156,9 +169,6 @@ void CgiWorker::createHttpResponse(HttpResponse &res) {
 	}
 }
 
-// ... (rest of the methods: _setupEnvironment, _closePipe, etc.) ...
-// No major changes needed for _setupEnvironment but simplified envp memory management is reflected above.
-
 void CgiWorker::_setupEnvironment(const HttpRequest &req, const Location &locConf) {
 	(void)locConf;
 	std::map<std::string, std::string> envMap;
@@ -168,7 +178,17 @@ void CgiWorker::_setupEnvironment(const HttpRequest &req, const Location &locCon
 	envMap["REQUEST_METHOD"] = req.getMethod();
 	envMap["SCRIPT_FILENAME"] = _script_path;
 	envMap["SCRIPT_NAME"] = req.getPath();
-	envMap["QUERY_STRING"] = req.getQuery();
+
+	std::string queryString;
+	const std::map<std::string, std::string> &queries = req.getQueries();
+	for (std::map<std::string, std::string>::const_iterator it = queries.begin(); it != queries.end(); ++it) {
+		if (it != queries.begin()) {
+			queryString += "&";
+		}
+		queryString += it->first + "=" + it->second;
+	}
+	envMap["QUERY_STRING"] = queryString;
+
 	envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	std::stringstream ss;
 	ss << req.getBody().length();
@@ -196,11 +216,13 @@ void CgiWorker::_closePipe(int &fd) {
 	}
 }
 
+void CgiWorker::_processResponseBuffer() {
+	std::string::size_type separator_pos = _response_buffer.find("\r\n\r\n");
+	if (separator_pos != std::string::npos) {
+		// Separator found, transition to receiving body
+		_state = CGI_RECEIVING_BODY;
+	}
+	// If separator not found, remain in CGI_RECEIVING_HEADERS state
+}
+
 void CgiWorker::_updateLastActivityTime() { _last_activity_time = time(NULL); }
-bool CgiWorker::isTimeout() const { return (time(NULL) - _last_activity_time) > TIMEOUT_SECONDS; }
-bool CgiWorker::isFinished() const { return _state == CGI_COMPLETE || _state == CGI_ERROR || _state == CGI_TIMEOUT; }
-int CgiWorker::getReadFd() const { return _pipe_out[0]; }
-int CgiWorker::getWriteFd() const { return _pipe_in[1]; }
-pid_t CgiWorker::getPid() const { return _pid; }
-CgiState CgiWorker::getState() const { return _state; }
-void CgiWorker::setState(CgiState newState) { _state = newState; }

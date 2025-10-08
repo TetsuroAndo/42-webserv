@@ -2,11 +2,9 @@
 #include <sys/wait.h>
 #include <iostream>
 
-// ADDED: Constructor implementation
 CgiManager::CgiManager(SocketsManager& socketsManager) : _socketsManager(socketsManager) {}
 
 CgiManager::~CgiManager() {
-	// 全てのワーカーをクリーンアップ
 	for (std::vector<CgiWorker*>::iterator it = _workers.begin(); it != _workers.end(); ++it) {
 		delete *it;
 	}
@@ -20,7 +18,7 @@ void CgiManager::createWorker(int clientFd, const HttpRequest& req, const Locati
 	try {
 		worker = new CgiWorker(req, locConf, scriptPath, interpreterPath);
 		worker->execute();
-		
+
 		_workers.push_back(worker);
 		_fdToWorker[worker->getReadFd()] = worker;
 		_fdToWorker[worker->getWriteFd()] = worker;
@@ -37,6 +35,7 @@ void CgiManager::createWorker(int clientFd, const HttpRequest& req, const Locati
 			delete worker;
 		}
 		// TODO: ここでクライアントに500エラーを返す処理が必要
+		// HTTPのBuilderモジュールで簡単に返せるライブラリを実装する
 	}
 }
 
@@ -49,10 +48,8 @@ void CgiManager::handleEvent(int fd) {
 	CgiWorker* worker = it->second;
 	if (fd == worker->getWriteFd()) {
 		worker->handleWrite();
-		// ボディの書き込みが完了したら、書き込み監視を解除
-		if (worker->getState() == CgiWorker::CGI_RECEIVING) {
+		if (worker->getState() == CgiWorker::CGI_RECEIVING_HEADERS) {
 			_socketsManager.unregisterSocket(worker->getWriteFd());
-			// 書き込み用パイプはCgiWorker内で閉じるのでここでは不要
 		}
 	} else if (fd == worker->getReadFd()) {
 		worker->handleRead();
@@ -65,14 +62,11 @@ void CgiManager::cleanupWorkers() {
 		CgiWorker* worker = _workers[i];
 		bool to_remove = false;
 
-		// 完了またはエラー状態かチェック
 		if (worker->isFinished()) {
 			to_remove = true;
 		}
-		// タイムアウトをチェック
 		else if (worker->isTimeout()) {
 			std::cerr << "CGI Worker PID " << worker->getPid() << " timed out." << std::endl;
-			// FIX: getState()はconstなので代入不可。setState()を導入
 			worker->setState(CgiWorker::CGI_TIMEOUT);
 			to_remove = true;
 		}
@@ -102,7 +96,7 @@ void CgiManager::cleanupWorkers() {
 bool CgiManager::isCgiComplete(int clientFd, HttpResponse& res) {
 	std::map<int, CgiWorker*>::iterator it = _clientFdToWorker.find(clientFd);
 	if (it == _clientFdToWorker.end()) {
-		return false; // このクライアントに対応するCGIはない
+		return false;
 	}
 
 	CgiWorker* worker = it->second;
@@ -118,21 +112,18 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse& res) {
 void CgiManager::_removeWorker(CgiWorker* worker) {
 	if (!worker) return;
 
-	// _fd_to_worker_mapからの削除
 	if (_fdToWorker.count(worker->getReadFd())) {
 		_fdToWorker.erase(worker->getReadFd());
 	}
 	if (_fdToWorker.count(worker->getWriteFd())) {
 		_fdToWorker.erase(worker->getWriteFd());
 	}
-	
-	// _workersベクターからの削除
+
 	for (std::vector<CgiWorker*>::iterator vec_it = _workers.begin(); vec_it != _workers.end(); ++vec_it) {
 		if (*vec_it == worker) {
 			_workers.erase(vec_it);
 			break;
 		}
 	}
-	
 	delete worker;
 }
