@@ -1,30 +1,43 @@
 #pragma once
 
-#include <string>
-#include <map>
-#include <vector>
-#include "CgiWorker.hpp"
 #include "../Socket/SocketsManager.hpp"
+#include "CgiWorker.hpp"
+#include <map>
+#include <string>
+#include <vector>
 
+/*
+ * CgiManagerクラス (Singleton)
+ *
+ * 全てのCgiWorkerのライフサイクルを管理する。
+ * Workerの生成、イベントのディスパッチ、完了したWorkerのクリーンアップを行う。
+ */
 class CgiManager {
 public:
-	static CgiManager& getInstance();
+	explicit CgiManager(SocketsManager &socketsManager);
 	~CgiManager();
 
-	// Client -> CgiHandlerから呼び出される
-	CgiWorker* createWorker(const HttpRequest& req, const Location& locConf, const std::string& scriptPath, SocketsManager& socketManager);
+	/**
+	 * @brief 新しいCgiWorkerを生成し、管理下に置く
+	 * CgiWorkerの読み書き用ファイルディスクリプタをSocketsManagerに登録する
+	 * Client -> CgiHandlerから呼び出される
+	 */
+	void createWorker(int clientFd, const HttpRequest &req, const Location &locConf,
+					  const std::string &scriptPath, const std::string &interpreterPath);
+	void handleEvent(int fd);
+	void cleanupWorkers();
 
-	// メインループからイベント発生時に呼ばれる
-	void handleEvent(int fd, SocketsManager& socketManager);
-
-	// メインループから定期的に呼ばれる
-	void cleanupWorkers(SocketsManager& socketManager);
+	bool isCgiComplete(int clientFd, HttpResponse &res);
 
 private:
+	SocketsManager &_socketsManager;
+	std::vector<CgiWorker*> _workers;
+	std::map<int, CgiWorker*> _fdToWorker;
+	std::map<int, CgiWorker*> _clientFdToWorker;
+
+	void _removeWorker(CgiWorker* worker);
+
 	CgiManager();
 	CgiManager(const CgiManager&);
-	CgiManager& operator=(const CgiManager&);
-
-	std::map<int, CgiWorker*> _fdToWorker;
-	std::vector<CgiWorker*> _workers;
+	CgiManager &operator=(const CgiManager&);
 };

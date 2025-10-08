@@ -1,28 +1,70 @@
 #pragma once
 
-
-#include "../Config/Config.hpp"
-#include "../Http/Core/HttpRequest.hpp"
 #include <string>
-
-// clang-format off
+#include <vector>
+#include <map>
+#include <unistd.h>
+#include <sys/time.h>
+#include "../Http/Core/HttpRequest.hpp"
+#include "../Http/Core/HttpResponse.hpp"
+#include "../Config/Config.hpp"
+#include "ParseCgiResponse.hpp"
 
 enum CgiState {
-	CGI_SENDING_BODY,      // リクエストボディをCGIに送信中
-	CGI_RECEIVING_HEADERS, // CGIからレスポンスヘッダを受信中
-	CGI_RECEIVING_BODY,    // CGIからレスポンスボディを受信中
-	CGI_COMPLETE,          // 処理完了
-	CGI_ERROR              // エラー発生
+	CGI_SENDING_BODY,
+	CGI_RECEIVING_HEADERS,
+	CGI_RECEIVING_BODY,
+	CGI_COMPLETE,
+	CGI_ERROR,
+	CGI_TIMEOUT
 };
 
 class CgiWorker {
 public:
-	CgiWorker(const HttpRequest &req, const Location &locConf, const std::string &scriptPath);
+	CgiWorker(const HttpRequest &req, const Location &locConf, const std::string &scriptPath, const std::string &interpreterPath);
 	~CgiWorker();
-private:
-	const HttpRequest _req;
-	const Location _locConf;
-	const std::string _scriptPath;
 
-	char **_envp;
+	void execute();
+
+	void handleWrite();
+	void handleRead();
+
+	int getReadFd() const;
+	int getWriteFd() const;
+	pid_t getPid() const;
+	CgiState getState() const;
+
+	void setState(CgiState newState);
+
+	bool isTimeout() const;
+	bool isFinished() const;
+	
+	void createHttpResponse(HttpResponse &res);
+
+private:
+	pid_t              _pid;
+	int                _pipe_in[2];  // Server -> CGI
+	int                _pipe_out[2]; // CGI -> Server
+	CgiState           _state;
+
+	std::string        _request_body;
+	size_t             _bytes_sent;
+	std::string        _response_buffer;
+
+	std::string        _interpreter_path;
+	std::string        _script_path;
+	std::vector<char*> _envp;
+	std::vector<std::string> _envp_strs;
+
+	time_t              _last_activity_time;
+	static const int    TIMEOUT_SECONDS = 30;
+
+	void _setupEnvironment(const HttpRequest &req, const Location &locConf);
+	void _closePipe(int &fd);
+	void _updateLastActivityTime();
+	void _childProcess();
+	void _processResponseBuffer();
+
+	CgiWorker(const CgiWorker&);
+	CgiWorker &operator=(const CgiWorker&);
 };
