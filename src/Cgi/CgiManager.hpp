@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Socket/SocketsManager.hpp"
+#include "../Socket/FdEventChanges.hpp"
 #include "CgiWorker.hpp"
 #include <map>
 #include <string>
@@ -14,7 +14,7 @@
  */
 class CgiManager {
 public:
-	explicit CgiManager(SocketsManager &socketsManager);
+	CgiManager();
 	~CgiManager();
 
 	/**
@@ -22,15 +22,14 @@ public:
 	 * CgiWorkerの読み書き用ファイルディスクリプタをSocketsManagerに登録する
 	 * Client -> CgiHandlerから呼び出される
 	 */
-	void createWorker(int clientFd, const HttpRequest &req, const Location &locConf,
+	FdEventChanges createWorker(int clientFd, const HttpRequest &req, const Location &locConf,
 					  const std::string &scriptPath, const std::string &interpreterPath);
-	void handleEvent(int fd);
-	void cleanupWorkers();
+	FdEventChanges handleEvent(int fd);
+	FdEventChanges cleanupWorkers();
 
 	bool isCgiComplete(int clientFd, HttpResponse &res);
 
 private:
-	SocketsManager &_socketsManager;
 	std::vector<CgiWorker*> _workers;
 	std::map<int, CgiWorker*> _fdToWorker;
 	std::map<int, CgiWorker*> _clientFdToWorker;

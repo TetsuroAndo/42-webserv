@@ -21,4 +21,5 @@ struct PipelineContext {
 
 	PipelineContext(HttpRequest *r, HttpResponse *s, const Config &c);
 	~PipelineContext();
+	void reset();
 };

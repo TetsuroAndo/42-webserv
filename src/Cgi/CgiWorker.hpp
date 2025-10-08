@@ -60,7 +60,6 @@ private:
 	time_t              _last_activity_time;
 	static const int    TIMEOUT_SECONDS; // TODO: タイムアウトオブジェクトに入れ替える
 
-	void _setupEnvironment(const HttpRequest &req, const Location &locConf);
 	void _closePipe(int &fd);
 	void _updateLastActivityTime();
 	void _childProcess();

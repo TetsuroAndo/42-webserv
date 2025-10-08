@@ -1,8 +1,9 @@
 #include "CgiManager.hpp"
 #include <sys/wait.h>
 #include <iostream>
+#include <sys/epoll.h>
 
-CgiManager::CgiManager(SocketsManager& socketsManager) : _socketsManager(socketsManager) {}
+CgiManager::CgiManager() {}
 
 CgiManager::~CgiManager() {
 	for (std::vector<CgiWorker*>::iterator it = _workers.begin(); it != _workers.end(); ++it) {
@@ -13,7 +14,11 @@ CgiManager::~CgiManager() {
 	_clientFdToWorker.clear();
 }
 
-void CgiManager::createWorker(int clientFd, const HttpRequest& req, const Location& locConf, const std::string& scriptPath, const std::string& interpreterPath) {
+FdEventChanges CgiManager::createWorker(int clientFd, const HttpRequest& req,
+										const Location& locConf,
+										const std::string& scriptPath,
+										const std::string& interpreterPath) {
+	FdEventChanges changes;
 	CgiWorker* worker = NULL;
 	try {
 		worker = new CgiWorker(req, locConf, scriptPath, interpreterPath);
@@ -24,10 +29,9 @@ void CgiManager::createWorker(int clientFd, const HttpRequest& req, const Locati
 		_fdToWorker[worker->getWriteFd()] = worker;
 		_clientFdToWorker[clientFd] = worker;
 
-		_socketsManager.registerSocket(worker->getReadFd(), EPOLLIN);
-		// ボディが空でない場合のみ、書き込みイベントを監視
+		changes.fdsToAdd.push_back((FdEvent){worker->getReadFd(), EPOLLIN});
 		if (!req.getBody().empty()) {
-			_socketsManager.registerSocket(worker->getWriteFd(), EPOLLOUT);
+			changes.fdsToAdd.push_back((FdEvent){worker->getWriteFd(), EPOLLOUT});
 		}
 	} catch (const std::exception& e) {
 		std::cerr << "CGI Worker creation failed: " << e.what() << std::endl;
@@ -37,41 +41,45 @@ void CgiManager::createWorker(int clientFd, const HttpRequest& req, const Locati
 		// TODO: ここでクライアントに500エラーを返す処理が必要
 		// HTTPのBuilderモジュールで簡単に返せるライブラリを実装する
 	}
+	return changes;
 }
 
-void CgiManager::handleEvent(int fd) {
+FdEventChanges CgiManager::handleEvent(int fd) {
+	FdEventChanges changes;
 	std::map<int, CgiWorker*>::iterator it = _fdToWorker.find(fd);
 	if (it == _fdToWorker.end()) {
-		return;
+		return changes;
 	}
 
 	CgiWorker* worker = it->second;
 	if (fd == worker->getWriteFd()) {
 		worker->handleWrite();
 		if (worker->getState() == CgiWorker::CGI_RECEIVING_HEADERS) {
-			_socketsManager.unregisterSocket(worker->getWriteFd());
+			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
 	} else if (fd == worker->getReadFd()) {
 		worker->handleRead();
 	}
+	return changes;
 }
 
-void CgiManager::cleanupWorkers() {
-	std::vector<CgiWorker*> remaining_workers;
+FdEventChanges CgiManager::cleanupWorkers() {
+	FdEventChanges changes;
+	std::vector<CgiWorker*> remainingWorkers;
 	for (size_t i = 0; i < _workers.size(); ++i) {
 		CgiWorker* worker = _workers[i];
-		bool to_remove = false;
+		bool toRemove = false;
 
 		if (worker->isFinished()) {
-			to_remove = true;
+			toRemove = true;
 		}
 		else if (worker->isTimeout()) {
 			std::cerr << "CGI Worker PID " << worker->getPid() << " timed out." << std::endl;
 			worker->setState(CgiWorker::CGI_TIMEOUT);
-			to_remove = true;
+			toRemove = true;
 		}
 
-		if (to_remove) {
+		if (toRemove) {
 			// Zombieプロセスを回収
 			int status;
 			waitpid(worker->getPid(), &status, WNOHANG);
@@ -79,18 +87,18 @@ void CgiManager::cleanupWorkers() {
 			// isCgiComplete()で処理されるまでworkerインスタンスは残す
 			// ただし、イベント監視対象からは外す
 			if (_fdToWorker.count(worker->getReadFd())) {
-				_socketsManager.unregisterSocket(worker->getReadFd());
+				changes.fdsToRemove.push_back(worker->getReadFd());
 			}
 			if (_fdToWorker.count(worker->getWriteFd())) {
-				_socketsManager.unregisterSocket(worker->getWriteFd());
+				changes.fdsToRemove.push_back(worker->getWriteFd());
 			}
 		} else {
-			remaining_workers.push_back(worker);
+			remainingWorkers.push_back(worker);
 		}
 	}
 	// isCgiCompleteで処理されなかった完了済みワーカーを削除するロジックが必要
 	// 今回は簡単のため、完了したworkerはisCgiCompleteで処理される前提とする
-	_workers.swap(remaining_workers);
+	_workers.swap(remainingWorkers);
 }
 
 bool CgiManager::isCgiComplete(int clientFd, HttpResponse& res) {
