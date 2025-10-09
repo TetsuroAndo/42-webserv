@@ -45,7 +45,7 @@ servers:
         - location:
             path: /
             root: /tmp/www
-            uploadStore: /tmp/uploads
+            uploadStore: ./tmp/uploads
             indexFile: index.html
             autoindex: true
             allowedMethods:
