@@ -1,4 +1,5 @@
 #include "RequestParser.hpp"
+#include "../../Lib/Logger/Log.hpp"
 #include "../../Lib/StringOps/StringOps.hpp"
 #include "../Core/HttpStatus.hpp"
 #include "ParseResult.hpp"
@@ -17,6 +18,7 @@ int RequestParser::getErrorCode() const { return _errorCode; }
 bool RequestParser::isComplete() const { return _state == STATE_COMPLETE; }
 
 ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
+	LOG(DEBUG) << "RequestParser::parse called" << attr("buffer_size", buffer.length());
 	bool stateChanged = true;
 	while (stateChanged) {
 		stateChanged = false;
@@ -29,12 +31,16 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 
 			if (buffer.begin() == buffer.begin() + crlfPos) {
 				_errorCode = HttpStatus::BAD_REQUEST;
+				LOG(WARNING) << "Parse error: Empty request line"
+							 << attr("error_code", _errorCode);
 				return PARSE_ERROR;
 			}
 
 			std::string line(buffer.begin(), buffer.begin() + crlfPos);
 			buffer.erase(0, crlfPos + 2);
 			if (_lineParser.parse(request, line, _errorCode) == PARSE_ERROR) {
+				LOG(WARNING) << "Failed to parse request line: " << line
+							 << attr("error_code", _errorCode);
 				return PARSE_ERROR;
 			}
 			_state = STATE_HEADERS;
@@ -46,6 +52,9 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 			if (headerEndPos == std::string::npos) {
 				if (buffer.length() > request.getMaxHeaderSize()) {
 					_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
+					LOG(WARNING) << "Parse error: Header fields too large"
+								 << attr("size", buffer.length())
+								 << attr("max_size", request.getMaxHeaderSize());
 					return PARSE_ERROR;
 				}
 				return PARSE_INCOMPLETE;
@@ -56,6 +65,8 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 			buffer.erase(0, headerEndPos + 4);
 			if (_headerParser.parse(request, headerBlock, _errorCode) ==
 				PARSE_ERROR) {
+				LOG(WARNING) << "Failed to parse header block"
+							 << attr("error_code", _errorCode);
 				return PARSE_ERROR;
 			}
 			_state = STATE_BODY;
@@ -65,6 +76,9 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 		case STATE_BODY: {
 			if (buffer.length() > request.getMaxBodySize()) {
 				_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
+				LOG(WARNING) << "Parse error: Payload too large"
+							 << attr("size", buffer.length())
+							 << attr("max_size", request.getMaxBodySize());
 				return PARSE_ERROR;
 			}
 
@@ -78,6 +92,7 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 
 			if (res == PARSE_COMPLETE) {
 				_state = STATE_COMPLETE;
+				LOG(DEBUG) << "Request parsing complete.";
 			}
 			return res;
 		}

@@ -2,6 +2,7 @@
 
 #include "../Middleware/Core/PipelineContext.hpp"
 #include "../Socket/Socket.hpp"
+#include <string>
 
 class Client {
 public:
@@ -9,11 +10,15 @@ public:
 	~Client();
 
 	int getFd() const;
+	const std::string &getIp() const;
+	int getPort() const;
 	Socket *getSocket() const;
 	PipelineContext *getContext() const;
 
 private:
 	int _fd;
+	std::string _ip;
+	int _port;
 	Socket *_socket;
 	PipelineContext *_context;
 
