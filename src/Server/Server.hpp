@@ -14,13 +14,14 @@ public:
 	~Server();
 
 	void run();
+	void closeConnection(int clientFd);
 
 private:
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
 	Config _config;
-	SocketsManager _manager;
+	SocketsManager _socketManager;
 	std::map<int, Socket *> _listenSockets;
 	std::map<int, Client *> _clients;
 
@@ -31,5 +32,4 @@ private:
 	void handleNewConnection(int listenFd);
 	void handleClientRead(int clientFd);
 	void handleClientWrite(int clientFd);
-	void closeConnection(int clientFd);
 };

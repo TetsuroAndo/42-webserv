@@ -1,11 +1,12 @@
 #include "Client.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
+#include "Server.hpp"
 #include <arpa/inet.h>
 #include <sstream>
 
-Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
-	: _fd(fd) {
+Client::Client(const int fd, const sockaddr_in &addr, const Config &config, Server *server)
+	: _fd(fd), _server(server) {
 	std::stringstream ipStream;
 	uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	ipStream << ((ip_addr >> 24) & 0xFF) << "."
@@ -35,3 +36,9 @@ PipelineContext *Client::getContext() const { return _context; }
 const std::string &Client::getIp() const { return _ip; }
 
 int Client::getPort() const { return _port; }
+
+void Client::onTimeout() {
+	if (_server) {
+		_server->closeConnection(this->getFd());
+	}
+}

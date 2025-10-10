@@ -84,7 +84,7 @@ void Server::setupListenSockets() {
 
 		Socket *sock = new Socket(listenFd, addr);
 		_listenSockets[listenFd] = sock;
-		_manager.registerSocket(listenFd, EPOLLIN);
+		_socketManager.registerSocket(listenFd, EPOLLIN);
 		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
 				  << attr("fd", listenFd);
 	}
@@ -93,13 +93,13 @@ void Server::setupListenSockets() {
 void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
 	while (true) {
-		const int nEvents = _manager.wait(-1);
+		const int nEvents = _socketManager.wait(-1);
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
-		const epoll_event *events = _manager.getEvents();
+		const epoll_event *events = _socketManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
 			int fd = events[i].data.fd;
@@ -149,7 +149,7 @@ void Server::handleNewConnection(const int listenFd) {
 	try {
 		Client *client = new Client(clientFd, clientAddr, _config);
 		_clients[clientFd] = client;
-		_manager.registerSocket(clientFd, EPOLLIN);
+		_socketManager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {
 		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
 				   << attr("fd", clientFd);
@@ -192,7 +192,7 @@ void Server::handleClientRead(const int clientFd) {
 				client->getSocket()->getSendBuffer() + responseStr);
 		}
 		if (!client->getSocket()->getSendBuffer().empty()) {
-			_manager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+			_socketManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
 		}
 	}
 }
@@ -203,7 +203,7 @@ void Server::handleClientWrite(const int clientFd) {
 	const std::string &sendBuffer = sock->getSendBuffer();
 
 	if (sendBuffer.empty()) {
-		_manager.modifySocket(clientFd, EPOLLIN);
+		_socketManager.modifySocket(clientFd, EPOLLIN);
 		return;
 	}
 
@@ -225,7 +225,7 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::closeConnection(const int clientFd) {
-	_manager.unregisterSocket(clientFd);
+	_socketManager.unregisterSocket(clientFd);
 	const std::map<int, Client *>::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"
