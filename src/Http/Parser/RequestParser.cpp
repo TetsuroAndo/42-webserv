@@ -102,3 +102,5 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 	}
 	return PARSE_INCOMPLETE;
 }
+
+RequestParser::ParseState RequestParser::getState() const { return _state; }

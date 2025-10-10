@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
+#include "../Lib/Logger/Log.hpp"
 #include "Server.hpp"
 #include <arpa/inet.h>
 #include <sstream>
@@ -39,6 +40,7 @@ int Client::getPort() const { return _port; }
 
 void Client::onTimeout() {
 	if (_server) {
+		LOG(INFO) << "Client timed out for fd: " << _fd;
 		_server->closeConnection(this->getFd());
 	}
 }

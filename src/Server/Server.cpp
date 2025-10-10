@@ -93,7 +93,9 @@ void Server::setupListenSockets() {
 void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
 	while (true) {
-		const int nEvents = _socketManager.wait(-1);
+		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
+		const int nEvents = _socketManager.wait(timeoutMs);
+		_timeoutManager.checkAndHandleTimeouts();
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
@@ -147,9 +149,10 @@ void Server::handleNewConnection(const int listenFd) {
 			  << attr("client_port", clientPort) << attr("fd", clientFd);
 
 	try {
-		Client *client = new Client(clientFd, clientAddr, _config);
+		Client *client = new Client(clientFd, clientAddr, _config, this);
 		_clients[clientFd] = client;
 		_socketManager.registerSocket(clientFd, EPOLLIN);
+		_timeoutManager.add(client, _config.getTimeoutSec());
 	} catch (const std::bad_alloc &e) {
 		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
 				   << attr("fd", clientFd);
@@ -162,7 +165,7 @@ void Server::handleNewConnection(const int listenFd) {
 }
 
 void Server::handleClientRead(const int clientFd) {
-	const Client *client = _clients[clientFd];
+	Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	char buffer[4096];
 
@@ -170,6 +173,7 @@ void Server::handleClientRead(const int clientFd) {
 
 	if (bytesRead > 0) {
 		ctx->recvBuffer.append(buffer, bytesRead);
+		_timeoutManager.add(client, _config.getTimeoutSec());
 	} else if (bytesRead == 0) {
 		closeConnection(clientFd);
 		return;
@@ -198,7 +202,7 @@ void Server::handleClientRead(const int clientFd) {
 }
 
 void Server::handleClientWrite(const int clientFd) {
-	const Client *client = _clients[clientFd];
+	Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
 	const std::string &sendBuffer = sock->getSendBuffer();
 
@@ -212,6 +216,7 @@ void Server::handleClientWrite(const int clientFd) {
 
 	if (bytesSent > 0) {
 		sock->eraseSendBuffer(0, bytesSent);
+		_timeoutManager.add(client, _config.getTimeoutSec());
 		if (sock->getSendBuffer().empty()) {
 			closeConnection(clientFd);
 		}
@@ -231,6 +236,7 @@ void Server::closeConnection(const int clientFd) {
 		LOG(INFO) << "Closing connection"
 				  << attr("client_ip", it->second->getIp())
 				  << attr("fd", clientFd);
+		_timeoutManager.remove(it->second);
 		delete it->second;
 		_clients.erase(it);
 	} else {

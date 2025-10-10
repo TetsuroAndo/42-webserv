@@ -3,6 +3,7 @@
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
+#include "../Timeout/TimeoutManager.hpp"
 #include "../SocketsManager/SocketsManager.hpp"
 #include "Client.hpp"
 #include <map>
@@ -24,7 +25,7 @@ private:
 	SocketsManager _socketManager;
 	std::map<int, Socket *> _listenSockets;
 	std::map<int, Client *> _clients;
-
+	TimeoutManager _timeoutManager;
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
 

@@ -34,7 +34,6 @@ void TimeoutManager::checkAndHandleTimeouts() {
 	time_t now = std::time(NULL);
 	std::vector<ITimeoutable*> expiredObjects;
 
-	// C++98ではmap::erase(iterator)がvoidを返すため、安全にループ内で削除するには工夫が必要
 	TimeoutMap::iterator it = _timeoutMap.begin();
 	while (it != _timeoutMap.end()) {
 		if (it->first <= now) {
@@ -50,7 +49,6 @@ void TimeoutManager::checkAndHandleTimeouts() {
 		}
 	}
 
-	// タイムアウト処理は、ロック時間を短くするためループの外で実行
 	for (std::vector<ITimeoutable*>::iterator it = expiredObjects.begin();
 		 it != expiredObjects.end(); ++it) {
 		(*it)->onTimeout();
