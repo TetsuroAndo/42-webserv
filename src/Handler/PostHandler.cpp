@@ -42,23 +42,9 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 
 	const std::string filePath =
 		HandlerUtil::resolvePath(req.getPath(), config);
-	LOG(DEBUG) << "PostHandler resolved path: " << filePath;
-	LOG(DEBUG) << "Called!: \n"
-		<< "    req head : "
-		<< (req.getHeader("Content-Type").empty()
-			    ? "empty"
-			    : req.getHeader("Content-Type"))
-		<< "\n"
-		<< "    req body size: "
-		<< (req.getBody().empty() ? 0 : req.getBody().size()) << "\n"
-		<< "    req name : "
-		<< (req.getPath().empty() ? "empty" : req.getPath()) << "\n";
-
-	// curl -X POST http://127.0.0.1:8080/ -H "Content-Type: image/png" --data-binary "@./tmp/img.png"
-	// 上記のコマンドを、@./tmp/img.pngを用意した状態でdefault.yamlでサーバーを起動すると動く
-
 	const Location &loc = config.getLocation(req.getPath());
-	// TODO : req.getPath()がlocationに一致しているかを検索する
+
+	// ファイルパスが不正
 	if (req.getPath() != loc.path) {
 		LOG(INFO) << "Requested path does not match actual path";
 		HandlerUtil::generateErrorBody(req.getMethod(), response,
@@ -66,10 +52,8 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 		return response;
 	}
 
-	LOG(DEBUG) << "loc path : " << loc.path;
-
 	const std::string uploadStore = loc.uploadStore;
-	LOG(DEBUG) << "uploadStore: " << uploadStore;
+
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is empty";
@@ -96,7 +80,6 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 		                               HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
-	// TODO:getTokenのcharsetを変える
 	std::string target = uploadStore + "/" +
 	                     removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) +
 	                     "-" + removeSpaceColonCommaHyphen(
@@ -112,7 +95,7 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	if (!file) {
 		LOG(ERROR) << "PostHandler : Can't create file";
 		HandlerUtil::generateErrorBody(req.getMethod(), response,
-		                               HttpStatus::INTERNAL_SERVER_ERROR);
+									   HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
 
