@@ -2,7 +2,6 @@
 #include "../../../Http/Core/HttpStatus.hpp"
 #include "../../StringOps/StringOps.hpp"
 #include "../../Time/TimeCache.hpp"
-#include "../../Time/TimeFormatter.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -46,7 +45,7 @@ void ElfForm::getErrorHeader(std::ostream &out) {
 }
 
 void ElfForm::getAccessHeader(std::ostream &out) {
-	std::string timeStr = TimeCache::getUtcTimestamp();	
+	std::string timeStr = TimeCache::getUtcTimestamp();
 	out << "#Version: 1.0\n";
 	out << "#Date: " << timeStr << "\n";
 	out << "#Software: webserv/42\n";
@@ -56,13 +55,8 @@ void ElfForm::getAccessHeader(std::ostream &out) {
 
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (!_headerWritten) getErrorHeader(out);
-	const tm *timeinfo = localtime(&msg.timestamp);
-	std::string dateStr;
-	TimeFormatter::getDate(dateStr, *timeinfo);
-	std::string timeStr;
-	TimeFormatter::getTime(timeStr, *timeinfo);
 
-	out << dateStr << " " << timeStr << " ";
+	out << TimeCache::getLocalDate() << " " << TimeCache::getLocalTime() << " ";
 	out << LogForm::levelToString(msg.level) << " ";
 	out << msg.function << " ";
 	out << msg.file << ":" << msg.line << " ";
@@ -87,13 +81,8 @@ void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 		return;
 	}
 	if (!_headerWritten) getAccessHeader(out);
-	const tm *timeinfo = gmtime(&ctx.timestamp);
-	std::string dateStr;
-	TimeFormatter::getDate(dateStr, *timeinfo);
-	std::string timeStr;
-	TimeFormatter::getTime(timeStr, *timeinfo);
 
-	out << dateStr << " " << timeStr << " ";
+	out << TimeCache::getGmtDate() << " " << TimeCache::getGmtTime() << " ";
 	out << (ctx.remote_addr.empty() ? "-" : ctx.remote_addr) << " ";
 	out << ctx.client_port << " ";
 	out << (ctx.request->getMethod().empty() ? "-" : ctx.request->getMethod()) << " ";

@@ -1,6 +1,6 @@
 #include "JsonForm.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
-#include "../../Time/TimeFormatter.hpp"
+#include "../../Time/TimeCache.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -48,11 +48,8 @@ std::string JsonForm::escapeJson(const std::string &str) const {
  * @param out 出力ストリーム
  */
 void JsonForm::format(const LogMessage &msg, std::ostream &out) {
-	std::string timeStr;
-	TimeFormatter::getLocalTimestamp(timeStr, *localtime(&msg.timestamp));
-
 	out << "{";
-	out << "\"timestamp\":\"" << timeStr << "\",";
+	out << "\"timestamp\":\"" << TimeCache::getLocalTimestamp() << "\",";
 	out << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
 	out << "\"message\":\"" << escapeJson(msg.message) << "\",";
 	out << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
@@ -79,9 +76,6 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 		return;
 	}
 
-	std::string timeStr;
-	TimeFormatter::getIsoTimestamp(timeStr, *gmtime(&ctx.timestamp));
-
 	std::string uri = ctx.request->getPath();
 	const std::map<std::string, std::string>& queries = ctx.request->getQueries();
 	if (!queries.empty()) {
@@ -95,7 +89,7 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 
 	out << "{";
-	out << "\"timestamp\":\"" << timeStr << "\",";
+	out << "\"timestamp\":\"" << TimeCache::getIsoTimestamp() << "\",";
 	out << "\"remote_addr\":\"" << escapeJson(ctx.remote_addr) << "\",";
 	out << "\"remote_port\":" << ctx.client_port << ",";
 	out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
@@ -103,7 +97,7 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	out << "\"version\":\"" << escapeJson(ctx.request->getVersion()) << "\",";
 	out << "\"status\":" << ctx.response->getStatusCode() << ",";
 	out << "\"bytes_sent\":" << ctx.response->getBody().length() << ",";
-	
+
 	const std::string& referer = ctx.request->getHeader("Referer");
 	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer)) << "\",";
 
