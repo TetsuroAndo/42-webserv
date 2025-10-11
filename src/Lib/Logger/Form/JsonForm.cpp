@@ -49,7 +49,7 @@ std::string JsonForm::escapeJson(const std::string &str) const {
  */
 void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 	out << "{";
-	out << "\"timestamp\":\"" << msg.localDate << " " << msg.localTime << "\",";
+	out << "\"timestamp\":\"" << msg.localDate << "T" << msg.localTime << "\",";
 	out << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
 	out << "\"message\":\"" << escapeJson(msg.message) << "\",";
 	out << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
