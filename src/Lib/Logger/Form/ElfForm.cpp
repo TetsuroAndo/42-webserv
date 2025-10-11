@@ -57,7 +57,7 @@ void ElfForm::getAccessHeader(std::ostream &out) {
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (!_headerWritten) getErrorHeader(out);
 
-	out << TimeCache::getLocalDate() << " " << TimeCache::getLocalTime() << " ";
+	out << msg.localDate << " " << msg.localTime << " ";
 	out << LogForm::levelToString(msg.level) << " ";
 	out << msg.function << " ";
 	out << msg.file << ":" << msg.line << " ";
@@ -83,7 +83,7 @@ void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 	if (!_headerWritten) getAccessHeader(out);
 
-	out << TimeCache::getGmtDate() << " " << TimeCache::getGmtTime() << " ";
+	out << ctx.utcTimestamp << " ";
 	out << (ctx.remote_addr.empty() ? "-" : ctx.remote_addr) << " ";
 	out << ctx.client_port << " ";
 	out << (ctx.request->getMethod().empty() ? "-" : ctx.request->getMethod()) << " ";

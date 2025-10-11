@@ -145,17 +145,11 @@ void testAccessLogger() {
 		MockHttpRequest req("GET", "/index.html", queries, headers);
 		MockHttpResponse res(200, "<html><body>Hello</body></html>");
 
-		// 修正点：集成体初期化を使ってconstメンバを初期化する
-		AccessLogContext ctx = {
-			std::time(NULL),      // time_t timestamp
-			&req,                 // const HttpRequest* request
-			&res,                 // const HttpResponse* response
-			"192.168.1.10",       // std::string remote_addr
-			54321,                // int client_port
-			"a1b2c3d4e5f6"        // std::string session_id
-		};
-
-		accessLogger.log(ctx);
+		accessLogger.log(&req,			  // const HttpRequest* request
+						 &res,			  // const HttpResponse* response
+						 "192.168.1.10",  // std::string remote_addr
+						 54321,			  // int client_port
+						 "a1b2c3d4e5f6"); // std::string session_id);
 	}
 
 	// タイムスタンプが確実に変わるように少し待つ
@@ -173,17 +167,11 @@ void testAccessLogger() {
 		MockHttpRequest req("POST", "/api/resource", queries, headers);
 		MockHttpResponse res(404, "Resource not found.");
 
-		// 修正点：こちらも集成体初期化を使用
-		AccessLogContext ctx = {
-			std::time(NULL),     // time_t timestamp
-			&req,                // const HttpRequest* request
-			&res,                // const HttpResponse* response
-			"10.0.0.5",          // std::string remote_addr
-			12345,               // int client_port
-			""                   // std::string session_id (セッションなし)
-		};
-
-		accessLogger.log(ctx);
+		accessLogger.log(&req,
+						 &res,
+						 "10.0.0.5",
+						 12345,
+						 "");        // セッションIDなし
 	}
 }
 

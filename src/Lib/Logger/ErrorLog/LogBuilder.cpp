@@ -1,10 +1,12 @@
+#include "../../Time/TimeCache.hpp"
 #include "LogBuilder.hpp"
 #include "Logger.hpp"
 #include <ctime>
 
 LogBuilder::LogBuilder(const LogLevel level, const char *file, const int line,
 					   const char *func) {
-	_msg.timestamp = std::time(NULL);
+	_msg.localDate = TimeCache::getLocalDate();
+	_msg.localTime = TimeCache::getLocalTime();
 	_msg.level = level;
 	_msg.file = file;
 	_msg.line = line;
