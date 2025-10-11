@@ -75,16 +75,16 @@ void testErrorLogger() {
 	logger.setLogDir("./test_log");
 
 	// 1. コンソール出力 (JSON形式, DEBUGレベル以上)
-	logger.setSinkConsole(JSON, DEBUG);
+	logger.setSinkConsole(JSON, DEBUG, GREATER_OR_EQUAL);
 
 	// 2. ファイル出力 (ELF形式, INFOレベル以上)
-	logger.setSinkFile("error_elf.log", ELF, INFO);
+	logger.setSinkFile("error_elf.log", ELF, INFO, GREATER_OR_EQUAL, 1024 * 1024, 5);
 
 	// 3. ファイル出力 (JSON形式, WARNINGレベル以上)
-	logger.setSinkFile("error_json_warn.log", JSON, WARNING);
+	logger.setSinkFile("error_json_warn.log", JSON, WARNING, GREATER_OR_EQUAL, 1024 * 1024, 5);
 
 	// 4. ファイル出力 (ELF形式, ERRORレベルのみ)
-	logger.setSinkFile("error_elf_exact.log", ELF, ERROR, EXACT);
+	logger.setSinkFile("error_elf_exact.log", ELF, ERROR, EXACT, 1024 * 1024, 5);
 
 	// 5. ローテーションテスト用ファイル (小さなファイルサイズに設定)
 	logger.setSinkFile("rotation.log", ELF, DEBUG, GREATER_OR_EQUAL, 200, 3);
@@ -129,8 +129,8 @@ void testAccessLogger() {
 	// 1. コンソール出力 (ELF形式)
 	accessLogger.setSinkConsole(ELF);
 	// 2. ファイル出力 (JSON形式)
-	accessLogger.setSinkFile("access_json.log", JSON);
-	accessLogger.setSinkFile("access_elf.log", ELF);
+	accessLogger.setSinkFile("access_json.log", JSON, 1024 * 1024, 5);
+	accessLogger.setSinkFile("access_elf.log", ELF, 1024 * 1024, 5);
 
 	std::cout << "Sending log messages to AccessLogger..." << std::endl;
 
@@ -144,17 +144,11 @@ void testAccessLogger() {
 		MockHttpRequest req("GET", "/index.html", queries, headers);
 		MockHttpResponse res(200, "<html><body>Hello</body></html>");
 
-		// 修正点：集成体初期化を使ってconstメンバを初期化する
-		AccessLogContext ctx = {
-			std::time(NULL),      // time_t timestamp
-			&req,                 // const HttpRequest* request
-			&res,                 // const HttpResponse* response
-			"192.168.1.10",       // std::string remote_addr
-			54321,                // int client_port
-			"a1b2c3d4e5f6"        // std::string session_id
-		};
-
-		accessLogger.log(ctx);
+		accessLogger.log(&req,			  // const HttpRequest* request
+						 &res,			  // const HttpResponse* response
+						 "192.168.1.10",  // std::string remote_addr
+						 54321,			  // int client_port
+						 "a1b2c3d4e5f6"); // std::string session_id);
 	}
 
 	// タイムスタンプが確実に変わるように少し待つ
@@ -172,17 +166,11 @@ void testAccessLogger() {
 		MockHttpRequest req("POST", "/api/resource", queries, headers);
 		MockHttpResponse res(404, "Resource not found.");
 
-		// 修正点：こちらも集成体初期化を使用
-		AccessLogContext ctx = {
-			std::time(NULL),     // time_t timestamp
-			&req,                // const HttpRequest* request
-			&res,                // const HttpResponse* response
-			"10.0.0.5",          // std::string remote_addr
-			12345,               // int client_port
-			""                   // std::string session_id (セッションなし)
-		};
-
-		accessLogger.log(ctx);
+		accessLogger.log(&req,
+						 &res,
+						 "10.0.0.5",
+						 12345,
+						 "");        // セッションIDなし
 	}
 }
 

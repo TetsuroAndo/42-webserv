@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ctime>
 #include <map>
 #include <string>
 
@@ -12,7 +11,8 @@ enum LogFilterMode {
 enum LogLevel { DEBUG, INFO, WARNING, ERROR, FATAL };
 
 struct LogMessage {
-	time_t timestamp;
+	std::string localDate;
+	std::string localTime;
 	LogLevel level;
 	std::string message;
 	const char *file;

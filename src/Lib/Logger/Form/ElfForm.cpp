@@ -1,6 +1,7 @@
 #include "ElfForm.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
 #include "../../StringOps/StringOps.hpp"
+#include "../../Time/TimeCache.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -44,9 +45,7 @@ void ElfForm::getErrorHeader(std::ostream &out) {
 }
 
 void ElfForm::getAccessHeader(std::ostream &out) {
-	char timeStr[21];
-	time_t now = time(NULL); // TODO: キャッシュから呼び出すようにする
-	strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%SZ", gmtime(&now));
+	std::string timeStr = TimeCache::getUtcTimestamp();
 	out << "#Version: 1.0\n";
 	out << "#Date: " << timeStr << "\n";
 	out << "#Software: webserv/42\n";
@@ -56,13 +55,8 @@ void ElfForm::getAccessHeader(std::ostream &out) {
 
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (!_headerWritten) getErrorHeader(out);
-	const tm *timeinfo = localtime(&msg.timestamp);  // TODO: キャッシュから呼び出すようにする
-	char dateStr[11];
-	char timeStr[9];
-	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
-	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
 
-	out << dateStr << " " << timeStr << " ";
+	out << msg.localDate << " " << msg.localTime << " ";
 	out << LogForm::levelToString(msg.level) << " ";
 	out << msg.function << " ";
 	out << msg.file << ":" << msg.line << " ";
@@ -88,13 +82,7 @@ void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 	if (!_headerWritten) getAccessHeader(out);
 
-	const tm* timeinfo = gmtime(&ctx.timestamp); // TODO: キャッシュから呼び出すようにする
-	char dateStr[11];
-	char timeStr[9];
-	strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", timeinfo);
-	strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeinfo);
-
-	out << dateStr << " " << timeStr << " ";
+	out << ctx.utcTimestamp << " ";
 	out << (ctx.remote_addr.empty() ? "-" : ctx.remote_addr) << " ";
 	out << ctx.client_port << " ";
 	out << (ctx.request->getMethod().empty() ? "-" : ctx.request->getMethod()) << " ";
