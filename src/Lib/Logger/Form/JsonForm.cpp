@@ -49,7 +49,7 @@ std::string JsonForm::escapeJson(const std::string &str) const {
  */
 void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 	out << "{";
-	out << "\"timestamp\":\"" << TimeCache::getLocalTimestamp() << "\",";
+	out << "\"timestamp\":\"" << msg.localDate << " " << msg.localTime << "\",";
 	out << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
 	out << "\"message\":\"" << escapeJson(msg.message) << "\",";
 	out << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
@@ -89,7 +89,7 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 
 	out << "{";
-	out << "\"timestamp\":\"" << TimeCache::getIsoTimestamp() << "\",";
+	out << "\"timestamp\":\"" << ctx.isoTimestamp << "\",";
 	out << "\"remote_addr\":\"" << escapeJson(ctx.remote_addr) << "\",";
 	out << "\"remote_port\":" << ctx.client_port << ",";
 	out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
