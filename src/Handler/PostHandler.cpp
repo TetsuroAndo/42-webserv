@@ -115,6 +115,15 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 		                               HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
+
+	// Bodyが大きすぎる
+	if (config.getMaxRequestBodySize() < req.getBody().size()) {
+		LOG(ERROR) << "PostHandler : Payload too large";
+		HandlerUtil::generateErrorBody(req.getMethod(), response,
+									   HttpStatus::PAYLOAD_TOO_LARGE);
+		return response;
+	}
+
 	// Bodyの中身を書き込む
 	file << req.getBody();
 	file.close();
