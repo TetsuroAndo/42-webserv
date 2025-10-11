@@ -20,7 +20,7 @@ PostHandler::~PostHandler() {
 }
 
 namespace {
-std::string removeSpaceCoronCommaHyphen(const std::string &str) {
+std::string removeSpaceColonCommaHyphen(const std::string &str) {
 	std::string result;
 	result.reserve(str.size());
 
@@ -98,7 +98,9 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	}
 	// TODO:getTokenのcharsetを変える
 	std::string target = uploadStore + "/" +
-	                     removeSpaceCoronCommaHyphen(TimeCache::getGmtDate()) + "-" + removeSpaceCoronCommaHyphen(TimeCache::getGmtTime()) +
+	                     removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) +
+	                     "-" + removeSpaceColonCommaHyphen(
+		                     TimeCache::getGmtTime()) +
 	                     "_" +
 	                     Token::genToken(
 		                     8,
