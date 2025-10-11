@@ -1,60 +1,15 @@
 #include "FileSink.hpp"
+#include "../../StringOps/StringOps.hpp"
 #include "../Form/ElfForm.hpp"
 #include "../Form/JsonForm.hpp"
+#include <cstdio>
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-
-namespace {
-template <typename T> std::string numberToString(T number) {
-	std::stringstream ss;
-	ss << number;
-	return ss.str();
-}
-
-bool isNumeric(const char *s) {
-	if (s == NULL || *s == '\0') {
-		return false;
-	}
-	while (*s) {
-		if (!std::isdigit(*s)) {
-			return false;
-		}
-		s++;
-	}
-	return true;
-}
-
-size_t getMaxBackupIndex(const std::string &logDir,
-						 const std::string &filename) {
-	size_t maxIndex = 0;
-	DIR *dir = opendir(logDir.c_str());
-	if (!dir)
-		return 0;
-
-	const std::string prefix = filename + ".";
-	dirent *entry;
-	while ((entry = readdir(dir)) != NULL) {
-		std::string name(entry->d_name);
-		if (name.find(prefix) == 0) {
-			const char *suffix = name.c_str() + prefix.length();
-			if (isNumeric(suffix)) {
-				std::istringstream iss(suffix);
-				size_t idx;
-				iss >> idx;
-				if (idx > 0 && idx > maxIndex) {
-					maxIndex = idx;
-				}
-			}
-		}
-	}
-	closedir(dir);
-	return maxIndex;
-}
-} // namespace
+#include <sys/stat.h>
 
 FileSink::FileSink(const std::string &logDir, const std::string &filename,
 				   LogForm *form, const size_t maxFileSize,
@@ -83,39 +38,14 @@ void FileSink::log(const LogMessage &msg) {
 	if (_fileStream.is_open()) {
 		_form->format(msg, _fileStream);
 		_fileStream << '\n';
-		if (_maxFileSize > 0 &&
-			static_cast<size_t>(_fileStream.tellp()) >= _maxFileSize) {
-			_fileStream.close();
-
-			const std::string baseFilepath = _dir + "/" + _fileName;
-			const size_t lastIdx = getMaxBackupIndex(_dir, _fileName);
-			for (size_t i = lastIdx; i > 0; --i) {
-				std::string oldPath = baseFilepath + "." + numberToString(i);
-				std::string newPath =
-					baseFilepath + "." + numberToString(i + 1);
-				if (i >= _maxBackupFiles) {
-					if (std::remove(oldPath.c_str()) != 0) {
-						throw std::runtime_error(
-							"Logger: Failed to remove log files: " + oldPath);
-					}
-				} else {
-					if (std::rename(oldPath.c_str(), newPath.c_str()) != 0) {
-						throw std::runtime_error(
-							"Logger: Failed to rename log files: " + oldPath +
-							" to " + newPath);
-					}
-				}
-			}
-			if (std::rename(baseFilepath.c_str(),
-							(baseFilepath + ".1").c_str()) != 0) {
-				throw std::runtime_error(
-					"Logger: Failed to rename log files: " + baseFilepath +
-					" to " + (baseFilepath + ".1"));
-			}
-			_fileStream.open(baseFilepath.c_str(),
-							 std::ios::out | std::ios::app);
-		}
 		_fileStream.flush();
+
+		struct stat st;
+		const std::string filepath = _dir + "/" + _fileName;
+		if (stat(filepath.c_str(), &st) == 0 &&
+			static_cast<size_t>(st.st_size) >= _maxFileSize) {
+			rotate();
+		}
 	}
 }
 
@@ -124,5 +54,57 @@ void FileSink::logAccess(const AccessLogContext& ctx) {
 		_form->formatAccess(ctx, _fileStream);
 		_fileStream << '\n';
 		_fileStream.flush();
+
+		struct stat st;
+		const std::string filepath = _dir + "/" + _fileName;
+		if (stat(filepath.c_str(), &st) == 0 &&
+			static_cast<size_t>(st.st_size) >= _maxFileSize) {
+			rotate();
+		}
+	}
+}
+
+
+void FileSink::rotate() {
+	_fileStream.close();
+
+	const std::string baseFilepath = _dir + "/" + _fileName;
+	struct stat st;
+
+	if (_maxBackupFiles == 0) {
+		if (stat(baseFilepath.c_str(), &st) == 0) {
+			if (std::remove(baseFilepath.c_str()) != 0) {
+				std::cerr << "Error: Failed to remove " << baseFilepath << std::endl;
+			}
+		}
+	} else {
+		const std::string oldestBackupPath =
+			baseFilepath + "." + StringOps::toString(_maxBackupFiles);
+		if (stat(oldestBackupPath.c_str(), &st) == 0) {
+			if (std::remove(oldestBackupPath.c_str()) != 0) {
+				std::cerr << "Error: Failed to remove " << oldestBackupPath << std::endl;
+			}
+		}
+
+		for (size_t i = _maxBackupFiles - 1; i > 0; --i) {
+			std::string oldPath = baseFilepath + "." + StringOps::toString(i);
+			std::string newPath = baseFilepath + "." + StringOps::toString(i + 1);
+			if (stat(oldPath.c_str(), &st) == 0) {
+				if (std::rename(oldPath.c_str(), newPath.c_str()) != 0) {
+					std::cerr << "Error: Failed to rename " << oldPath << " to " << newPath << std::endl;
+				}
+			}
+		}
+
+		if (stat(baseFilepath.c_str(), &st) == 0) {
+			if (std::rename(baseFilepath.c_str(), (baseFilepath + ".1").c_str()) != 0) {
+				std::cerr << "Error: Failed to rename " << baseFilepath << " to " << (baseFilepath + ".1") << std::endl;
+			}
+		}
+	}
+
+	_fileStream.open(baseFilepath.c_str(), std::ios::out | std::ios::app);
+	if (!_fileStream.is_open()) {
+		throw std::runtime_error("Logger: Failed to open log file: " + baseFilepath);
 	}
 }
