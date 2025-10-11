@@ -2,6 +2,7 @@
 #include "../../StringOps/StringOps.hpp"
 #include "../Form/ElfForm.hpp"
 #include "../Form/JsonForm.hpp"
+#include "../Log.hpp"
 #include <cstdio>
 #include <dirent.h>
 #include <fstream>
@@ -75,6 +76,7 @@ void FileSink::rotate() {
 	if (_maxBackupFiles == 0) {
 		if (stat(baseFilepath.c_str(), &st) == 0) {
 			if (std::remove(baseFilepath.c_str()) != 0) {
+				LOG(ERROR) << "Failed to remove " << baseFilepath;
 				std::cerr << "Error: Failed to remove " << baseFilepath << std::endl;
 			}
 		}
@@ -83,6 +85,7 @@ void FileSink::rotate() {
 			baseFilepath + "." + StringOps::toString(_maxBackupFiles);
 		if (stat(oldestBackupPath.c_str(), &st) == 0) {
 			if (std::remove(oldestBackupPath.c_str()) != 0) {
+				LOG(ERROR) << "Failed to remove " << oldestBackupPath;
 				std::cerr << "Error: Failed to remove " << oldestBackupPath << std::endl;
 			}
 		}
@@ -92,6 +95,7 @@ void FileSink::rotate() {
 			std::string newPath = baseFilepath + "." + StringOps::toString(i + 1);
 			if (stat(oldPath.c_str(), &st) == 0) {
 				if (std::rename(oldPath.c_str(), newPath.c_str()) != 0) {
+					LOG(ERROR) << "Failed to rename " << oldPath << " to " << newPath;
 					std::cerr << "Error: Failed to rename " << oldPath << " to " << newPath << std::endl;
 				}
 			}
@@ -99,6 +103,7 @@ void FileSink::rotate() {
 
 		if (stat(baseFilepath.c_str(), &st) == 0) {
 			if (std::rename(baseFilepath.c_str(), (baseFilepath + ".1").c_str()) != 0) {
+				LOG(ERROR) << "Failed to rename " << baseFilepath << " to " << (baseFilepath + ".1");
 				std::cerr << "Error: Failed to rename " << baseFilepath << " to " << (baseFilepath + ".1") << std::endl;
 			}
 		}
@@ -106,6 +111,7 @@ void FileSink::rotate() {
 
 	_fileStream.open(baseFilepath.c_str(), std::ios::out | std::ios::app);
 	if (!_fileStream.is_open()) {
+		LOG(ERROR) << "Failed to open log file: " << baseFilepath;
 		throw std::runtime_error("Logger: Failed to open log file: " + baseFilepath);
 	}
 }
