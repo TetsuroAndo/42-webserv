@@ -13,6 +13,7 @@ public:
 	virtual void log(const LogMessage &msg);
 	virtual void logAccess(const AccessLogContext& ctx);
 private:
+	void rotate();
 	std::string _dir;
 	std::string _fileName;
 	std::ofstream _fileStream;

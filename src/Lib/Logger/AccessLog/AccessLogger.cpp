@@ -1,3 +1,4 @@
+#include "../../Time/TimeCache.hpp"
 #include "AccessLogger.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -93,14 +94,13 @@ void AccessLogger::log(const HttpRequest* request,
 				 std::string remote_addr,
 				 int client_port,
 				 std::string session_id) {
-	AccessLogContext ctx = {
-		std::time(NULL), // TODO: キャッシュから呼び出すようにする
-		request,
-		response,
-		remote_addr,
-		client_port,
-		session_id
-	};
+	AccessLogContext ctx = {TimeCache::getUtcTimestamp(),
+							TimeCache::getIsoTimestamp(),
+							request,
+							response,
+							remote_addr,
+							client_port,
+							session_id};
 	this->log(ctx);
 }
 
