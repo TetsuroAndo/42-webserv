@@ -1,13 +1,14 @@
 #include "../../../Http/Core/HttpRequest.hpp"
 #include "../../../Http/Core/HttpResponse.hpp"
+#include "../../Info/App.hpp"
 #include "../AccessLog/AccessLogger.hpp"
 #include "../ErrorLog/Logger.hpp"
 #include <iostream>
-#include <stdexcept>
 #include <map>
+#include <stdexcept>
 #include <string>
-#include <vector>
 #include <unistd.h>
+#include <vector>
 
 // ========================================================================
 // AccessLoggerのテストに必要なHttpRequest/HttpResponseのモック(ダミークラス)
@@ -75,16 +76,16 @@ void testErrorLogger() {
 	logger.setLogDir("./test_log");
 
 	// 1. コンソール出力 (JSON形式, DEBUGレベル以上)
-	logger.setSinkConsole(JSON, DEBUG);
+	logger.setSinkConsole(JSON, DEBUG, GREATER_OR_EQUAL);
 
 	// 2. ファイル出力 (ELF形式, INFOレベル以上)
-	logger.setSinkFile("error_elf.log", ELF, INFO);
+	logger.setSinkFile("error_elf.log", ELF, INFO, GREATER_OR_EQUAL, 1024 * 1024, 5);
 
 	// 3. ファイル出力 (JSON形式, WARNINGレベル以上)
-	logger.setSinkFile("error_json_warn.log", JSON, WARNING);
+	logger.setSinkFile("error_json_warn.log", JSON, WARNING, GREATER_OR_EQUAL, 1024 * 1024, 5);
 
 	// 4. ファイル出力 (ELF形式, ERRORレベルのみ)
-	logger.setSinkFile("error_elf_exact.log", ELF, ERROR, EXACT);
+	logger.setSinkFile("error_elf_exact.log", ELF, ERROR, EXACT, 1024 * 1024, 5);
 
 	// 5. ローテーションテスト用ファイル (小さなファイルサイズに設定)
 	logger.setSinkFile("rotation.log", ELF, DEBUG, GREATER_OR_EQUAL, 200, 3);
@@ -129,8 +130,8 @@ void testAccessLogger() {
 	// 1. コンソール出力 (ELF形式)
 	accessLogger.setSinkConsole(ELF);
 	// 2. ファイル出力 (JSON形式)
-	accessLogger.setSinkFile("access_json.log", JSON);
-	accessLogger.setSinkFile("access_elf.log", ELF);
+	accessLogger.setSinkFile("access_json.log", JSON, 1024 * 1024, 5);
+	accessLogger.setSinkFile("access_elf.log", ELF, 1024 * 1024, 5);
 
 	std::cout << "Sending log messages to AccessLogger..." << std::endl;
 

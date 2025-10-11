@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
+#include "../Lib/Info/App.hpp"
 #include <arpa/inet.h>
 #include <sstream>
 

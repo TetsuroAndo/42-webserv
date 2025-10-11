@@ -3,8 +3,6 @@
 #include "Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include <iostream>
 
-#define VERSION "0.9"
-
 int main(const int argc, char **argv) {
 	try {
 		switch (argc) {
