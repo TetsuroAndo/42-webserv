@@ -42,21 +42,18 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 
 	const std::string filePath =
 		HandlerUtil::resolvePath(req.getPath(), config);
-	// 工事現場はこちらです。
-	std::cout << "Called!: \n"
+	LOG(DEBUG) << "Called!: \n"
 		<< "    req head : "
 		<< (req.getHeader("Content-Type").empty()
 			    ? "empty"
 			    : req.getHeader("Content-Type"))
-		<< std::endl
-		<< "    req body : "
-		<< (req.getBody().empty() ? 0 : req.getBody().size()) << std::endl
+		<< "\n"
+		<< "    req body size: "
+		<< (req.getBody().empty() ? 0 : req.getBody().size()) << "\n"
 		<< "    req name : "
-		<< (req.getPath().empty() ? "empty" : req.getPath()) << std::endl;
-
-	//  curl -X POST http://127.0.0.1:8080/ \
-	// -H "Content-Type: image/png" \
-	// --data-binary "@./tmp/img.png"
+		<< (req.getPath().empty() ? "empty" : req.getPath()) << "\n";
+	// TODO : req.getPath()がlocationに一致しているかを検索する
+	// curl -X POST http://127.0.0.1:8080/ -H "Content-Type: image/png" --data-binary "@./tmp/img.png"
 
 	// 上記のコマンドを、@./tmp/img.pngを用意した状態でdefault.yamlでサーバーを起動すると動く
 
@@ -64,7 +61,7 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	const std::string uploadStore = loc.uploadStore;
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
-		std::cout << "-1" << std::endl;
+		LOG(ERROR) << "Upload store is empty";
 		HandlerUtil::generateErrorBody(req.getMethod(), response,
 		                               HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
@@ -72,7 +69,7 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	struct stat s;
 	// upload storeが存在しない
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
-		std::cout << "0" << std::endl;
+		LOG(ERROR) << "PostHandler : Upload Store \"" << uploadStore << "\" is not exist.";
 		std::cout << uploadStore.c_str() << std::endl;
 		HandlerUtil::generateErrorBody(req.getMethod(), response,
 		                               HttpStatus::INTERNAL_SERVER_ERROR);
@@ -82,18 +79,19 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 		MimeType::getExtension(req.getHeader("Content-Type"));
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
-		std::cout << "2" << std::endl;
+		LOG(ERROR) << "PostHandler : This Content-Type is Not Supported";
 		HandlerUtil::generateErrorBody(req.getMethod(), response,
 		                               HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
+	// TODO:getTokenのcharsetを変える
 	std::string target = uploadStore + "/" + Token::genToken(32) + "_" +
 	                     removeSpaceCoronComma(TimeCache::getCurrentTime()) +
 	                     expansion;
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
-		std::cout << "3" << std::endl;
+		LOG(ERROR) << "PostHandler : Can't create file";
 		HandlerUtil::generateErrorBody(req.getMethod(), response,
 		                               HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
@@ -103,5 +101,6 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	file.close();
 	HandlerUtil::generateErrorBody(req.getMethod(), response,
 	                               HttpStatus::CREATED);
+	LOG(INFO) << "PostHandler : File \""<< target << "\" created successfully.";
 	return response;
 }
