@@ -66,6 +66,7 @@ void FileSink::logAccess(const AccessLogContext& ctx) {
 
 
 void FileSink::rotate() {
+	_fileStream.flush();
 	_fileStream.close();
 
 	const std::string baseFilepath = _dir + "/" + _fileName;
