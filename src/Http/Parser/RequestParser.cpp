@@ -50,11 +50,11 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 		case STATE_HEADERS: {
 			const size_t headerEndPos = buffer.find("\r\n\r\n");
 			if (headerEndPos == std::string::npos) {
-				if (buffer.length() > request.getMaxHeaderSize()) {
+				if (buffer.length() > request.getMaxBodySize()) {
 					_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
 					LOG(WARNING) << "Parse error: Header fields too large"
 								 << attr("size", buffer.length())
-								 << attr("max_size", request.getMaxHeaderSize());
+								 << attr("max_size", request.getMaxBodySize());
 					return PARSE_ERROR;
 				}
 				return PARSE_INCOMPLETE;

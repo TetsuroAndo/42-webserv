@@ -50,8 +50,7 @@ public:
 	void clear();
 
 private:
-	static size_t maxHeaderSize;
-	static size_t maxBodySize;
+	size_t maxBodySize;
 
 	std::string _method;
 	std::string _path;
