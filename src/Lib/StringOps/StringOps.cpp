@@ -262,7 +262,6 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 	}
 
 	std::string num_part;
-	std::string unit_part;
 	size_t i = 0;
 
 	// 負の数(-記号)のチェックと数字部分の抽出
@@ -291,29 +290,31 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 	}
 
 	// 単位部分の抽出
-	unit_part = toUpper(trim(sizeStr.substr(i)));
+	const std::string unit_part = toUpper(trim(sizeStr.substr(i)));
 
 	const size_t max_size_t = std::numeric_limits<size_t>::max();
 	if (unit_part.empty() || unit_part == "B") {
 		return number;
-	} else if (unit_part == "KB") {
+	}
+	if (unit_part == "KB") {
 		if (number > max_size_t / 1024) {
 			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
 		}
 		return number * 1024;
-	} else if (unit_part == "MB") {
+	}
+	if (unit_part == "MB") {
 		if (number > max_size_t / (1024 * 1024)) {
 			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
 		}
 		return number * 1024 * 1024;
-	} else if (unit_part == "GB") {
+	}
+	if (unit_part == "GB") {
 		if (number > max_size_t / (1024 * 1024 * 1024)) {
 			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
 		}
 		return number * 1024 * 1024 * 1024;
-	} else {
-		throw std::runtime_error("Config error: unknown size unit '" + unit_part + "'. Use B, KB, MB, or GB.");
 	}
+	throw std::runtime_error("Config error: unknown size unit '" + unit_part + "'. Use B, KB, MB, or GB.");
 }
 
 unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
