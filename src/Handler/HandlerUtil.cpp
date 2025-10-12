@@ -34,9 +34,9 @@ void generateSimpleBody(const std::string &method, HttpResponse &res,
 	body += reason;
 	body += "</h1>";
 	if (description.empty() == false) {
-		body += "<h2>";
+		body += "<p>";
 		body += description;
-		body += "</h2>";
+		body += "</p>";
 	}
 	body += "</body></html>";
 	res.setBody(body);
