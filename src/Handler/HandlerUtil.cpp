@@ -3,6 +3,8 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -17,22 +19,16 @@ std::string getRealPath(const char *path) {
 	return realPath;
 }
 
-std::string toString(const int value) {
-	char buffer[32];
-	std::sprintf(buffer, "%d", value);
-	return std::string(buffer);
-}
-
 void generateErrorBody(const std::string &method, HttpResponse &res, const int code) {
 	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string body;
 	body += "<html><head><title>";
-	body += toString(code);
+	body += StringOps::toString(code);
 	body += " ";
 	body += reason;
 	body += "</title></head><body><h1>";
-	body += toString(code);
+	body += StringOps::toString(code);
 	body += " ";
 	body += reason;
 	body += "</h1></body></html>";
