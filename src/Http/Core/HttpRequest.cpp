@@ -2,7 +2,7 @@
 
 #include "../../Lib/StringOps/StringOps.hpp"
 
-HttpRequest::HttpRequest() : maxBodySize(0) {
+HttpRequest::HttpRequest(const Config &config) : maxBodySize(config.getMaxRequestBodySize()) {
 }
 
 HttpRequest::~HttpRequest() {}
