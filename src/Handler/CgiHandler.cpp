@@ -20,7 +20,7 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	if (req.getMethod() != "POST") {
 		LOG(WARNING) << "Method not allowed for CgiHandler"
 					 << attr("method", req.getMethod());
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::METHOD_NOT_ALLOWED);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::METHOD_NOT_ALLOWED);
 		return res;
 	}
 
@@ -30,7 +30,7 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	if (uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is not configured for this location"
 				   << attr("uri", req.getPath());
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
@@ -38,7 +38,7 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
 		LOG(ERROR) << "Upload store path is not a valid directory"
 				   << attr("path", uploadStore);
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
@@ -49,7 +49,7 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	if (!ofs.is_open()) {
 		LOG(ERROR) << "Failed to open file for writing" << attr("path", fullUploadPath)
 				   << attr("error", strerror(errno));
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
