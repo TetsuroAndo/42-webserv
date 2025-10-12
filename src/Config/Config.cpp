@@ -513,7 +513,7 @@ void Config::setup(const std::string &configFile) {
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
-		_maxRequestBodySize = StringOps::stringToInt(n->getValue());
+		_maxRequestBodySize = StringOps::sizeByteStrToSizeT(n->getValue());
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
 		_timeoutSec = StringOps::stringToInt(n->getValue());
