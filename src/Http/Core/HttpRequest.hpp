@@ -10,8 +10,6 @@ public:
 	~HttpRequest();
 
 	// Max
-	size_t getMaxHeaderSize() const;
-	void setMaxHeaderSize(const size_t size = 8192);
 	size_t getMaxBodySize() const;
 	void setMaxBodySize(const size_t size = 10 * 1024 * 1024);
 
