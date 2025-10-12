@@ -56,7 +56,7 @@ void StaticFileHandler::generateDirectoryListing(
 		LOG(ERROR) << "Failed to open directory for listing"
 				   << attr("path", directoryPath)
 				   << attr("error", strerror(errno));
-		HandlerUtil::generateErrorBody(req.getMethod(), res,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 									   HttpStatus::INTERNAL_SERVER_ERROR);
 		return;
 	}
@@ -110,7 +110,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 	if (filePath.empty()) {
 		LOG(WARNING) << "No matching location found for URI"
 					 << attr("uri", req.getPath());
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -118,7 +118,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 	if (stat(filePath.c_str(), &pathStat) != 0) {
 		LOG(WARNING) << "File or directory not found" << attr("path", filePath)
 					 << attr("error", strerror(errno));
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -145,7 +145,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			} else {
 				LOG(WARNING) << "Directory listing is disabled for"
 							 << attr("path", filePath);
-				HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
+				HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			}
 			return res;
 		}
@@ -170,23 +170,23 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
 			break;
 		case FILE_READ_NOT_FOUND:
-			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
+			HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
 			break;
 		case FILE_READ_IS_DIRECTORY:
-			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
+			HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_FORBIDDEN:
-			HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
+			HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_ERROR:
-			HandlerUtil::generateErrorBody(req.getMethod(), res,
+			HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										   HttpStatus::INTERNAL_SERVER_ERROR);
 			break;
 		}
 	} else {
 		LOG(WARNING) << "Requested path is not a regular file or directory"
 					 << attr("path", filePath);
-		HandlerUtil::generateErrorBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
 	}
 	return res;
 }

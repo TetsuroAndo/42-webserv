@@ -61,3 +61,15 @@ std::string MimeType::getMimeType(const std::string &extension) {
 	}
 	return "application/octet-stream";
 }
+
+std::string MimeType::getExtension(const std::string &mimeType) {
+	if (!_isInitialized) {
+		_setMimeTypes();
+	}
+	for (std::map<std::string, std::string>::const_iterator it = _mimeMap.begin(); it != _mimeMap.end(); ++it) {
+		if (it->second == mimeType) {
+			return it->first;
+		}
+	}
+	return "";
+}

@@ -39,13 +39,16 @@ servers:
             filterMode: exact
             maxSize: 1MB
             maxBackup: 3
+        - error_log:
+            sink : console
+            level : debug
 
       locations:
         # Default location, allows most things, autoindex on
         - location:
             path: /
             root: /tmp/www
-            uploadStore: /tmp/uploads
+            uploadStore: ./tmp/default_uploads
             indexFile: index.html
             autoindex: true
             allowedMethods:
@@ -58,7 +61,7 @@ servers:
         - location:
             path: /upload
             root: /tmp/uploads
-            uploadStore: /tmp/uploads
+            uploadStore: ./tmp/uploads
             allowedMethods:
               - POST
               - DELETE
