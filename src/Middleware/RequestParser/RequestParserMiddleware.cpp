@@ -8,7 +8,6 @@ void RequestParserMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 
-	ctx.req->setMaxBodySize(ctx.conf.getMaxRequestBodySize());
 	const ParseResult result = ctx.parser.parse(*ctx.req, ctx.recvBuffer);
 
 	if (result == PARSE_COMPLETE) {
