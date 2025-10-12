@@ -1,13 +1,14 @@
 #include "../../../Http/Core/HttpRequest.hpp"
 #include "../../../Http/Core/HttpResponse.hpp"
+#include "../../Info/App.hpp"
 #include "../AccessLog/AccessLogger.hpp"
 #include "../ErrorLog/Logger.hpp"
 #include <iostream>
-#include <stdexcept>
 #include <map>
+#include <stdexcept>
 #include <string>
-#include <vector>
 #include <unistd.h>
+#include <vector>
 
 // ========================================================================
 // AccessLoggerのテストに必要なHttpRequest/HttpResponseのモック(ダミークラス)

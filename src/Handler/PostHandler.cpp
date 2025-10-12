@@ -3,6 +3,7 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "../Lib/Info/App.hpp"
 #include "../Http/Mime/MimeType.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/Time/TimeCache.hpp"
