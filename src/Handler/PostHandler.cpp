@@ -8,6 +8,7 @@
 #include "../Lib/Time/TimeCache.hpp"
 #include "../Lib/Token/Token.hpp"
 #include "HandlerUtil.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -47,8 +48,8 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	// ファイルパスが不正
 	if (req.getPath() != loc.path) {
 		LOG(INFO) << "Requested path does not match actual path";
-		HandlerUtil::generateErrorBody(req.getMethod(), response,
-		                               HttpStatus::NOT_FOUND);
+		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		                                HttpStatus::NOT_FOUND);
 		return response;
 	}
 
@@ -57,8 +58,8 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is empty";
-		HandlerUtil::generateErrorBody(req.getMethod(), response,
-		                               HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		                                HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
 	struct stat s;
@@ -67,8 +68,8 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 		LOG(ERROR) << "PostHandler : Upload Store \"" << uploadStore <<
  "\" is not exist.";
 		std::cout << uploadStore.c_str() << std::endl;
-		HandlerUtil::generateErrorBody(req.getMethod(), response,
-		                               HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		                                HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
 	const std::string expansion =
@@ -76,42 +77,36 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
 		LOG(INFO) << "PostHandler : This Content-Type is Not Supported";
-		HandlerUtil::generateErrorBody(req.getMethod(), response,
-		                               HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		                                HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
-	std::string target = uploadStore + "/" +
-	                     removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) +
-	                     "-" + removeSpaceColonCommaHyphen(
-		                     TimeCache::getGmtTime()) +
-	                     "_" +
-	                     Token::genToken(
-		                     8,
-		                     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-	                     +
-	                     expansion;
+	std::string target_filename = removeSpaceColonCommaHyphen(
+		                              TimeCache::getGmtDate()) +
+	                              "-" + removeSpaceColonCommaHyphen(
+		                              TimeCache::getGmtTime()) +
+	                              "_" +
+	                              Token::genToken(
+		                              8,
+		                              "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	                              +
+	                              expansion;
+	std::string target = uploadStore + "/" + target_filename;
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
 		LOG(ERROR) << "PostHandler : Can't create file";
-		HandlerUtil::generateErrorBody(req.getMethod(), response,
-									   HttpStatus::INTERNAL_SERVER_ERROR);
-		return response;
-	}
-
-	// Bodyが大きすぎる
-	if (config.getMaxRequestBodySize() < req.getBody().size()) {
-		LOG(ERROR) << "PostHandler : Payload too large";
-		HandlerUtil::generateErrorBody(req.getMethod(), response,
-									   HttpStatus::PAYLOAD_TOO_LARGE);
+		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		                                HttpStatus::INTERNAL_SERVER_ERROR);
 		return response;
 	}
 
 	// Bodyの中身を書き込む
 	file << req.getBody();
 	file.close();
-	HandlerUtil::generateErrorBody(req.getMethod(), response,
-	                               HttpStatus::CREATED);
+	HandlerUtil::generateSimpleBody(req.getMethod(), response,
+	                                HttpStatus::CREATED,
+	                                "Created : " + target_filename);
 	LOG(INFO) << "PostHandler : File \"" << target <<
  "\" created successfully.";
 	return response;
