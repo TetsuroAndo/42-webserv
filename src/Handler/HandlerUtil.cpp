@@ -19,7 +19,8 @@ std::string getRealPath(const char *path) {
 	return realPath;
 }
 
-void generateErrorBody(const std::string &method, HttpResponse &res, const int code) {
+void generateSimpleBody(const std::string &method, HttpResponse &res,
+                        const int code,  const std::string &description) {
 	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string body;
@@ -31,10 +32,16 @@ void generateErrorBody(const std::string &method, HttpResponse &res, const int c
 	body += StringOps::toString(code);
 	body += " ";
 	body += reason;
-	body += "</h1></body></html>";
+	body += "</h1>";
+	if (description.empty() == false) {
+		body += "<h2>";
+		body += description;
+		body += "</h2>";
+	}
+	body += "</body></html>";
 	res.setBody(body);
 	res.setHeader("Content-Type", "text/html");
-	if(method == "HEAD") {
+	if (method == "HEAD") {
 		res.setBody("");
 	} else {
 		res.setBody(body);
@@ -47,7 +54,7 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 
 	const std::map<std::string, Location> &locations = config.getLocations();
 	for (std::map<std::string, Location>::const_iterator it = locations.begin();
-		 it != locations.end(); ++it) {
+	     it != locations.end(); ++it) {
 		if (requestPath.rfind(it->first, 0) == 0) {
 			if (it->first.length() > bestMatchPath.length()) {
 				bestMatchPath = it->first;
@@ -64,7 +71,7 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	std::string remainingPath = requestPath.substr(bestMatchPath.length());
 
 	if (!resolvedPath.empty() &&
-		resolvedPath[resolvedPath.length() - 1] != '/') {
+	    resolvedPath[resolvedPath.length() - 1] != '/') {
 		resolvedPath += "/";
 	}
 	if (!remainingPath.empty() && remainingPath[0] == '/') {
