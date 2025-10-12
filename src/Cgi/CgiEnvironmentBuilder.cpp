@@ -1,15 +1,15 @@
 #include "CgiEnvironmentBuilder.hpp"
+#include <algorithm>
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
-
+#include "../../Lib/StringOps/StringOps.hpp"
 #include "CgiEnvironmentBuilder.hpp"
 // ...
 
 std::vector<std::string> CgiEnvironmentBuilder::build(const HttpRequest& req,
 													  const Location& locConf,
 													  const std::string& scriptPath) {
-	std::map<std::string, std::string> envMap;
 	(void)locConf;
 	std::map<std::string, std::string> envMap;
 	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
@@ -35,10 +35,8 @@ std::vector<std::string> CgiEnvironmentBuilder::build(const HttpRequest& req,
 	const std::map<std::string, std::string> &headers = req.getHeaders();
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
 		std::string envKey = "HTTP_" + it->first;
-		for (size_t i = 0; i < envKey.length(); ++i) {
-			if (envKey[i] == '-') envKey[i] = '_';
-			else envKey[i] = toupper(envKey[i]);
-		}
+		std::replace(envKey.begin(), envKey.end(), '-', '_');
+		StringOps::toUpper(envKey);
 		envMap[envKey] = it->second;
 	}
 
