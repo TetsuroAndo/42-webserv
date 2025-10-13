@@ -66,7 +66,18 @@ void Server::setupListenSockets() {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
-		inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
+		int ptonRet = inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
+		if (ptonRet <= 0) {
+			close(listenFd);
+			if (ptonRet == 0) {
+				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
+				throw std::runtime_error("Invalid IP address format");     
+			}
+			if(ptonRet < 0) {
+				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
+				throw std::runtime_error("inet_pton() failed");   
+			}
+		}
 
 		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) <
 			0) {
