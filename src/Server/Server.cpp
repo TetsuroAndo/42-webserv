@@ -185,7 +185,7 @@ void Server::handleClientRead(const int clientFd) {
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
-									  client->getPort(), "");
+									  client->getPort(), ""); // TODO: セッションIDをここに
 		const std::string responseStr = ResponseBuilder::build(*ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(

@@ -32,7 +32,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 
 		if (!currentLocation.allowedMethods.empty()) {
 			routeProcessor->addMiddleware(
-				new SessionMiddleware(/* TODO: Implement SessionMiddleware */));
+				new SessionMiddleware());
 		}
 
 		if (currentLocation.allowedMethods.count("GET")) {
