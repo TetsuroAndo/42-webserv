@@ -47,7 +47,7 @@ servers:
         # Default location, allows most things, autoindex on
         - location:
             path: /
-            root: /tmp/www
+            root: ./tmp/www
             uploadStore: ./tmp/default_uploads
             indexFile: index.html
             autoindex: true
