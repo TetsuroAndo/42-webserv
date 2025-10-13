@@ -18,10 +18,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	_socket = new Socket(fd, addr);
 	HttpRequest *req = new HttpRequest(config);
 	HttpResponse *res = new HttpResponse(config);
-	_context = new PipelineContext(req, res, config);
-
-	_context->remoteAddr = _ip;
-	_context->remotePort = _port;
+	_context = new PipelineContext(req, res, config, *this);
 }
 
 Client::~Client() {

@@ -4,7 +4,6 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
 #include "../Socket/SocketsManager.hpp"
-#include "../Cgi/CgiManager.hpp"
 #include "Client.hpp"
 #include <map>
 
@@ -22,7 +21,6 @@ private:
 
 	Config _config;
 	SocketsManager _manager;
-	CgiManager _cgiManager;
 	std::map<int, Socket *> _listenSockets;
 	std::map<int, Client *> _clients;
 
