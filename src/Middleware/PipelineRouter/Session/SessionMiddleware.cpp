@@ -1,25 +1,74 @@
 #include "SessionMiddleware.hpp"
 
+#include "../../../Lib/StringOps/StringOps.hpp"
 #include "../../Core/MiddlewareProcessor.hpp"
 #include "../../Core/PipelineContext.hpp"
+#include "../../../Session/Session.hpp"
+#include "../../../Session/SessionManager.hpp"
+
+#include <string>
+#include <map>
+#include <sstream>
+#include <algorithm>
+
+namespace {
+
+std::map<std::string, std::string> parseCookieField(const std::string &cookie) {
+	std::map<std::string, std::string> result;
+	std::istringstream stream(cookie);
+	std::string pair;
+
+	while (std::getline(stream, pair, ';')) {
+		StringOps::trim(pair);
+
+		size_t pos = pair.find('=');
+		if (pos == std::string::npos) {
+			result[pair] = "";
+		} else {
+			std::string key = pair.substr(0, pos);
+			std::string value = pair.substr(pos + 1);
+			StringOps::trim(key);
+			StringOps::trim(value);
+			result[key] = value;
+		}
+	}
+
+	return result;
+}
+}
 
 SessionMiddleware::SessionMiddleware() {}
 
 SessionMiddleware::~SessionMiddleware() {}
 
-// TODO: これの実装進める
-// TODO: ctxがsessionを持ってるので、そこをctxのreqから読み取る。レスポンスにセッション情報をつける。
 void SessionMiddleware::handle(PipelineContext &ctx,
 							   MiddlewareProcessor *proc) {
 	(void)ctx;
-	// TODO: ヘッダーがセッション情報を持ってるか見る
-	std::string reqCookieRaw = ctx.req->getHeader("");
-	// TODO: ヘッダーのCookie情報をパースする
-	// TODO: セッションが有効なものかを確認する
-	// TODO: セッションがなければ新しく作る
-	// TODO: セッション情報を保存する
-	// TODO: セッション情報をレスポンスにつける。
+	SessionManager &manager = SessionManager::getInstance();
+	std::string token;
+	if (ctx.req->getHeader("Cookie").empty() == false) {
+		std::map<std::string, std::string> reqCookie = parseCookieField(ctx.req->getHeader("Cookie"));
+		if (reqCookie.count("sessionId") > 0) {
+			token = reqCookie["sessionId"];
+		}
+	}
+	Session *currentSession = NULL;
+	if (token.empty() == false) {
+		 currentSession = manager.getSession(token);
+	}
+	if (NULL == currentSession) {
+		currentSession = manager.createSession();
+	}
+	ctx.session = currentSession;
 
+	std::string response = "sessionId=";
+	response.append(token);
+	response.append("; Path=/; HttpOnly");
+	ctx.res->setHeader("Set-Cookie", response);
+
+	std::string response2 = "lastAccessTime=";
+	response2.append(StringOps::toString(currentSession->getLastAccess()));
+	ctx.res->setHeader("Set-Cookie", response2);
 
 	if (proc) {
 		proc->next(ctx);
