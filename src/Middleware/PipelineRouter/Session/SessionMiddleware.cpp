@@ -57,9 +57,11 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	Session *currentSession = NULL;
 	if (token.empty() == false) {
 		 currentSession = manager.getSession(token);
+		LOG(INFO) << "Session ID :" << ctx.session->getId();
 	}
 	if (NULL == currentSession) {
 		currentSession = manager.createSession();
+		LOG(INFO) << "Created session " << currentSession->getId();
 	}
 	ctx.session = currentSession;
 
@@ -71,8 +73,6 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	std::string response2 = "lastAccessTime=";
 	response2.append(TimeCache::getLocalTimestamp());
 	ctx.res->setHeader("Set-Cookie", response2);
-
-	LOG(INFO) << "Session ID :" << ctx.session->getId();
 
 	if (proc) {
 		proc->next(ctx);

@@ -1,6 +1,7 @@
 #include "SessionManager.hpp"
 
 #include "../Lib/Token/Token.hpp"
+#include "../Lib/Logger/Log.hpp"
 
 #include <ctime>
 #include <string>
@@ -58,14 +59,19 @@ bool SessionManager::destroySession(const std::string &sessionId) {
 
 void SessionManager::cleanupExpiredSessions() {
 	const time_t now = std::time(NULL);
+	size_t deleteCount = 0;
 
 	std::map<std::string, Session *>::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {
 		if (now - it->second->getLastAccess() > _SESSION_TIMEOUT) {
 			delete it->second;
 			_sessions.erase(it++);
+			deleteCount++;
 		} else {
 			++it;
 		}
+	}
+	if (0 < deleteCount) {
+		LOG(INFO) << "SessionManager::cleanupExpiredSessions closed Session: " << deleteCount ;
 	}
 }
