@@ -28,6 +28,7 @@ public:
 	FdEventChanges cleanupWorkers();
 
 	bool isCgiComplete(int clientFd, HttpResponse &res);
+	bool isCgiFd(int fd) const;
 
 private:
 	std::vector<CgiWorker*> _workers;

@@ -46,6 +46,7 @@ private:
 	pid_t              _pid;
 	int                _pipe_in[2];  // Server -> CGI
 	int                _pipe_out[2]; // CGI -> Server
+	int                _status_pipe[2]; // Child -> Parent (for execve status)
 	CgiState           _state;
 
 	std::string        _request_body;

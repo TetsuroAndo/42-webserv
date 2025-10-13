@@ -117,6 +117,10 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse& res) {
 	return false;
 }
 
+bool CgiManager::isCgiFd(int fd) const {
+	return _fdToWorker.count(fd) > 0;
+}
+
 void CgiManager::_removeWorker(CgiWorker* worker) {
 	if (!worker) return;
 

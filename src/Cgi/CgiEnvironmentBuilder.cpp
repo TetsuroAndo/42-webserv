@@ -3,20 +3,33 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include "../Server/Client.hpp"
+#include "../../Lib/Info/App.hpp"
 #include "../../Lib/StringOps/StringOps.hpp"
 #include "CgiEnvironmentBuilder.hpp"
 // ...
 
-std::vector<std::string> CgiEnvironmentBuilder::build(const HttpRequest& req,
+std::vector<std::string> CgiEnvironmentBuilder::build(const PipelineContext &ctx,
 													  const Location& locConf,
 													  const std::string& scriptPath) {
 	(void)locConf;
 	std::map<std::string, std::string> envMap;
 	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
-	envMap["SERVER_PROTOCOL"] = "HTTP/1.1";
-	envMap["REQUEST_METHOD"] = req.getMethod();
+	envMap["SERVER_PROTOCOL"] = HTTP_VERSION;
+	envMap["REQUEST_METHOD"] = ctx.req.getMethod();
 	envMap["SCRIPT_FILENAME"] = scriptPath;
-	envMap["SCRIPT_NAME"] = req.getPath();
+	envMap["SCRIPT_NAME"] = ctx.req.getRequest().getPath();
+
+	// RFC 3875 variables
+	envMap["SERVER_SOFTWARE"] = SOFTWARE_NAME;
+	envMap["SERVER_NAME"] = req.getHeader("Host"); // Host header
+	std::stringstream ss_port;
+	ss_port << req.getServerPort();
+	envMap["SERVER_PORT"] = ss_port.str();
+	envMap["REMOTE_ADDR"] = req.getRemoteAddr();
+	std::stringstream ss_remote_port;
+	ss_remote_port << req.getRemotePort();
+	envMap["REMOTE_PORT"] = ss_remote_port.str();
 
 	std::string queryString;
 	const std::map<std::string, std::string> &queries = req.getQueries();

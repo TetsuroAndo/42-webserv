@@ -1,13 +1,14 @@
-#include "../Cgi/CgiEnvironmentBuilder.hpp"
 #include "CgiWorker.hpp"
-#include <fcntl.h>
+#include "../Cgi/CgiEnvironmentBuilder.hpp"
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <iostream>
+#include <signal.h>
+#include <sstream>
 #include <stdexcept>
 #include <sys/wait.h>
-#include <sstream>
 
 // TODO: TIMEOUT_SECONDSをタイムアウトオブジェクトに置き換える
 const int CgiWorker::TIMEOUT_SECONDS = 30;
@@ -20,14 +21,15 @@ CgiWorker::CgiWorker(const HttpRequest &req, const Location &locConf,
 {
 	_pipe_in[0] = -1; _pipe_in[1] = -1;
 	_pipe_out[0] = -1; _pipe_out[1] = -1;
-	CgiEnvironmentBuilder::build(req, locConf, scriptPath);
+	_status_pipe[0] = -1; _status_pipe[1] = -1;
+	_envp_strs = CgiEnvironmentBuilder::build(req, locConf, scriptPath);
 	_updateLastActivityTime();
 }
 
 CgiWorker::~CgiWorker() {
 	_closePipe(_pipe_in[1]);
 	_closePipe(_pipe_out[0]);
-	
+
 	if (_pid > 0) {
 		// kill and waitpid are now managed by CgiManager
 	}
@@ -57,14 +59,14 @@ void CgiWorker::execute() {
 	if (fcntl(_pipe_in[1], F_SETFL, O_NONBLOCK) == -1 || fcntl(_pipe_out[0], F_SETFL, O_NONBLOCK) == -1) {
 		throw std::runtime_error("fcntl() failed");
 	}
-	
+
 	_state = _request_body.empty() ? CGI_RECEIVING_HEADERS : CGI_SENDING_BODY;
 }
 
 void CgiWorker::_childProcess() {
 	close(_pipe_in[1]);
 	close(_pipe_out[0]);
-	
+
 	if (dup2(_pipe_in[0], STDIN_FILENO) == -1 || dup2(_pipe_out[1], STDOUT_FILENO) == -1) {
 		std::cerr << "dup2() failed in child process" << std::endl;
 		exit(EXIT_FAILURE);
@@ -80,7 +82,7 @@ void CgiWorker::_childProcess() {
 	envp.push_back(NULL);
 
 	char* const argv[] = {const_cast<char*>(_interpreter_path.c_str()), const_cast<char*>(_script_path.c_str()), NULL};
-	
+
 	// Change directory
 	std::string script_dir = _script_path.substr(0, _script_path.find_last_of("/"));
 	if (chdir(script_dir.c_str()) != 0) {
@@ -98,9 +100,9 @@ void CgiWorker::_childProcess() {
 void CgiWorker::handleWrite() {
 	if (_state != CGI_SENDING_BODY) return;
 	_updateLastActivityTime();
-	
+
 	ssize_t bytes = write(_pipe_in[1], _request_body.c_str() + _bytes_sent, _request_body.length() - _bytes_sent);
-	
+
 	if (bytes > 0) {
 		_bytes_sent += bytes;
 	}
