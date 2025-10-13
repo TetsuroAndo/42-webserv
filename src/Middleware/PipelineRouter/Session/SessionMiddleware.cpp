@@ -108,7 +108,7 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 			parseCookieField(ctx.req->getHeader("Cookie"));
 		if (reqCookie.count("sessionId") > 0) {
 			token = reqCookie["sessionId"];
-			std::cout << "Received sessionId: " << token << std::endl;
+			// std::cout << "Received sessionId: " << token << std::endl;
 		}
 	}
 	Session *currentSession = NULL;
