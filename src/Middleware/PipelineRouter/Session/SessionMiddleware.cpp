@@ -57,7 +57,7 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	Session *currentSession = NULL;
 	if (token.empty() == false) {
 		 currentSession = manager.getSession(token);
-		LOG(INFO) << "Session ID :" << ctx.session->getId();
+		LOG(INFO) << "Session ID :" << currentSession->getId();
 	}
 	if (NULL == currentSession) {
 		currentSession = manager.createSession();
