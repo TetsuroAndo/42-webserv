@@ -27,8 +27,9 @@ public:
 	void setVersion(const std::string &version);
 
 	// Headers
-	const std::map<std::string, std::string> &getHeaders() const;
+	const std::map<std::string, std::vector<std::string> > &getHeaders() const;
 	const std::string &getHeader(const std::string &key) const;
+	const std::vector<std::string> &getHeaderVector(const std::string &key) const;
 	bool hasHeader(const std::string &key) const;
 	bool hasHeader(const char *keyStart, size_t keyLen) const;
 	void addHeader(const std::string &key, const std::string &value);
@@ -56,7 +57,7 @@ private:
 	std::string _method;
 	std::string _path;
 	std::string _version;
-	std::map<std::string, std::string> _headers;
+	std::map<std::string, std::vector<std::string> > _headers;
 	std::map<std::string, std::string> _query;
 	std::string _body;
 
