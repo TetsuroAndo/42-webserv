@@ -2,6 +2,7 @@
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
+#include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
@@ -92,6 +93,7 @@ void Server::setupListenSockets() {
 
 void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
+	time_t lastCleanTime = time(NULL);
 	while (true) {
 		const int nEvents = _manager.wait(-1);
 		if (nEvents < 0) {
@@ -121,6 +123,11 @@ void Server::run() {
 					handleClientWrite(fd);
 				}
 			}
+		}
+
+		if (time(NULL) - lastCleanTime > 900) { // 暫定的に15分ごとにセッションをクリア
+			SessionManager::getInstance().cleanupExpiredSessions();
+			lastCleanTime = time(NULL);
 		}
 	}
 }
