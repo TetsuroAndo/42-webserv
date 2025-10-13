@@ -7,6 +7,7 @@ usage() {
 	echo "  -t, --tree         Only show directory tree"
 	echo "  -v, --view         Only show file contents"
 	echo "  -nc, --no-comments Do not remove comments from files"
+	echo "  -nt, --no-tests    Do not show test files"
 	echo "If no path is provided, the current directory will be used."
 }
 
@@ -14,6 +15,7 @@ usage() {
 SHOW_TREE=true
 SHOW_VIEW=true
 REMOVE_COMMENTS=true
+SHOW_TESTS=true
 TARGET_PATH="."
 
 # Parse command line arguments
@@ -35,6 +37,18 @@ while [[ $# -gt 0 ]]; do
 			;;
 		-nc|--no-comments)
 			REMOVE_COMMENTS=false
+			shift
+			;;
+		-nt|--no-tests)
+			SHOW_TESTS=false
+			IGNORE_ARRAY+=(
+						"tests/"       # tests ディレクトリ
+						"tests/*"      # tests 配下のすべてのファイル
+						"*/tests/*"    # 任意のディレクトリ配下の tests ディレクトリ
+						"*/test/*"     # 任意のディレクトリ配下の test ディレクトリ
+						"tests.*"      # tests で始まるファイル
+						"test.*"       # test で始まるファイル
+			)
 			shift
 			;;
 		-*)
@@ -152,9 +166,9 @@ if [[ "$SHOW_VIEW" == true ]]; then
 				else
 					sed '
 						# 1行内で完結するブロックコメント /* ... */ を削除
-						s/\/\*.*\*\///g; 
+						s/\/\*.*\*\///g;
 						# 複数行にまたがるブロックコメントを削除
-						/\/\*.*/,/.*\*\//d; 
+						/\/\*.*/,/.*\*\//d;
 						# 行末コメント // ... を削除（コード部分は残す）
 						s/\/\/.*$//
 					' "$input_file" | awk 'NF'
