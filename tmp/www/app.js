@@ -152,3 +152,24 @@
     }
   });
 })();
+
+// Server name from cookie
+(() => {
+  const nameEl = document.getElementById('server-name');
+  if (!nameEl) return;
+
+  function getCookie(name) {
+    if (!document.cookie) return null;
+    const pairs = document.cookie.split(';');
+    for (let p of pairs) {
+      const idx = p.indexOf('=');
+      const key = (idx >= 0 ? p.slice(0, idx) : p).trim();
+      const val = idx >= 0 ? p.slice(idx + 1).trim() : '';
+      if (key === name) return decodeURIComponent(val);
+    }
+    return null;
+  }
+
+  const name = getCookie('serverName');
+  nameEl.textContent = name || 'not set';
+})();
