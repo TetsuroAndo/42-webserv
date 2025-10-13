@@ -37,8 +37,7 @@ std::string removeSpaceColonCommaHyphen(const std::string &str) {
 
 } // namespace
 
-HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
-	HttpResponse response(SERVER_NAME);
+HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res, const Config &config) {
 	LOG(INFO) << "PostHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
@@ -49,9 +48,9 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	// ファイルパスが不正
 	if (req.getPath() != loc.path) {
 		LOG(INFO) << "Requested path does not match actual path";
-		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 		                                HttpStatus::NOT_FOUND);
-		return response;
+		return res;
 	}
 
 	const std::string uploadStore = loc.uploadStore;
@@ -59,9 +58,9 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is empty";
-		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 		                                HttpStatus::INTERNAL_SERVER_ERROR);
-		return response;
+		return res;
 	}
 	struct stat s;
 	// upload storeが存在しない
@@ -69,18 +68,18 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 		LOG(ERROR) << "PostHandler : Upload Store \"" << uploadStore <<
  "\" is not exist.";
 		std::cout << uploadStore.c_str() << std::endl;
-		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 		                                HttpStatus::INTERNAL_SERVER_ERROR);
-		return response;
+		return res;
 	}
 	const std::string expansion =
 		MimeType::getExtension(req.getHeader("Content-Type"));
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
 		LOG(INFO) << "PostHandler : This Content-Type is Not Supported";
-		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 		                                HttpStatus::INTERNAL_SERVER_ERROR);
-		return response;
+		return res;
 	}
 	std::string target_filename = removeSpaceColonCommaHyphen(
 		                              TimeCache::getGmtDate()) +
@@ -97,18 +96,18 @@ HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
 	// ファイル作成失敗
 	if (!file) {
 		LOG(ERROR) << "PostHandler : Can't create file";
-		HandlerUtil::generateSimpleBody(req.getMethod(), response,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 		                                HttpStatus::INTERNAL_SERVER_ERROR);
-		return response;
+		return res;
 	}
 
 	// Bodyの中身を書き込む
 	file << req.getBody();
 	file.close();
-	HandlerUtil::generateSimpleBody(req.getMethod(), response,
+	HandlerUtil::generateSimpleBody(req.getMethod(), res,
 	                                HttpStatus::CREATED,
 	                                "Created : " + target_filename);
 	LOG(INFO) << "PostHandler : File \"" << target <<
  "\" created successfully.";
-	return response;
+	return res;
 }

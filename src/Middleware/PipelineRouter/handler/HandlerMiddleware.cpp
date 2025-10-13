@@ -49,7 +49,7 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 	if (it != _handlers.end()) {
 		ISubHandler *handler = it->second;
 		try {
-			*ctx.res = handler->handle(*ctx.req, ctx.conf);
+			*ctx.res = handler->handle(*ctx.req, *ctx.res ,ctx.conf);
 		} catch (...) {
 			ctx.res->setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 			ctx.res->setHeader("Content-Type", "text/html");

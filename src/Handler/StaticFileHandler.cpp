@@ -100,8 +100,8 @@ void StaticFileHandler::generateDirectoryListing(
 }
 
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
-									   const Config &config) {
-	HttpResponse res(SERVER_NAME);
+										HttpResponse &res,
+										const Config &config) {
 	LOG(INFO) << "StaticFileHandler processing request"
 			  << attr("method", req.getMethod())
 			  << attr("uri", req.getPath());

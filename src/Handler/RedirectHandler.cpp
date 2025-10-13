@@ -6,10 +6,11 @@ RedirectHandler::RedirectHandler(const std::string& redirectUrl, int statusCode)
 
 RedirectHandler::~RedirectHandler() {}
 
-HttpResponse RedirectHandler::handle(const HttpRequest& req, const Config& config) {
+HttpResponse RedirectHandler::handle(const HttpRequest& req,
+									HttpResponse &res,
+									const Config& config) {
     (void)req;
     (void)config;
-    HttpResponse res(SERVER_NAME);
     res.setStatusCode(_statusCode);
     res.setHeader("Location", _redirectUrl);
     return res;

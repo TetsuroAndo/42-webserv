@@ -13,8 +13,7 @@ CgiHandler::CgiHandler() {}
 
 CgiHandler::~CgiHandler() {}
 
-HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
-	HttpResponse res(SERVER_NAME);
+HttpResponse CgiHandler::handle(const HttpRequest &req, HttpResponse &res, const Config &config) {
 	LOG(INFO) << "CgiHandler processing request" << attr("method", req.getMethod())
 			  << attr("uri", req.getPath());
 
