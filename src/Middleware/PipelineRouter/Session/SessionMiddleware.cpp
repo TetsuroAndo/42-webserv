@@ -1,10 +1,12 @@
 #include "SessionMiddleware.hpp"
 
 #include "../../../Lib/StringOps/StringOps.hpp"
+#include "../../../Lib/Time/TimeCache.hpp"
 #include "../../Core/MiddlewareProcessor.hpp"
 #include "../../Core/PipelineContext.hpp"
 #include "../../../Session/Session.hpp"
 #include "../../../Session/SessionManager.hpp"
+#include "../../../Lib/Logger/Log.hpp"
 
 #include <string>
 #include <map>
@@ -62,13 +64,15 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	ctx.session = currentSession;
 
 	std::string response = "sessionId=";
-	response.append(token);
+	response.append(currentSession->getId());
 	response.append("; Path=/; HttpOnly");
 	ctx.res->setHeader("Set-Cookie", response);
 
 	std::string response2 = "lastAccessTime=";
-	response2.append(StringOps::toString(currentSession->getLastAccess()));
+	response2.append(TimeCache::getLocalTimestamp());
 	ctx.res->setHeader("Set-Cookie", response2);
+
+	LOG(INFO) << "Session ID :" << ctx.session->getId();
 
 	if (proc) {
 		proc->next(ctx);
