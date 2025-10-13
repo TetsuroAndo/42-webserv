@@ -74,6 +74,7 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 
 	std::string response2 = "lastAccessTime=";
 	response2.append(TimeCache::getLocalTimestamp());
+	response.append("; Path=/");
 	ctx.res->setHeader("Set-Cookie", response2);
 
 	if (proc) {
