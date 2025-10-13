@@ -1,43 +1,66 @@
 #include "SessionMiddleware.hpp"
 
+#include "../../../Lib/Logger/Log.hpp"
 #include "../../../Lib/StringOps/StringOps.hpp"
 #include "../../../Lib/Time/TimeCache.hpp"
-#include "../../Core/MiddlewareProcessor.hpp"
-#include "../../Core/PipelineContext.hpp"
 #include "../../../Session/Session.hpp"
 #include "../../../Session/SessionManager.hpp"
-#include "../../../Lib/Logger/Log.hpp"
+#include "../../Core/MiddlewareProcessor.hpp"
+#include "../../Core/PipelineContext.hpp"
 
-#include <string>
+#include <algorithm>
 #include <map>
 #include <sstream>
-#include <algorithm>
+#include <string>
 
 namespace {
 
-std::map<std::string, std::string> parseCookieField(const std::string &cookie) {
-	std::map<std::string, std::string> result;
-	std::istringstream stream(cookie);
-	std::string pair;
-
-	while (std::getline(stream, pair, ';')) {
-		StringOps::trim(pair);
-
-		size_t pos = pair.find('=');
+void extractKeyValue(std::map< std::string, std::string > &result,
+					 std::string &current) {
+	if (!current.empty()) {
+		const size_t pos = current.find('=');
 		if (pos == std::string::npos) {
-			result[pair] = "";
+			result[current] = "";
 		} else {
-			std::string key = pair.substr(0, pos);
-			std::string value = pair.substr(pos + 1);
+			std::string key = current.substr(0, pos);
+			std::string value = current.substr(pos + 1);
 			StringOps::trim(key);
 			StringOps::trim(value);
+			if (value.size() >= 2 && *value.begin() == '"' &&
+				*(value.end() - 1) == '"') {
+				value = value.substr(1, value.size() - 2);
+			}
 			result[key] = value;
 		}
 	}
+	current.clear();
+}
 
+std::map< std::string, std::string >
+parseCookieField(const std::string &cookie) {
+	std::map< std::string, std::string > result;
+
+	std::string current;
+	bool inQuotes = false;
+
+	for (size_t i = 0; i < cookie.size(); ++i) {
+		const char c = cookie[i];
+
+		if (c == '"') {
+			inQuotes = !inQuotes;
+			current += c;
+		} else if (c == ';' && !inQuotes) {
+			StringOps::trim(current);
+			extractKeyValue(result, current);
+		} else {
+			current += c;
+		}
+	}
+	StringOps::trim(current);
+	extractKeyValue(result, current);
 	return result;
 }
-}
+} // namespace
 
 SessionMiddleware::SessionMiddleware() {}
 
@@ -49,9 +72,11 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	SessionManager &manager = SessionManager::getInstance();
 	std::string token;
 	if (ctx.req->getHeader("Cookie").empty() == false) {
-		std::map<std::string, std::string> reqCookie = parseCookieField(ctx.req->getHeader("Cookie"));
+		std::map< std::string, std::string > reqCookie =
+			parseCookieField(ctx.req->getHeader("Cookie"));
 		if (reqCookie.count("sessionId") > 0) {
 			token = reqCookie["sessionId"];
+			LOG(DEBUG) << "Received sessionId: " << token;
 		}
 	}
 	Session *currentSession = NULL;
@@ -68,9 +93,9 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	ctx.session = currentSession;
 
 	{
-		std::string response = "sessionId=";
+		std::string response = "sessionId=\"";
 		response.append(currentSession->getId());
-		response.append("; Path=/; HttpOnly");
+		response.append("\"; Path=/; HttpOnly");
 		ctx.res->setHeader("Set-Cookie", response);
 	}
 	{
