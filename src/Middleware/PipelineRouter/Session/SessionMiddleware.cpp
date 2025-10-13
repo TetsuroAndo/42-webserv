@@ -15,6 +15,25 @@
 
 namespace {
 
+std::string unescapeCookieValue(const std::string &in) {
+	std::string out;
+	out.reserve(in.size());
+	bool esc = false;
+	for (size_t i = 0; i < in.size(); ++i) {
+		char c = in[i];
+		if (!esc && c == '\\') {
+			esc = true;
+			continue;
+		}
+		out += c;
+		esc = false;
+	}
+	if (esc) {
+		out += '\\';
+	}
+	return out;
+}
+
 void extractKeyValue(std::map< std::string, std::string > &result,
 					 std::string &current) {
 	if (!current.empty()) {
@@ -26,10 +45,13 @@ void extractKeyValue(std::map< std::string, std::string > &result,
 			std::string value = current.substr(pos + 1);
 			StringOps::trim(key);
 			StringOps::trim(value);
-			if (value.size() >= 2 && *value.begin() == '"' &&
-				*(value.end() - 1) == '"') {
+			const bool hadOuterQuotes =
+				(value.size() >= 2 && *value.begin() == '"' &&
+				 *(value.end() - 1) == '"');
+			if (hadOuterQuotes) {
 				value = value.substr(1, value.size() - 2);
 			}
+			value = unescapeCookieValue(value);
 			result[key] = value;
 		}
 	}
@@ -42,19 +64,30 @@ parseCookieField(const std::string &cookie) {
 
 	std::string current;
 	bool inQuotes = false;
+	bool escaped = false;
 
 	for (size_t i = 0; i < cookie.size(); ++i) {
 		const char c = cookie[i];
+		if (inQuotes && !escaped && c == '\\') {
+			escaped = true;
+			continue;
+		}
 
-		if (c == '"') {
+		if (c == '"' && !escaped) {
 			inQuotes = !inQuotes;
 			current += c;
-		} else if (c == ';' && !inQuotes) {
+		} else if (c == ';' && !inQuotes && !escaped) {
 			StringOps::trim(current);
 			extractKeyValue(result, current);
 		} else {
 			current += c;
 		}
+		if (escaped) {
+			escaped = false;
+		}
+	}
+	if (escaped) {
+		current += '\\';
 	}
 	StringOps::trim(current);
 	extractKeyValue(result, current);
@@ -68,7 +101,6 @@ SessionMiddleware::~SessionMiddleware() {}
 
 void SessionMiddleware::handle(PipelineContext &ctx,
 							   MiddlewareProcessor *proc) {
-	(void)ctx;
 	SessionManager &manager = SessionManager::getInstance();
 	std::string token;
 	if (ctx.req->getHeader("Cookie").empty() == false) {
@@ -76,7 +108,7 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 			parseCookieField(ctx.req->getHeader("Cookie"));
 		if (reqCookie.count("sessionId") > 0) {
 			token = reqCookie["sessionId"];
-			LOG(DEBUG) << "Received sessionId: " << token;
+			std::cout << "Received sessionId: " << token << std::endl;
 		}
 	}
 	Session *currentSession = NULL;
