@@ -4,20 +4,12 @@
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
-
-#include <cstdio>
-#include <cstdlib>
+#include "../Lib/Path/Path.hpp"
+#include "../Lib/Logger/ErrorLog/Logger.hpp"
+#include <cerrno>
+#include <cstring>
 
 namespace HandlerUtil {
-std::string getRealPath(const char *path) {
-	char *realPathPtr = realpath(path, NULL);
-	if (realPathPtr == NULL) {
-		return "";
-	}
-	std::string realPath(realPathPtr);
-	free(realPathPtr);
-	return realPath;
-}
 
 void generateSimpleBody(const std::string &method, HttpResponse &res,
                         const int code,  const std::string &description) {
@@ -79,17 +71,35 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	}
 	resolvedPath += remainingPath;
 
-	resolvedPath = getRealPath(resolvedPath.c_str());
+    std::string originalResolvedPath = resolvedPath;
+	resolvedPath = Path::getAbsolutePath(resolvedPath);
 	if (resolvedPath.empty()) {
+        if (errno == ENOENT) {
+            LOG(DEBUG) << "Path does not exist: " << originalResolvedPath;
+        } else if (errno == EACCES) {
+            LOG(WARNING) << "Permission denied for path: " << originalResolvedPath;
+        } else {
+            LOG(ERROR) << "realpath failed for path: " << originalResolvedPath << " Error: " << strerror(errno);
+        }
 		return "";
 	}
 
-	const std::string realRoot = getRealPath(root.c_str());
+    std::string originalRoot = root;
+	const std::string realRoot = Path::getAbsolutePath(root);
 	if (realRoot.empty()) {
+        if (errno == ENOENT) {
+            LOG(DEBUG) << "Root path does not exist: " << originalRoot;
+        }
+        else if (errno == EACCES) {
+            LOG(WARNING) << "Permission denied for root path: " << originalRoot;
+        } else {
+            LOG(ERROR) << "realpath failed for root path: " << originalRoot << " Error: " << strerror(errno);
+        }
 		return "";
 	}
 
 	if (resolvedPath.rfind(realRoot, 0) != 0) {
+        LOG(WARNING) << "Directory traversal attempt detected. Resolved path: " << resolvedPath << ", Real root: " << realRoot;
 		return "";
 	}
 
