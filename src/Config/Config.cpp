@@ -1,23 +1,11 @@
 #include "Config.hpp"
+#include "ConfigParser.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
-#include "../Lib/Logger/LogType.hpp"
 #include "../Lib/Logger/ErrorLog/Logger.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
-namespace {
-void validateKeys(const Node *node, const std::set<std::string> &validKeys, const std::string &context) {
-    if (!node) return;
-    const std::vector<std::string> &keys = node->getKeys();
-    for (std::vector<std::string>::const_iterator it = keys.begin(); it != keys.end(); ++it) {
-        if (validKeys.find(*it) == validKeys.end()) {
-            throw std::runtime_error("Config error: unknown directive '" + *it + "' in " + context);
-        }
-    }
-}
-}
 
 void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
@@ -95,6 +83,10 @@ void Config::setAllowedMethods(const std::set<std::string> &methods,
 }
 
 void Config::setListens(const std::vector<Listen> &lists) { _listens = lists; }
+
+void Config::setAccessLogs(const std::vector<AccessLog> &accessLogs) { _accessLogs = accessLogs; }
+
+void Config::setErrorLogs(const std::vector<ErrorLog> &errorLogs) { _errorLogs = errorLogs; }
 
 void Config::setRedirects(const std::map<std::string, Redirect> &redirects) {
 	_redirects = redirects;
@@ -184,272 +176,6 @@ Config &Config::operator=(const Config &other) {
 
 Config::~Config() {}
 
-void Config::parseListens(const Node *node) {
-	if (!node)
-		throw std::runtime_error("Config error: missing 'listens' node");
-	const std::vector<Node *> &listens = node->getSeq();
-	for (std::vector<Node *>::const_iterator it = listens.begin();
-		 it != listens.end(); ++it) {
-		Node *l_node = *it;
-		if (l_node->getKey() != "listen") {
-			throw std::runtime_error(
-				"Config error: missing 'listen' key in listen item");
-		}
-
-        const char *validKeysArr[] = {"interface", "port"};
-        std::set<std::string> validKeys(validKeysArr, validKeysArr + 2);
-        validateKeys(l_node, validKeys, "listen block");
-
-		Listen l;
-		Node *interfaceNode = l_node->getMapNode("interface");
-		if (!interfaceNode)
-			throw std::runtime_error(
-				"Config error: missing 'interface' in listen item");
-		l.interface = interfaceNode->getValue();
-
-		Node *portNode = l_node->getMapNode("port");
-		if (!portNode)
-			throw std::runtime_error(
-				"Config error: missing 'port' in listen item");
-		int port = StringOps::stringToInt(portNode->getValue());
-		if (port < 1024 || port > 65535) {
-			std::stringstream ss;
-			ss << "Config error: invalid port number " << port
-			   << ". Port must be between 1024 and 65535.";
-			throw std::runtime_error(ss.str());
-		}
-		l.port = port;
-
-		_listens.push_back(l);
-	}
-}
-
-void Config::parseRedirects(Node *node) {
-	if (!node)
-		throw std::runtime_error("Config error: missing 'redirects' node");
-	const std::vector<Node *> &redirects = node->getSeq();
-	for (std::vector<Node *>::const_iterator it = redirects.begin();
-		 it != redirects.end(); ++it) {
-		Node *r_node = *it;
-		if (r_node->getKey() != "redirect") {
-			continue;
-		}
-
-        const char *validKeysArr[] = {"from", "to", "code"};
-        std::set<std::string> validKeys(validKeysArr, validKeysArr + 3);
-        validateKeys(r_node, validKeys, "redirect block");
-
-		Redirect r;
-		Node *fromNode = r_node->getMapNode("from");
-		if (!fromNode)
-			throw std::runtime_error(
-				"Config error: missing 'from' key in redirect item");
-		r.fromPath = fromNode->getValue();
-
-		Node *toNode = r_node->getMapNode("to");
-		if (!toNode)
-			throw std::runtime_error(
-				"Config error: missing 'to' key in redirect item");
-		r.toUrl = toNode->getValue();
-
-		Node *codeNode = r_node->getMapNode("code");
-		if (!codeNode)
-			throw std::runtime_error(
-				"Config error: missing 'code' key in redirect item");
-		r.code = StringOps::stringToInt(codeNode->getValue());
-
-		_redirects[r.fromPath] = r;
-	}
-}
-
-void Config::parseLocations(Node *node) {
-	if (!node)
-		throw std::runtime_error("Config error: missing 'locations' node");
-
-	const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
-	std::set<std::string> validMethods(validMethodsArr, validMethodsArr + 4);
-
-	const std::vector<Node *> &locations = node->getSeq();
-	for (std::vector<Node *>::const_iterator it = locations.begin();
-		 it != locations.end(); ++it) {
-		Node *l_node = *it;
-		if (l_node->getKey() != "location") {
-			continue;
-		}
-
-        const char *validKeysArr[] = {"path", "root", "allowedMethods", "autoindex", "indexFile", "uploadStore", "cgi", "redirects", "errorFile"};
-        std::set<std::string> validKeys(validKeysArr, validKeysArr + 9);
-        validateKeys(l_node, validKeys, "location block");
-
-		Location loc;
-		Node *pathNode = l_node->getMapNode("path");
-		if (!pathNode)
-			throw std::runtime_error(
-				"Config error: missing 'path' key in location item");
-		loc.path = pathNode->getValue();
-
-		Node *rootNode = l_node->getMapNode("root");
-		if (rootNode)
-			loc.root = rootNode->getValue();
-		Node *errorFileNode = l_node->getMapNode("errorFile");
-		if (errorFileNode)
-			loc.errorFile = errorFileNode->getValue();
-		Node *uploadStoreNode = l_node->getMapNode("uploadStore");
-		if (uploadStoreNode)
-			loc.uploadStore = uploadStoreNode->getValue();
-		Node *indexNode = l_node->getMapNode("indexFile");
-		if (indexNode)
-			loc.indexFile = indexNode->getValue();
-		Node *autoindexNode = l_node->getMapNode("autoindex");
-		if (autoindexNode)
-			loc.autoindex = (autoindexNode->getValue() == "true");
-
-		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
-			const std::vector<Node *> &methods = allowMethodsNode->getSeq();
-			for (std::vector<Node *>::const_iterator m_it = methods.begin();
-				 m_it != methods.end(); ++m_it) {
-				std::string method = (*m_it)->getValue();
-				if (validMethods.find(method) == validMethods.end()) {
-					throw std::runtime_error(
-						"Config error: invalid HTTP method '" + method + "'");
-				}
-				loc.allowedMethods.insert(method);
-			}
-		}
-		_locations[loc.path] = loc;
-	}
-}
-
-namespace {
-// AccessLog用の何もしないSpecificsパーサー
-void parseLogSpecifics(Node *logNode, AccessLog &log, const std::string &logKey) {
-    (void)logNode;
-    (void)log;
-    (void)logKey;
-}
-
-// ErrorLog用のSpecificsパーサー
-void parseLogSpecifics(Node *logNode, ErrorLog &log, const std::string &logKey) {
-    Node *levelNode = logNode->getMapNode("level");
-    if (levelNode) {
-        const std::string levelValue = StringOps::toUpper(levelNode->getValue());
-        if (levelValue == "DEBUG") log.level = DEBUG;
-        else if (levelValue == "INFO") log.level = INFO;
-        else if (levelValue == "WARNING") log.level = WARNING;
-        else if (levelValue == "ERROR") log.level = ERROR;
-        else if (levelValue == "FATAL") log.level = FATAL;
-        else throw std::runtime_error("Config error in " + logKey + ": invalid log level.");
-    }
-
-    Node *modeNode = logNode->getMapNode("mode");
-    if (modeNode) {
-        const std::string modeValue = StringOps::toUpper(modeNode->getValue());
-        if (modeValue == "GREATER_OR_EQUAL") log.filterMode = GREATER_OR_EQUAL;
-        else if (modeValue == "EXACT") log.filterMode = EXACT;
-        else throw std::runtime_error("Config error in " + logKey + ": invalid filter mode.");
-    }
-}
-
-template <typename LogType>
-void parseLogs(Node *node, const std::string &logKey, const std::set<std::string>& enabledValidKeys, std::vector<LogType> &configuredLogs) {
-    if (!node) return;
-
-    const std::vector<Node *> &logs = node->getSeq();
-    bool isDisabledFound = false;
-    bool isEnabledFound = false;
-
-    for (std::vector<Node *>::const_iterator it = logs.begin(); it != logs.end(); ++it) {
-        Node *logNode = *it;
-        if (logNode->getKey() != logKey) {
-            continue;
-        }
-
-        LogType log;
-
-        Node *disableNode = logNode->getMapNode("disable");
-        const bool isDisabled = disableNode && StringOps::equalsIgnoreCase(disableNode->getValue(), "true");
-
-        if (isDisabled) {
-            isDisabledFound = true;
-            std::set<std::string> validKeys;
-            validKeys.insert("disable");
-            validateKeys(logNode, validKeys, "disabled " + logKey + " block");
-            log.isDisable = true;
-            configuredLogs.push_back(log);
-            continue;
-        }
-
-        isEnabledFound = true;
-        validateKeys(logNode, enabledValidKeys, logKey + " block");
-
-        log.isDisable = false;
-
-        Node *sinkNode = logNode->getMapNode("sink");
-        if (!sinkNode) throw std::runtime_error("Config error in " + logKey + ": 'sink' is required.");
-        const std::string sinkValue = StringOps::toUpper(sinkNode->getValue());
-        if (sinkValue == "FILE") log.sink = File;
-        else if (sinkValue == "CONSOLE") log.sink = Console;
-        else throw std::runtime_error("Config error in " + logKey + ": 'sink' must be 'file' or 'console'.");
-
-        Node *formatNode = logNode->getMapNode("format");
-        if (formatNode) {
-            const std::string formatValue = StringOps::toUpper(formatNode->getValue());
-            if (formatValue == "JSON") log.format = JSON;
-            else if (formatValue == "ELF") log.format = ELF;
-            else throw std::runtime_error("Config error in " + logKey + ": invalid format type.");
-        }
-
-        if (sinkValue == "FILE") {
-            Node *filenameNode = logNode->getMapNode("filename");
-            if (filenameNode) log.filename = filenameNode->getValue();
-            Node *logDirNode = logNode->getMapNode("logDir");
-            if (logDirNode) log.logDir = logDirNode->getValue();
-            Node *maxSizeNode = logNode->getMapNode("maxSize");
-            if (maxSizeNode) log.maxFileSize = StringOps::sizeByteStrToSizeT(maxSizeNode->getValue());
-            Node *maxBackupNode = logNode->getMapNode("maxBackup");
-            if (maxBackupNode) log.maxBackupFiles = StringOps::toSizeT(maxBackupNode->getValue());
-        } else {
-            if (logNode->getMapNode("filename")) throw std::runtime_error("Config error in " + logKey + ": 'filename' is not allowed for 'console' sink.");
-            if (logNode->getMapNode("logDir")) throw std::runtime_error("Config error in " + logKey + ": 'logDir' is not allowed for 'console' sink.");
-            if (logNode->getMapNode("maxSize")) throw std::runtime_error("Config error in " + logKey + ": 'maxSize' is not allowed for 'console' sink.");
-            if (logNode->getMapNode("maxBackup")) throw std::runtime_error("Config error in " + logKey + ": 'maxBackup' is not allowed for 'console' sink.");
-        }
-
-        parseLogSpecifics(logNode, log, logKey);
-
-        configuredLogs.push_back(log);
-    }
-
-    if (isDisabledFound && isEnabledFound) {
-        throw std::runtime_error("Config error in " + logKey + ": Cannot mix 'disable: true' with other valid log configurations.");
-    }
-}
-}
-
-void Config::parseAccessLogs(Node *node) {
-    std::vector<AccessLog> configuredLogs;
-    const char *validKeysArr[] = {"disable", "sink", "filename", "logDir", "format", "maxSize", "maxBackup"};
-    std::set<std::string> validKeys(validKeysArr, validKeysArr + 7);
-
-    parseLogs(node, "access_log", validKeys, configuredLogs);
-
-    if (!configuredLogs.empty()) {
-        _accessLogs = configuredLogs;
-    }
-}
-
-void Config::parseErrorLogs(Node *node) {
-    std::vector<ErrorLog> configuredLogs;
-    const char *validKeysArr[] = {"disable", "sink", "filename", "logDir", "format", "level", "mode", "maxSize", "maxBackup"};
-    std::set<std::string> validKeys(validKeysArr, validKeysArr + 9);
-
-    parseLogs(node, "error_log", validKeys, configuredLogs);
-
-    if (!configuredLogs.empty()) {
-        _errorLogs = configuredLogs;
-    }
-}
-
 void Config::setup(const std::string &configFile) {
 	LOG(INFO) << "Loading configuration from: " << configFile;
 	const MyYAML yaml(configFile);
@@ -469,32 +195,8 @@ void Config::setup(const std::string &configFile) {
 			"Config error: missing 'server' key in server list");
 	}
 
-    const char *validKeysArr[] = {"listens", "redirects", "locations", "access_logs", "error_logs", "maxRequestBodySize", "timeoutSec", "maxEvents"};
-    std::set<std::string> validKeys(validKeysArr, validKeysArr + 8);
-    validateKeys(serverNode, validKeys, "server block");
-
-	parseListens(serverNode->getMapNode("listens"));
-	if (Node *redirectsNode = serverNode->getMapNode("redirects")) {
-		parseRedirects(redirectsNode);
-	}
-	if (Node *locationsNode = serverNode->getMapNode("locations")) {
-		parseLocations(locationsNode);
-	}
-	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
-		parseAccessLogs(accessLogsNode);
-	}
-	if (Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
-		parseErrorLogs(errorLogsNode);
-	}
-
-	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
-		_maxRequestBodySize = StringOps::sizeByteStrToSizeT(n->getValue());
-
-	if (Node *n = serverNode->getMapNode("timeoutSec"))
-		_timeoutSec = StringOps::stringToInt(n->getValue());
-
-	if (Node *n = serverNode->getMapNode("maxEvents"))
-		_maxEvents = StringOps::stringToInt(n->getValue());
+    ConfigParser parser(this);
+    parser.parseServer(serverNode);
 }
 
 const std::vector<Listen> &Config::getListens() const { return _listens; }

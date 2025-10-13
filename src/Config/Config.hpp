@@ -77,6 +77,10 @@ private:
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
 
+	void initDefaults();
+	void setup(const std::string &configFile);
+
+public:
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
 	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
 	void setIndexFile(const std::string &indexFile,
@@ -100,6 +104,8 @@ private:
 						   const std::string &locationKey = "/");
 
 	void setListens(const std::vector<Listen> &lists);
+	void setAccessLogs(const std::vector<AccessLog> &accessLogs);
+	void setErrorLogs(const std::vector<ErrorLog> &errorLogs);
 	void setRedirects(const std::map<std::string, Redirect> &redirects);
 	void setRedirect(const Redirect &redirect,
 					 const std::string &redirectKey = "/");
@@ -110,17 +116,6 @@ private:
 	void setMaxRequestBodySize(unsigned int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
-
-	void initDefaults();
-	void setup(const std::string &configFile);
-
-	void parseListens(const Node *node);
-	void parseRedirects(Node *node);
-	void parseLocations(Node *node);
-	void parseAccessLogs(Node *node);
-	void parseErrorLogs(Node *node);
-
-public:
 	Config();
 	Config(const std::string &configFile);
 	Config(const Config &other);
