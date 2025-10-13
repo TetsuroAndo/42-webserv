@@ -3,7 +3,6 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Http/Mime/MimeType.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/Time/TimeCache.hpp"
@@ -38,7 +37,7 @@ std::string removeSpaceColonCommaHyphen(const std::string &str) {
 } // namespace
 
 HttpResponse PostHandler::handle(const HttpRequest &req, const Config &config) {
-	HttpResponse response(SERVER_NAME);
+	HttpResponse response(config);
 	LOG(INFO) << "PostHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 

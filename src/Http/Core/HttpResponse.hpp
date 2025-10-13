@@ -1,18 +1,18 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
-#include "../../Lib/Info/App.hpp"
+#include "../../Config/Config.hpp"
 #include <map>
 #include <string>
 
 class HttpResponse {
 public:
-	HttpResponse(const std::string &serverName = SERVER_NAME);
+	HttpResponse(const Config &conf);
 	~HttpResponse();
 
 	// Server Name
 	const std::string &getServerName() const;
-	void setServerName(const std::string &name = SERVER_NAME);
+	void setServerName(const std::string &name);
 
 	// Status Code
 	int getStatusCode() const;

@@ -10,11 +10,10 @@ PipelineContext::~PipelineContext() {
 }
 
 void PipelineContext::reset() {
-	std::string serverName = res->getServerName();
 	delete req;
 	delete res;
-	req = new HttpRequest();
-	res = new HttpResponse(serverName);
+	req = new HttpRequest(conf);
+	res = new HttpResponse(conf);
 	recvBuffer.clear();
 	sendBuffer.clear();
 	parser.reset();

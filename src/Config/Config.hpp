@@ -2,6 +2,7 @@
 
 #include "../Lib/Logger/ErrorLog/LogStructure.hpp"
 #include "../Lib/Logger/LogType.hpp"
+#include "Info/App.hpp"
 #include <map>
 #include <ostream>
 #include <set>
@@ -9,6 +10,18 @@
 #include <vector>
 
 class Node;
+
+struct AppInfo {
+	std::string softwareName;
+	std::string softwareVersion;
+
+	std::string httpServerName;
+	std::string httpProtocolVersion;
+
+	AppInfo()
+		: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
+		  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION) {}
+};
 
 struct Listen {
 	std::string interface;
@@ -68,6 +81,7 @@ struct ErrorLog {
 
 class Config {
 private:
+	AppInfo _appInfo;
 	std::vector<Listen> _listens;
 	std::map<std::string, Redirect> _redirects;
 	std::map<std::string, Location> _locations;
@@ -127,6 +141,7 @@ public:
 	Config &operator=(const Config &other);
 	~Config();
 
+	const AppInfo &getAppInfo() const;
 	const std::vector<Listen> &getListens() const;
 	const std::map<std::string, Redirect> &getRedirects() const;
 	const Redirect &getRedirect(const std::string &path) const;

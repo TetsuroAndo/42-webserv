@@ -542,6 +542,8 @@ void Config::setup(const std::string &configFile) {
 		_maxEvents = StringOps::stringToInt(n->getValue());
 }
 
+const AppInfo &Config::getAppInfo() const { return _appInfo; }
+
 const std::vector<Listen> &Config::getListens() const { return _listens; }
 
 const std::map<std::string, Redirect> &Config::getRedirects() const {

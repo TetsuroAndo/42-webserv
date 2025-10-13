@@ -2,7 +2,6 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "HandlerUtil.hpp"
 #include <cstdio>
@@ -43,7 +42,7 @@ DeleteHandler::~DeleteHandler() {
 
 HttpResponse DeleteHandler::handle(const HttpRequest &req,
                                    const Config &config) {
-	HttpResponse res(SERVER_NAME);
+	HttpResponse res(config);
 	LOG(INFO) << "DeleteHandler processing request"
 			  << attr("method", req.getMethod())
 			  << attr("uri", req.getPath());

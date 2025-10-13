@@ -22,7 +22,6 @@ private:
 	Socket *_socket;
 	PipelineContext *_context;
 
-	// Disable copy
 	Client(const Client &);
 	Client &operator=(const Client &);
 };

@@ -11,13 +11,15 @@
  * @note HttpRequest, HttpResponse, Config, Session への参照を保持する
  */
 struct PipelineContext {
-	HttpRequest *req;
-	HttpResponse *res;
-	const Config &conf;
-	Session *session;
-	std::string recvBuffer;
-	std::string sendBuffer;
-	RequestParser parser;
+	const Config	&conf;
+	HttpRequest		*req;
+	HttpResponse	*res;
+	std::string		remoteAddr;
+	int				remotePort;
+	Session			*session;
+	std::string		recvBuffer;
+	std::string		sendBuffer;
+	RequestParser	parser;
 
 	PipelineContext(HttpRequest *r, HttpResponse *s, const Config &c);
 	~PipelineContext();

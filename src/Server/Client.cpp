@@ -1,7 +1,6 @@
 #include "Client.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
-#include "../Lib/Info/App.hpp"
 #include <arpa/inet.h>
 #include <sstream>
 
@@ -18,8 +17,11 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 
 	_socket = new Socket(fd, addr);
 	HttpRequest *req = new HttpRequest(config);
-	HttpResponse *res = new HttpResponse(SERVER_NAME);
+	HttpResponse *res = new HttpResponse(config);
 	_context = new PipelineContext(req, res, config);
+
+	_context->remoteAddr = _ip;
+	_context->remotePort = _port;
 }
 
 Client::~Client() {

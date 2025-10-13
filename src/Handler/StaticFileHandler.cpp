@@ -1,7 +1,6 @@
 #include "StaticFileHandler.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "HandlerUtil.hpp"
 #include <algorithm>
@@ -101,7 +100,7 @@ void StaticFileHandler::generateDirectoryListing(
 
 HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 									   const Config &config) {
-	HttpResponse res(SERVER_NAME);
+	HttpResponse res(config);
 	LOG(INFO) << "StaticFileHandler processing request"
 			  << attr("method", req.getMethod())
 			  << attr("uri", req.getPath());
