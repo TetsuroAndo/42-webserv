@@ -1,19 +1,18 @@
-#ifndef HTTPREQUEST_HPP
-#define HTTPREQUEST_HPP
+#pragma once
 
 #include <map>
 #include <string>
 
+#include "../../Config/Config.hpp"
+
 class HttpRequest {
 public:
-	HttpRequest();
+	HttpRequest(const Config& config);
 	~HttpRequest();
 
 	// Max
-	size_t getMaxHeaderSize() const;
-	void setMaxHeaderSize(const size_t size = 8192);
 	size_t getMaxBodySize() const;
-	void setMaxBodySize(const size_t size = 10 * 1024 * 1024);
+	void setMaxBodySize(size_t size);
 
 	// Method
 	const std::string &getMethod() const;
@@ -52,8 +51,7 @@ public:
 	void clear();
 
 private:
-	static size_t maxHeaderSize;
-	static size_t maxBodySize;
+	size_t maxBodySize;
 
 	std::string _method;
 	std::string _path;
@@ -65,5 +63,3 @@ private:
 	HttpRequest(const HttpRequest &);
 	HttpRequest &operator=(const HttpRequest &);
 };
-
-#endif

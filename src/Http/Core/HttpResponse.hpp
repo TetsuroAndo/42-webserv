@@ -1,11 +1,9 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
+#include "../../Lib/Info/App.hpp"
 #include <map>
 #include <string>
-
-#define HTTP_VERSION "HTTP/1.0"
-#define SERVER_NAME "webserv/42"
 
 class HttpResponse {
 public:

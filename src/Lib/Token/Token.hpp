@@ -10,4 +10,5 @@ public:
 	~Token();
 
 	static std::string genToken(size_t length = 32);
+	static std::string genToken(size_t length, const std::string &charset);
 };
