@@ -4,6 +4,7 @@
 #include "../../Lib/Info/App.hpp"
 #include <map>
 #include <string>
+#include <vector>
 
 class HttpResponse {
 public:
@@ -23,8 +24,9 @@ public:
 	void setVersion(const std::string &version);
 
 	// Headers
-	const std::map<std::string, std::string> &getHeaders() const;
+	const std::map<std::string, std::vector<std::string> > &getHeaders() const;
 	const std::string &getHeader(const std::string &key) const;
+	const std::vector<std::string> &getHeaderVector(const std::string &key) const;
 	bool hasHeader(const std::string &key) const;
 	void setHeader(const std::string &key, const std::string &value);
 
@@ -54,7 +56,7 @@ private:
 	std::string _serverName;
 	int _statusCode;
 	std::string _version;
-	std::map<std::string, std::string> _headers;
+	std::map<std::string, std::vector<std::string> > _headers;
 	std::string _body;
 
 	HttpResponse();
