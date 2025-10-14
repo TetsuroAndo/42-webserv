@@ -110,15 +110,6 @@ void ConfigBuilder::setLocation(const Location &location) {
 	_locations[location.path] = location;
 }
 
-void ConfigBuilder::setServerDefaultPath(const std::string &path) {
-	if (_locations.count(_defaultLocationKey) > 0) {
-		Location loc = _locations[_defaultLocationKey];
-		loc.path = path;
-		_locations[path] = loc;
-		_defaultLocationKey = path;
-	}
-}
-
 void ConfigBuilder::setServerDefaultRoot(const std::string &root) {
 	_locations[_defaultLocationKey].root = root;
 }

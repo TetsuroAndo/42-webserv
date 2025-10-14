@@ -38,7 +38,6 @@ static std::set<std::string> createValidServerKeys() {
 	keys.insert("maxRequestBodySize");
 	keys.insert("timeoutSec");
 	keys.insert("maxEvents");
-	keys.insert("path");
 	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
@@ -246,9 +245,6 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		logParser.parseErrorLogs(errorLogsNode);
 	}
 
-	if (Node *n = serverNode->getMapNode("path")) {
-		_builder->setServerDefaultPath(n->getValue());
-	}
 	if (Node *n = serverNode->getMapNode("root"))
 		_builder->setServerDefaultRoot(n->getValue());
 	if (Node *n = serverNode->getMapNode("allowedMethods")) {
