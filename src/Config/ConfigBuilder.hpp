@@ -25,7 +25,7 @@ public:
 	ConfigBuilder(const std::string &configFile);
 	~ConfigBuilder();
 
-	Config build();
+	Config build() const;
 
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
 	void setAutoindex(bool autoindex, const std::string &locationKey = "/");

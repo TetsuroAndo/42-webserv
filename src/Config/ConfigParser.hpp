@@ -3,7 +3,7 @@
 #include <set>
 #include <string>
 
-class Config;
+class ConfigBuilder;
 class Node;
 
 class ConfigParser {

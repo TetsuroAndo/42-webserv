@@ -54,7 +54,7 @@ void ConfigBuilder::setup(const std::string &configFile) {
 	parser.parseServer(serverNode);
 }
 
-Config ConfigBuilder::build() {
+Config ConfigBuilder::build() const {
 	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
 				  _maxRequestBodySize, _timeoutSec, _maxEvents);
 }
