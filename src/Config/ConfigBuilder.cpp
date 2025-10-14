@@ -2,6 +2,7 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "ConfigParser.hpp"
+#include <algorithm>
 #include <sstream>
 
 void ConfigBuilder::initDefaults() {
@@ -112,7 +113,6 @@ void ConfigBuilder::setLocation(const Location &location) {
 void ConfigBuilder::setServerDefaultPath(const std::string &path) {
 	if (_locations.count(_defaultLocationKey) > 0) {
 		Location loc = _locations[_defaultLocationKey];
-		_locations.erase(_defaultLocationKey);
 		loc.path = path;
 		_locations[path] = loc;
 		_defaultLocationKey = path;
@@ -176,9 +176,10 @@ void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
 	std::set<std::string> methodsSet;
 	std::istringstream iss(methods);
 	std::string method;
-	while (std::getline(iss, method, ',')) {
-		if (!method.empty())
+	while (iss >> method) {
+		if (!method.empty()) {
 			methodsSet.insert(method);
+		}
 	}
 	_locations[_defaultLocationKey].allowedMethods = methodsSet;
 }
