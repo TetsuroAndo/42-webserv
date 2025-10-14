@@ -1,11 +1,94 @@
 #include "Config.hpp"
-#include "ConfigParser.hpp"
+#include "../Lib/Logger/ErrorLog/Logger.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
-#include "../Lib/Logger/ErrorLog/Logger.hpp"
+#include "ConfigParser.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+void Config::initDefaults() {
+	_listens.clear();
+	_redirects.clear();
+	_locations.clear();
+	_accessLogs.clear();
+	_errorLogs.clear();
+
+	_maxRequestBodySize = 1024 * 1024;
+	_timeoutSec = 60;
+	_maxEvents = 1024;
+
+	Location defaultLoc;
+	defaultLoc.path = "/";
+	defaultLoc.root = "/tmp/www";
+	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.indexFile = "index.html";
+	defaultLoc.autoindex = true;
+	defaultLoc.allowedMethods.insert("GET");
+	defaultLoc.allowedMethods.insert("HEAD");
+	defaultLoc.allowedMethods.insert("POST");
+	defaultLoc.allowedMethods.insert("DELETE");
+	_locations["/"] = defaultLoc;
+
+	_accessLogs.push_back(AccessLog());
+	_errorLogs.push_back(ErrorLog());
+}
+
+void Config::setup(const std::string &configFile) {
+	LOG(INFO) << "Loading configuration from: " << configFile;
+	const MyYAML yaml(configFile);
+	const Node *serversNode = yaml.getData().getMapNode("servers");
+	if (!serversNode) {
+		throw std::runtime_error("Config error: missing 'servers' root node");
+	}
+
+	const std::vector<Node *> &serverList = serversNode->getSeq();
+	if (serverList.empty()) {
+		throw std::runtime_error("Config error: no servers configured");
+	}
+
+	Node *serverNode = serverList[0];
+	if (serverNode->getKey() != "server") {
+		throw std::runtime_error(
+			"Config error: missing 'server' key in server list");
+	}
+
+	ConfigParser parser(this);
+	parser.parseServer(serverNode);
+}
+
+Config::Config() {
+	initDefaults();
+	setup("config/default.yaml");
+}
+
+Config::Config(const std::string &configFile) {
+	initDefaults();
+	setup(configFile);
+}
+
+Config::Config(const Config &other)
+	: _listens(other._listens), _redirects(other._redirects),
+	  _locations(other._locations), _accessLogs(other._accessLogs),
+	  _errorLogs(other._errorLogs),
+	  _maxRequestBodySize(other._maxRequestBodySize),
+	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
+
+Config &Config::operator=(const Config &other) {
+	if (this != &other) {
+		_listens = other._listens;
+		_redirects = other._redirects;
+		_locations = other._locations;
+		_accessLogs = other._accessLogs;
+		_errorLogs = other._errorLogs;
+		_maxRequestBodySize = other._maxRequestBodySize;
+		_timeoutSec = other._timeoutSec;
+		_maxEvents = other._maxEvents;
+	}
+	return *this;
+}
+
+Config::~Config() {}
 
 void Config::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
@@ -84,9 +167,13 @@ void Config::setAllowedMethods(const std::set<std::string> &methods,
 
 void Config::setListens(const std::vector<Listen> &lists) { _listens = lists; }
 
-void Config::setAccessLogs(const std::vector<AccessLog> &accessLogs) { _accessLogs = accessLogs; }
+void Config::setAccessLogs(const std::vector<AccessLog> &accessLogs) {
+	_accessLogs = accessLogs;
+}
 
-void Config::setErrorLogs(const std::vector<ErrorLog> &errorLogs) { _errorLogs = errorLogs; }
+void Config::setErrorLogs(const std::vector<ErrorLog> &errorLogs) {
+	_errorLogs = errorLogs;
+}
 
 void Config::setRedirects(const std::map<std::string, Redirect> &redirects) {
 	_redirects = redirects;
@@ -116,89 +203,6 @@ void Config::setMaxEvents(const unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
-void Config::initDefaults() {
-	_listens.clear();
-	_redirects.clear();
-	_locations.clear();
-	_accessLogs.clear();
-	_errorLogs.clear();
-
-	_maxRequestBodySize = 1024 * 1024;
-	_timeoutSec = 60;
-	_maxEvents = 1024;
-
-	Location defaultLoc;
-	defaultLoc.path = "/";
-	defaultLoc.root = "/tmp/www";
-	defaultLoc.uploadStore = "/tmp/uploads";
-	defaultLoc.indexFile = "index.html";
-	defaultLoc.autoindex = true;
-	defaultLoc.allowedMethods.insert("GET");
-	defaultLoc.allowedMethods.insert("HEAD");
-	defaultLoc.allowedMethods.insert("POST");
-	defaultLoc.allowedMethods.insert("DELETE");
-	_locations["/"] = defaultLoc;
-
-	_accessLogs.push_back(AccessLog());
-	_errorLogs.push_back(ErrorLog());
-}
-
-Config::Config() {
-	initDefaults();
-	setup("config/default.yaml");
-}
-
-Config::Config(const std::string &configFile) {
-	initDefaults();
-	setup(configFile);
-}
-
-Config::Config(const Config &other)
-	: _listens(other._listens), _redirects(other._redirects),
-	  _locations(other._locations), _accessLogs(other._accessLogs),
-	  _errorLogs(other._errorLogs),
-	  _maxRequestBodySize(other._maxRequestBodySize),
-	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
-
-Config &Config::operator=(const Config &other) {
-	if (this != &other) {
-		_listens = other._listens;
-		_redirects = other._redirects;
-		_locations = other._locations;
-		_accessLogs = other._accessLogs;
-		_errorLogs = other._errorLogs;
-		_maxRequestBodySize = other._maxRequestBodySize;
-		_timeoutSec = other._timeoutSec;
-		_maxEvents = other._maxEvents;
-	}
-	return *this;
-}
-
-Config::~Config() {}
-
-void Config::setup(const std::string &configFile) {
-	LOG(INFO) << "Loading configuration from: " << configFile;
-	const MyYAML yaml(configFile);
-	const Node *serversNode = yaml.getData().getMapNode("servers");
-	if (!serversNode) {
-		throw std::runtime_error("Config error: missing 'servers' root node");
-	}
-
-	const std::vector<Node *> &serverList = serversNode->getSeq();
-	if (serverList.empty()) {
-		throw std::runtime_error("Config error: no servers configured");
-	}
-
-	Node *serverNode = serverList[0];
-	if (serverNode->getKey() != "server") {
-		throw std::runtime_error(
-			"Config error: missing 'server' key in server list");
-	}
-
-    ConfigParser parser(this);
-    parser.parseServer(serverNode);
-}
-
 const std::vector<Listen> &Config::getListens() const { return _listens; }
 
 const std::map<std::string, Redirect> &Config::getRedirects() const {
@@ -206,23 +210,24 @@ const std::map<std::string, Redirect> &Config::getRedirects() const {
 }
 
 const Redirect &Config::getRedirect(const std::string &path) const {
-    std::string bestMatchKey = "";
+	std::string bestMatchKey = "";
 
-    for (std::map<std::string, Redirect>::const_iterator it = _redirects.begin();
-         it != _redirects.end(); ++it) {
-        const std::string &redirectPath = it->first;
-        if (path.rfind(redirectPath, 0) == 0) {
-            if (redirectPath.length() > bestMatchKey.length()) {
-                bestMatchKey = redirectPath;
-            }
-        }
-    }
-    if (!bestMatchKey.empty()) {
-        return _redirects.at(bestMatchKey);
-    }
-    // Return a default constructed Redirect indicating no match
-    static const Redirect noMatchRedirect = {"", "", 0};
-    return noMatchRedirect;
+	for (std::map<std::string, Redirect>::const_iterator it =
+			 _redirects.begin();
+		 it != _redirects.end(); ++it) {
+		const std::string &redirectPath = it->first;
+		if (path.rfind(redirectPath, 0) == 0) {
+			if (redirectPath.length() > bestMatchKey.length()) {
+				bestMatchKey = redirectPath;
+			}
+		}
+	}
+	if (!bestMatchKey.empty()) {
+		return _redirects.at(bestMatchKey);
+	}
+	// Return a default constructed Redirect indicating no match
+	static const Redirect noMatchRedirect = {"", "", 0};
+	return noMatchRedirect;
 }
 
 const std::map<std::string, Location> &Config::getLocations() const {
@@ -258,14 +263,14 @@ const std::vector<AccessLog> &Config::getAccessLogs() const {
 	return _accessLogs;
 }
 
-const std::vector<ErrorLog> &Config::getErrorLogs() const {
-	return _errorLogs;
-}
+const std::vector<ErrorLog> &Config::getErrorLogs() const { return _errorLogs; }
 
 unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
 }
+
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
+
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
 std::ostream &operator<<(std::ostream &os, const Config &config) {
@@ -356,7 +361,7 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "\n";
 		os << "      filterMode: "
 		   << (it->filterMode == GREATER_OR_EQUAL ? "GREATER_OR_EQUAL"
-										  : "EXACT")
+												  : "EXACT")
 		   << "\n";
 		os << "      maxFileSize: " << it->maxFileSize << "\n";
 		os << "      maxBackupFiles: " << it->maxBackupFiles << "\n";

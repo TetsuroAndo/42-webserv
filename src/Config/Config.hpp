@@ -81,6 +81,12 @@ private:
 	void setup(const std::string &configFile);
 
 public:
+	Config();
+	Config(const std::string &configFile);
+	Config(const Config &other);
+	Config &operator=(const Config &other);
+	~Config();
+
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
 	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
 	void setIndexFile(const std::string &indexFile,
@@ -116,11 +122,6 @@ public:
 	void setMaxRequestBodySize(unsigned int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
-	Config();
-	Config(const std::string &configFile);
-	Config(const Config &other);
-	Config &operator=(const Config &other);
-	~Config();
 
 	const std::vector<Listen> &getListens() const;
 	const std::map<std::string, Redirect> &getRedirects() const;
