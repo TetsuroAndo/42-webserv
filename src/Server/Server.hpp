@@ -1,10 +1,10 @@
 #pragma once
 
+#include "Client.hpp"
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
 #include "../SocketsManager/SocketsManager.hpp"
-#include "Client.hpp"
 #include <map>
 
 class Server {

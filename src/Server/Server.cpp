@@ -4,13 +4,13 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 Server::Server() : _config(Config()) {
 	LOG(INFO) << "Initializing server with default configuration...";
