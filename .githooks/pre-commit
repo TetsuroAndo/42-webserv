@@ -1,0 +1,10 @@
+#!/bin/sh
+files=$(git diff --cached --name-only main | grep -E '\.(cpp|hpp)$')
+[ -z "$files" ] && exit 0
+echo "Running clang-format on changed C++ files..."
+echo "$files" | xargs clang-format -i
+git add $files
+
+#以下のコマンドを実行することで利用可能
+#git config --local core.hooksPath .githooks
+#chmod -R +x .githooks/
