@@ -1,8 +1,9 @@
 #include "PipelineContext.hpp"
+#include "../../Server/Client.hpp"
 
 PipelineContext::PipelineContext(HttpRequest *r, HttpResponse *s,
 								 const Config &c, Client &client)
-	: req(r), res(s), conf(c), session(NULL), recvBuffer(""), sendBuffer(""),
+	: conf(c), req(r), res(s), session(NULL), recvBuffer(""), sendBuffer(""),
 	  ownerClient(client) {}
 
 PipelineContext::~PipelineContext() {
@@ -18,6 +19,7 @@ void PipelineContext::reset() {
 	recvBuffer.clear();
 	sendBuffer.clear();
 	parser.reset();
+	// sessionはresetでdeleteするべきか要検討ですが、元のコードの挙動を維持します
 	if (session) {
 		delete session;
 		session = NULL;

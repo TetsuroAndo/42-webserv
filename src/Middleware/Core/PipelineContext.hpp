@@ -5,7 +5,8 @@
 #include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Parser/RequestParser.hpp"
 #include "../../Session/Session.hpp"
-#include "../../Server/Client.hpp"
+
+class Client;
 
 /**
  * @brief ミドルウェア間で引き回す情報をまとめた構造体

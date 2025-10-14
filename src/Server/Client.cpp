@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
+#include "../Middleware/Core/PipelineContext.hpp"
 #include <arpa/inet.h>
 #include <sstream>
 

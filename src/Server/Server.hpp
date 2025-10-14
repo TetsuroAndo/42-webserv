@@ -3,6 +3,7 @@
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
+#include "../Socket/FdEventChanges.hpp"
 #include "../Socket/SocketsManager.hpp"
 #include "Client.hpp"
 #include <map>

@@ -1,8 +1,10 @@
 #pragma once
 
-#include "../Middleware/Core/PipelineContext.hpp"
+#include "../Config/Config.hpp"
 #include "../Socket/Socket.hpp"
 #include <string>
+
+class PipelineContext;
 
 class Client {
 public:

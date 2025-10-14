@@ -103,6 +103,7 @@ public:
 	Config &operator=(const Config &other);
 	~Config();
 
+	const AppInfo &getAppInfo() const;
 	const std::vector<Listen> &getListens() const;
 	const std::map<std::string, Redirect> &getRedirects() const;
 	const Redirect &getRedirect(const std::string &path) const;
