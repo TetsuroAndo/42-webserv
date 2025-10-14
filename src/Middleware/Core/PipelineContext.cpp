@@ -19,7 +19,7 @@ void PipelineContext::reset() {
 	recvBuffer.clear();
 	sendBuffer.clear();
 	parser.reset();
-	// sessionはresetでdeleteするべきか要検討ですが、元のコードの挙動を維持します
+	// sessionはresetでdeleteするべきか要検討
 	if (session) {
 		delete session;
 		session = NULL;
