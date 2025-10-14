@@ -34,25 +34,22 @@ FileDeleteStatus tryDeleteFile(const std::string &filePath) {
 }
 } // namespace
 
-DeleteHandler::DeleteHandler() {
-}
+DeleteHandler::DeleteHandler() {}
 
-DeleteHandler::~DeleteHandler() {
-}
+DeleteHandler::~DeleteHandler() {}
 
-HttpResponse DeleteHandler::handle(const HttpRequest &req,
-                                   const Config &config) {
-	HttpResponse res(config);
+HttpResponse DeleteHandler::handle(const HttpRequest &req, HttpResponse &res,
+								   const Config &config) {
 	LOG(INFO) << "DeleteHandler processing request"
-			  << attr("method", req.getMethod())
-			  << attr("uri", req.getPath());
+			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
 	const std::string filePath =
 		HandlerUtil::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
 		LOG(WARNING) << "No matching location for DELETE request"
 					 << attr("uri", req.getPath());
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -65,23 +62,26 @@ HttpResponse DeleteHandler::handle(const HttpRequest &req,
 		break;
 	case DELETE_NOT_FOUND:
 		LOG(WARNING) << "File not found for deletion" << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::NOT_FOUND);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::NOT_FOUND);
 		break;
 	case DELETE_IS_DIRECTORY:
 		LOG(WARNING) << "Attempted to delete a directory"
 					 << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::FORBIDDEN);
 		break;
 	case DELETE_PERMISSION_DENIED:
 		LOG(ERROR) << "Permission denied while deleting file"
-				   << attr("path", filePath)
-				   << attr("error", strerror(errno));
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::FORBIDDEN);
+				   << attr("path", filePath) << attr("error", strerror(errno));
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::FORBIDDEN);
 		break;
 	case DELETE_UNKNOWN_ERROR:
 		LOG(ERROR) << "Unknown error occurred while deleting file"
 				   << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		break;
 	}
 

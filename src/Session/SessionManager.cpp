@@ -1,5 +1,6 @@
 #include "SessionManager.hpp"
 
+#include "../Lib/Logger/Log.hpp"
 #include "../Lib/Token/Token.hpp"
 
 #include <ctime>
@@ -8,7 +9,7 @@
 SessionManager::SessionManager() {}
 
 SessionManager::~SessionManager() {
-	for (std::map<std::string, Session *>::iterator it = _sessions.begin();
+	for (std::map< std::string, Session * >::iterator it = _sessions.begin();
 		 it != _sessions.end(); ++it) {
 		delete it->second;
 	}
@@ -36,7 +37,7 @@ Session *SessionManager::createSession() {
 }
 
 Session *SessionManager::getSession(const std::string &sessionId) {
-	const std::map<std::string, Session *>::iterator it =
+	const std::map< std::string, Session * >::iterator it =
 		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		it->second->updateLastAccess();
@@ -46,7 +47,7 @@ Session *SessionManager::getSession(const std::string &sessionId) {
 }
 
 bool SessionManager::destroySession(const std::string &sessionId) {
-	const std::map<std::string, Session *>::iterator it =
+	const std::map< std::string, Session * >::iterator it =
 		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
 		delete it->second;
@@ -58,14 +59,20 @@ bool SessionManager::destroySession(const std::string &sessionId) {
 
 void SessionManager::cleanupExpiredSessions() {
 	const time_t now = std::time(NULL);
+	size_t deleteCount = 0;
 
-	std::map<std::string, Session *>::iterator it = _sessions.begin();
+	std::map< std::string, Session * >::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {
 		if (now - it->second->getLastAccess() > _SESSION_TIMEOUT) {
 			delete it->second;
 			_sessions.erase(it++);
+			deleteCount++;
 		} else {
 			++it;
 		}
+	}
+	if (0 < deleteCount) {
+		LOG(INFO) << "SessionManager::cleanupExpiredSessions closed Session: "
+				  << deleteCount;
 	}
 }

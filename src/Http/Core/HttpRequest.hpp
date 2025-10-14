@@ -7,7 +7,7 @@
 
 class HttpRequest {
 public:
-	HttpRequest(const Config& config);
+	HttpRequest(const Config &config);
 	~HttpRequest();
 
 	// Max
@@ -27,16 +27,21 @@ public:
 	void setVersion(const std::string &version);
 
 	// Headers
-	const std::map<std::string, std::string> &getHeaders() const;
+	const std::map< std::string, std::vector< std::string > > &
+	getHeaders() const;
 	const std::string &getHeader(const std::string &key) const;
+	const std::vector< std::string > &
+	getHeaderVector(const std::string &key) const;
 	bool hasHeader(const std::string &key) const;
 	bool hasHeader(const char *keyStart, size_t keyLen) const;
 	void addHeader(const std::string &key, const std::string &value);
 	void addHeader(const char *keyStart, size_t keyLen, const char *valStart,
 				   size_t valLen);
-
+	void appendHeader(const std::string &key, const std::string &value);
+	void appendHeader(const char *keyStart, size_t keyLen, const char *valStart,
+					  size_t valLen);
 	// Query Parameters (?以降のキーバリュー)
-	const std::map<std::string, std::string> &getQueries() const;
+	const std::map< std::string, std::string > &getQueries() const;
 	const std::string &getQuery(const std::string &key) const;
 	bool hasQuery(const std::string &key) const;
 	void addQuery(const std::string &key, const std::string &value);
@@ -56,8 +61,8 @@ private:
 	std::string _method;
 	std::string _path;
 	std::string _version;
-	std::map<std::string, std::string> _headers;
-	std::map<std::string, std::string> _query;
+	std::map< std::string, std::vector< std::string > > _headers;
+	std::map< std::string, std::string > _query;
 	std::string _body;
 
 	HttpRequest(const HttpRequest &);

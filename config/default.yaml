@@ -28,7 +28,7 @@ servers:
             logDir: ./logs
             format: JSON
             level: info
-            filterMode: GREATER_OR_EQUAL
+            mode: GREATER_OR_EQUAL
             maxSize: 1MB
             maxBackup: 3
         - error_log:
@@ -36,7 +36,7 @@ servers:
             filename: debug.log
             format: ELF
             level: debug
-            filterMode: exact
+            mode: exact
             maxSize: 1MB
             maxBackup: 3
         - error_log:
@@ -47,7 +47,7 @@ servers:
         # Default location, allows most things, autoindex on
         - location:
             path: /
-            root: /tmp/www
+            root: ./tmp/www
             uploadStore: ./tmp/default_uploads
             indexFile: index.html
             autoindex: true

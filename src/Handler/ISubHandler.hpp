@@ -8,6 +8,6 @@ class ISubHandler {
 public:
 	virtual ~ISubHandler() {}
 
-	virtual HttpResponse handle(const HttpRequest &req,
+	virtual HttpResponse handle(const HttpRequest &req, HttpResponse &res,
 								const Config &config) = 0;
 };
