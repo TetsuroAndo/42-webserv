@@ -27,10 +27,6 @@ void HttpResponse::setServerName(const std::string &name) {
 int HttpResponse::getStatusCode() const { return _statusCode; }
 void HttpResponse::setStatusCode(const int code) { _statusCode = code; }
 
-// Status Message
-const std::string &HttpResponse::getStatusMessage() const { return _statusMessage; }
-void HttpResponse::setStatusMessage(const std::string &message) { _statusMessage = message; }
-
 // Version
 const std::string &HttpResponse::getVersion() const { return _version; }
 void HttpResponse::setVersion(const std::string &version) {

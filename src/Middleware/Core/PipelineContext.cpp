@@ -1,10 +1,9 @@
 #include "PipelineContext.hpp"
 #include "../../Server/Client.hpp"
 
-PipelineContext::PipelineContext(HttpRequest *r, HttpResponse *s,
-								 const Config &c, Client &client)
-	: conf(c), req(r), res(s), session(NULL), recvBuffer(""), sendBuffer(""),
-	  ownerClient(client) {}
+PipelineContext::PipelineContext(const Config &c, Client &client)
+	: conf(c), req(new HttpRequest(c)), res(new HttpResponse(c)),
+	  session(NULL), recvBuffer(""), sendBuffer(""), ownerClient(client) {}
 
 PipelineContext::~PipelineContext() {
 	delete req;

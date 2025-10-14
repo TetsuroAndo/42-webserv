@@ -22,7 +22,7 @@ struct PipelineContext {
 	RequestParser	parser;
 	Client			&ownerClient;
 
-	PipelineContext(HttpRequest *r, HttpResponse *s, const Config &c, Client &client);
+	PipelineContext(const Config &c, Client &client);
 	~PipelineContext();
 	void reset();
 };
