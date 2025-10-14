@@ -65,4 +65,3 @@ public:
 
 	const Location &getLocation(const std::string &key) const;
 };
-

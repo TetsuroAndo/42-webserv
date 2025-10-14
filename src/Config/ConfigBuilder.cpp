@@ -54,11 +54,6 @@ void ConfigBuilder::setup(const std::string &configFile) {
 	parser.parseServer(serverNode);
 }
 
-Config ConfigBuilder::build() const {
-	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents);
-}
-
 const Location &ConfigBuilder::getLocation(const std::string &key) const {
 	return _locations.at(key);
 }
@@ -74,6 +69,11 @@ ConfigBuilder::ConfigBuilder(const std::string &configFile) {
 }
 
 ConfigBuilder::~ConfigBuilder() {}
+
+Config ConfigBuilder::build() const {
+	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
+				  _maxRequestBodySize, _timeoutSec, _maxEvents);
+}
 
 void ConfigBuilder::setRoot(const std::string &root, const std::string &locationKey) {
 	_locations[locationKey].root = root;
