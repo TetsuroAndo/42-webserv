@@ -35,19 +35,19 @@ Server::Server(const Config &config) : _config(config) {
 }
 
 Server::~Server() {
-	for (std::map<int, Client *>::iterator it = _clients.begin();
+	for (std::map< int, Client * >::iterator it = _clients.begin();
 		 it != _clients.end(); ++it) {
 		delete it->second;
 	}
-	for (std::map<int, Socket *>::iterator it = _listenSockets.begin();
+	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
 		delete it->second;
 	}
 }
 
 void Server::setupListenSockets() {
-	const std::vector<Listen> &listens = _config.getListens();
-	for (std::vector<Listen>::const_iterator it = listens.begin();
+	const std::vector< Listen > &listens = _config.getListens();
+	for (std::vector< Listen >::const_iterator it = listens.begin();
 		 it != listens.end(); ++it) {
 		const int port = it->port;
 		std::string interfaceAddr = it->interface;
@@ -69,8 +69,8 @@ void Server::setupListenSockets() {
 		addr.sin_port = htons(port);
 		inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
 
-		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) <
-			0) {
+		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
+				 sizeof(addr)) < 0) {
 			close(listenFd);
 			LOG(FATAL) << "bind() failed for " << interfaceAddr << ":" << port
 					   << ": " << strerror(errno);
@@ -125,7 +125,8 @@ void Server::run() {
 			}
 		}
 
-		if (time(NULL) - lastCleanTime > 900) { // 暫定的に15分ごとにセッションをクリア
+		if (time(NULL) - lastCleanTime >
+			900) { // 暫定的に15分ごとにセッションをクリア
 			SessionManager::getInstance().cleanupExpiredSessions();
 			lastCleanTime = time(NULL);
 		}
@@ -135,8 +136,9 @@ void Server::run() {
 void Server::handleNewConnection(const int listenFd) {
 	sockaddr_in clientAddr;
 	socklen_t clientLen = sizeof(clientAddr);
-	const int clientFd = accept(
-		listenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
+	const int clientFd =
+		accept(listenFd, reinterpret_cast< struct sockaddr * >(&clientAddr),
+			   &clientLen);
 
 	if (clientFd < 0) {
 		LOG(ERROR) << "accept() failed: " << strerror(errno);
@@ -192,7 +194,8 @@ void Server::handleClientRead(const int clientFd) {
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
-									  client->getPort(), ""); // TODO: セッションIDをここに
+										client->getPort(),
+										""); // TODO: セッションIDをここに
 		const std::string responseStr = ResponseBuilder::build(*ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
@@ -233,7 +236,7 @@ void Server::handleClientWrite(const int clientFd) {
 
 void Server::closeConnection(const int clientFd) {
 	_manager.unregisterSocket(clientFd);
-	const std::map<int, Client *>::iterator it = _clients.find(clientFd);
+	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"
 				  << attr("client_ip", it->second->getIp())

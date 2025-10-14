@@ -19,9 +19,10 @@ std::string ResponseBuilder::build(HttpResponse &res) {
 		<< HttpStatus::getReason(res.getStatusCode()) << "\r\n";
 
 	// Headers
-	const std::map<std::string, std::vector<std::string> > &headers = res.getHeaders();
-	for (std::map<std::string, std::vector<std::string> >::const_iterator it =
-			 headers.begin();
+	const std::map< std::string, std::vector< std::string > > &headers =
+		res.getHeaders();
+	for (std::map< std::string, std::vector< std::string > >::const_iterator
+			 it = headers.begin();
 		 it != headers.end(); ++it) {
 		for (size_t i = 0; i < it->second.size(); ++i) {
 			oss << it->first << ": " << it->second[i] << "\r\n";

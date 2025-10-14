@@ -2,8 +2,8 @@
 
 #include "../../Lib/StringOps/StringOps.hpp"
 
-HttpRequest::HttpRequest(const Config &config) : maxBodySize(config.getMaxRequestBodySize()) {
-}
+HttpRequest::HttpRequest(const Config &config)
+	: maxBodySize(config.getMaxRequestBodySize()) {}
 
 HttpRequest::~HttpRequest() {}
 
@@ -24,14 +24,15 @@ const std::string &HttpRequest::getVersion() const { return _version; }
 void HttpRequest::setVersion(const std::string &version) { _version = version; }
 
 // Headers
-const std::map<std::string, std::vector<std::string> > &HttpRequest::getHeaders() const {
+const std::map< std::string, std::vector< std::string > > &
+HttpRequest::getHeaders() const {
 	return _headers;
 }
 
 const std::string &HttpRequest::getHeader(const std::string &key) const {
-	StringOps::toLower(const_cast<std::string &>(key));
-	const std::map<std::string, std::vector<std::string> >::const_iterator it =
-		_headers.find(key);
+	StringOps::toLower(const_cast< std::string & >(key));
+	const std::map< std::string, std::vector< std::string > >::const_iterator
+		it = _headers.find(key);
 	if (it != _headers.end() && !it->second.empty()) {
 		return it->second[it->second.size() - 1];
 	}
@@ -39,19 +40,20 @@ const std::string &HttpRequest::getHeader(const std::string &key) const {
 	return empty;
 }
 
-const std::vector<std::string> & HttpRequest::getHeaderVector(const std::string &key) const{
-	StringOps::toLower(const_cast<std::string &>(key));
-	const std::map<std::string, std::vector<std::string> >::const_iterator it =
-		_headers.find(key);
+const std::vector< std::string > &
+HttpRequest::getHeaderVector(const std::string &key) const {
+	StringOps::toLower(const_cast< std::string & >(key));
+	const std::map< std::string, std::vector< std::string > >::const_iterator
+		it = _headers.find(key);
 	if (it != _headers.end()) {
 		return it->second;
 	}
-	static const std::vector<std::string> empty;
+	static const std::vector< std::string > empty;
 	return empty;
 }
 
 bool HttpRequest::hasHeader(const std::string &key) const {
-	StringOps::toLower(const_cast<std::string &>(key));
+	StringOps::toLower(const_cast< std::string & >(key));
 	return _headers.count(key) > 0;
 }
 
@@ -62,7 +64,7 @@ bool HttpRequest::hasHeader(const char *keyStart, const size_t keyLen) const {
 }
 
 void HttpRequest::addHeader(const std::string &key, const std::string &value) {
-	StringOps::toLower(const_cast<std::string &>(key));
+	StringOps::toLower(const_cast< std::string & >(key));
 	_headers[key].clear();
 	_headers[key].push_back(value);
 }
@@ -75,25 +77,26 @@ void HttpRequest::addHeader(const char *keyStart, const size_t keyLen,
 	_headers[key].push_back(std::string(valStart, valLen));
 }
 
-void HttpRequest::appendHeader(const std::string &key, const std::string &value) {
-	StringOps::toLower(const_cast<std::string &>(key));
+void HttpRequest::appendHeader(const std::string &key,
+							   const std::string &value) {
+	StringOps::toLower(const_cast< std::string & >(key));
 	_headers[key].push_back(value);
 }
 
 void HttpRequest::appendHeader(const char *keyStart, const size_t keyLen,
-							const char *valStart, const size_t valLen) {
+							   const char *valStart, const size_t valLen) {
 	std::string key(keyStart, keyLen);
 	StringOps::toLower(key);
 	_headers[key].push_back(std::string(valStart, valLen));
 }
 
 // Queries
-const std::map<std::string, std::string> &HttpRequest::getQueries() const {
+const std::map< std::string, std::string > &HttpRequest::getQueries() const {
 	return _query;
 }
 
 const std::string &HttpRequest::getQuery(const std::string &key) const {
-	const std::map<std::string, std::string>::const_iterator it =
+	const std::map< std::string, std::string >::const_iterator it =
 		_query.find(key);
 	if (it != _query.end()) {
 		return it->second;

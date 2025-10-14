@@ -1,11 +1,11 @@
 #include "PipelineRouteBuilder.hpp"
 #include "../../Handler/DeleteHandler.hpp"
-#include "../../Handler/StaticFileHandler.hpp"
 #include "../../Handler/PostHandler.hpp"
-#include "../RedirectMiddleware.hpp"
+#include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
 #include "../PipelineRouter/Session/SessionMiddleware.hpp"
 #include "../PipelineRouter/handler/HandlerMiddleware.hpp"
+#include "../RedirectMiddleware.hpp"
 #include "../RequestParser/RequestParserMiddleware.hpp"
 // #include "../../Handler/CgiHandler.hpp"
 
@@ -20,19 +20,19 @@ PipelineRouteBuilder::~PipelineRouteBuilder() {
 void PipelineRouteBuilder::buildRoute(const Config &conf,
 									  MiddlewareProcessor *mainProc) {
 	RouteMap routes;
-	const std::map<std::string, Location> &locations = conf.getLocations();
+	const std::map< std::string, Location > &locations = conf.getLocations();
 
-	for (std::map<std::string, Location>::const_iterator it = locations.begin();
+	for (std::map< std::string, Location >::const_iterator it =
+			 locations.begin();
 		 it != locations.end(); ++it) {
 		const Location &currentLocation = it->second;
-		std::map<std::string, ISubHandler *> handlers;
+		std::map< std::string, ISubHandler * > handlers;
 
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
 
 		if (!currentLocation.allowedMethods.empty()) {
-			routeProcessor->addMiddleware(
-				new SessionMiddleware());
+			routeProcessor->addMiddleware(new SessionMiddleware());
 		}
 
 		if (currentLocation.allowedMethods.count("GET")) {

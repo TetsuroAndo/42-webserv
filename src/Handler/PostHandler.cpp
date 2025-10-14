@@ -3,23 +3,21 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Http/Mime/MimeType.hpp"
+#include "../Lib/Info/App.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "../Lib/Time/TimeCache.hpp"
 #include "../Lib/Token/Token.hpp"
 #include "HandlerUtil.hpp"
-#include "../Lib/StringOps/StringOps.hpp"
 
 #include <cstring>
 #include <iostream>
 #include <sys/stat.h>
 
-PostHandler::PostHandler() {
-}
+PostHandler::PostHandler() {}
 
-PostHandler::~PostHandler() {
-}
+PostHandler::~PostHandler() {}
 
 namespace {
 std::string removeSpaceColonCommaHyphen(const std::string &str) {
@@ -37,7 +35,8 @@ std::string removeSpaceColonCommaHyphen(const std::string &str) {
 
 } // namespace
 
-HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res, const Config &config) {
+HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res,
+								 const Config &config) {
 	LOG(INFO) << "PostHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
@@ -49,7 +48,7 @@ HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res, cons
 	if (req.getPath() != loc.path) {
 		LOG(INFO) << "Requested path does not match actual path";
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-		                                HttpStatus::NOT_FOUND);
+										HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -59,17 +58,17 @@ HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res, cons
 	if (loc.uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is empty";
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-		                                HttpStatus::INTERNAL_SERVER_ERROR);
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 	struct stat s;
 	// upload storeが存在しない
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
-		LOG(ERROR) << "PostHandler : Upload Store \"" << uploadStore <<
- "\" is not exist.";
+		LOG(ERROR) << "PostHandler : Upload Store \"" << uploadStore
+				   << "\" is not exist.";
 		std::cout << uploadStore.c_str() << std::endl;
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-		                                HttpStatus::INTERNAL_SERVER_ERROR);
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 	const std::string expansion =
@@ -78,36 +77,31 @@ HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res, cons
 	if (expansion.empty()) {
 		LOG(INFO) << "PostHandler : This Content-Type is Not Supported";
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-		                                HttpStatus::INTERNAL_SERVER_ERROR);
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
-	std::string target_filename = removeSpaceColonCommaHyphen(
-		                              TimeCache::getGmtDate()) +
-	                              "-" + removeSpaceColonCommaHyphen(
-		                              TimeCache::getGmtTime()) +
-	                              "_" +
-	                              Token::genToken(
-		                              8,
-		                              "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-	                              +
-	                              expansion;
+	std::string target_filename =
+		removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) + "-" +
+		removeSpaceColonCommaHyphen(TimeCache::getGmtTime()) + "_" +
+		Token::genToken(
+			8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") +
+		expansion;
 	std::string target = uploadStore + "/" + target_filename;
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
 		LOG(ERROR) << "PostHandler : Can't create file";
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-		                                HttpStatus::INTERNAL_SERVER_ERROR);
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
 	// Bodyの中身を書き込む
 	file << req.getBody();
 	file.close();
-	HandlerUtil::generateSimpleBody(req.getMethod(), res,
-	                                HttpStatus::CREATED,
-	                                "Created : " + target_filename);
-	LOG(INFO) << "PostHandler : File \"" << target <<
- "\" created successfully.";
+	HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::CREATED,
+									"Created : " + target_filename);
+	LOG(INFO) << "PostHandler : File \"" << target
+			  << "\" created successfully.";
 	return res;
 }

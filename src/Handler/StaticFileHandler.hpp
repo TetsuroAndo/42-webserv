@@ -7,12 +7,12 @@ public:
 	StaticFileHandler();
 	~StaticFileHandler();
 
-	HttpResponse handle(const HttpRequest &req, HttpResponse &res, const Config &config);
+	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
+						const Config &config);
 
 private:
-	void generateDirectoryListing(HttpResponse &res,
-								  const HttpRequest &req,
-							      const std::string &directoryPath,
+	void generateDirectoryListing(HttpResponse &res, const HttpRequest &req,
+								  const std::string &directoryPath,
 								  const std::string &requestPath);
 
 	StaticFileHandler(const StaticFileHandler &);

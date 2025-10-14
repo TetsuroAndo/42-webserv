@@ -2,13 +2,13 @@
 
 #include "ISubHandler.hpp"
 
-class PostHandler : public ISubHandler
-{
+class PostHandler : public ISubHandler {
 public:
-    PostHandler();
-    ~PostHandler();
+	PostHandler();
+	~PostHandler();
 
-    HttpResponse handle(const HttpRequest& req, HttpResponse &res, const Config& config);
+	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
+						const Config &config);
 
 private:
 };
