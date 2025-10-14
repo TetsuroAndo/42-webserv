@@ -14,9 +14,10 @@ void ConfigBuilder::initDefaults() {
 	_maxRequestBodySize = 1024 * 1024;
 	_timeoutSec = 60;
 	_maxEvents = 1024;
+	_defaultLocationKey = "/";
 
 	Location defaultLoc;
-	defaultLoc.path = "/";
+	defaultLoc.path = _defaultLocationKey;
 	defaultLoc.root = "/tmp/www";
 	defaultLoc.uploadStore = "/tmp/uploads";
 	defaultLoc.indexFile = "index.html";
@@ -54,10 +55,6 @@ void ConfigBuilder::setup(const std::string &configFile) {
 	parser.parseServer(serverNode);
 }
 
-const Location &ConfigBuilder::getLocation(const std::string &key) const {
-	return _locations.at(key);
-}
-
 ConfigBuilder::ConfigBuilder() {
 	initDefaults();
 	setup("config/default.yaml");
@@ -75,79 +72,14 @@ Config ConfigBuilder::build() const {
 				  _maxRequestBodySize, _timeoutSec, _maxEvents);
 }
 
-void ConfigBuilder::setRoot(const std::string &root, const std::string &locationKey) {
-	_locations[locationKey].root = root;
+void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
+	_maxRequestBodySize = size;
 }
 
-void ConfigBuilder::setAutoindex(const bool autoindex,
-						  const std::string &locationKey) {
-	_locations[locationKey].autoindex = autoindex;
-}
+void ConfigBuilder::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
 
-void ConfigBuilder::setIndexFile(const std::string &indexFile,
-						  const std::string &locationKey) {
-	_locations[locationKey].indexFile = indexFile;
-}
-
-void ConfigBuilder::setErrorFile(const std::string &errorFile,
-						  const std::string &locationKey) {
-	_locations[locationKey].errorFile = errorFile;
-}
-
-void ConfigBuilder::setUploadStore(const std::string &uploadStore,
-							const std::string &locationKey) {
-	_locations[locationKey].uploadStore = uploadStore;
-}
-
-void ConfigBuilder::setCgiConf(const std::string &extension,
-						const std::string &interpreterPath,
-						const std::string &locationKey) {
-	_locations[locationKey].cgiConf[extension] = interpreterPath;
-}
-
-void ConfigBuilder::setIsAllowGet(const bool allow, const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("GET");
-	else
-		_locations[locationKey].allowedMethods.erase("GET");
-}
-
-void ConfigBuilder::setIsAllowHead(const bool allow, const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("HEAD");
-	else
-		_locations[locationKey].allowedMethods.erase("HEAD");
-}
-
-void ConfigBuilder::setIsAllowPost(const bool allow, const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("POST");
-	else
-		_locations[locationKey].allowedMethods.erase("POST");
-}
-
-void ConfigBuilder::setIsAllowDelete(const bool allow,
-							  const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("DELETE");
-	else
-		_locations[locationKey].allowedMethods.erase("DELETE");
-}
-
-void ConfigBuilder::setAllowedMethods(const std::string &methods,
-							   const std::string &locationKey) {
-	std::set<std::string> methodSet;
-	std::stringstream ss(methods);
-	std::string method;
-	while (ss >> method) {
-		methodSet.insert(method);
-	}
-	_locations[locationKey].allowedMethods = methodSet;
-}
-
-void ConfigBuilder::setAllowedMethods(const std::set<std::string> &methods,
-							   const std::string &locationKey) {
-	_locations[locationKey].allowedMethods = methods;
+void ConfigBuilder::setMaxEvents(const unsigned int maxEvents) {
+	_maxEvents = maxEvents;
 }
 
 void ConfigBuilder::setListens(const std::vector<Listen> &lists) { _listens = lists; }
@@ -173,17 +105,84 @@ void ConfigBuilder::setLocations(const std::map<std::string, Location> &location
 	_locations = locations;
 }
 
-void ConfigBuilder::setLocation(const Location &location,
-						 const std::string &locationKey) {
-	_locations[locationKey] = location;
+void ConfigBuilder::setLocation(const Location &location) {
+	_locations[location.path] = location;
 }
 
-void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
-	_maxRequestBodySize = size;
+void ConfigBuilder::setServerDefaultPath(const std::string &path) {
+	if (_locations.count(_defaultLocationKey) > 0) {
+		Location loc = _locations[_defaultLocationKey];
+		_locations.erase(_defaultLocationKey);
+		loc.path = path;
+		_locations[path] = loc;
+		_defaultLocationKey = path;
+	}
 }
 
-void ConfigBuilder::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
+void ConfigBuilder::setServerDefaultRoot(const std::string &root) {
+	_locations[_defaultLocationKey].root = root;
+}
 
-void ConfigBuilder::setMaxEvents(const unsigned int maxEvents) {
-	_maxEvents = maxEvents;
+void ConfigBuilder::setServerDefaultAutoindex(bool autoindex) {
+	_locations[_defaultLocationKey].autoindex = autoindex;
+}
+
+void ConfigBuilder::setServerDefaultIndexFile(const std::string &indexFile) {
+	_locations[_defaultLocationKey].indexFile = indexFile;
+}
+
+void ConfigBuilder::setServerDefaultErrorFile(const std::string &errorFile) {
+	_locations[_defaultLocationKey].errorFile = errorFile;
+}
+
+void ConfigBuilder::setServerDefaultUploadStore(const std::string &uploadStore) {
+	_locations[_defaultLocationKey].uploadStore = uploadStore;
+}
+
+void ConfigBuilder::setServerDefaultCgiConf(const std::string &extension,
+											 const std::string &interpreterPath) {
+	_locations[_defaultLocationKey].cgiConf[extension] = interpreterPath;
+}
+
+void ConfigBuilder::setServerDefaultIsAllowGet(bool allow) {
+	if (allow)
+		_locations[_defaultLocationKey].allowedMethods.insert("GET");
+	else
+		_locations[_defaultLocationKey].allowedMethods.erase("GET");
+}
+
+void ConfigBuilder::setServerDefaultIsAllowHead(bool allow) {
+	if (allow)
+		_locations[_defaultLocationKey].allowedMethods.insert("HEAD");
+	else
+		_locations[_defaultLocationKey].allowedMethods.erase("HEAD");
+}
+
+void ConfigBuilder::setServerDefaultIsAllowPost(bool allow) {
+	if (allow)
+		_locations[_defaultLocationKey].allowedMethods.insert("POST");
+	else
+		_locations[_defaultLocationKey].allowedMethods.erase("POST");
+}
+
+void ConfigBuilder::setServerDefaultIsAllowDelete(bool allow) {
+	if (allow)
+		_locations[_defaultLocationKey].allowedMethods.insert("DELETE");
+	else
+		_locations[_defaultLocationKey].allowedMethods.erase("DELETE");
+}
+
+void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
+	std::set<std::string> methodsSet;
+	std::istringstream iss(methods);
+	std::string method;
+	while (std::getline(iss, method, ',')) {
+		if (!method.empty())
+			methodsSet.insert(method);
+	}
+	_locations[_defaultLocationKey].allowedMethods = methodsSet;
+}
+
+void ConfigBuilder::setServerDefaultAllowedMethods(const std::set<std::string> &methods) {
+	_locations[_defaultLocationKey].allowedMethods = methods;
 }

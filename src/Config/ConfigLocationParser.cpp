@@ -63,6 +63,6 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
-		_builder->setLocation(loc, loc.path);
+		_builder->setLocation(loc);
 	}
 }

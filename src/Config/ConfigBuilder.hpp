@@ -16,6 +16,7 @@ private:
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
+	std::string _defaultLocationKey;
 
 	void initDefaults();
 	void setup(const std::string &configFile);
@@ -27,28 +28,10 @@ public:
 
 	Config build() const;
 
-	void setRoot(const std::string &root, const std::string &locationKey = "/");
-	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
-	void setIndexFile(const std::string &indexFile,
-					  const std::string &locationKey = "/");
-	void setErrorFile(const std::string &errorFile,
-					  const std::string &locationKey = "/");
-	void setUploadStore(const std::string &uploadStore,
-						const std::string &locationKey = "/");
-
-	void setCgiConf(const std::string &extension,
-					const std::string &interpreterPath,
-					const std::string &locationKey = "/");
-
-	void setIsAllowGet(bool allow, const std::string &locationKey = "/");
-	void setIsAllowHead(bool allow, const std::string &locationKey = "/");
-	void setIsAllowPost(bool allow, const std::string &locationKey = "/");
-	void setIsAllowDelete(bool allow, const std::string &locationKey = "/");
-	void setAllowedMethods(const std::string &methods,
-						   const std::string &locationKey = "/");
-	void setAllowedMethods(const std::set<std::string> &methods,
-						   const std::string &locationKey = "/");
-
+	// グローバル設定
+	void setMaxRequestBodySize(unsigned int size);
+	void setTimeoutSec(unsigned int sec);
+	void setMaxEvents(unsigned int maxEvents);
 	void setListens(const std::vector<Listen> &lists);
 	void setAccessLogs(const std::vector<AccessLog> &accessLogs);
 	void setErrorLogs(const std::vector<ErrorLog> &errorLogs);
@@ -56,12 +39,22 @@ public:
 	void setRedirect(const Redirect &redirect,
 					 const std::string &redirectKey = "/");
 	void setLocations(const std::map<std::string, Location> &locations);
-	void setLocation(const Location &location,
-					 const std::string &locationKey = "/");
+	void setLocation(const Location &location);
 
-	void setMaxRequestBodySize(unsigned int size);
-	void setTimeoutSec(unsigned int sec);
-	void setMaxEvents(unsigned int maxEvents);
+	// サーバーブロック直下の設定（デフォルトロケーション）
+	void setServerDefaultPath(const std::string &path);
+	void setServerDefaultRoot(const std::string &root);
+	void setServerDefaultAutoindex(bool autoindex);
+	void setServerDefaultIndexFile(const std::string &indexFile);
+	void setServerDefaultErrorFile(const std::string &errorFile);
+	void setServerDefaultUploadStore(const std::string &uploadStore);
+	void setServerDefaultCgiConf(const std::string &extension,
+								  const std::string &interpreterPath);
+	void setServerDefaultIsAllowGet(bool allow);
+	void setServerDefaultIsAllowHead(bool allow);
+	void setServerDefaultIsAllowPost(bool allow);
+	void setServerDefaultIsAllowDelete(bool allow);
+	void setServerDefaultAllowedMethods(const std::string &methods);
+	void setServerDefaultAllowedMethods(const std::set<std::string> &methods);
 
-	const Location &getLocation(const std::string &key) const;
 };

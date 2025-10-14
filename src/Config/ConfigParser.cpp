@@ -247,12 +247,10 @@ void ConfigParser::parseServer(const Node *serverNode) {
 	}
 
 	if (Node *n = serverNode->getMapNode("path")) {
-		Location defaultLoc = _builder->getLocation("/");
-		defaultLoc.path = n->getValue();
-		_builder->setLocation(defaultLoc, "/");
+		_builder->setServerDefaultPath(n->getValue());
 	}
 	if (Node *n = serverNode->getMapNode("root"))
-		_builder->setRoot(n->getValue(), "/");
+		_builder->setServerDefaultRoot(n->getValue());
 	if (Node *n = serverNode->getMapNode("allowedMethods")) {
 		const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
 		std::set<std::string> validMethods(validMethodsArr,
@@ -268,22 +266,21 @@ void ConfigParser::parseServer(const Node *serverNode) {
 			}
 			methodsSet.insert(method);
 		}
-		_builder->setAllowedMethods(methodsSet, "/");
+		_builder->setServerDefaultAllowedMethods(methodsSet);
 	}
 	if (Node *n = serverNode->getMapNode("autoindex"))
-		_builder->setAutoindex(n->getValue() == "true", "/");
+		_builder->setServerDefaultAutoindex(n->getValue() == "true");
 	if (Node *n = serverNode->getMapNode("indexFile"))
-		_builder->setIndexFile(n->getValue(), "/");
+		_builder->setServerDefaultIndexFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("errorFile"))
-		_builder->setErrorFile(n->getValue(), "/");
+		_builder->setServerDefaultErrorFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
-		_builder->setUploadStore(n->getValue(), "/");
+		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("cgi")) {
 		const std::vector<std::string> &cgiKeys = n->getKeys();
 		for (std::vector<std::string>::const_iterator cgi_it = cgiKeys.begin();
 			 cgi_it != cgiKeys.end(); ++cgi_it) {
-			_builder->setCgiConf(*cgi_it, n->getMapNode(*cgi_it)->getValue(),
-								"/");
+			_builder->setServerDefaultCgiConf(*cgi_it, n->getMapNode(*cgi_it)->getValue());
 		}
 	}
 
