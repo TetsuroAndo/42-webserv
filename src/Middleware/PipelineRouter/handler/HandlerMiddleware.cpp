@@ -24,32 +24,31 @@ std::string HandlerMiddleware::getAllowedMethods() {
 	return ss.str();
 }
 
-
 HandlerMiddleware::HandlerMiddleware(
-	const std::map<std::string, ISubHandler *> &handlers)
-	: _handlers(handlers) {
-}
+	const std::map< std::string, ISubHandler * > &handlers)
+	: _handlers(handlers) {}
 
 HandlerMiddleware::~HandlerMiddleware() {
-	for (std::map<std::string, ISubHandler *>::iterator it = _handlers.begin();
-	     it != _handlers.end(); ++it) {
+	for (std::map< std::string, ISubHandler * >::iterator it =
+			 _handlers.begin();
+		 it != _handlers.end(); ++it) {
 		delete it->second;
 	}
 	_handlers.clear();
 }
 
 void HandlerMiddleware::handle(PipelineContext &ctx,
-                               MiddlewareProcessor *proc) {
+							   MiddlewareProcessor *proc) {
 	(void)proc;
 	const std::string &method = ctx.req->getMethod();
 
-	const std::map<std::string, ISubHandler *>::const_iterator it =
+	const std::map< std::string, ISubHandler * >::const_iterator it =
 		_handlers.find(method);
 
 	if (it != _handlers.end()) {
 		ISubHandler *handler = it->second;
 		try {
-			*ctx.res = handler->handle(*ctx.req, ctx.conf);
+			*ctx.res = handler->handle(*ctx.req, *ctx.res, ctx.conf);
 		} catch (...) {
 			ctx.res->setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 			ctx.res->setHeader("Content-Type", "text/html");

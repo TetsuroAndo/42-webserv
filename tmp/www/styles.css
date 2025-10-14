@@ -1,0 +1,76 @@
+/* Simple, eye-friendly defaults */
+:root {
+  --bg: #f9fafb;         /* soft gray */
+  --panel: #ffffff;      /* panel background */
+  --text: #111827;       /* slate-900 */
+  --muted: #6b7280;      /* slate-500 */
+  --border: #e5e7eb;     /* slate-200 */
+  --accent: #2563eb;     /* blue-600 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1220;       /* deep indigo */
+    --panel: #0f172a;    /* slate-900 */
+    --text: #e5e7eb;     /* slate-200 */
+    --muted: #94a3b8;    /* slate-400 */
+    --border: #1f2937;   /* gray-800 */
+    --accent: #60a5fa;   /* blue-400 */
+  }
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.7;
+  letter-spacing: 0.02cm;
+}
+
+/* Center content with comfortable measure */
+body > * {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Headings and text rhythm */
+h1, h2, h3 { line-height: 1.25; margin: 0.8em 0 0.4em; }
+p { margin: 0.6em 0; }
+
+/* Links */
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Card panels */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  margin-top: 12px;
+}
+
+.card .title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card .value {
+  color: var(--text);
+}
+
+.card .hint, #last-access span { color: var(--muted); }
+
+/* Subtle transitions */
+* { transition: background-color .2s ease, color .2s ease, border-color .2s ease; }

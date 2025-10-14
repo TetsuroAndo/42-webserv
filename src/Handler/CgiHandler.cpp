@@ -13,15 +13,16 @@ CgiHandler::CgiHandler() {}
 
 CgiHandler::~CgiHandler() {}
 
-HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
-	HttpResponse res(SERVER_NAME);
-	LOG(INFO) << "CgiHandler processing request" << attr("method", req.getMethod())
-			  << attr("uri", req.getPath());
+HttpResponse CgiHandler::handle(const HttpRequest &req, HttpResponse &res,
+								const Config &config) {
+	LOG(INFO) << "CgiHandler processing request"
+			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
 	if (req.getMethod() != "POST") {
 		LOG(WARNING) << "Method not allowed for CgiHandler"
 					 << attr("method", req.getMethod());
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::METHOD_NOT_ALLOWED);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::METHOD_NOT_ALLOWED);
 		return res;
 	}
 
@@ -31,7 +32,8 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	if (uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is not configured for this location"
 				   << attr("uri", req.getPath());
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
@@ -39,7 +41,8 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
 		LOG(ERROR) << "Upload store path is not a valid directory"
 				   << attr("path", uploadStore);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
@@ -48,9 +51,11 @@ HttpResponse CgiHandler::handle(const HttpRequest &req, const Config &config) {
 
 	std::ofstream ofs(fullUploadPath.c_str(), std::ios::binary);
 	if (!ofs.is_open()) {
-		LOG(ERROR) << "Failed to open file for writing" << attr("path", fullUploadPath)
+		LOG(ERROR) << "Failed to open file for writing"
+				   << attr("path", fullUploadPath)
 				   << attr("error", strerror(errno));
-		HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::INTERNAL_SERVER_ERROR);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
