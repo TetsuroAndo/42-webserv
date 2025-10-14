@@ -1,13 +1,13 @@
 #include "ConfigLocationParser.hpp"
-#include "Config.hpp"
-#include "ConfigParser.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
-#include <stdexcept>
+#include "Config.hpp"
+#include "ConfigParser.hpp"
 #include <set>
+#include <stdexcept>
 #include <vector>
 
-ConfigLocationParser::ConfigLocationParser(Config* config) : _config(config) {}
+ConfigLocationParser::ConfigLocationParser(Config *config) : _config(config) {}
 ConfigLocationParser::~ConfigLocationParser() {}
 
 void ConfigLocationParser::parseLocations(const Node *node) {
@@ -22,7 +22,8 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			continue;
 		}
 
-        ConfigParser::validateKeys(l_node, ConfigParser::VALID_LOCATION_KEYS, "location block");
+		ConfigParser::validateKeys(l_node, ConfigParser::VALID_LOCATION_KEYS,
+								   "location block");
 
 		Location loc;
 		Node *pathNode = l_node->getMapNode("path");
@@ -52,7 +53,8 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			for (std::vector<Node *>::const_iterator m_it = methods.begin();
 				 m_it != methods.end(); ++m_it) {
 				std::string method = (*m_it)->getValue();
-				if (ConfigParser::VALID_ALLOWED_METHODS.find(method) == ConfigParser::VALID_ALLOWED_METHODS.end()) {
+				if (ConfigParser::VALID_ALLOWED_METHODS.find(method) ==
+					ConfigParser::VALID_ALLOWED_METHODS.end()) {
 					throw std::runtime_error(
 						"Config error: invalid HTTP method '" + method + "'");
 				}

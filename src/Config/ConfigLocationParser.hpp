@@ -5,11 +5,11 @@ class Node;
 
 class ConfigLocationParser {
 private:
-    Config* _config;
+	Config *_config;
 
 public:
-    ConfigLocationParser(Config* config);
-    ~ConfigLocationParser();
+	ConfigLocationParser(Config *config);
+	~ConfigLocationParser();
 
-    void parseLocations(const Node *node);
+	void parseLocations(const Node *node);
 };
