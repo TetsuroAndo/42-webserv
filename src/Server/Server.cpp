@@ -229,7 +229,7 @@ void Server::handleClientWrite(const int clientFd) {
 			} else {
 				// Keep-Alive: 接続を維持し、次のリクエストのために読み込み監視のみに戻す
 				_manager.modifySocket(clientFd, EPOLLIN);
-				ctx->reset(); 
+				ctx->reset();
 			}
 		}
 	} else {

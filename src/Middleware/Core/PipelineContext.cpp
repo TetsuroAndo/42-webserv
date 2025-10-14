@@ -18,7 +18,7 @@ void PipelineContext::reset() {
 	recvBuffer.clear();
 	sendBuffer.clear();
 	parser.reset();
-	// sessionはresetでdeleteするべきか要検討
+	// TODO: Consider whether session should be deleted on reset
 	if (session) {
 		delete session;
 		session = NULL;
