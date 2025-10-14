@@ -130,19 +130,19 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 		std::string response = "sessionId=\"";
 		response.append(currentSession->getId());
 		response.append("\"; Path=/; HttpOnly");
-		ctx.res->setHeader("Set-Cookie", response);
+		ctx.res->appendHeader("Set-Cookie", response);
 	}
 	{
 		std::string response = "lastAccessTime=";
 		response.append(TimeCache::getLocalTimestamp());
 		response.append("; Path=/");
-		ctx.res->setHeader("Set-Cookie", response);
+		ctx.res->appendHeader("Set-Cookie", response);
 	}
 	{
 		std::string response = "serverName=";
 		response.append(ctx.res->getServerName());
 		response.append("; Path=/");
-		ctx.res->setHeader("Set-Cookie", response);
+		ctx.res->appendHeader("Set-Cookie", response);
 	}
 
 	if (proc) {

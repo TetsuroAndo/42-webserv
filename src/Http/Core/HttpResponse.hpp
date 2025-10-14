@@ -29,6 +29,7 @@ public:
 	const std::vector<std::string> &getHeaderVector(const std::string &key) const;
 	bool hasHeader(const std::string &key) const;
 	void setHeader(const std::string &key, const std::string &value);
+	void appendHeader(const std::string&key, const std::string&value);
 
 	// Body
 	const std::string &getBody() const;

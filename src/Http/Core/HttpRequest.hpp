@@ -35,7 +35,8 @@ public:
 	void addHeader(const std::string &key, const std::string &value);
 	void addHeader(const char *keyStart, size_t keyLen, const char *valStart,
 				   size_t valLen);
-
+	void appendHeader(const std::string&key, const std::string&value);
+	void appendHeader(const char*keyStart, size_t keyLen, const char*valStart, size_t valLen);
 	// Query Parameters (?以降のキーバリュー)
 	const std::map<std::string, std::string> &getQueries() const;
 	const std::string &getQuery(const std::string &key) const;

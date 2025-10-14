@@ -61,6 +61,11 @@ bool HttpResponse::hasHeader(const std::string &key) const {
 }
 
 void HttpResponse::setHeader(const std::string &key, const std::string &value) {
+	_headers[key].clear();
+	_headers[key].push_back(value);
+}
+
+void HttpResponse::appendHeader(const std::string &key, const std::string &value) {
 	_headers[key].push_back(value);
 }
 

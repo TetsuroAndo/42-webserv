@@ -63,10 +63,24 @@ bool HttpRequest::hasHeader(const char *keyStart, const size_t keyLen) const {
 
 void HttpRequest::addHeader(const std::string &key, const std::string &value) {
 	StringOps::toLower(const_cast<std::string &>(key));
+	_headers[key].clear();
 	_headers[key].push_back(value);
 }
 
 void HttpRequest::addHeader(const char *keyStart, const size_t keyLen,
+							const char *valStart, const size_t valLen) {
+	std::string key(keyStart, keyLen);
+	StringOps::toLower(key);
+	_headers[key].clear();
+	_headers[key].push_back(std::string(valStart, valLen));
+}
+
+void HttpRequest::appendHeader(const std::string &key, const std::string &value) {
+	StringOps::toLower(const_cast<std::string &>(key));
+	_headers[key].push_back(value);
+}
+
+void HttpRequest::appendHeader(const char *keyStart, const size_t keyLen,
 							const char *valStart, const size_t valLen) {
 	std::string key(keyStart, keyLen);
 	StringOps::toLower(key);
