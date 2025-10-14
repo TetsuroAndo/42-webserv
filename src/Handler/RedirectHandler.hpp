@@ -7,15 +7,16 @@
 
 class RedirectHandler : public ISubHandler {
 public:
-    RedirectHandler(const std::string& redirectUrl, int statusCode);
-    ~RedirectHandler();
+	RedirectHandler(const std::string &redirectUrl, int statusCode);
+	~RedirectHandler();
 
-    HttpResponse handle(const HttpRequest& req, const Config& config);
+	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
+						const Config &config);
 
 private:
-    std::string _redirectUrl;
-    int _statusCode;
+	std::string _redirectUrl;
+	int _statusCode;
 
-    RedirectHandler(const RedirectHandler& other);
-    RedirectHandler& operator=(const RedirectHandler& other);
+	RedirectHandler(const RedirectHandler &other);
+	RedirectHandler &operator=(const RedirectHandler &other);
 };
