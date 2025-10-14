@@ -95,6 +95,8 @@ parseCookieField(const std::string &cookie) {
 }
 } // namespace
 
+#ifndef UNIT_TEST
+
 SessionMiddleware::SessionMiddleware() {}
 
 SessionMiddleware::~SessionMiddleware() {}
@@ -147,3 +149,5 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 		proc->next(ctx);
 	}
 }
+
+#endif // UNIT_TEST
