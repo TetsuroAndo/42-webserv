@@ -42,7 +42,6 @@ public:
 	void setLocation(const Location &location);
 
 	// サーバーブロック直下の設定（デフォルトロケーション）
-	void setServerDefaultPath(const std::string &path);
 	void setServerDefaultRoot(const std::string &root);
 	void setServerDefaultAutoindex(bool autoindex);
 	void setServerDefaultIndexFile(const std::string &indexFile);
