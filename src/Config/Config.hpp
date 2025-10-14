@@ -77,8 +77,6 @@ private:
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
 
-	Config();
-
 public:
 	Config(const std::vector<Listen> &listens,
 		   const std::map<std::string, Redirect> &redirects,

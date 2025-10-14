@@ -54,6 +54,15 @@ void ConfigBuilder::setup(const std::string &configFile) {
 	parser.parseServer(serverNode);
 }
 
+Config ConfigBuilder::build() {
+	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
+				  _maxRequestBodySize, _timeoutSec, _maxEvents);
+}
+
+const Location &ConfigBuilder::getLocation(const std::string &key) const {
+	return _locations.at(key);
+}
+
 ConfigBuilder::ConfigBuilder() {
 	initDefaults();
 	setup("config/default.yaml");

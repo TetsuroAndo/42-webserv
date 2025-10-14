@@ -8,7 +8,7 @@ class Node;
 
 class ConfigParser {
 private:
-	Config *_config;
+	ConfigBuilder *_builder;
 
 public:
 	static const std::set<std::string> VALID_SERVER_KEYS;
@@ -26,7 +26,7 @@ public:
 							 const std::string &context);
 
 public:
-	ConfigParser(Config *config);
+	ConfigParser(ConfigBuilder *builder);
 	~ConfigParser();
 
 	void parseServer(const Node *serverNode);

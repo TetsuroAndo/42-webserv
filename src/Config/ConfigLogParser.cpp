@@ -3,13 +3,14 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
+#include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
-ConfigLogParser::ConfigLogParser(Config *config) : _config(config) {}
+ConfigLogParser::ConfigLogParser(ConfigBuilder *builder) : _builder(builder) {}
 ConfigLogParser::~ConfigLogParser() {}
 
 namespace {
@@ -177,7 +178,7 @@ void ConfigLogParser::parseAccessLogs(const Node *node) {
 			  configuredLogs);
 
 	if (!configuredLogs.empty()) {
-		_config->setAccessLogs(configuredLogs);
+		_builder->setAccessLogs(configuredLogs);
 	}
 }
 
@@ -187,6 +188,6 @@ void ConfigLogParser::parseErrorLogs(const Node *node) {
 			  configuredLogs);
 
 	if (!configuredLogs.empty()) {
-		_config->setErrorLogs(configuredLogs);
+		_builder->setErrorLogs(configuredLogs);
 	}
 }

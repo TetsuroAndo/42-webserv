@@ -25,6 +25,8 @@ public:
 	ConfigBuilder(const std::string &configFile);
 	~ConfigBuilder();
 
+	Config build();
+
 	void setRoot(const std::string &root, const std::string &locationKey = "/");
 	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
 	void setIndexFile(const std::string &indexFile,
@@ -60,4 +62,7 @@ public:
 	void setMaxRequestBodySize(unsigned int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
+
+	const Location &getLocation(const std::string &key) const;
 };
+
