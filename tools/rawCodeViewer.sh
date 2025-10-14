@@ -42,12 +42,18 @@ while [[ $# -gt 0 ]]; do
 		-nt|--no-tests)
 			SHOW_TESTS=false
 			IGNORE_ARRAY+=(
-						"tests/"       # tests ディレクトリ
-						"tests/*"      # tests 配下のすべてのファイル
-						"*/tests/*"    # 任意のディレクトリ配下の tests ディレクトリ
-						"*/test/*"     # 任意のディレクトリ配下の test ディレクトリ
-						"tests.*"      # tests で始まるファイル
-						"test.*"       # test で始まるファイル
+						"tests/*"        # testsディレクトリ配下のファイル
+						"test/*"         # testディレクトリ配下のファイル
+						"*/tests/*"      # サブディレクトリ内のtests配下のファイル
+						"*/test/*"       # サブディレクトリ内のtest配下のファイル
+						"*_test.?"       # _test.cで終わるファイル
+						"*_test.?pp"     # _test.cppで終わるファイル
+						"test_*.?"       # test_で始まるCファイル
+						"test_*.?pp"     # test_で始まるCppファイル
+						"*.spec.js"      # Jasmine/Jestなどのテストファイル
+						"*.test.js"      # Jestなどのテストファイル
+						"*.spec.ts"      # Jasmineなどのテストファイル
+						"*.test.ts"      # Jestなどのテストファイル
 			)
 			shift
 			;;
@@ -195,9 +201,22 @@ if [[ "$SHOW_VIEW" == true ]]; then
 
 	find "$TARGET_PATH" -type f "${EXCLUDE_ARGS[@]}" \( "${NAME_ARGS[@]}" \) | while read -r file; do
 		rel_path="${file#$TARGET_PATH/}"
-		if printf '%s\n' "${IGNORE_ARRAY[@]}" | grep -Fxq "$rel_path"; then
-			continue
+		rel_path="${rel_path#./}"
+
+		is_ignored=false
+		if [[ "$SHOW_TESTS" == false ]]; then
+				for pattern in "${IGNORE_ARRAY[@]}"; do
+						if [[ "$rel_path" == $pattern ]]; then
+								is_ignored=true
+								break # 一致したらループを抜ける
+						fi
+				done
 		fi
+
+		if [[ "$is_ignored" == true ]]; then
+				continue # 除外リストに一致したら次のファイルへ
+		fi
+
 		remove_comments "$file"
 	done
 fi
