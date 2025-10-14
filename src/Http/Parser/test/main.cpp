@@ -4,14 +4,14 @@
 #include <iostream>
 
 int main() {
-    std::cout << "=== RequestBodyParser Tests ===" << std::endl;
-    runAllRequestBodyParserTests();
+	std::cout << "=== RequestBodyParser Tests ===" << std::endl;
+	runAllRequestBodyParserTests();
 
-    std::cout << "\n=== RequestHeaderParser Tests ===" << std::endl;
+	std::cout << "\n=== RequestHeaderParser Tests ===" << std::endl;
 	runRequestHeaderParserTests();
 
-    std::cout << "\n=== RequestLineParser Tests ===" << std::endl;
+	std::cout << "\n=== RequestLineParser Tests ===" << std::endl;
 	runRequestLineParserTests();
 
-    return 0;
+	return 0;
 }

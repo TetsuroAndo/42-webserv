@@ -10,26 +10,26 @@ namespace // Helper functor structs
 {
 struct IsNotDigit {
 	bool operator()(const char c) const {
-		return !std::isdigit(static_cast<unsigned char>(c));
+		return !std::isdigit(static_cast< unsigned char >(c));
 	}
 };
 
 struct CharEqualIgnoreCase {
 	bool operator()(const char lhs, const char rhs) const {
-		return std::tolower(static_cast<unsigned char>(lhs)) ==
-			   std::tolower(static_cast<unsigned char>(rhs));
+		return std::tolower(static_cast< unsigned char >(lhs)) ==
+			   std::tolower(static_cast< unsigned char >(rhs));
 	}
 };
 
 struct CharToUpper {
 	char operator()(const char c) const {
-		return std::toupper(static_cast<unsigned char>(c));
+		return std::toupper(static_cast< unsigned char >(c));
 	}
 };
 
 struct CharToLower {
 	char operator()(const char c) const {
-		return std::tolower(static_cast<unsigned char>(c));
+		return std::tolower(static_cast< unsigned char >(c));
 	}
 };
 
@@ -171,9 +171,9 @@ std::string toLower(const std::string &str) {
 /**
  * @brief 文字列を指定した区切り文字で分割する
  */
-std::vector<std::string> split(const std::string &str,
-							   const std::string &delimiter) {
-	std::vector<std::string> tokens;
+std::vector< std::string > split(const std::string &str,
+								 const std::string &delimiter) {
+	std::vector< std::string > tokens;
 	size_t start = 0;
 	size_t end = str.find(delimiter);
 	while (end != std::string::npos) {
@@ -206,8 +206,8 @@ bool hexStrToSize(const char *str, const size_t len, size_t &result) {
 		return false;
 	}
 
-	const size_t maxDiv16 = std::numeric_limits<size_t>::max() / 16;
-	const size_t maxMod16 = std::numeric_limits<size_t>::max() % 16;
+	const size_t maxDiv16 = std::numeric_limits< size_t >::max() / 16;
+	const size_t maxMod16 = std::numeric_limits< size_t >::max() % 16;
 
 	for (size_t i = 0; i < len; ++i) {
 		unsigned int digit;
@@ -229,8 +229,8 @@ bool decStrToSize(const std::string &str, size_t &result) {
 		return false;
 	}
 
-	const size_t maxDiv10 = std::numeric_limits<size_t>::max() / 10;
-	const size_t maxMod10 = std::numeric_limits<size_t>::max() % 10;
+	const size_t maxDiv10 = std::numeric_limits< size_t >::max() / 10;
+	const size_t maxMod10 = std::numeric_limits< size_t >::max() % 10;
 
 	for (size_t i = 0; i < str.length(); ++i) {
 		if (!std::isdigit(str[i])) {
@@ -255,7 +255,6 @@ int stringToInt(const std::string &s) {
 	return i;
 }
 
-
 size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 	if (sizeStr.empty()) {
 		throw std::runtime_error("Config error: size string is empty.");
@@ -269,7 +268,9 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 		i++;
 	}
 	if (i < sizeStr.length() && sizeStr[i] == '-') {
-		throw std::runtime_error("Config error: size must be a non-negative value in '" + sizeStr + "'.");
+		throw std::runtime_error(
+			"Config error: size must be a non-negative value in '" + sizeStr +
+			"'.");
 	}
 
 	// 数字部分の抽出
@@ -278,7 +279,9 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 		i++;
 	}
 	if (num_part.empty()) {
-		throw std::runtime_error("Config error: invalid size format, missing number in '" + sizeStr + "'.");
+		throw std::runtime_error(
+			"Config error: invalid size format, missing number in '" + sizeStr +
+			"'.");
 	}
 
 	// 数字部分をsize_tに変換
@@ -286,39 +289,44 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 	size_t number;
 	ss >> number;
 	if (ss.fail() || !ss.eof()) {
-		throw std::runtime_error("Config error: invalid size number format in '" + sizeStr + "'.");
+		throw std::runtime_error(
+			"Config error: invalid size number format in '" + sizeStr + "'.");
 	}
 
 	// 単位部分の抽出
 	const std::string unit_part = toUpper(trim(sizeStr.substr(i)));
 
-	const size_t max_size_t = std::numeric_limits<size_t>::max();
+	const size_t max_size_t = std::numeric_limits< size_t >::max();
 	if (unit_part.empty() || unit_part == "B") {
 		return number;
 	}
 	if (unit_part == "KB") {
 		if (number > max_size_t / 1024) {
-			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+			throw std::runtime_error("Config error: size value is too large '" +
+									 sizeStr + "'.");
 		}
 		return number * 1024;
 	}
 	if (unit_part == "MB") {
 		if (number > max_size_t / (1024 * 1024)) {
-			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+			throw std::runtime_error("Config error: size value is too large '" +
+									 sizeStr + "'.");
 		}
 		return number * 1024 * 1024;
 	}
 	if (unit_part == "GB") {
 		if (number > max_size_t / (1024 * 1024 * 1024)) {
-			throw std::runtime_error("Config error: size value is too large '" + sizeStr + "'.");
+			throw std::runtime_error("Config error: size value is too large '" +
+									 sizeStr + "'.");
 		}
 		return number * 1024 * 1024 * 1024;
 	}
-	throw std::runtime_error("Config error: unknown size unit '" + unit_part + "'. Use B, KB, MB, or GB.");
+	throw std::runtime_error("Config error: unknown size unit '" + unit_part +
+							 "'. Use B, KB, MB, or GB.");
 }
 
 unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
-	return static_cast<unsigned int>(sizeByteStrToSizeT(sizeStr));
+	return static_cast< unsigned int >(sizeByteStrToSizeT(sizeStr));
 }
 
 } // namespace StringOps

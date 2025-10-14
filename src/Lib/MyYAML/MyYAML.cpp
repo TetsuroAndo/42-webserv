@@ -152,16 +152,16 @@ void MyYAML::parseYaml(std::string buf) {
 	if ('\n' == *it) {
 		++it;
 	}
-	std::stack<int> prevIndent;
-	std::stack<Node *> nodeChain;
+	std::stack< int > prevIndent;
+	std::stack< Node * > nodeChain;
 	MyYamlState nowState = MyYamlState_NONE;
-	std::stack<MyYamlState> prevStates;
+	std::stack< MyYamlState > prevStates;
 	Node *rootNode = NULL;
 
 	prevIndent.push(-1);
 	prevStates.push(MyYamlState_NONE);
 
-	std::vector<std::string> lines;
+	std::vector< std::string > lines;
 	{
 		std::istringstream iss(buf);
 		std::string l;

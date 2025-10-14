@@ -21,7 +21,7 @@ int main() {
 
 	// Test 3: Multiple tokens uniqueness
 	std::cout << "Generating multiple tokens:" << std::endl;
-	std::set<std::string> tokens;
+	std::set< std::string > tokens;
 	bool unique = true;
 	for (int i = 0; i < 999999; ++i) {
 		std::string t = hasher.genToken();

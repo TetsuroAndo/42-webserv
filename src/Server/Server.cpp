@@ -72,11 +72,11 @@ void Server::setupListenSockets() {
 			close(listenFd);
 			if (ptonRet == 0) {
 				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
-				throw std::runtime_error("Invalid IP address format");     
+				throw std::runtime_error("Invalid IP address format");
 			}
-			if(ptonRet < 0) {
+			if (ptonRet < 0) {
 				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
-				throw std::runtime_error("inet_pton() failed");   
+				throw std::runtime_error("inet_pton() failed");
 			}
 		}
 

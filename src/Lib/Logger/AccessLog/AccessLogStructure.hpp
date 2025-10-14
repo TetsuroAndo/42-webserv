@@ -9,7 +9,7 @@ struct AccessLogContext {
 	std::string utcTimestamp;
 	std::string isoTimestamp;
 	const HttpRequest *request;
-	const HttpResponse* response;
+	const HttpResponse *response;
 	std::string remote_addr;
 	int client_port;
 	std::string session_id;

@@ -22,7 +22,7 @@ public:
 
 private:
 	std::string _sessionId;
-	std::map<std::string, std::string> _data;
+	std::map< std::string, std::string > _data;
 	time_t _lastAccessTime;
 
 	// Sessions should not be copyable to ensure uniqueness.

@@ -42,7 +42,7 @@ void Config::setup(const std::string &configFile) {
 		throw std::runtime_error("Config error: missing 'servers' root node");
 	}
 
-	const std::vector<Node *> &serverList = serversNode->getSeq();
+	const std::vector< Node * > &serverList = serversNode->getSeq();
 	if (serverList.empty()) {
 		throw std::runtime_error("Config error: no servers configured");
 	}
@@ -151,7 +151,7 @@ void Config::setIsAllowDelete(const bool allow,
 
 void Config::setAllowedMethods(const std::string &methods,
 							   const std::string &locationKey) {
-	std::set<std::string> methodSet;
+	std::set< std::string > methodSet;
 	std::stringstream ss(methods);
 	std::string method;
 	while (ss >> method) {
@@ -160,22 +160,24 @@ void Config::setAllowedMethods(const std::string &methods,
 	_locations[locationKey].allowedMethods = methodSet;
 }
 
-void Config::setAllowedMethods(const std::set<std::string> &methods,
+void Config::setAllowedMethods(const std::set< std::string > &methods,
 							   const std::string &locationKey) {
 	_locations[locationKey].allowedMethods = methods;
 }
 
-void Config::setListens(const std::vector<Listen> &lists) { _listens = lists; }
+void Config::setListens(const std::vector< Listen > &lists) {
+	_listens = lists;
+}
 
-void Config::setAccessLogs(const std::vector<AccessLog> &accessLogs) {
+void Config::setAccessLogs(const std::vector< AccessLog > &accessLogs) {
 	_accessLogs = accessLogs;
 }
 
-void Config::setErrorLogs(const std::vector<ErrorLog> &errorLogs) {
+void Config::setErrorLogs(const std::vector< ErrorLog > &errorLogs) {
 	_errorLogs = errorLogs;
 }
 
-void Config::setRedirects(const std::map<std::string, Redirect> &redirects) {
+void Config::setRedirects(const std::map< std::string, Redirect > &redirects) {
 	_redirects = redirects;
 }
 
@@ -184,7 +186,7 @@ void Config::setRedirect(const Redirect &redirect,
 	_redirects[redirectKey] = redirect;
 }
 
-void Config::setLocations(const std::map<std::string, Location> &locations) {
+void Config::setLocations(const std::map< std::string, Location > &locations) {
 	_locations = locations;
 }
 
@@ -203,16 +205,16 @@ void Config::setMaxEvents(const unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
-const std::vector<Listen> &Config::getListens() const { return _listens; }
+const std::vector< Listen > &Config::getListens() const { return _listens; }
 
-const std::map<std::string, Redirect> &Config::getRedirects() const {
+const std::map< std::string, Redirect > &Config::getRedirects() const {
 	return _redirects;
 }
 
 const Redirect &Config::getRedirect(const std::string &path) const {
 	std::string bestMatchKey = "";
 
-	for (std::map<std::string, Redirect>::const_iterator it =
+	for (std::map< std::string, Redirect >::const_iterator it =
 			 _redirects.begin();
 		 it != _redirects.end(); ++it) {
 		const std::string &redirectPath = it->first;
@@ -230,14 +232,14 @@ const Redirect &Config::getRedirect(const std::string &path) const {
 	return noMatchRedirect;
 }
 
-const std::map<std::string, Location> &Config::getLocations() const {
+const std::map< std::string, Location > &Config::getLocations() const {
 	return _locations;
 }
 
 const Location &Config::getLocation(const std::string &path) const {
 	std::string bestMatchKey = "";
 
-	for (std::map<std::string, Location>::const_iterator it =
+	for (std::map< std::string, Location >::const_iterator it =
 			 _locations.begin();
 		 it != _locations.end(); ++it) {
 		const std::string &locPath = it->first;
@@ -248,22 +250,24 @@ const Location &Config::getLocation(const std::string &path) const {
 		}
 	}
 	if (!bestMatchKey.empty()) {
-		std::map<std::string, Location>::const_iterator it =
+		std::map< std::string, Location >::const_iterator it =
 			_locations.find(bestMatchKey);
 		return it->second;
 	}
-	std::map<std::string, Location>::const_iterator it = _locations.find("/");
+	std::map< std::string, Location >::const_iterator it = _locations.find("/");
 	if (it != _locations.end()) {
 		return it->second;
 	}
 	throw std::runtime_error("Config error: default location '/' not found");
 }
 
-const std::vector<AccessLog> &Config::getAccessLogs() const {
+const std::vector< AccessLog > &Config::getAccessLogs() const {
 	return _accessLogs;
 }
 
-const std::vector<ErrorLog> &Config::getErrorLogs() const { return _errorLogs; }
+const std::vector< ErrorLog > &Config::getErrorLogs() const {
+	return _errorLogs;
+}
 
 unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
@@ -280,13 +284,13 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "  maxEvents: " << config._maxEvents << "\n";
 
 	os << "  listens:\n";
-	for (std::vector<Listen>::const_iterator it = config._listens.begin();
+	for (std::vector< Listen >::const_iterator it = config._listens.begin();
 		 it != config._listens.end(); ++it) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
 
 	os << "  redirects:\n";
-	for (std::map<std::string, Redirect>::const_iterator it =
+	for (std::map< std::string, Redirect >::const_iterator it =
 			 config._redirects.begin();
 		 it != config._redirects.end(); ++it) {
 		os << "    - from: " << it->second.fromPath
@@ -295,13 +299,13 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	}
 
 	os << "  locations:\n";
-	for (std::map<std::string, Location>::const_iterator it =
+	for (std::map< std::string, Location >::const_iterator it =
 			 config._locations.begin();
 		 it != config._locations.end(); ++it) {
 		os << "  - path: " << it->second.path << "\n";
 		os << "      root: " << it->second.root << "\n";
 		os << "      allowedMethods: ";
-		for (std::set<std::string>::const_iterator mit =
+		for (std::set< std::string >::const_iterator mit =
 				 it->second.allowedMethods.begin();
 			 mit != it->second.allowedMethods.end(); ++mit) {
 			os << *mit << " ";
@@ -313,7 +317,7 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "      errorFile: " << it->second.errorFile << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      cgiConf:\n";
-		for (std::map<std::string, std::string>::const_iterator cit =
+		for (std::map< std::string, std::string >::const_iterator cit =
 				 it->second.cgiConf.begin();
 			 cit != it->second.cgiConf.end(); ++cit) {
 			os << "        " << cit->first << ": " << cit->second << "\n";
@@ -321,7 +325,8 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	}
 
 	os << "  accessLogs:\n";
-	for (std::vector<AccessLog>::const_iterator it = config._accessLogs.begin();
+	for (std::vector< AccessLog >::const_iterator it =
+			 config._accessLogs.begin();
 		 it != config._accessLogs.end(); ++it) {
 		os << "    - isDisable: " << (it->isDisable ? "true" : "false") << "\n";
 		os << "      sink: " << (it->sink == File ? "file" : "console") << "\n";
@@ -333,7 +338,7 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	}
 
 	os << "  errorLogs:\n";
-	for (std::vector<ErrorLog>::const_iterator it = config._errorLogs.begin();
+	for (std::vector< ErrorLog >::const_iterator it = config._errorLogs.begin();
 		 it != config._errorLogs.end(); ++it) {
 		os << "    - isDisable: " << (it->isDisable ? "true" : "false") << "\n";
 		os << "      sink: " << (it->sink == File ? "FILE" : "CONSOLE") << "\n";
