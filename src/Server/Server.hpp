@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Client.hpp"
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
 #include "../SocketsManager/SocketsManager.hpp"
+#include "Client.hpp"
 #include <map>
 
 class Server {
@@ -21,8 +21,8 @@ private:
 
 	Config _config;
 	SocketsManager _manager;
-	std::map<int, Socket *> _listenSockets;
-	std::map<int, Client *> _clients;
+	std::map< int, Socket * > _listenSockets;
+	std::map< int, Client * > _clients;
 
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;

@@ -4,13 +4,12 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
+#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
-#include <iostream>
 #include <stdexcept>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 Server::Server() : _config(Config()) {
 	LOG(INFO) << "Initializing server with default configuration...";
@@ -72,11 +71,11 @@ void Server::setupListenSockets() {
 			close(listenFd);
 			if (ptonRet == 0) {
 				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
-				throw std::runtime_error("Invalid IP address format");     
+				throw std::runtime_error("Invalid IP address format");
 			}
-			if(ptonRet < 0) {
+			if (ptonRet < 0) {
 				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
-				throw std::runtime_error("inet_pton() failed");   
+				throw std::runtime_error("inet_pton() failed");
 			}
 		}
 
