@@ -9,13 +9,13 @@
 
 class Server {
 public:
-	Server();
 	Server(const Config &config);
 	~Server();
 
 	void run();
 
 private:
+	Server();
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 

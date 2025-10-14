@@ -1,14 +1,14 @@
 #pragma once
 
-class Config;
+class ConfigBuilder;
 class Node;
 
 class ConfigLocationParser {
 private:
-	Config *_config;
+	ConfigBuilder *_builder;
 
 public:
-	ConfigLocationParser(Config *config);
+	ConfigLocationParser(ConfigBuilder *builder);
 	~ConfigLocationParser();
 
 	void parseLocations(const Node *node);

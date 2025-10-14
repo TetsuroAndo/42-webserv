@@ -12,17 +12,6 @@
 #include <stdexcept>
 #include <unistd.h>
 
-Server::Server() : _config(Config()) {
-	LOG(INFO) << "Initializing server with default configuration...";
-	Logging::setupLoggers(_config);
-	std::ostringstream oss;
-	oss << _config;
-	LOG(DEBUG) << oss.str();
-	setupListenSockets();
-	_builder.buildRoute(_config, &_mainProcessor);
-	LOG(INFO) << "Server initialized successfully.";
-}
-
 Server::Server(const Config &config) : _config(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);

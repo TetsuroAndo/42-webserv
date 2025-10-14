@@ -91,51 +91,17 @@ private:
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
 
-	void initDefaults();
-	void setup(const std::string &configFile);
-
 public:
-	Config();
-	Config(const std::string &configFile);
+	Config(const std::vector<Listen> &listens,
+		   const std::map<std::string, Redirect> &redirects,
+		   const std::map<std::string, Location> &locations,
+		   const std::vector<AccessLog> &accessLogs,
+		   const std::vector<ErrorLog> &errorLogs,
+		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
+		   unsigned int maxEvents);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
-
-	void setRoot(const std::string &root, const std::string &locationKey = "/");
-	void setAutoindex(bool autoindex, const std::string &locationKey = "/");
-	void setIndexFile(const std::string &indexFile,
-					  const std::string &locationKey = "/");
-	void setErrorFile(const std::string &errorFile,
-					  const std::string &locationKey = "/");
-	void setUploadStore(const std::string &uploadStore,
-						const std::string &locationKey = "/");
-
-	void setCgiConf(const std::string &extension,
-					const std::string &interpreterPath,
-					const std::string &locationKey = "/");
-
-	void setIsAllowGet(bool allow, const std::string &locationKey = "/");
-	void setIsAllowHead(bool allow, const std::string &locationKey = "/");
-	void setIsAllowPost(bool allow, const std::string &locationKey = "/");
-	void setIsAllowDelete(bool allow, const std::string &locationKey = "/");
-	void setAllowedMethods(const std::string &methods,
-						   const std::string &locationKey = "/");
-	void setAllowedMethods(const std::set<std::string> &methods,
-						   const std::string &locationKey = "/");
-
-	void setListens(const std::vector<Listen> &lists);
-	void setAccessLogs(const std::vector<AccessLog> &accessLogs);
-	void setErrorLogs(const std::vector<ErrorLog> &errorLogs);
-	void setRedirects(const std::map<std::string, Redirect> &redirects);
-	void setRedirect(const Redirect &redirect,
-					 const std::string &redirectKey = "/");
-	void setLocations(const std::map<std::string, Location> &locations);
-	void setLocation(const Location &location,
-					 const std::string &locationKey = "/");
-
-	void setMaxRequestBodySize(unsigned int size);
-	void setTimeoutSec(unsigned int sec);
-	void setMaxEvents(unsigned int maxEvents);
 
 	const std::vector<Listen> &getListens() const;
 	const std::map<std::string, Redirect> &getRedirects() const;
