@@ -79,10 +79,6 @@ private:
 
 	Config();
 
-	unsigned int _maxEvents;
-
-	Config();
-
 public:
 	Config(const std::vector<Listen> &listens,
 		   const std::map<std::string, Redirect> &redirects,
@@ -91,12 +87,6 @@ public:
 		   const std::vector<ErrorLog> &errorLogs,
 		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
 		   unsigned int maxEvents);
-	Config(const Config &other);
-	Config &operator=(const Config &other);
-	~Config();
-
-	const std::vector<Listen> &getListens() const;
-	const std::map<std::string, Redirect> &getRedirects() const;
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
