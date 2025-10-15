@@ -54,6 +54,7 @@ public:
 	bool isCgiFd(int fd) const;
 
 private:
+	const time_t _timeoutSeconds;
 	std::vector< CgiWorker * > _workers;
 	// パイプFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _pipeFdToWorker;
@@ -61,9 +62,6 @@ private:
 	std::map< int, CgiWorker * > _clientFdToWorker;
 
 	void _removeWorker(CgiWorker *worker);
-
-	// TODO: 設定ファイルから読み込んだり、Timeoutオブジェクトを受け入れる
-	time_t timeoutSeconds;
 
 	CgiManager(const CgiManager &);
 	CgiManager &operator=(const CgiManager &);

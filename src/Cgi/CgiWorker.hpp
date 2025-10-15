@@ -4,7 +4,6 @@
 #include "CgiResponseParser.hpp"
 #include <string>
 #include <sys/time.h>
-#include <unistd.h>
 #include <vector>
 
 class CgiWorker {
@@ -64,8 +63,10 @@ private:
 	int _pipeOut[2];
 	CgiState _state;
 	std::string _requestBody;
-	size_t _bytesSent;
+	size_t      _bytesSent;
 	std::string _responseBuffer;
+	std::string _scriptPath;
+	std::string _interpreterPath;
 	time_t _lastActivityTime;
 
 	CgiResponseParser _responseParser;
