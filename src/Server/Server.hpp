@@ -21,8 +21,8 @@ private:
 
 	Config _config;
 	SocketsManager _manager;
-	std::map<int, Socket *> _listenSockets;
-	std::map<int, Client *> _clients;
+	std::map< int, Socket * > _listenSockets;
+	std::map< int, Client * > _clients;
 
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
