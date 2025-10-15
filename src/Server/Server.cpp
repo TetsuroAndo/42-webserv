@@ -8,7 +8,6 @@
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
-#include <iostream>
 #include <stdexcept>
 #include <unistd.h>
 
