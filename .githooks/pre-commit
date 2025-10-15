@@ -1,45 +1,50 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🐳 Running clang-format in Docker for staged C++ changes..."
+echo "🐳 Running clang-format (Docker) using project .clang-format..."
 
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 HOOKS_DIR="$PROJECT_ROOT/.githooks"
 DOCKERFILE_PATH="$HOOKS_DIR/Dockerfile"
 IMAGE_NAME="my/clang-format:hook"
 
-# --- Dockerfile 確認 ---
+# --- Dockerfile がない場合は生成 ---
 if [ ! -f "$DOCKERFILE_PATH" ]; then
   echo "🧱 .githooks/Dockerfile not found, creating minimal one..."
   cat <<'EOF' > "$DOCKERFILE_PATH"
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y clang-format && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y wget lsb-release software-properties-common gnupg && \
+    wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && ./llvm.sh 21 all && \
+    apt-get install -y clang-format-21 && \
+    ln -sf /usr/bin/clang-format-21 /usr/bin/clang-format && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 EOF
 fi
 
-# --- イメージ確認 ---
+# --- イメージが存在しない場合はビルド ---
 if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
   echo "🔧 Building Docker image '$IMAGE_NAME' ..."
   docker build -t "$IMAGE_NAME" -f "$DOCKERFILE_PATH" "$HOOKS_DIR"
 fi
 
-# --- ステージ済み変更の C++ ファイルのみ抽出 ---
+# --- 変更された C++ ファイルのみ取得 ---
 files=$(git diff --cached --name-only --diff-filter=ACMR main | grep -E '\.(cpp|hpp)$' || true)
 [ -z "$files" ] && echo "🟢 No C++ files to format." && exit 0
 
-echo "🧹 Formatting changed files inside Docker..."
+# --- Docker 内で clang-format 実行（.clang-format はルートにある想定） ---
+echo "🧹 Formatting staged C++ files inside Docker..."
 docker run --rm \
   -v "$PROJECT_ROOT":/workspace \
   -w /workspace \
   "$IMAGE_NAME" \
   bash -c "clang-format -i $files"
 
-# --- 整形後の変更を再ステージ ---
+# --- 整形されたファイルを再ステージ ---
 git add $files
 
-echo "✅ clang-format applied to staged C++ changes."
+echo "✅ clang-format applied using project .clang-format."
 
 #以下のコマンドを実行することで利用可能
 #git config --local core.hooksPath .githooks
