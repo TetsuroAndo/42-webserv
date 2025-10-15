@@ -1,0 +1,13 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      maxEvets: 1024 # Invalid key
+
+      locations:
+        - location:
+            path: /
+            root: ./www/http_test_root

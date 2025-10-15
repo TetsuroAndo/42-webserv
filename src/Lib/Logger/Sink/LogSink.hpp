@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../LogType.hpp"
 #include "../AccessLog/AccessLogStructure.hpp"
 #include "../ErrorLog/LogStructure.hpp"
+#include "../LogType.hpp"
 
 class LogForm;
 
@@ -12,7 +12,7 @@ public:
 	virtual ~LogSink();
 
 	virtual void log(const LogMessage &msg) = 0;
-	virtual void logAccess(const AccessLogContext& ctx) = 0;
+	virtual void logAccess(const AccessLogContext &ctx) = 0;
 
 	LogType getType() const;
 	LogForm *getForm() const;

@@ -5,7 +5,7 @@
 #include <ctime>
 #include <string>
 
-Token::Token() { std::srand(static_cast<unsigned int>(std::time(NULL))); }
+Token::Token() { std::srand(static_cast< unsigned int >(std::time(NULL))); }
 
 Token::~Token() {}
 
@@ -33,6 +33,25 @@ long uniformRand(long min, long max) {
 std::string Token::genToken(const size_t length) {
 	const std::string charset =
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=-_.";
+	std::string token;
+	token.reserve(length);
+	for (size_t i = 0; i < length; ++i) {
+		char newChar;
+		do {
+			newChar = charset[uniformRand(0, charset.length() - 1)];
+		} while (newChar == '.' && !token.empty() &&
+				 token[token.length() - 1] == '.');
+		token += newChar;
+	}
+	return token;
+}
+
+/**
+ * @brief 新しいトークンを生成します。
+ * @param length トークンの長さ。
+ * @return 生成されたランダムなトークン。
+ */
+std::string Token::genToken(const size_t length, const std::string &charset) {
 	std::string token;
 	token.reserve(length);
 	for (size_t i = 0; i < length; ++i) {

@@ -9,8 +9,9 @@ TimeoutManager::TimeoutManager() {}
 
 TimeoutManager::~TimeoutManager() {}
 
-void TimeoutManager::add(ITimeoutable* obj, time_t timeoutSec) {
-	if (!obj) return;
+void TimeoutManager::add(ITimeoutable *obj, time_t timeoutSec) {
+	if (!obj)
+		return;
 
 	remove(obj);
 
@@ -19,8 +20,9 @@ void TimeoutManager::add(ITimeoutable* obj, time_t timeoutSec) {
 	_reverseMap[obj] = expiryTime;
 }
 
-void TimeoutManager::remove(ITimeoutable* obj) {
-	if (!obj) return;
+void TimeoutManager::remove(ITimeoutable *obj) {
+	if (!obj)
+		return;
 
 	ReverseTimeoutMap::iterator itObj = _reverseMap.find(obj);
 	if (itObj != _reverseMap.end()) {
@@ -32,7 +34,7 @@ void TimeoutManager::remove(ITimeoutable* obj) {
 
 void TimeoutManager::checkAndHandleTimeouts() {
 	time_t now = std::time(NULL);
-	std::vector<ITimeoutable*> expiredObjects;
+	std::vector< ITimeoutable * > expiredObjects;
 
 	TimeoutMap::iterator it = _timeoutMap.begin();
 	while (it != _timeoutMap.end()) {
@@ -49,7 +51,7 @@ void TimeoutManager::checkAndHandleTimeouts() {
 		}
 	}
 
-	for (std::vector<ITimeoutable*>::iterator it = expiredObjects.begin();
+	for (std::vector< ITimeoutable * >::iterator it = expiredObjects.begin();
 		 it != expiredObjects.end(); ++it) {
 		(*it)->onTimeout();
 	}
@@ -68,9 +70,10 @@ int TimeoutManager::getNextTimeoutInterval() const {
 	}
 
 	double diff = std::difftime(nextExpiry, now);
-	if (diff > static_cast<double>(std::numeric_limits<int>::max()) / 1000.0) {
-		return std::numeric_limits<int>::max();
+	if (diff >
+		static_cast< double >(std::numeric_limits< int >::max()) / 1000.0) {
+		return std::numeric_limits< int >::max();
 	}
 
-	return static_cast<int>(diff * 1000.0);
+	return static_cast< int >(diff * 1000.0);
 }

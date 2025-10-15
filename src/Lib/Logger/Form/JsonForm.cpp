@@ -1,6 +1,6 @@
 #include "JsonForm.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
-#include "../../Time/TimeFormatter.hpp"
+#include "../../Time/TimeCache.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -48,11 +48,8 @@ std::string JsonForm::escapeJson(const std::string &str) const {
  * @param out 出力ストリーム
  */
 void JsonForm::format(const LogMessage &msg, std::ostream &out) {
-	std::string timeStr;
-	TimeFormatter::getLocalTimestamp(timeStr, *localtime(&msg.timestamp));
-
 	out << "{";
-	out << "\"timestamp\":\"" << timeStr << "\",";
+	out << "\"timestamp\":\"" << msg.localDate << "T" << msg.localTime << "\",";
 	out << "\"level\":\"" << LogForm::levelToString(msg.level) << "\",";
 	out << "\"message\":\"" << escapeJson(msg.message) << "\",";
 	out << "\"source\":\"" << msg.file << ":" << msg.line << "\"";
@@ -60,7 +57,7 @@ void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 
 	if (!msg.attributes.empty()) {
 		out << ",\"attributes\":{";
-		for (std::map<std::string, std::string>::const_iterator it =
+		for (std::map< std::string, std::string >::const_iterator it =
 				 msg.attributes.begin();
 			 it != msg.attributes.end();) {
 			out << "\"" << it->first << "\":\"" << escapeJson(it->second)
@@ -74,19 +71,19 @@ void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 	out << "}";
 }
 
-void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
+void JsonForm::formatAccess(const AccessLogContext &ctx, std::ostream &out) {
 	if (!ctx.request || !ctx.response) {
 		return;
 	}
 
-	std::string timeStr;
-	TimeFormatter::getIsoTimestamp(timeStr, *gmtime(&ctx.timestamp));
-
 	std::string uri = ctx.request->getPath();
-	const std::map<std::string, std::string>& queries = ctx.request->getQueries();
+	const std::map< std::string, std::string > &queries =
+		ctx.request->getQueries();
 	if (!queries.empty()) {
 		uri += "?";
-		for (std::map<std::string, std::string>::const_iterator it = queries.begin(); it != queries.end();) {
+		for (std::map< std::string, std::string >::const_iterator it =
+				 queries.begin();
+			 it != queries.end();) {
 			uri += it->first + "=" + it->second;
 			if (++it != queries.end()) {
 				uri += "&";
@@ -95,7 +92,7 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	}
 
 	out << "{";
-	out << "\"timestamp\":\"" << timeStr << "\",";
+	out << "\"timestamp\":\"" << ctx.isoTimestamp << "\",";
 	out << "\"remote_addr\":\"" << escapeJson(ctx.remote_addr) << "\",";
 	out << "\"remote_port\":" << ctx.client_port << ",";
 	out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
@@ -103,13 +100,16 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	out << "\"version\":\"" << escapeJson(ctx.request->getVersion()) << "\",";
 	out << "\"status\":" << ctx.response->getStatusCode() << ",";
 	out << "\"bytes_sent\":" << ctx.response->getBody().length() << ",";
-	
-	const std::string& referer = ctx.request->getHeader("Referer");
-	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer)) << "\",";
 
-	const std::string& userAgent = ctx.request->getHeader("User-Agent");
-	out << "\"user_agent\":\"" << (userAgent.empty() ? "-" : escapeJson(userAgent)) << "\",";
+	const std::string &referer = ctx.request->getHeader("Referer");
+	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer))
+		<< "\",";
 
-	out << "\"session_id\":\"" << (ctx.session_id.empty() ? "-" : escapeJson(ctx.session_id)) << "\"";
+	const std::string &userAgent = ctx.request->getHeader("User-Agent");
+	out << "\"user_agent\":\""
+		<< (userAgent.empty() ? "-" : escapeJson(userAgent)) << "\",";
+
+	out << "\"session_id\":\""
+		<< (ctx.session_id.empty() ? "-" : escapeJson(ctx.session_id)) << "\"";
 	out << "}";
 }

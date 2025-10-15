@@ -1,14 +1,15 @@
 #include "HttpResponse.hpp"
 #include <stdexcept>
 
-HttpResponse::HttpResponse(const std::string &serverName)
-	: _serverName(serverName), _statusCode(200), _version(HTTP_VERSION) {}
+HttpResponse::HttpResponse(const Config &conf)
+	: _serverName(conf.getAppInfo().httpServerName), _statusCode(200),
+	  _version(conf.getAppInfo().httpProtocolVersion) {}
 
 HttpResponse::~HttpResponse() {}
 
-void HttpResponse::clear() {
+void HttpResponse::clear(const Config &c) {
 	_statusCode = 200;
-	_version = HTTP_VERSION;
+	_version = c.getAppInfo().httpProtocolVersion;
 	_headers.clear();
 	_body.clear();
 }
@@ -31,17 +32,29 @@ void HttpResponse::setVersion(const std::string &version) {
 }
 
 // Headers
-const std::map<std::string, std::string> &HttpResponse::getHeaders() const {
+const std::map< std::string, std::vector< std::string > > &
+HttpResponse::getHeaders() const {
 	return _headers;
 }
 
 const std::string &HttpResponse::getHeader(const std::string &key) const {
-	const std::map<std::string, std::string>::const_iterator it =
-		_headers.find(key);
+	const std::map< std::string, std::vector< std::string > >::const_iterator
+		it = _headers.find(key);
+	if (it != _headers.end() && !it->second.empty()) {
+		return it->second[it->second.size() - 1];
+	}
+	static const std::string empty;
+	return empty;
+}
+
+const std::vector< std::string > &
+HttpResponse::getHeaderVector(const std::string &key) const {
+	const std::map< std::string, std::vector< std::string > >::const_iterator
+		it = _headers.find(key);
 	if (it != _headers.end()) {
 		return it->second;
 	}
-	static const std::string empty;
+	static const std::vector< std::string > empty;
 	return empty;
 }
 
@@ -50,7 +63,13 @@ bool HttpResponse::hasHeader(const std::string &key) const {
 }
 
 void HttpResponse::setHeader(const std::string &key, const std::string &value) {
-	_headers[key] = value;
+	_headers[key].clear();
+	_headers[key].push_back(value);
+}
+
+void HttpResponse::appendHeader(const std::string &key,
+								const std::string &value) {
+	_headers[key].push_back(value);
 }
 
 // Body

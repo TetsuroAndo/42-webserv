@@ -34,7 +34,7 @@ Logger::Logger() : _logDir(_LOG_DEFAULT_DIR), _activeLevelsMask(0) {
 }
 
 Logger::~Logger() {
-	for (std::vector<LogSink *>::iterator it = _ownedSinks.begin();
+	for (std::vector< LogSink * >::iterator it = _ownedSinks.begin();
 		 it != _ownedSinks.end(); ++it) {
 		delete *it;
 	}
@@ -50,7 +50,8 @@ void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
 	} else {
 		form = new ElfForm();
 	}
-	addSink(level, mode, new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles));
+	addSink(level, mode,
+			new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
@@ -63,8 +64,8 @@ void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 	} else {
 		form = new ElfForm();
 	}
-	addSink(level, mode, new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
-
+	addSink(level, mode,
+			new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
@@ -78,7 +79,7 @@ void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
 	addSink(level, mode, new ConsoleSink(form));
 }
 
-void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink* sink) {
+void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink *sink) {
 	_ownedSinks.push_back(sink);
 
 	if (mode == GREATER_OR_EQUAL) {
@@ -92,14 +93,15 @@ void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink* sink) {
 }
 
 void Logger::log(const LogMessage &msg) {
-	const std::vector<LogSink *>& sinks = _sinksByLevel[msg.level];
+	const std::vector< LogSink * > &sinks = _sinksByLevel[msg.level];
 
-	for (std::vector<LogSink *>::const_iterator sinkIt = sinks.begin();
+	for (std::vector< LogSink * >::const_iterator sinkIt = sinks.begin();
 		 sinkIt != sinks.end(); ++sinkIt) {
 		try {
 			(*sinkIt)->log(msg);
 		} catch (const std::exception &e) {
-			std::cerr << "Logger: Failed to write log: " << e.what() << std::endl;
+			std::cerr << "Logger: Failed to write log: " << e.what()
+					  << std::endl;
 		}
 	}
 }

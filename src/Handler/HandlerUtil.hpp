@@ -8,9 +8,6 @@ class Config;
 namespace HandlerUtil {
 std::string resolvePath(const std::string &requestPath, const Config &config);
 
-void generateErrorBody(const std::string &method, HttpResponse &res, int code);
-
-std::string toString(int value);
-
-std::string getRealPath(const char *path);
+void generateSimpleBody(const std::string &method, HttpResponse &res, int code,
+						const std::string &description = "");
 } // namespace HandlerUtil

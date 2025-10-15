@@ -1,16 +1,17 @@
 #pragma once
 
+#include "../Cgi/CgiManager.hpp"
 #include "../Config/Config.hpp"
+#include "../Lib/Timeout/TimeoutManager.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
-#include "../Lib/Timeout/TimeoutManager.hpp"
-#include "../SocketsManager/SocketsManager.hpp"
+#include "../Socket/FdEventChanges.hpp"
+#include "../Socket/SocketsManager.hpp"
 #include "Client.hpp"
 #include <map>
 
 class Server {
 public:
-	Server();
 	Server(const Config &config);
 	~Server();
 
@@ -18,17 +19,21 @@ public:
 	void closeConnection(int clientFd);
 
 private:
+	Server();
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
 	Config _config;
-	SocketsManager _socketManager;
-	std::map<int, Socket *> _listenSockets;
-	std::map<int, Client *> _clients;
+	CgiManager _cgiManager;
 	TimeoutManager _timeoutManager;
+	SocketsManager _socketsManager;
+	std::map< int, Socket * > _listenSockets;
+	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
 
+	bool isCgiFd(int fd) const;
+	void applyCgiChanges(const FdEventChanges &changes);
 	void setupListenSockets();
 	void handleNewConnection(int listenFd);
 	void handleClientRead(int clientFd);

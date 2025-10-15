@@ -2,25 +2,14 @@
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
+#include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
-#include <iostream>
 #include <stdexcept>
 #include <unistd.h>
-
-Server::Server() : _config(Config()) {
-	LOG(INFO) << "Initializing server with default configuration...";
-	Logging::setupLoggers(_config);
-	std::ostringstream oss;
-	oss << _config;
-	LOG(DEBUG) << oss.str();
-	setupListenSockets();
-	_builder.buildRoute(_config, &_mainProcessor);
-	LOG(INFO) << "Server initialized successfully.";
-}
 
 Server::Server(const Config &config) : _config(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
@@ -34,19 +23,19 @@ Server::Server(const Config &config) : _config(config) {
 }
 
 Server::~Server() {
-	for (std::map<int, Client *>::iterator it = _clients.begin();
+	for (std::map< int, Client * >::iterator it = _clients.begin();
 		 it != _clients.end(); ++it) {
 		delete it->second;
 	}
-	for (std::map<int, Socket *>::iterator it = _listenSockets.begin();
+	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
 		delete it->second;
 	}
 }
 
 void Server::setupListenSockets() {
-	const std::vector<Listen> &listens = _config.getListens();
-	for (std::vector<Listen>::const_iterator it = listens.begin();
+	const std::vector< Listen > &listens = _config.getListens();
+	for (std::vector< Listen >::const_iterator it = listens.begin();
 		 it != listens.end(); ++it) {
 		const int port = it->port;
 		std::string interfaceAddr = it->interface;
@@ -66,10 +55,21 @@ void Server::setupListenSockets() {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
-		inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
+		int ptonRet = inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
+		if (ptonRet <= 0) {
+			close(listenFd);
+			if (ptonRet == 0) {
+				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
+				throw std::runtime_error("Invalid IP address format");
+			}
+			if (ptonRet < 0) {
+				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
+				throw std::runtime_error("inet_pton() failed");
+			}
+		}
 
-		if (bind(listenFd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) <
-			0) {
+		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
+				 sizeof(addr)) < 0) {
 			close(listenFd);
 			LOG(FATAL) << "bind() failed for " << interfaceAddr << ":" << port
 					   << ": " << strerror(errno);
@@ -84,7 +84,7 @@ void Server::setupListenSockets() {
 
 		Socket *sock = new Socket(listenFd, addr);
 		_listenSockets[listenFd] = sock;
-		_socketManager.registerSocket(listenFd, EPOLLIN);
+		_socketsManager.registerSocket(listenFd, EPOLLIN);
 		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
 				  << attr("fd", listenFd);
 	}
@@ -92,16 +92,17 @@ void Server::setupListenSockets() {
 
 void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
+	time_t lastCleanTime = time(NULL);
 	while (true) {
 		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
-		const int nEvents = _socketManager.wait(timeoutMs);
+		const int nEvents = _socketsManager.wait(timeoutMs);
 		_timeoutManager.checkAndHandleTimeouts();
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
-		const epoll_event *events = _socketManager.getEvents();
+		const epoll_event *events = _socketsManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
 			int fd = events[i].data.fd;
@@ -124,14 +125,21 @@ void Server::run() {
 				}
 			}
 		}
+
+		if (time(NULL) - lastCleanTime >
+			900) { // 暫定的に15分ごとにセッションをクリア
+			SessionManager::getInstance().cleanupExpiredSessions();
+			lastCleanTime = time(NULL);
+		}
 	}
 }
 
 void Server::handleNewConnection(const int listenFd) {
 	sockaddr_in clientAddr;
 	socklen_t clientLen = sizeof(clientAddr);
-	const int clientFd = accept(
-		listenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
+	const int clientFd =
+		accept(listenFd, reinterpret_cast< struct sockaddr * >(&clientAddr),
+			   &clientLen);
 
 	if (clientFd < 0) {
 		LOG(ERROR) << "accept() failed: " << strerror(errno);
@@ -151,7 +159,7 @@ void Server::handleNewConnection(const int listenFd) {
 	try {
 		Client *client = new Client(clientFd, clientAddr, _config, this);
 		_clients[clientFd] = client;
-		_socketManager.registerSocket(clientFd, EPOLLIN);
+		_socketsManager.registerSocket(clientFd, EPOLLIN);
 		_timeoutManager.add(client, _config.getTimeoutSec());
 	} catch (const std::bad_alloc &e) {
 		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
@@ -185,18 +193,18 @@ void Server::handleClientRead(const int clientFd) {
 		}
 		return;
 	}
-	_mainProcessor.handle(*ctx);
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
-									  client->getPort(), "");
+										client->getPort(),
+										ctx->session->getId());
 		const std::string responseStr = ResponseBuilder::build(*ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
 				client->getSocket()->getSendBuffer() + responseStr);
 		}
 		if (!client->getSocket()->getSendBuffer().empty()) {
-			_socketManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
 		}
 	}
 }
@@ -207,7 +215,7 @@ void Server::handleClientWrite(const int clientFd) {
 	const std::string &sendBuffer = sock->getSendBuffer();
 
 	if (sendBuffer.empty()) {
-		_socketManager.modifySocket(clientFd, EPOLLIN);
+		_socketsManager.modifySocket(clientFd, EPOLLIN);
 		return;
 	}
 
@@ -218,7 +226,16 @@ void Server::handleClientWrite(const int clientFd) {
 		sock->eraseSendBuffer(0, bytesSent);
 		_timeoutManager.add(client, _config.getTimeoutSec());
 		if (sock->getSendBuffer().empty()) {
-			closeConnection(clientFd);
+			PipelineContext *ctx = client->getContext();
+			// Connectionヘッダを見て接続を閉じるか判断
+			if (ctx->res->getHeader("Connection") == "close") {
+				closeConnection(clientFd);
+			} else {
+				// Keep-Alive:
+				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
+				_socketsManager.modifySocket(clientFd, EPOLLIN);
+				ctx->reset();
+			}
 		}
 	} else {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -230,8 +247,8 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::closeConnection(const int clientFd) {
-	_socketManager.unregisterSocket(clientFd);
-	const std::map<int, Client *>::iterator it = _clients.find(clientFd);
+	_socketsManager.unregisterSocket(clientFd);
+	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"
 				  << attr("client_ip", it->second->getIp())

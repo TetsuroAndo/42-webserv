@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <map>
 
-std::map<std::string, std::string> MimeType::_mimeMap;
+std::map< std::string, std::string > MimeType::_mimeMap;
 bool MimeType::_isInitialized = false;
 
 void MimeType::_setMimeTypes() {
@@ -54,10 +54,24 @@ std::string MimeType::getMimeType(const std::string &extension) {
 	std::string ext = extension.substr(dotPos);
 	StringOps::toLower(ext);
 
-	const std::map<std::string, std::string>::const_iterator it =
+	const std::map< std::string, std::string >::const_iterator it =
 		_mimeMap.find(ext);
 	if (it != _mimeMap.end()) {
 		return it->second;
 	}
 	return "application/octet-stream";
+}
+
+std::string MimeType::getExtension(const std::string &mimeType) {
+	if (!_isInitialized) {
+		_setMimeTypes();
+	}
+	for (std::map< std::string, std::string >::const_iterator it =
+			 _mimeMap.begin();
+		 it != _mimeMap.end(); ++it) {
+		if (it->second == mimeType) {
+			return it->first;
+		}
+	}
+	return "";
 }

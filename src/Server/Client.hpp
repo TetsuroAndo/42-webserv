@@ -1,14 +1,17 @@
 #pragma once
 
-#include "../Middleware/Core/PipelineContext.hpp"
+#include "../Config/Config.hpp"
 #include "../Lib/Timeout/ITimeoutable.hpp"
 #include "../Socket/Socket.hpp"
 #include "server.hpp"
 #include <string>
 
+class PipelineContext;
+
 class Client : public ITimeoutable {
 public:
-	Client(int fd, const sockaddr_in &addr, const Config &config, Server *server);
+	Client(int fd, const sockaddr_in &addr, const Config &config,
+		   Server *server);
 	~Client();
 
 	int getFd() const;
@@ -25,9 +28,8 @@ private:
 	int _port;
 	Socket *_socket;
 	PipelineContext *_context;
-	Server* _server;
+	Server *_server;
 
-	// Disable copy
 	Client(const Client &);
 	Client &operator=(const Client &);
 };

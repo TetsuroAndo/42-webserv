@@ -18,7 +18,8 @@ int RequestParser::getErrorCode() const { return _errorCode; }
 bool RequestParser::isComplete() const { return _state == STATE_COMPLETE; }
 
 ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
-	LOG(DEBUG) << "RequestParser::parse called" << attr("buffer_size", buffer.length());
+	LOG(DEBUG) << "RequestParser::parse called"
+			   << attr("buffer_size", buffer.length());
 	bool stateChanged = true;
 	while (stateChanged) {
 		stateChanged = false;
@@ -50,13 +51,6 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 		case STATE_HEADERS: {
 			const size_t headerEndPos = buffer.find("\r\n\r\n");
 			if (headerEndPos == std::string::npos) {
-				if (buffer.length() > request.getMaxHeaderSize()) {
-					_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
-					LOG(WARNING) << "Parse error: Header fields too large"
-								 << attr("size", buffer.length())
-								 << attr("max_size", request.getMaxHeaderSize());
-					return PARSE_ERROR;
-				}
 				return PARSE_INCOMPLETE;
 			}
 
@@ -74,13 +68,6 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 			break;
 		}
 		case STATE_BODY: {
-			if (buffer.length() > request.getMaxBodySize()) {
-				_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
-				LOG(WARNING) << "Parse error: Payload too large"
-							 << attr("size", buffer.length())
-							 << attr("max_size", request.getMaxBodySize());
-				return PARSE_ERROR;
-			}
 
 			ParseResult res;
 			const size_t consumed =
@@ -88,6 +75,14 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 
 			if (consumed > 0) {
 				buffer.erase(0, consumed);
+			}
+
+			if (request.getBody().length() > request.getMaxBodySize()) {
+				_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
+				LOG(WARNING) << "Parse error: Payload too large"
+							 << attr("size", buffer.length())
+							 << attr("max_size", request.getMaxBodySize());
+				return PARSE_ERROR;
 			}
 
 			if (res == PARSE_COMPLETE) {

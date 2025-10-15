@@ -1,19 +1,18 @@
-#ifndef HTTPREQUEST_HPP
-#define HTTPREQUEST_HPP
+#pragma once
 
 #include <map>
 #include <string>
 
+#include "../../Config/Config.hpp"
+
 class HttpRequest {
 public:
-	HttpRequest();
+	HttpRequest(const Config &config);
 	~HttpRequest();
 
 	// Max
-	size_t getMaxHeaderSize() const;
-	void setMaxHeaderSize(const size_t size = 8192);
 	size_t getMaxBodySize() const;
-	void setMaxBodySize(const size_t size = 10 * 1024 * 1024);
+	void setMaxBodySize(size_t size);
 
 	// Method
 	const std::string &getMethod() const;
@@ -28,16 +27,21 @@ public:
 	void setVersion(const std::string &version);
 
 	// Headers
-	const std::map<std::string, std::string> &getHeaders() const;
+	const std::map< std::string, std::vector< std::string > > &
+	getHeaders() const;
 	const std::string &getHeader(const std::string &key) const;
+	const std::vector< std::string > &
+	getHeaderVector(const std::string &key) const;
 	bool hasHeader(const std::string &key) const;
 	bool hasHeader(const char *keyStart, size_t keyLen) const;
 	void addHeader(const std::string &key, const std::string &value);
 	void addHeader(const char *keyStart, size_t keyLen, const char *valStart,
 				   size_t valLen);
-
+	void appendHeader(const std::string &key, const std::string &value);
+	void appendHeader(const char *keyStart, size_t keyLen, const char *valStart,
+					  size_t valLen);
 	// Query Parameters (?以降のキーバリュー)
-	const std::map<std::string, std::string> &getQueries() const;
+	const std::map< std::string, std::string > &getQueries() const;
 	const std::string &getQuery(const std::string &key) const;
 	bool hasQuery(const std::string &key) const;
 	void addQuery(const std::string &key, const std::string &value);
@@ -52,18 +56,15 @@ public:
 	void clear();
 
 private:
-	static size_t maxHeaderSize;
-	static size_t maxBodySize;
+	size_t maxBodySize;
 
 	std::string _method;
 	std::string _path;
 	std::string _version;
-	std::map<std::string, std::string> _headers;
-	std::map<std::string, std::string> _query;
+	std::map< std::string, std::vector< std::string > > _headers;
+	std::map< std::string, std::string > _query;
 	std::string _body;
 
 	HttpRequest(const HttpRequest &);
 	HttpRequest &operator=(const HttpRequest &);
 };
-
-#endif
