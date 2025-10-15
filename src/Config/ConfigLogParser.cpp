@@ -3,13 +3,14 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
+#include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
-ConfigLogParser::ConfigLogParser(Config *config) : _config(config) {}
+ConfigLogParser::ConfigLogParser(ConfigBuilder *builder) : _builder(builder) {}
 ConfigLogParser::~ConfigLogParser() {}
 
 namespace {
@@ -54,18 +55,18 @@ void parseLogSpecifics(Node *logNode, ErrorLog &log,
 	}
 }
 
-template <typename LogType>
+template < typename LogType >
 void parseLogs(const Node *node, const std::string &logKey,
-			   const std::set<std::string> &enabledValidKeys,
-			   std::vector<LogType> &configuredLogs) {
+			   const std::set< std::string > &enabledValidKeys,
+			   std::vector< LogType > &configuredLogs) {
 	if (!node)
 		return;
 
-	const std::vector<Node *> &logs = node->getSeq();
+	const std::vector< Node * > &logs = node->getSeq();
 	bool isDisabledFound = false;
 	bool isEnabledFound = false;
 
-	for (std::vector<Node *>::const_iterator it = logs.begin();
+	for (std::vector< Node * >::const_iterator it = logs.begin();
 		 it != logs.end(); ++it) {
 		Node *logNode = *it;
 		if (logNode->getKey() != logKey) {
@@ -172,21 +173,21 @@ void parseLogs(const Node *node, const std::string &logKey,
 } // namespace
 
 void ConfigLogParser::parseAccessLogs(const Node *node) {
-	std::vector<AccessLog> configuredLogs;
+	std::vector< AccessLog > configuredLogs;
 	parseLogs(node, "access_log", ConfigParser::VALID_ACCESS_LOG_KEYS,
 			  configuredLogs);
 
 	if (!configuredLogs.empty()) {
-		_config->setAccessLogs(configuredLogs);
+		_builder->setAccessLogs(configuredLogs);
 	}
 }
 
 void ConfigLogParser::parseErrorLogs(const Node *node) {
-	std::vector<ErrorLog> configuredLogs;
+	std::vector< ErrorLog > configuredLogs;
 	parseLogs(node, "error_log", ConfigParser::VALID_ERROR_LOG_KEYS,
 			  configuredLogs);
 
 	if (!configuredLogs.empty()) {
-		_config->setErrorLogs(configuredLogs);
+		_builder->setErrorLogs(configuredLogs);
 	}
 }

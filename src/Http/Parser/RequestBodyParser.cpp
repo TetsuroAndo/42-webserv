@@ -80,7 +80,7 @@ size_t RequestBodyParser::parseIdentity(HttpRequest &request,
 										const std::string &buffer,
 										ParseResult &result) {
 	const size_t toRead =
-		std::min<size_t>(buffer.length(), _contentLengthRemaining);
+		std::min< size_t >(buffer.length(), _contentLengthRemaining);
 
 	if (toRead == 0) {
 		result = PARSE_INCOMPLETE;
@@ -127,7 +127,7 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 			const void *semiPosPtr = memchr(sizeLineStart, ';', sizeLineLen);
 			if (semiPosPtr != NULL) {
 				sizeLineLen =
-					static_cast<const char *>(semiPosPtr) - sizeLineStart;
+					static_cast< const char * >(semiPosPtr) - sizeLineStart;
 			}
 
 			if (!StringOps::hexStrToSize(sizeLineStart, sizeLineLen,

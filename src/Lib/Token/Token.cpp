@@ -5,7 +5,7 @@
 #include <ctime>
 #include <string>
 
-Token::Token() { std::srand(static_cast<unsigned int>(std::time(NULL))); }
+Token::Token() { std::srand(static_cast< unsigned int >(std::time(NULL))); }
 
 Token::~Token() {}
 

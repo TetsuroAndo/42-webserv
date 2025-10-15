@@ -10,8 +10,8 @@ PipelineRouterMiddleware::~PipelineRouterMiddleware() {}
 
 struct CompareRoutes {
 	bool
-	operator()(const std::pair<std::string, MiddlewareProcessor *> &a,
-			   const std::pair<std::string, MiddlewareProcessor *> &b) const {
+	operator()(const std::pair< std::string, MiddlewareProcessor * > &a,
+			   const std::pair< std::string, MiddlewareProcessor * > &b) const {
 		return a.first.length() > b.first.length();
 	}
 };
@@ -21,7 +21,7 @@ void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 	const std::string requestPath = ctx.req->getPath();
 	MiddlewareProcessor *nextProcessor = 0;
 
-	std::vector<std::pair<std::string, MiddlewareProcessor *> > sortedRoutes;
+	std::vector< std::pair< std::string, MiddlewareProcessor * > > sortedRoutes;
 
 	for (RouteMap::const_iterator it = _routes.begin(); it != _routes.end();
 		 ++it) {
@@ -30,9 +30,8 @@ void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 
 	std::sort(sortedRoutes.begin(), sortedRoutes.end(), CompareRoutes());
 
-	for (std::vector<
-			 std::pair<std::string, MiddlewareProcessor *> >::const_iterator it =
-			 sortedRoutes.begin();
+	for (std::vector< std::pair< std::string, MiddlewareProcessor * > >::
+			 const_iterator it = sortedRoutes.begin();
 		 it != sortedRoutes.end(); ++it) {
 		const std::string &routeKey = it->first;
 		if (requestPath.rfind(routeKey, 0) == 0) {

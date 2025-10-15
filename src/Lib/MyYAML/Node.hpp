@@ -25,7 +25,7 @@ public:
 
 	void setTypeValue();
 
-	const std::vector<Node *> &getSeq() const;
+	const std::vector< Node * > &getSeq() const;
 	Node *getMapNode(const std::string &key) const;
 
 	void terminateNode();
@@ -34,13 +34,13 @@ public:
 
 	std::size_t size() const;
 
-	std::vector<std::string> getKeys() const;
+	std::vector< std::string > getKeys() const;
 
 private:
 	Type _type;
 	Type _childNodeType;
 	const std::string _key;
 	const std::string _value;
-	std::vector<Node *> _seq;
-	std::map<std::string, Node *> _map;
+	std::vector< Node * > _seq;
+	std::map< std::string, Node * > _map;
 };

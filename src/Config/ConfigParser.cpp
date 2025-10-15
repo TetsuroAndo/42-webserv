@@ -2,6 +2,7 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
+#include "ConfigBuilder.hpp"
 #include "ConfigLocationParser.hpp"
 #include "ConfigLogParser.hpp"
 #include <set>
@@ -9,16 +10,16 @@
 #include <stdexcept>
 #include <vector>
 
-ConfigParser::ConfigParser(Config *config) : _config(config) {}
+ConfigParser::ConfigParser(ConfigBuilder *builder) : _builder(builder) {}
 ConfigParser::~ConfigParser() {}
 
 void ConfigParser::validateKeys(const Node *node,
-								const std::set<std::string> &validKeys,
+								const std::set< std::string > &validKeys,
 								const std::string &context) {
 	if (!node)
 		return;
-	const std::vector<std::string> &keys = node->getKeys();
-	for (std::vector<std::string>::const_iterator it = keys.begin();
+	const std::vector< std::string > &keys = node->getKeys();
+	for (std::vector< std::string >::const_iterator it = keys.begin();
 		 it != keys.end(); ++it) {
 		if (validKeys.find(*it) == validKeys.end()) {
 			throw std::runtime_error("Config error: unknown directive '" + *it +
@@ -27,8 +28,8 @@ void ConfigParser::validateKeys(const Node *node,
 	}
 }
 
-static std::set<std::string> createValidServerKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidServerKeys() {
+	std::set< std::string > keys;
 	keys.insert("listens");
 	keys.insert("redirects");
 	keys.insert("locations");
@@ -37,7 +38,6 @@ static std::set<std::string> createValidServerKeys() {
 	keys.insert("maxRequestBodySize");
 	keys.insert("timeoutSec");
 	keys.insert("maxEvents");
-	keys.insert("path");
 	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
@@ -48,23 +48,23 @@ static std::set<std::string> createValidServerKeys() {
 	return keys;
 }
 
-static std::set<std::string> createValidListenKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidListenKeys() {
+	std::set< std::string > keys;
 	keys.insert("interface");
 	keys.insert("port");
 	return keys;
 }
 
-static std::set<std::string> createValidRedirectKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidRedirectKeys() {
+	std::set< std::string > keys;
 	keys.insert("from");
 	keys.insert("to");
 	keys.insert("code");
 	return keys;
 }
 
-static std::set<std::string> createValidLocationKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidLocationKeys() {
+	std::set< std::string > keys;
 	keys.insert("path");
 	keys.insert("root");
 	keys.insert("allowedMethods");
@@ -77,8 +77,8 @@ static std::set<std::string> createValidLocationKeys() {
 	return keys;
 }
 
-static std::set<std::string> createValidAccessLogKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidAccessLogKeys() {
+	std::set< std::string > keys;
 	keys.insert("disable");
 	keys.insert("sink");
 	keys.insert("filename");
@@ -89,8 +89,8 @@ static std::set<std::string> createValidAccessLogKeys() {
 	return keys;
 }
 
-static std::set<std::string> createValidErrorLogKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidErrorLogKeys() {
+	std::set< std::string > keys;
 	keys.insert("disable");
 	keys.insert("sink");
 	keys.insert("filename");
@@ -103,20 +103,20 @@ static std::set<std::string> createValidErrorLogKeys() {
 	return keys;
 }
 
-static std::set<std::string> createValidDisabledAccessLogKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidDisabledAccessLogKeys() {
+	std::set< std::string > keys;
 	keys.insert("disable");
 	return keys;
 }
 
-static std::set<std::string> createValidDisabledErrorLogKeys() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidDisabledErrorLogKeys() {
+	std::set< std::string > keys;
 	keys.insert("disable");
 	return keys;
 }
 
-static std::set<std::string> createValidAllowedMethods() {
-	std::set<std::string> keys;
+static std::set< std::string > createValidAllowedMethods() {
+	std::set< std::string > keys;
 	keys.insert("GET");
 	keys.insert("POST");
 	keys.insert("HEAD");
@@ -124,31 +124,31 @@ static std::set<std::string> createValidAllowedMethods() {
 	return keys;
 }
 
-const std::set<std::string> ConfigParser::VALID_SERVER_KEYS =
+const std::set< std::string > ConfigParser::VALID_SERVER_KEYS =
 	createValidServerKeys();
-const std::set<std::string> ConfigParser::VALID_LISTEN_KEYS =
+const std::set< std::string > ConfigParser::VALID_LISTEN_KEYS =
 	createValidListenKeys();
-const std::set<std::string> ConfigParser::VALID_REDIRECT_KEYS =
+const std::set< std::string > ConfigParser::VALID_REDIRECT_KEYS =
 	createValidRedirectKeys();
-const std::set<std::string> ConfigParser::VALID_LOCATION_KEYS =
+const std::set< std::string > ConfigParser::VALID_LOCATION_KEYS =
 	createValidLocationKeys();
-const std::set<std::string> ConfigParser::VALID_ACCESS_LOG_KEYS =
+const std::set< std::string > ConfigParser::VALID_ACCESS_LOG_KEYS =
 	createValidAccessLogKeys();
-const std::set<std::string> ConfigParser::VALID_ERROR_LOG_KEYS =
+const std::set< std::string > ConfigParser::VALID_ERROR_LOG_KEYS =
 	createValidErrorLogKeys();
-const std::set<std::string> ConfigParser::VALID_DISABLED_ACCESS_LOG_KEYS =
+const std::set< std::string > ConfigParser::VALID_DISABLED_ACCESS_LOG_KEYS =
 	createValidDisabledAccessLogKeys();
-const std::set<std::string> ConfigParser::VALID_DISABLED_ERROR_LOG_KEYS =
+const std::set< std::string > ConfigParser::VALID_DISABLED_ERROR_LOG_KEYS =
 	createValidDisabledErrorLogKeys();
-const std::set<std::string> ConfigParser::VALID_ALLOWED_METHODS =
+const std::set< std::string > ConfigParser::VALID_ALLOWED_METHODS =
 	createValidAllowedMethods();
 
 void ConfigParser::parseListens(const Node *node) {
 	if (!node)
 		throw std::runtime_error("Config error: missing 'listens' node");
-	const std::vector<Node *> &listensNodes = node->getSeq();
-	std::vector<Listen> listens;
-	for (std::vector<Node *>::const_iterator it = listensNodes.begin();
+	const std::vector< Node * > &listensNodes = node->getSeq();
+	std::vector< Listen > listens;
+	for (std::vector< Node * >::const_iterator it = listensNodes.begin();
 		 it != listensNodes.end(); ++it) {
 		Node *l_node = *it;
 		if (l_node->getKey() != "listen") {
@@ -157,7 +157,7 @@ void ConfigParser::parseListens(const Node *node) {
 		}
 
 		const char *validKeysArr[] = {"interface", "port"};
-		std::set<std::string> validKeys(validKeysArr, validKeysArr + 2);
+		std::set< std::string > validKeys(validKeysArr, validKeysArr + 2);
 		validateKeys(l_node, validKeys, "listen block");
 
 		Listen l;
@@ -182,14 +182,14 @@ void ConfigParser::parseListens(const Node *node) {
 
 		listens.push_back(l);
 	}
-	_config->setListens(listens);
+	_builder->setListens(listens);
 }
 
 void ConfigParser::parseRedirects(Node *node) {
 	if (!node)
 		throw std::runtime_error("Config error: missing 'redirects' node");
-	const std::vector<Node *> &redirects = node->getSeq();
-	for (std::vector<Node *>::const_iterator it = redirects.begin();
+	const std::vector< Node * > &redirects = node->getSeq();
+	for (std::vector< Node * >::const_iterator it = redirects.begin();
 		 it != redirects.end(); ++it) {
 		Node *r_node = *it;
 		if (r_node->getKey() != "redirect") {
@@ -197,7 +197,7 @@ void ConfigParser::parseRedirects(Node *node) {
 		}
 
 		const char *validKeysArr[] = {"from", "to", "code"};
-		std::set<std::string> validKeys(validKeysArr, validKeysArr + 3);
+		std::set< std::string > validKeys(validKeysArr, validKeysArr + 3);
 		validateKeys(r_node, validKeys, "redirect block");
 
 		Redirect r;
@@ -219,7 +219,7 @@ void ConfigParser::parseRedirects(Node *node) {
 				"Config error: missing 'code' key in redirect item");
 		r.code = StringOps::stringToInt(codeNode->getValue());
 
-		_config->setRedirect(r, r.fromPath);
+		_builder->setRedirect(r, r.fromPath);
 	}
 }
 
@@ -232,12 +232,12 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		parseRedirects(redirectsNode);
 	}
 
-	ConfigLocationParser locationParser(_config);
+	ConfigLocationParser locationParser(_builder);
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		locationParser.parseLocations(locationsNode);
 	}
 
-	ConfigLogParser logParser(_config);
+	ConfigLogParser logParser(_builder);
 	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
 		logParser.parseAccessLogs(accessLogsNode);
 	}
@@ -245,20 +245,15 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		logParser.parseErrorLogs(errorLogsNode);
 	}
 
-	if (Node *n = serverNode->getMapNode("path")) {
-		Location defaultLoc = _config->getLocation("/");
-		defaultLoc.path = n->getValue();
-		_config->setLocation(defaultLoc, "/");
-	}
 	if (Node *n = serverNode->getMapNode("root"))
-		_config->setRoot(n->getValue(), "/");
+		_builder->setServerDefaultRoot(n->getValue());
 	if (Node *n = serverNode->getMapNode("allowedMethods")) {
 		const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
-		std::set<std::string> validMethods(validMethodsArr,
-										   validMethodsArr + 4);
-		std::set<std::string> methodsSet;
-		const std::vector<Node *> &methods = n->getSeq();
-		for (std::vector<Node *>::const_iterator m_it = methods.begin();
+		std::set< std::string > validMethods(validMethodsArr,
+											 validMethodsArr + 4);
+		std::set< std::string > methodsSet;
+		const std::vector< Node * > &methods = n->getSeq();
+		for (std::vector< Node * >::const_iterator m_it = methods.begin();
 			 m_it != methods.end(); ++m_it) {
 			std::string method = (*m_it)->getValue();
 			if (validMethods.find(method) == validMethods.end()) {
@@ -267,32 +262,33 @@ void ConfigParser::parseServer(const Node *serverNode) {
 			}
 			methodsSet.insert(method);
 		}
-		_config->setAllowedMethods(methodsSet, "/");
+		_builder->setServerDefaultAllowedMethods(methodsSet);
 	}
 	if (Node *n = serverNode->getMapNode("autoindex"))
-		_config->setAutoindex(n->getValue() == "true", "/");
+		_builder->setServerDefaultAutoindex(n->getValue() == "true");
 	if (Node *n = serverNode->getMapNode("indexFile"))
-		_config->setIndexFile(n->getValue(), "/");
+		_builder->setServerDefaultIndexFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("errorFile"))
-		_config->setErrorFile(n->getValue(), "/");
+		_builder->setServerDefaultErrorFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
-		_config->setUploadStore(n->getValue(), "/");
+		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("cgi")) {
-		const std::vector<std::string> &cgiKeys = n->getKeys();
-		for (std::vector<std::string>::const_iterator cgi_it = cgiKeys.begin();
+		const std::vector< std::string > &cgiKeys = n->getKeys();
+		for (std::vector< std::string >::const_iterator cgi_it =
+				 cgiKeys.begin();
 			 cgi_it != cgiKeys.end(); ++cgi_it) {
-			_config->setCgiConf(*cgi_it, n->getMapNode(*cgi_it)->getValue(),
-								"/");
+			_builder->setServerDefaultCgiConf(
+				*cgi_it, n->getMapNode(*cgi_it)->getValue());
 		}
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
-		_config->setMaxRequestBodySize(
+		_builder->setMaxRequestBodySize(
 			StringOps::sizeByteStrToSizeT(n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
-		_config->setTimeoutSec(StringOps::stringToInt(n->getValue()));
+		_builder->setTimeoutSec(StringOps::stringToInt(n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
-		_config->setMaxEvents(StringOps::stringToInt(n->getValue()));
+		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));
 }

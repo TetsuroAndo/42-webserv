@@ -5,7 +5,7 @@
 
 int main() {
 	try {
-		std::auto_ptr<MyYAML> yaml(
+		std::auto_ptr< MyYAML > yaml(
 			new MyYAML("test.yaml")); // テスト用YAMLファイル
 		yaml->getData().print(0);	  // ノード構造を表示
 		std::cout << "最上層のサイズ" << yaml->getData().size() << std::endl;

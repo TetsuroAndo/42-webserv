@@ -18,7 +18,8 @@ int RequestParser::getErrorCode() const { return _errorCode; }
 bool RequestParser::isComplete() const { return _state == STATE_COMPLETE; }
 
 ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
-	LOG(DEBUG) << "RequestParser::parse called" << attr("buffer_size", buffer.length());
+	LOG(DEBUG) << "RequestParser::parse called"
+			   << attr("buffer_size", buffer.length());
 	bool stateChanged = true;
 	while (stateChanged) {
 		stateChanged = false;

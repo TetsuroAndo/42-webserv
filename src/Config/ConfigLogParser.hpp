@@ -1,14 +1,14 @@
 #pragma once
 
-class Config;
+class ConfigBuilder;
 class Node;
 
 class ConfigLogParser {
 private:
-	Config *_config;
+	ConfigBuilder *_builder;
 
 public:
-	ConfigLogParser(Config *config);
+	ConfigLogParser(ConfigBuilder *builder);
 	~ConfigLogParser();
 
 	void parseAccessLogs(const Node *node);
