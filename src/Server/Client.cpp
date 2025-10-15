@@ -3,7 +3,7 @@
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
-#include "server.hpp"
+#include "Server.hpp"
 #include <arpa/inet.h>
 #include <sstream>
 
