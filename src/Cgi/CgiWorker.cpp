@@ -30,6 +30,8 @@ pid_t CgiWorker::getPid() const { return _pid; }
 
 CgiWorker::CgiState CgiWorker::getState() const { return _state; }
 
+void CgiWorker::setTimeout() { _state = CGI_TIMEOUT; }
+
 time_t CgiWorker::getLastActivityTime() const { return _lastActivityTime; }
 
 void CgiWorker::updateLastActivityTime() { _lastActivityTime = time(NULL); }

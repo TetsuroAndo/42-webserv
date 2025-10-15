@@ -21,9 +21,10 @@ public:
 	/**
 	 * @brief CGIのパイプFDでイベントが発生した際にServerから呼ばれる
 	 * @param fd イベントが発生したファイルディスクリプタ
-	 * @return 状態変化によりepollへの登録内容を変更するための情報
+	 * @param event_type イベントのタイプ (EPOLLIN or EPOLLOUT)
+	 * @return FdEventChanges サーバーのイベントループに登録・変更すべきFDの情報
 	 */
-	FdEventChanges handleEvent(int fd);
+	FdEventChanges handleEvent(int fd, uint32_t event_type);
 
 	/**
 	 * @brief 完了またはタイムアウトしたWorkerをクリーンアップする
@@ -41,7 +42,7 @@ public:
 	 * @brief 指定したクライアント向けのCGI処理が完了したか確認する
 	 * @param clientFd クライアントのファイルディスクリプタ
 	 * @param res
-	 * 処理が完了していた場合、このHttpResponseオブジェクトに結果が格納される
+	 * ステータス関係なく完了していればHttpResponseを構築してワーカーを削除する
 	 * @return 処理が完了していればtrue、そうでなければfalse
 	 */
 	bool isCgiComplete(int clientFd, HttpResponse &res);
@@ -56,7 +57,7 @@ public:
 private:
 	const time_t _timeoutSeconds;
 	std::vector< CgiWorker * > _workers;
-	// pipeFD(ReadFd)からWorkerを引くためのマップ
+	// pipeFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _pipeFdToWorker;
 	// ClientFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _clientFdToWorker;

@@ -45,6 +45,9 @@ public:
 	/// @brief 現在の状態を取得する
 	CgiState getState() const;
 
+	/// @brief 状態をタイムアウトに設定する
+	void setTimeout();
+
 	/// @brief 最終活動時刻を取得する
 	time_t getLastActivityTime() const;
 
