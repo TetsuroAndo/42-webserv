@@ -18,7 +18,8 @@ HttpResponse CgiHandler::handle(PipelineContext &ctx) {
 	HttpResponse *res = ctx.res;
 
 	LOG(INFO) << "CgiHandler processing request"
-			  << attr("method", req->getMethod()) << attr("uri", req->getPath());
+			  << attr("method", req->getMethod())
+			  << attr("uri", req->getPath());
 
 	if (req->getMethod() != "POST") {
 		LOG(WARNING) << "Method not allowed for CgiHandler"

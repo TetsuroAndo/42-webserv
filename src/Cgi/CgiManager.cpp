@@ -2,8 +2,9 @@
 #include <algorithm>
 
 void CgiManager::_removeWorker(CgiWorker *worker) {
-	_workers.erase(std::remove(_workers.begin(), _workers.end(), worker), _workers.end());
-	_pipeFdToWorker.erase(worker->getPipeFd());
+	_workers.erase(std::remove(_workers.begin(), _workers.end(), worker),
+				   _workers.end());
+	_pipeFdToWorker.erase(worker->getReadFd());
 	_clientFdToWorker.erase(worker->getClientFd());
 	delete worker;
 }
@@ -13,8 +14,7 @@ CgiManager::CgiManager(const Config &config)
 	  _timeoutSeconds(config.getTimeoutSec()) {}
 
 CgiManager::~CgiManager() {
-	for (size_t i = 0; i < _workers.size(); ++i) {
-		delete _workers[i];
+	while (!_workers.empty()) {
+		_removeWorker(_workers.back());
 	}
 }
-

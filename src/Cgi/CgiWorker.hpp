@@ -30,6 +30,9 @@ public:
 	/// @brief CGIプロセスの標準出力からレスポンスを読み込む
 	void handleRead();
 
+	/// @brief クライアントFDを取得する
+	int getClientFd() const;
+
 	/// @brief 読み込み用パイプのFDを取得する
 	int getReadFd() const;
 
@@ -58,12 +61,13 @@ public:
 	void createHttpResponse(HttpResponse &res);
 
 private:
+	CgiState _state;
+	int _clientFd;
 	pid_t _pid;
 	int _pipeIn[2];
 	int _pipeOut[2];
-	CgiState _state;
 	std::string _requestBody;
-	size_t      _bytesSent;
+	size_t _bytesSent;
 	std::string _responseBuffer;
 	std::string _scriptPath;
 	std::string _interpreterPath;

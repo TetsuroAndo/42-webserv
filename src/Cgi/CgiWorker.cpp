@@ -1,12 +1,13 @@
 #include "CgiWorker.hpp"
+#include "Client.hpp"
 #include <algorithm>
 #include <unistd.h>
 
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
-					   const std::string &interpreterPath)
-	: _pid(-1), _pipeIn{ -1, -1 }, _pipeOut{ -1, -1 }, _state(CGI_INIT),
-	  _requestBody(ctx.recvBuffer), _bytesSent(0),
-	  _responseBuffer(ctx.recvBuffer), _scriptPath(scriptPath),
+					 const std::string &interpreterPath)
+	: _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
+	  _pipeIn{-1, -1}, _pipeOut{-1, -1}, _requestBody(ctx.recvBuffer),
+	  _bytesSent(0), _responseBuffer(ctx.recvBuffer), _scriptPath(scriptPath),
 	  _interpreterPath(interpreterPath), _responseParser(),
 	  _lastActivityTime(time(NULL)) {}
 
@@ -19,36 +20,25 @@ void CgiWorker::handleWrite() {}
 
 void CgiWorker::handleRead() {}
 
-int CgiWorker::getReadFd() const {
-	return _pipeOut[0];
-}
+int CgiWorker::getClientFd() const { return _clientFd; }
 
-int CgiWorker::getWriteFd() const {
-	return _pipeIn[1];
-}
+int CgiWorker::getReadFd() const { return _pipeOut[0]; }
 
-pid_t CgiWorker::getPid() const {
-	return _pid;
-}
+int CgiWorker::getWriteFd() const { return _pipeIn[1]; }
 
-CgiWorker::CgiState CgiWorker::getState() const {
-	return _state;
-}
+pid_t CgiWorker::getPid() const { return _pid; }
 
-time_t CgiWorker::getLastActivityTime() const {
-	return _lastActivityTime;
-}
+CgiWorker::CgiState CgiWorker::getState() const { return _state; }
 
-void CgiWorker::updateLastActivityTime() {
-	_lastActivityTime = time(NULL);
-}
+time_t CgiWorker::getLastActivityTime() const { return _lastActivityTime; }
 
-bool CgiWorker::isTimeout() const {
-	return _state == CGI_TIMEOUT;
-}
+void CgiWorker::updateLastActivityTime() { _lastActivityTime = time(NULL); }
+
+bool CgiWorker::isTimeout() const { return _state == CGI_TIMEOUT; }
 
 bool CgiWorker::isFinished() const {
-	return _state == CGI_COMPLETE || _state == CGI_ERROR || _state == CGI_TIMEOUT;
+	return _state == CGI_COMPLETE || _state == CGI_ERROR ||
+		   _state == CGI_TIMEOUT;
 }
 
 void CgiWorker::createHttpResponse(HttpResponse &res) {

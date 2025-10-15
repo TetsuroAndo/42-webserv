@@ -56,7 +56,7 @@ public:
 private:
 	const time_t _timeoutSeconds;
 	std::vector< CgiWorker * > _workers;
-	// パイプFDからWorkerを引くためのマップ
+	// pipeFD(ReadFd)からWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _pipeFdToWorker;
 	// ClientFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _clientFdToWorker;

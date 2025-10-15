@@ -1,11 +1,11 @@
 #pragma once
 
+#include "../Cgi/CgiManager.hpp"
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
 #include "../Socket/FdEventChanges.hpp"
 #include "../Socket/SocketsManager.hpp"
-#include "../Cgi/CgiManager.hpp"
 #include "Client.hpp"
 #include <map>
 
@@ -24,8 +24,8 @@ private:
 	Config _config;
 	CgiManager _cgiManager;
 	SocketsManager _socketsManager;
-	std::map<int, Socket *> _listenSockets;
-	std::map<int, Client *> _clients;
+	std::map< int, Socket * > _listenSockets;
+	std::map< int, Client * > _clients;
 
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;

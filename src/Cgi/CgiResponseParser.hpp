@@ -25,7 +25,8 @@ public:
 
 private:
 	int _statusCode;
-	std::string _statusMessage; // CGIから渡されるStatusMessage現在は使用しない予定
+	std::string
+		_statusMessage; // CGIから渡されるStatusMessage現在は使用しない予定
 	std::map< std::string, std::string > _headers;
 	std::string _body;
 
