@@ -37,7 +37,7 @@ public:
 	const std::string &getBody() const;
 	void setBody(const std::string &body);
 
-	void clear();
+	void clear(const Config &c);
 
 	HttpResponse(const HttpResponse &other)
 		: _serverName(other._serverName), _statusCode(other._statusCode),

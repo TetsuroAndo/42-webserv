@@ -1,8 +1,13 @@
 #include "Config.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "Info/App.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+AppInfo::AppInfo()
+	: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
+	  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION) {}
 
 Config::Config(const std::vector<Listen> &listens,
 			   const std::map<std::string, Redirect> &redirects,

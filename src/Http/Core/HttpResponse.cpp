@@ -7,9 +7,9 @@ HttpResponse::HttpResponse(const Config &conf)
 
 HttpResponse::~HttpResponse() {}
 
-void HttpResponse::clear() {
+void HttpResponse::clear(const Config &c) {
 	_statusCode = 200;
-	_version = HTTP_VERSION;
+	_version = c.getAppInfo().httpProtocolVersion;
 	_headers.clear();
 	_body.clear();
 }

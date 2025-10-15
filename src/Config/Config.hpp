@@ -2,7 +2,6 @@
 
 #include "../Lib/Logger/ErrorLog/LogStructure.hpp"
 #include "../Lib/Logger/LogType.hpp"
-#include "Info/App.hpp"
 #include <map>
 #include <ostream>
 #include <set>
@@ -18,9 +17,7 @@ struct AppInfo {
 	std::string httpServerName;
 	std::string httpProtocolVersion;
 
-	AppInfo()
-		: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
-		  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION) {}
+	AppInfo();
 };
 
 struct Listen {
