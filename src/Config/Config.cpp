@@ -7,7 +7,8 @@
 
 AppInfo::AppInfo()
 	: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
-	  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION) {}
+	  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION),
+	  cgiVersion(CGI_VERSION) {}
 
 Config::Config(const std::vector<Listen> &listens,
 			   const std::map<std::string, Redirect> &redirects,

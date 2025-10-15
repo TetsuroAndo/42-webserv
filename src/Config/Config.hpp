@@ -17,6 +17,8 @@ struct AppInfo {
 	std::string httpServerName;
 	std::string httpProtocolVersion;
 
+	std::string cgiVersion;
+
 	AppInfo();
 };
 

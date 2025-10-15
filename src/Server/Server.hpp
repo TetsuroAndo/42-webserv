@@ -5,6 +5,7 @@
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
 #include "../Socket/FdEventChanges.hpp"
 #include "../Socket/SocketsManager.hpp"
+#include "../Cgi/CgiManager.hpp"
 #include "Client.hpp"
 #include <map>
 
@@ -21,7 +22,8 @@ private:
 	Server &operator=(const Server &other);
 
 	Config _config;
-	SocketsManager _manager;
+	CgiManager _cgiManager;
+	SocketsManager _socketsManager;
 	std::map<int, Socket *> _listenSockets;
 	std::map<int, Client *> _clients;
 
