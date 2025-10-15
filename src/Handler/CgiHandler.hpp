@@ -8,7 +8,7 @@ class CgiManager;
 class CgiHandler : public ISubHandler {
 public:
 	explicit CgiHandler(CgiManager *cgiManager);
-	virtual ~CgiHandler();
+	~CgiHandler();
 
 	/**
 	 * @brief CGI処理を開始するハンドラ
