@@ -64,6 +64,7 @@ private:
 
 	CgiResponseParser _response_parser;
 
+	// TODO: 設定ファイルから読み込むようにする
 	static const int TIMEOUT_SECONDS = 30;
 
 	void _childProcess(const std::string &scriptPath,
