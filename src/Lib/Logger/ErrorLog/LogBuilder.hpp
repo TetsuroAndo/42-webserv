@@ -9,7 +9,7 @@ struct LogAttribute {
 	std::string value;
 };
 
-template <typename T>
+template < typename T >
 inline LogAttribute attr(const std::string &key, const T &value) {
 	std::stringstream ss;
 	ss << value;
@@ -24,7 +24,7 @@ public:
 	LogBuilder(LogLevel level, const char *file, int line, const char *func);
 	~LogBuilder();
 
-	template <typename T> LogBuilder &operator<<(const T &value) {
+	template < typename T > LogBuilder &operator<<(const T &value) {
 		_ss << value;
 		return *this;
 	}
@@ -39,4 +39,4 @@ private:
 
 #define LOG(level)                                                             \
 	if (Logger::getInstance().isLogLevelActive(level))                         \
-		LogBuilder(level, __FILE__, __LINE__, __func__)
+	LogBuilder(level, __FILE__, __LINE__, __func__)

@@ -40,7 +40,7 @@ private:
 	static const int NUM_LOG_LEVELS = FATAL + 1;
 
 	std::string _logDir;
-	std::vector<LogSink *> _sinksByLevel[NUM_LOG_LEVELS];
-	std::vector<LogSink *> _ownedSinks;
+	std::vector< LogSink * > _sinksByLevel[NUM_LOG_LEVELS];
+	std::vector< LogSink * > _ownedSinks;
 	unsigned int _activeLevelsMask;
 };

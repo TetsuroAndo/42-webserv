@@ -8,11 +8,11 @@ class Node;
 
 class ConfigBuilder {
 private:
-	std::vector<Listen> _listens;
-	std::map<std::string, Redirect> _redirects;
-	std::map<std::string, Location> _locations;
-	std::vector<AccessLog> _accessLogs;
-	std::vector<ErrorLog> _errorLogs;
+	std::vector< Listen > _listens;
+	std::map< std::string, Redirect > _redirects;
+	std::map< std::string, Location > _locations;
+	std::vector< AccessLog > _accessLogs;
+	std::vector< ErrorLog > _errorLogs;
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
@@ -32,13 +32,13 @@ public:
 	void setMaxRequestBodySize(unsigned int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
-	void setListens(const std::vector<Listen> &lists);
-	void setAccessLogs(const std::vector<AccessLog> &accessLogs);
-	void setErrorLogs(const std::vector<ErrorLog> &errorLogs);
-	void setRedirects(const std::map<std::string, Redirect> &redirects);
+	void setListens(const std::vector< Listen > &lists);
+	void setAccessLogs(const std::vector< AccessLog > &accessLogs);
+	void setErrorLogs(const std::vector< ErrorLog > &errorLogs);
+	void setRedirects(const std::map< std::string, Redirect > &redirects);
 	void setRedirect(const Redirect &redirect,
 					 const std::string &redirectKey = "/");
-	void setLocations(const std::map<std::string, Location> &locations);
+	void setLocations(const std::map< std::string, Location > &locations);
 	void setLocation(const Location &location);
 
 	// サーバーブロック直下の設定（デフォルトロケーション）
@@ -48,12 +48,11 @@ public:
 	void setServerDefaultErrorFile(const std::string &errorFile);
 	void setServerDefaultUploadStore(const std::string &uploadStore);
 	void setServerDefaultCgiConf(const std::string &extension,
-								  const std::string &interpreterPath);
+								 const std::string &interpreterPath);
 	void setServerDefaultIsAllowGet(bool allow);
 	void setServerDefaultIsAllowHead(bool allow);
 	void setServerDefaultIsAllowPost(bool allow);
 	void setServerDefaultIsAllowDelete(bool allow);
 	void setServerDefaultAllowedMethods(const std::string &methods);
-	void setServerDefaultAllowedMethods(const std::set<std::string> &methods);
-
+	void setServerDefaultAllowedMethods(const std::set< std::string > &methods);
 };

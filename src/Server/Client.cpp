@@ -9,10 +9,8 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	: _fd(fd) {
 	std::stringstream ipStream;
 	uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
-	ipStream << ((ip_addr >> 24) & 0xFF) << "."
-			 << ((ip_addr >> 16) & 0xFF) << "."
-			 << ((ip_addr >> 8) & 0xFF) << "."
-			 << (ip_addr & 0xFF);
+	ipStream << ((ip_addr >> 24) & 0xFF) << "." << ((ip_addr >> 16) & 0xFF)
+			 << "." << ((ip_addr >> 8) & 0xFF) << "." << (ip_addr & 0xFF);
 	_ip = ipStream.str();
 	_port = ntohs(addr.sin_port);
 

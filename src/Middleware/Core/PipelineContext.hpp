@@ -13,14 +13,14 @@ class Client;
  * @note HttpRequest, HttpResponse, Config, Session への参照を保持する
  */
 struct PipelineContext {
-	const Config	&conf;
-	HttpRequest		*req;
-	HttpResponse	*res;
-	Session			*session;
-	std::string		recvBuffer;
-	std::string		sendBuffer;
-	RequestParser	parser;
-	Client			&ownerClient;
+	const Config &conf;
+	HttpRequest *req;
+	HttpResponse *res;
+	Session *session;
+	std::string recvBuffer;
+	std::string sendBuffer;
+	RequestParser parser;
+	Client &ownerClient;
 
 	PipelineContext(const Config &c, Client &client);
 	~PipelineContext();
