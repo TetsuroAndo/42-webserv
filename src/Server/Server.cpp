@@ -8,7 +8,6 @@
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
-#include <iostream>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -63,7 +62,7 @@ void Server::setupListenSockets() {
 				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
 				throw std::runtime_error("Invalid IP address format");
 			}
-			if(ptonRet < 0) {
+			if (ptonRet < 0) {
 				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
 				throw std::runtime_error("inet_pton() failed");
 			}
