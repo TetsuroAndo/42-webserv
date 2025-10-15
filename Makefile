@@ -13,9 +13,9 @@ SRC_DIR			:= $(ROOT_DIR)/src
 OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
 CONF			:= $(CONF_DIR)/default.yaml
+LOG_DIR			:= $(ROOT_DIR)/logs
 
-SRC := $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
-
+SRC 	:= $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
 # =============== 42 RULES ==============
@@ -39,7 +39,7 @@ run: $(NAME)
 
 # Clean log files
 clog:
-	$(RM) logs/*.log*
+	$(RM) $(LOG_DIR)/*.log*
 
 # Aliases
 c: clog
@@ -53,6 +53,10 @@ debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
 	$(MAKE) $(NAME) -j $(shell nproc)
+
+# Create log directory if it doesn't exist
+$(LOG_DIR):
+	@mkdir -p $(LOG_DIR)
 
 # ============= STATIC ANALYSIS =============
 
@@ -78,7 +82,7 @@ check:
 
 # ============= BUILD RULES =============
 
-$(NAME): $(OBJ)
+$(NAME): $(OBJ) | $(LOG_DIR)
 	$(CXX) $(CXXFLAG) $(OPT) $(IDFLAG) $(LFLAG) $(DEFINE) -o  $@ $^
 	@echo "====================="
 	@echo "== Build Complete! =="
@@ -112,10 +116,10 @@ printobj:
 	@echo $(OBJ) | tr ' ' '\n' | sort
 
 fill:
-	./tools/fillEmptyDir.sh
+	@./tools/fillEmptyDir.sh
 
 view:
-	./tools/rawCodeViewer.sh
+	@./tools/rawCodeViewer.sh
 
 help:
 	@echo "Usage: make [target]"
