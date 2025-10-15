@@ -1,14 +1,15 @@
 #include "HttpResponse.hpp"
 #include <stdexcept>
 
-HttpResponse::HttpResponse(const std::string &serverName)
-	: _serverName(serverName), _statusCode(200), _version(HTTP_VERSION) {}
+HttpResponse::HttpResponse(const Config &conf)
+	: _serverName(conf.getAppInfo().httpServerName), _statusCode(200),
+	  _version(conf.getAppInfo().httpProtocolVersion) {}
 
 HttpResponse::~HttpResponse() {}
 
-void HttpResponse::clear() {
+void HttpResponse::clear(const Config &c) {
 	_statusCode = 200;
-	_version = HTTP_VERSION;
+	_version = c.getAppInfo().httpProtocolVersion;
 	_headers.clear();
 	_body.clear();
 }

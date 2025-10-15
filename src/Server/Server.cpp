@@ -11,17 +11,6 @@
 #include <stdexcept>
 #include <unistd.h>
 
-Server::Server() : _config(Config()) {
-	LOG(INFO) << "Initializing server with default configuration...";
-	Logging::setupLoggers(_config);
-	std::ostringstream oss;
-	oss << _config;
-	LOG(DEBUG) << oss.str();
-	setupListenSockets();
-	_builder.buildRoute(_config, &_mainProcessor);
-	LOG(INFO) << "Server initialized successfully.";
-}
-
 Server::Server(const Config &config) : _config(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
@@ -181,7 +170,7 @@ void Server::handleNewConnection(const int listenFd) {
 }
 
 void Server::handleClientRead(const int clientFd) {
-	const Client *client = _clients[clientFd];
+	Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	char buffer[4096];
 
@@ -200,7 +189,6 @@ void Server::handleClientRead(const int clientFd) {
 		}
 		return;
 	}
-	_mainProcessor.handle(*ctx);
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
@@ -218,7 +206,7 @@ void Server::handleClientRead(const int clientFd) {
 }
 
 void Server::handleClientWrite(const int clientFd) {
-	const Client *client = _clients[clientFd];
+	Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
 	const std::string &sendBuffer = sock->getSendBuffer();
 
@@ -233,7 +221,15 @@ void Server::handleClientWrite(const int clientFd) {
 	if (bytesSent > 0) {
 		sock->eraseSendBuffer(0, bytesSent);
 		if (sock->getSendBuffer().empty()) {
-			closeConnection(clientFd);
+			PipelineContext *ctx = client->getContext();
+			// Connectionヘッダを見て接続を閉じるか判断
+			if (ctx->res->getHeader("Connection") == "close") {
+				closeConnection(clientFd);
+			} else {
+				// Keep-Alive: 接続を維持し、次のリクエストのために読み込み監視のみに戻す
+				_manager.modifySocket(clientFd, EPOLLIN);
+				ctx->reset();
+			}
 		}
 	} else {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {

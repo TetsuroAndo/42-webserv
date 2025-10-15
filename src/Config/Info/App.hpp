@@ -7,3 +7,5 @@
 // HTTP SERVER INFO
 #define SERVER_NAME "webserv/42"
 #define HTTP_VERSION "HTTP/1.0"
+
+// Socket Max

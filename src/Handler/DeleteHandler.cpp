@@ -2,7 +2,6 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "HandlerUtil.hpp"
 #include <cstdio>
