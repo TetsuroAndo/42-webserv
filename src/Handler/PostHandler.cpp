@@ -4,7 +4,6 @@
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Lib/Time/TimeCache.hpp"

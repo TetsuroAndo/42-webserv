@@ -3,7 +3,8 @@
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
-#include "../SocketsManager/SocketsManager.hpp"
+#include "../Socket/FdEventChanges.hpp"
+#include "../Socket/SocketsManager.hpp"
 #include "Client.hpp"
 #include <map>
 
@@ -27,6 +28,8 @@ private:
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
 
+	bool isCgiFd(int fd) const;
+	void applyCgiChanges(const FdEventChanges &changes);
 	void setupListenSockets();
 	void handleNewConnection(int listenFd);
 	void handleClientRead(int clientFd);

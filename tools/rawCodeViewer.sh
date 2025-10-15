@@ -3,15 +3,19 @@
 usage() {
 	echo "Usage: $0 [options] [path]"
 	echo "Options:"
-	echo "  -h, --help     Show this help message"
-	echo "  -t, --tree     Only show directory tree"
-	echo "  -v, --view     Only show file contents"
+	echo "  -h, --help         Show this help message"
+	echo "  -t, --tree         Only show directory tree"
+	echo "  -v, --view         Only show file contents"
+	echo "  -nc, --no-comments Do not remove comments from files"
+	echo "  -nt, --no-tests    Do not show test files"
 	echo "If no path is provided, the current directory will be used."
 }
 
 # Default options
 SHOW_TREE=true
 SHOW_VIEW=true
+REMOVE_COMMENTS=true
+SHOW_TESTS=true
 TARGET_PATH="."
 
 # Parse command line arguments
@@ -29,6 +33,28 @@ while [[ $# -gt 0 ]]; do
 		-v|--view)
 			SHOW_TREE=false
 			SHOW_VIEW=true
+			shift
+			;;
+		-nc|--no-comments)
+			REMOVE_COMMENTS=false
+			shift
+			;;
+		-nt|--no-tests)
+			SHOW_TESTS=false
+			IGNORE_ARRAY+=(
+						"tests/*"        # testsディレクトリ配下のファイル
+						"test/*"         # testディレクトリ配下のファイル
+						"*/tests/*"      # サブディレクトリ内のtests配下のファイル
+						"*/test/*"       # サブディレクトリ内のtest配下のファイル
+						"*_test.?"       # _test.cで終わるファイル
+						"*_test.?pp"     # _test.cppで終わるファイル
+						"test_*.?"       # test_で始まるCファイル
+						"test_*.?pp"     # test_で始まるCppファイル
+						"*.spec.js"      # Jasmine/Jestなどのテストファイル
+						"*.test.js"      # Jestなどのテストファイル
+						"*.spec.ts"      # Jasmineなどのテストファイル
+						"*.test.ts"      # Jestなどのテストファイル
+			)
 			shift
 			;;
 		-*)
@@ -135,28 +161,28 @@ if [[ "$SHOW_VIEW" == true ]]; then
 		local input_file="$1"
 		local relative_path="${input_file#$TARGET_PATH/}"
 		local file_ext="${input_file##*.}"
-		# libftディレクトリはスキップ
-		if [[ "$input_file" == *"/lib/libft/"* || "$input_file" == *"/lib/minilibx/"* ]]; then
-			return
-		fi
 		{
 			echo "----------------------------------------"
 			echo "File: $relative_path"
 			echo "----------------------------------------"
-			
-			if [[ "$relative_path" == *"Makefile"* ]]; then
-				sed 's/#.*$//' "$input_file" | awk 'NF'
+
+			if [[ "$REMOVE_COMMENTS" == true ]]; then
+				if [[ "$relative_path" == *"Makefile"* ]]; then
+					sed 's/#.*$//' "$input_file" | awk 'NF'
+				else
+					sed '
+						# 1行内で完結するブロックコメント /* ... */ を削除
+						s/\/\*.*\*\///g;
+						# 複数行にまたがるブロックコメントを削除
+						/\/\*.*/,/.*\*\//d;
+						# 行末コメント // ... を削除（コード部分は残す）
+						s/\/\/.*$//
+					' "$input_file" | awk 'NF'
+				fi
 			else
-				sed '
-					# 1行内で完結するブロックコメント /* ... */ を削除
-					s/\/\*.*\*\///g; 
-					# 複数行にまたがるブロックコメントを削除
-					/\/\*.*/,/.*\*\//d; 
-					# 行末コメント // ... を削除（コード部分は残す）
-					s/\/\/.*$//
-				' "$input_file" | awk 'NF'
+				cat "$input_file"
 			fi
-			
+
 			echo "----------------------------------------"
 			echo
 		} >> "$TMP_OUTPUT"
@@ -175,9 +201,22 @@ if [[ "$SHOW_VIEW" == true ]]; then
 
 	find "$TARGET_PATH" -type f "${EXCLUDE_ARGS[@]}" \( "${NAME_ARGS[@]}" \) | while read -r file; do
 		rel_path="${file#$TARGET_PATH/}"
-		if printf '%s\n' "${IGNORE_ARRAY[@]}" | grep -Fxq "$rel_path"; then
-			continue
+		rel_path="${rel_path#./}"
+
+		is_ignored=false
+		if [[ "$SHOW_TESTS" == false ]]; then
+				for pattern in "${IGNORE_ARRAY[@]}"; do
+						if [[ "$rel_path" == $pattern ]]; then
+								is_ignored=true
+								break # 一致したらループを抜ける
+						fi
+				done
 		fi
+
+		if [[ "$is_ignored" == true ]]; then
+				continue # 除外リストに一致したら次のファイルへ
+		fi
+
 		remove_comments "$file"
 	done
 fi

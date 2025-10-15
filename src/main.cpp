@@ -1,5 +1,6 @@
 #include "Server/Server.hpp"
 #include "Config/ConfigBuilder.hpp"
+#include "Config/Info/App.hpp"
 #include "Lib/Message/Help.hpp"
 #include "Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include <iostream>
