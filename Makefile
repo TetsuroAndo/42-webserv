@@ -54,9 +54,12 @@ debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
 	$(MAKE) $(NAME) -j $(shell nproc)
 
-# Create log directory if it doesn't exist
 $(LOG_DIR):
 	@mkdir -p $(LOG_DIR)
+
+setuphooks:
+	@git config --local core.hooksPath .githooks
+	@chmod -R 744 .githooks/
 
 # ============= STATIC ANALYSIS =============
 
@@ -145,4 +148,4 @@ help:
 	@echo "  view		View source code"
 	@echo "  help		Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug tidy check nm nmbin printsrc printobj fill view help
+.PHONY: all clean fclean re run clog c f r debug setuphooks tidy check nm nmbin printsrc printobj fill view help
