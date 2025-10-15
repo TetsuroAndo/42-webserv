@@ -3,9 +3,7 @@
 
 HttpResponse::HttpResponse(const Config &conf)
 	: _serverName(conf.getAppInfo().httpServerName), _statusCode(200),
-	  _version(conf.getAppInfo().httpProtocolVersion) {
-	(void)conf;
-}
+	  _version(conf.getAppInfo().httpProtocolVersion) {}
 
 HttpResponse::~HttpResponse() {}
 
