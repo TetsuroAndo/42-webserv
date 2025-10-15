@@ -1,6 +1,7 @@
 #include "Logging.hpp"
 #include "../../Lib/Logger/AccessLog/AccessLogger.hpp"
 #include "../../Lib/Logger/ErrorLog/Logger.hpp"
+#include "../../Lib/Message/Art.hpp"
 #include <iostream>
 #include <vector>
 
@@ -28,6 +29,21 @@ bool isErrorLoggingDisabled(const std::vector< ErrorLog > &logs) {
 	for (std::vector< ErrorLog >::const_iterator it = logs.begin();
 		 it != logs.end(); ++it) {
 		if (it->isDisable) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * @brief エラーログでコンソール出力とデバッグレベルの出力が有効かをチェックする
+ * @return コンソール出力が有効化されている場合はtrue、そうでなければfalse
+ */
+bool isConsoleDebugActive(const Config &config) {
+	const std::vector< ErrorLog > &errorLogs = config.getErrorLogs();
+	for (std::vector< ErrorLog >::const_iterator it = errorLogs.begin();
+		 it != errorLogs.end(); ++it) {
+		if (it->sink == Console && it->level == DEBUG) {
 			return true;
 		}
 	}
@@ -73,6 +89,9 @@ void setupLoggers(const Config &config) {
 				errorLogger.setSinkConsole(it->format, it->level,
 										   it->filterMode);
 			}
+		}
+		if (isConsoleDebugActive(config)) {
+			Art::art();
 		}
 	}
 }
