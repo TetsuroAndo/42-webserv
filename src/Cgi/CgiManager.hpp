@@ -8,7 +8,7 @@
 
 class CgiManager {
 public:
-	CgiManager();
+	CgiManager(const Config &config);
 	~CgiManager();
 
 	/**
@@ -30,6 +30,12 @@ public:
 	 * @return epollから削除すべきFDの情報
 	 */
 	FdEventChanges cleanupWorkers();
+
+	/**
+	 * @brief タイムアウトしたWorkerをクリーンアップする
+	 * @return epollから削除すべきFDの情報
+	 */
+	FdEventChanges cleanupTimedOutWorkers();
 
 	/**
 	 * @brief 指定したクライアント向けのCGI処理が完了したか確認する
@@ -55,6 +61,9 @@ private:
 	std::map< int, CgiWorker * > _clientFdToWorker;
 
 	void _removeWorker(CgiWorker *worker);
+
+	// TODO: 設定ファイルから読み込んだり、Timeoutオブジェクトを受け入れる
+	time_t timeoutSeconds;
 
 	CgiManager(const CgiManager &);
 	CgiManager &operator=(const CgiManager &);

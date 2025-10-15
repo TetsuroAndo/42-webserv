@@ -43,6 +43,12 @@ public:
 	/// @brief 現在の状態を取得する
 	CgiState getState() const;
 
+	/// @brief 最終活動時刻を取得する
+	time_t getLastActivityTime() const;
+
+	/// @brief 最終活動時刻を更新する
+	void updateLastActivityTime();
+
 	/// @brief タイムアウトしたか判定する
 	bool isTimeout() const;
 
@@ -54,18 +60,15 @@ public:
 
 private:
 	pid_t _pid;
-	int _pipe_in[2];
-	int _pipe_out[2];
+	int _pipeIn[2];
+	int _pipeOut[2];
 	CgiState _state;
-	std::string _request_body;
-	size_t _bytes_sent;
-	std::string _response_buffer;
-	time_t _last_activity_time;
+	std::string _requestBody;
+	size_t _bytesSent;
+	std::string _responseBuffer;
+	time_t _lastActivityTime;
 
-	CgiResponseParser _response_parser;
-
-	// TODO: 設定ファイルから読み込むようにする
-	static const int TIMEOUT_SECONDS = 30;
+	CgiResponseParser _responseParser;
 
 	void _childProcess(const std::string &scriptPath,
 					   const std::string &interpreterPath,
