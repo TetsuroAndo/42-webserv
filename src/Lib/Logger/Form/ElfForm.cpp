@@ -49,9 +49,7 @@ void ElfForm::getErrorHeader(std::ostream &out) {
 
 void ElfForm::getAccessHeader(std::ostream &out) {
 	std::string timeStr = TimeCache::getUtcTimestamp();
-	out << "#Version: " << VERSION << "\n";
 	out << "#Date: " << timeStr << "\n";
-	out << "#Software: " << SOFTWARE_NAME << "\n";
 	out << "#Fields: date time c-ip c-port cs-method cs-uri-stem cs-uri-query "
 		   "sc-status sc-bytes cs-version cs(User-Agent) cs(Referer) "
 		   "x-session-id\n";

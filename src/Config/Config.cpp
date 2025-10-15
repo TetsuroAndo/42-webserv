@@ -1,71 +1,25 @@
 #include "Config.hpp"
-#include "../Lib/Logger/ErrorLog/Logger.hpp"
-#include "../Lib/MyYAML/MyYAML.hpp"
-#include "../Lib/StringOps/StringOps.hpp"
-#include "ConfigParser.hpp"
+#include "../Lib/Logger/Log.hpp"
+#include "Info/App.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-void Config::initDefaults() {
-	_listens.clear();
-	_redirects.clear();
-	_locations.clear();
-	_accessLogs.clear();
-	_errorLogs.clear();
+AppInfo::AppInfo()
+	: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
+	  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION) {}
 
-	_maxRequestBodySize = 1024 * 1024;
-	_timeoutSec = 60;
-	_maxEvents = 1024;
-
-	Location defaultLoc;
-	defaultLoc.path = "/";
-	defaultLoc.root = "/tmp/www";
-	defaultLoc.uploadStore = "/tmp/uploads";
-	defaultLoc.indexFile = "index.html";
-	defaultLoc.autoindex = true;
-	defaultLoc.allowedMethods.insert("GET");
-	defaultLoc.allowedMethods.insert("HEAD");
-	defaultLoc.allowedMethods.insert("POST");
-	defaultLoc.allowedMethods.insert("DELETE");
-	_locations["/"] = defaultLoc;
-
-	_accessLogs.push_back(AccessLog());
-	_errorLogs.push_back(ErrorLog());
-}
-
-void Config::setup(const std::string &configFile) {
-	LOG(INFO) << "Loading configuration from: " << configFile;
-	const MyYAML yaml(configFile);
-	const Node *serversNode = yaml.getData().getMapNode("servers");
-	if (!serversNode) {
-		throw std::runtime_error("Config error: missing 'servers' root node");
-	}
-
-	const std::vector< Node * > &serverList = serversNode->getSeq();
-	if (serverList.empty()) {
-		throw std::runtime_error("Config error: no servers configured");
-	}
-
-	Node *serverNode = serverList[0];
-	if (serverNode->getKey() != "server") {
-		throw std::runtime_error(
-			"Config error: missing 'server' key in server list");
-	}
-
-	ConfigParser parser(this);
-	parser.parseServer(serverNode);
-}
-
-Config::Config() {
-	initDefaults();
-	setup("config/default.yaml");
-}
-
-Config::Config(const std::string &configFile) {
-	initDefaults();
-	setup(configFile);
-}
+Config::Config(const std::vector< Listen > &listens,
+			   const std::map< std::string, Redirect > &redirects,
+			   const std::map< std::string, Location > &locations,
+			   const std::vector< AccessLog > &accessLogs,
+			   const std::vector< ErrorLog > &errorLogs,
+			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
+			   unsigned int maxEvents)
+	: _listens(listens), _redirects(redirects), _locations(locations),
+	  _accessLogs(accessLogs), _errorLogs(errorLogs),
+	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
+	  _maxEvents(maxEvents) {}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
@@ -90,120 +44,7 @@ Config &Config::operator=(const Config &other) {
 
 Config::~Config() {}
 
-void Config::setRoot(const std::string &root, const std::string &locationKey) {
-	_locations[locationKey].root = root;
-}
-
-void Config::setAutoindex(const bool autoindex,
-						  const std::string &locationKey) {
-	_locations[locationKey].autoindex = autoindex;
-}
-
-void Config::setIndexFile(const std::string &indexFile,
-						  const std::string &locationKey) {
-	_locations[locationKey].indexFile = indexFile;
-}
-
-void Config::setErrorFile(const std::string &errorFile,
-						  const std::string &locationKey) {
-	_locations[locationKey].errorFile = errorFile;
-}
-
-void Config::setUploadStore(const std::string &uploadStore,
-							const std::string &locationKey) {
-	_locations[locationKey].uploadStore = uploadStore;
-}
-
-void Config::setCgiConf(const std::string &extension,
-						const std::string &interpreterPath,
-						const std::string &locationKey) {
-	_locations[locationKey].cgiConf[extension] = interpreterPath;
-}
-
-void Config::setIsAllowGet(const bool allow, const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("GET");
-	else
-		_locations[locationKey].allowedMethods.erase("GET");
-}
-
-void Config::setIsAllowHead(const bool allow, const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("HEAD");
-	else
-		_locations[locationKey].allowedMethods.erase("HEAD");
-}
-
-void Config::setIsAllowPost(const bool allow, const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("POST");
-	else
-		_locations[locationKey].allowedMethods.erase("POST");
-}
-
-void Config::setIsAllowDelete(const bool allow,
-							  const std::string &locationKey) {
-	if (allow)
-		_locations[locationKey].allowedMethods.insert("DELETE");
-	else
-		_locations[locationKey].allowedMethods.erase("DELETE");
-}
-
-void Config::setAllowedMethods(const std::string &methods,
-							   const std::string &locationKey) {
-	std::set< std::string > methodSet;
-	std::stringstream ss(methods);
-	std::string method;
-	while (ss >> method) {
-		methodSet.insert(method);
-	}
-	_locations[locationKey].allowedMethods = methodSet;
-}
-
-void Config::setAllowedMethods(const std::set< std::string > &methods,
-							   const std::string &locationKey) {
-	_locations[locationKey].allowedMethods = methods;
-}
-
-void Config::setListens(const std::vector< Listen > &lists) {
-	_listens = lists;
-}
-
-void Config::setAccessLogs(const std::vector< AccessLog > &accessLogs) {
-	_accessLogs = accessLogs;
-}
-
-void Config::setErrorLogs(const std::vector< ErrorLog > &errorLogs) {
-	_errorLogs = errorLogs;
-}
-
-void Config::setRedirects(const std::map< std::string, Redirect > &redirects) {
-	_redirects = redirects;
-}
-
-void Config::setRedirect(const Redirect &redirect,
-						 const std::string &redirectKey) {
-	_redirects[redirectKey] = redirect;
-}
-
-void Config::setLocations(const std::map< std::string, Location > &locations) {
-	_locations = locations;
-}
-
-void Config::setLocation(const Location &location,
-						 const std::string &locationKey) {
-	_locations[locationKey] = location;
-}
-
-void Config::setMaxRequestBodySize(const unsigned int size) {
-	_maxRequestBodySize = size;
-}
-
-void Config::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
-
-void Config::setMaxEvents(const unsigned int maxEvents) {
-	_maxEvents = maxEvents;
-}
+const AppInfo &Config::getAppInfo() const { return _appInfo; }
 
 const std::vector< Listen > &Config::getListens() const { return _listens; }
 

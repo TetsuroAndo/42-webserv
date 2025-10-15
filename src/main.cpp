@@ -1,3 +1,5 @@
+#include "Config/ConfigBuilder.hpp"
+#include "Config/Info/App.hpp"
 #include "Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include "Lib/Message/Help.hpp"
 #include "Server/Server.hpp"
@@ -7,8 +9,7 @@ int main(const int argc, char **argv) {
 	try {
 		switch (argc) {
 		case 1: {
-			Config config;
-			Server server(config);
+			Server server(ConfigBuilder().build());
 			server.run();
 			break;
 		}
@@ -19,8 +20,7 @@ int main(const int argc, char **argv) {
 			} else if (arg == "-v" || arg == "--version") {
 				printVersion(VERSION);
 			} else {
-				Config config(argv[1]);
-				Server server(config);
+				Server server(ConfigBuilder(argv[1]).build());
 				server.run();
 			}
 			break;

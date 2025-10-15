@@ -1,7 +1,7 @@
 #include "Client.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
-#include "../Lib/Info/App.hpp"
+#include "../Middleware/Core/PipelineContext.hpp"
 #include <arpa/inet.h>
 #include <sstream>
 
@@ -15,9 +15,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	_port = ntohs(addr.sin_port);
 
 	_socket = new Socket(fd, addr);
-	HttpRequest *req = new HttpRequest(config);
-	HttpResponse *res = new HttpResponse(SERVER_NAME);
-	_context = new PipelineContext(req, res, config);
+	_context = new PipelineContext(config, *this);
 }
 
 Client::~Client() {

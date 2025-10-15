@@ -6,11 +6,11 @@
 /*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 00:52:20 by teando            #+#    #+#             */
-/*   Updated: 2025/10/11 18:00:09 by teando           ###   ########.fr       */
+/*   Updated: 2025/10/15 02:25:30 by teando           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../Info/App.hpp"
+#include "../../Config/Info/App.hpp"
 #include <iostream>
 
 /**

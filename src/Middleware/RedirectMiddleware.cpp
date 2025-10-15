@@ -12,7 +12,7 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 
 	if (!redirect.fromPath.empty()) {
 		// Redirect found
-		HttpResponse res(SERVER_NAME);
+		HttpResponse res(ctx.conf);
 		res.setStatusCode(redirect.code);
 
 		std::string newLocation = redirect.toUrl;

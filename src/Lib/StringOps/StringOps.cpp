@@ -200,6 +200,15 @@ size_t toSizeT(const std::string &str) {
 	return res;
 }
 
+int stringToInt(const std::string &s) {
+	std::istringstream iss(s);
+	int i;
+	if (!(iss >> i) || !iss.eof()) {
+		throw std::runtime_error("invalid integer format");
+	}
+	return i;
+}
+
 bool hexStrToSize(const char *str, const size_t len, size_t &result) {
 	result = 0;
 	if (len == 0) {
@@ -244,15 +253,6 @@ bool decStrToSize(const std::string &str, size_t &result) {
 		result = result * 10 + digit;
 	}
 	return true;
-}
-
-int stringToInt(const std::string &s) {
-	std::istringstream iss(s);
-	int i;
-	if (!(iss >> i) || !iss.eof()) {
-		throw std::runtime_error("invalid integer format");
-	}
-	return i;
 }
 
 size_t sizeByteStrToSizeT(const std::string &sizeStr) {

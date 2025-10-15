@@ -2,6 +2,7 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
+#include "ConfigBuilder.hpp"
 #include "ConfigLocationParser.hpp"
 #include "ConfigLogParser.hpp"
 #include <set>
@@ -9,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-ConfigParser::ConfigParser(Config *config) : _config(config) {}
+ConfigParser::ConfigParser(ConfigBuilder *builder) : _builder(builder) {}
 ConfigParser::~ConfigParser() {}
 
 void ConfigParser::validateKeys(const Node *node,
@@ -37,7 +38,6 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("maxRequestBodySize");
 	keys.insert("timeoutSec");
 	keys.insert("maxEvents");
-	keys.insert("path");
 	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
@@ -182,7 +182,7 @@ void ConfigParser::parseListens(const Node *node) {
 
 		listens.push_back(l);
 	}
-	_config->setListens(listens);
+	_builder->setListens(listens);
 }
 
 void ConfigParser::parseRedirects(Node *node) {
@@ -219,7 +219,7 @@ void ConfigParser::parseRedirects(Node *node) {
 				"Config error: missing 'code' key in redirect item");
 		r.code = StringOps::stringToInt(codeNode->getValue());
 
-		_config->setRedirect(r, r.fromPath);
+		_builder->setRedirect(r, r.fromPath);
 	}
 }
 
@@ -232,12 +232,12 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		parseRedirects(redirectsNode);
 	}
 
-	ConfigLocationParser locationParser(_config);
+	ConfigLocationParser locationParser(_builder);
 	if (Node *locationsNode = serverNode->getMapNode("locations")) {
 		locationParser.parseLocations(locationsNode);
 	}
 
-	ConfigLogParser logParser(_config);
+	ConfigLogParser logParser(_builder);
 	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
 		logParser.parseAccessLogs(accessLogsNode);
 	}
@@ -245,13 +245,8 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		logParser.parseErrorLogs(errorLogsNode);
 	}
 
-	if (Node *n = serverNode->getMapNode("path")) {
-		Location defaultLoc = _config->getLocation("/");
-		defaultLoc.path = n->getValue();
-		_config->setLocation(defaultLoc, "/");
-	}
 	if (Node *n = serverNode->getMapNode("root"))
-		_config->setRoot(n->getValue(), "/");
+		_builder->setServerDefaultRoot(n->getValue());
 	if (Node *n = serverNode->getMapNode("allowedMethods")) {
 		const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
 		std::set< std::string > validMethods(validMethodsArr,
@@ -267,33 +262,33 @@ void ConfigParser::parseServer(const Node *serverNode) {
 			}
 			methodsSet.insert(method);
 		}
-		_config->setAllowedMethods(methodsSet, "/");
+		_builder->setServerDefaultAllowedMethods(methodsSet);
 	}
 	if (Node *n = serverNode->getMapNode("autoindex"))
-		_config->setAutoindex(n->getValue() == "true", "/");
+		_builder->setServerDefaultAutoindex(n->getValue() == "true");
 	if (Node *n = serverNode->getMapNode("indexFile"))
-		_config->setIndexFile(n->getValue(), "/");
+		_builder->setServerDefaultIndexFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("errorFile"))
-		_config->setErrorFile(n->getValue(), "/");
+		_builder->setServerDefaultErrorFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
-		_config->setUploadStore(n->getValue(), "/");
+		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("cgi")) {
 		const std::vector< std::string > &cgiKeys = n->getKeys();
 		for (std::vector< std::string >::const_iterator cgi_it =
 				 cgiKeys.begin();
 			 cgi_it != cgiKeys.end(); ++cgi_it) {
-			_config->setCgiConf(*cgi_it, n->getMapNode(*cgi_it)->getValue(),
-								"/");
+			_builder->setServerDefaultCgiConf(
+				*cgi_it, n->getMapNode(*cgi_it)->getValue());
 		}
 	}
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
-		_config->setMaxRequestBodySize(
+		_builder->setMaxRequestBodySize(
 			StringOps::sizeByteStrToSizeT(n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
-		_config->setTimeoutSec(StringOps::stringToInt(n->getValue()));
+		_builder->setTimeoutSec(StringOps::stringToInt(n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
-		_config->setMaxEvents(StringOps::stringToInt(n->getValue()));
+		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));
 }

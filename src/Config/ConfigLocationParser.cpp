@@ -2,12 +2,14 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
+#include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
 #include <set>
 #include <stdexcept>
 #include <vector>
 
-ConfigLocationParser::ConfigLocationParser(Config *config) : _config(config) {}
+ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
+	: _builder(builder) {}
 ConfigLocationParser::~ConfigLocationParser() {}
 
 void ConfigLocationParser::parseLocations(const Node *node) {
@@ -61,6 +63,6 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
-		_config->setLocation(loc, loc.path);
+		_builder->setLocation(loc);
 	}
 }

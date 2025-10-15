@@ -1,7 +1,6 @@
 #include "StaticFileHandler.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
-#include "../Lib/Info/App.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "HandlerUtil.hpp"
 #include <algorithm>
