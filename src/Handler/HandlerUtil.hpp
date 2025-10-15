@@ -5,9 +5,9 @@
 class HttpResponse;
 class Config;
 
-namespace HandlerUtil
-{
-    std::string resolvePath(const std::string& requestPath, const Config& config);
+namespace HandlerUtil {
+std::string resolvePath(const std::string &requestPath, const Config &config);
 
-    void generateSimpleBody(const std::string& method, HttpResponse& res, int code, const std::string &description = "");
+void generateSimpleBody(const std::string &method, HttpResponse &res, int code,
+						const std::string &description = "");
 } // namespace HandlerUtil

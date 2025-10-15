@@ -15,13 +15,15 @@
 
 namespace {
 /**
- * @brief W3C-ELF形式のログメッセージフォーマットで使用するための文字列のサニタイズ
+ * @brief
+ * W3C-ELF形式のログメッセージフォーマットで使用するための文字列のサニタイズ
  */
-std::string sanitize(const std::string& str) {
+std::string sanitize(const std::string &str) {
 	if (str.empty()) {
 		return "-";
 	}
-	if (str.find(' ') == std::string::npos && str.find('"') == std::string::npos) {
+	if (str.find(' ') == std::string::npos &&
+		str.find('"') == std::string::npos) {
 		return str;
 	}
 
@@ -48,12 +50,15 @@ void ElfForm::getErrorHeader(std::ostream &out) {
 void ElfForm::getAccessHeader(std::ostream &out) {
 	std::string timeStr = TimeCache::getUtcTimestamp();
 	out << "#Date: " << timeStr << "\n";
-	out << "#Fields: date time c-ip c-port cs-method cs-uri-stem cs-uri-query sc-status sc-bytes cs-version cs(User-Agent) cs(Referer) x-session-id\n";
+	out << "#Fields: date time c-ip c-port cs-method cs-uri-stem cs-uri-query "
+		   "sc-status sc-bytes cs-version cs(User-Agent) cs(Referer) "
+		   "x-session-id\n";
 	_headerWritten = true;
 }
 
 void ElfForm::format(const LogMessage &msg, std::ostream &out) {
-	if (!_headerWritten) getErrorHeader(out);
+	if (!_headerWritten)
+		getErrorHeader(out);
 
 	out << msg.localDate << " " << msg.localTime << " ";
 	out << LogForm::levelToString(msg.level) << " ";
@@ -64,7 +69,7 @@ void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	if (msg.attributes.empty()) {
 		out << "-";
 	} else {
-		for (std::map<std::string, std::string>::const_iterator it =
+		for (std::map< std::string, std::string >::const_iterator it =
 				 msg.attributes.begin();
 			 it != msg.attributes.end();) {
 			out << sanitize(it->first) << "=" << sanitize(it->second);
@@ -75,24 +80,30 @@ void ElfForm::format(const LogMessage &msg, std::ostream &out) {
 	}
 }
 
-void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
+void ElfForm::formatAccess(const AccessLogContext &ctx, std::ostream &out) {
 	if (!ctx.request || !ctx.response) {
 		return;
 	}
-	if (!_headerWritten) getAccessHeader(out);
+	if (!_headerWritten)
+		getAccessHeader(out);
 
 	out << ctx.utcTimestamp << " ";
 	out << (ctx.remote_addr.empty() ? "-" : ctx.remote_addr) << " ";
 	out << ctx.client_port << " ";
-	out << (ctx.request->getMethod().empty() ? "-" : ctx.request->getMethod()) << " ";
-	out << (ctx.request->getPath().empty() ? "-" : ctx.request->getPath()) << " ";
+	out << (ctx.request->getMethod().empty() ? "-" : ctx.request->getMethod())
+		<< " ";
+	out << (ctx.request->getPath().empty() ? "-" : ctx.request->getPath())
+		<< " ";
 
-	const std::map<std::string, std::string>& queries = ctx.request->getQueries();
+	const std::map< std::string, std::string > &queries =
+		ctx.request->getQueries();
 	if (queries.empty()) {
 		out << "- ";
 	} else {
 		std::string queryString;
-		for (std::map<std::string, std::string>::const_iterator it = queries.begin(); it != queries.end();) {
+		for (std::map< std::string, std::string >::const_iterator it =
+				 queries.begin();
+			 it != queries.end();) {
 			queryString += it->first + "=" + it->second;
 			if (++it != queries.end()) {
 				queryString += "&";
@@ -103,7 +114,8 @@ void ElfForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 
 	out << ctx.response->getStatusCode() << " ";
 	out << ctx.response->getBody().length() << " ";
-	out << (ctx.request->getVersion().empty() ? "-" : ctx.request->getVersion()) << " ";
+	out << (ctx.request->getVersion().empty() ? "-" : ctx.request->getVersion())
+		<< " ";
 
 	out << sanitize(ctx.request->getHeader("User-Agent")) << " ";
 	out << sanitize(ctx.request->getHeader("Referer")) << " ";

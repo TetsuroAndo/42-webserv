@@ -226,7 +226,8 @@ void Server::handleClientWrite(const int clientFd) {
 			if (ctx->res->getHeader("Connection") == "close") {
 				closeConnection(clientFd);
 			} else {
-				// Keep-Alive: 接続を維持し、次のリクエストのために読み込み監視のみに戻す
+				// Keep-Alive:
+				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
 				_socketsManager.modifySocket(clientFd, EPOLLIN);
 				ctx->reset();
 			}

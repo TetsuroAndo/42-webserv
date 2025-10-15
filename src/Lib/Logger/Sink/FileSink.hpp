@@ -11,7 +11,8 @@ public:
 	virtual ~FileSink();
 
 	virtual void log(const LogMessage &msg);
-	virtual void logAccess(const AccessLogContext& ctx);
+	virtual void logAccess(const AccessLogContext &ctx);
+
 private:
 	void rotate();
 	std::string _dir;

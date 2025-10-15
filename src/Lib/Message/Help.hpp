@@ -2,6 +2,6 @@
 
 #include <string>
 
-void printUsage(const char* progName);
-void printVersion(const char* version);
-void printHelp(const char* progName);
+void printUsage(const char *progName);
+void printVersion(const char *version);
+void printHelp(const char *progName);

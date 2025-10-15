@@ -35,5 +35,5 @@ private:
 	void addSink(LogSink *sink);
 
 	std::string _logDir;
-	std::vector<LogSink *> _sinks;
+	std::vector< LogSink * > _sinks;
 };

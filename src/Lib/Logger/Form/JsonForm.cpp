@@ -57,7 +57,7 @@ void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 
 	if (!msg.attributes.empty()) {
 		out << ",\"attributes\":{";
-		for (std::map<std::string, std::string>::const_iterator it =
+		for (std::map< std::string, std::string >::const_iterator it =
 				 msg.attributes.begin();
 			 it != msg.attributes.end();) {
 			out << "\"" << it->first << "\":\"" << escapeJson(it->second)
@@ -71,16 +71,19 @@ void JsonForm::format(const LogMessage &msg, std::ostream &out) {
 	out << "}";
 }
 
-void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
+void JsonForm::formatAccess(const AccessLogContext &ctx, std::ostream &out) {
 	if (!ctx.request || !ctx.response) {
 		return;
 	}
 
 	std::string uri = ctx.request->getPath();
-	const std::map<std::string, std::string>& queries = ctx.request->getQueries();
+	const std::map< std::string, std::string > &queries =
+		ctx.request->getQueries();
 	if (!queries.empty()) {
 		uri += "?";
-		for (std::map<std::string, std::string>::const_iterator it = queries.begin(); it != queries.end();) {
+		for (std::map< std::string, std::string >::const_iterator it =
+				 queries.begin();
+			 it != queries.end();) {
 			uri += it->first + "=" + it->second;
 			if (++it != queries.end()) {
 				uri += "&";
@@ -98,12 +101,15 @@ void JsonForm::formatAccess(const AccessLogContext& ctx, std::ostream& out) {
 	out << "\"status\":" << ctx.response->getStatusCode() << ",";
 	out << "\"bytes_sent\":" << ctx.response->getBody().length() << ",";
 
-	const std::string& referer = ctx.request->getHeader("Referer");
-	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer)) << "\",";
+	const std::string &referer = ctx.request->getHeader("Referer");
+	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer))
+		<< "\",";
 
-	const std::string& userAgent = ctx.request->getHeader("User-Agent");
-	out << "\"user_agent\":\"" << (userAgent.empty() ? "-" : escapeJson(userAgent)) << "\",";
+	const std::string &userAgent = ctx.request->getHeader("User-Agent");
+	out << "\"user_agent\":\""
+		<< (userAgent.empty() ? "-" : escapeJson(userAgent)) << "\",";
 
-	out << "\"session_id\":\"" << (ctx.session_id.empty() ? "-" : escapeJson(ctx.session_id)) << "\"";
+	out << "\"session_id\":\""
+		<< (ctx.session_id.empty() ? "-" : escapeJson(ctx.session_id)) << "\"";
 	out << "}";
 }

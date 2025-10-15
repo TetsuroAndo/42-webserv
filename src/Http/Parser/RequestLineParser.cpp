@@ -42,7 +42,7 @@ ParseResult RequestLineParser::parse(HttpRequest &request,
 
 	// 3. URIをパスとクエリに分割
 	const char *queryStartPtr =
-		static_cast<const char *>(std::memchr(uriStart, '?', uriLen));
+		static_cast< const char * >(std::memchr(uriStart, '?', uriLen));
 	size_t pathLen;
 	if (queryStartPtr) {
 		pathLen = queryStartPtr - uriStart;
@@ -53,7 +53,7 @@ ParseResult RequestLineParser::parse(HttpRequest &request,
 		size_t queryOffset = 0;
 		while (queryOffset < queryLen) {
 			size_t pairEndOffset;
-			const char *ampPtr = static_cast<const char *>(std::memchr(
+			const char *ampPtr = static_cast< const char * >(std::memchr(
 				queryStart + queryOffset, '&', queryLen - queryOffset));
 			if (ampPtr) {
 				pairEndOffset = ampPtr - queryStart;
@@ -64,8 +64,8 @@ ParseResult RequestLineParser::parse(HttpRequest &request,
 			const char *pairStart = queryStart + queryOffset;
 			const size_t pairLen = pairEndOffset - queryOffset;
 
-			const char *eqPtr =
-				static_cast<const char *>(std::memchr(pairStart, '=', pairLen));
+			const char *eqPtr = static_cast< const char * >(
+				std::memchr(pairStart, '=', pairLen));
 			std::string key, value;
 			if (eqPtr) {
 				key = URI::decodeURIComponent(

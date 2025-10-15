@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-typedef std::map<std::string, class MiddlewareProcessor *> RouteMap;
+typedef std::map< std::string, class MiddlewareProcessor * > RouteMap;
 
 class PipelineRouterMiddleware : public IMiddleware {
 public:

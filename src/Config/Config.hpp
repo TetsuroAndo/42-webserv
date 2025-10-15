@@ -36,12 +36,12 @@ struct Redirect {
 struct Location {
 	std::string path;
 	std::string root;
-	std::set<std::string> allowedMethods;
+	std::set< std::string > allowedMethods;
 	bool autoindex;
 	std::string indexFile;
 	std::string errorFile;
 	std::string uploadStore;
-	std::map<std::string, std::string> cgiConf;
+	std::map< std::string, std::string > cgiConf;
 
 	Location() : autoindex(false) {}
 };
@@ -81,21 +81,21 @@ struct ErrorLog {
 class Config {
 private:
 	AppInfo _appInfo;
-	std::vector<Listen> _listens;
-	std::map<std::string, Redirect> _redirects;
-	std::map<std::string, Location> _locations;
-	std::vector<AccessLog> _accessLogs;
-	std::vector<ErrorLog> _errorLogs;
+	std::vector< Listen > _listens;
+	std::map< std::string, Redirect > _redirects;
+	std::map< std::string, Location > _locations;
+	std::vector< AccessLog > _accessLogs;
+	std::vector< ErrorLog > _errorLogs;
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
 
 public:
-	Config(const std::vector<Listen> &listens,
-		   const std::map<std::string, Redirect> &redirects,
-		   const std::map<std::string, Location> &locations,
-		   const std::vector<AccessLog> &accessLogs,
-		   const std::vector<ErrorLog> &errorLogs,
+	Config(const std::vector< Listen > &listens,
+		   const std::map< std::string, Redirect > &redirects,
+		   const std::map< std::string, Location > &locations,
+		   const std::vector< AccessLog > &accessLogs,
+		   const std::vector< ErrorLog > &errorLogs,
 		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
 		   unsigned int maxEvents);
 	Config(const Config &other);
@@ -103,13 +103,13 @@ public:
 	~Config();
 
 	const AppInfo &getAppInfo() const;
-	const std::vector<Listen> &getListens() const;
-	const std::map<std::string, Redirect> &getRedirects() const;
+	const std::vector< Listen > &getListens() const;
+	const std::map< std::string, Redirect > &getRedirects() const;
 	const Redirect &getRedirect(const std::string &path) const;
-	const std::map<std::string, Location> &getLocations() const;
+	const std::map< std::string, Location > &getLocations() const;
 	const Location &getLocation(const std::string &path) const;
-	const std::vector<AccessLog> &getAccessLogs() const;
-	const std::vector<ErrorLog> &getErrorLogs() const;
+	const std::vector< AccessLog > &getAccessLogs() const;
+	const std::vector< ErrorLog > &getErrorLogs() const;
 
 	unsigned int getMaxRequestBodySize() const;
 	unsigned int getTimeoutSec() const;

@@ -1,8 +1,7 @@
 #include "LogSink.hpp"
 #include "../Form/LogForm.hpp"
 
-LogSink::LogSink(LogForm *form)
-	: _type(errorLog), _form(form) {}
+LogSink::LogSink(LogForm *form) : _type(errorLog), _form(form) {}
 
 LogSink::~LogSink() {
 	if (_form) {

@@ -18,5 +18,5 @@ struct LogMessage {
 	const char *file;
 	int line;
 	const char *function;
-	std::map<std::string, std::string> attributes;
+	std::map< std::string, std::string > attributes;
 };

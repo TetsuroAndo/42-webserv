@@ -24,7 +24,7 @@ Node::~Node() {
 	for (std::size_t i = 0; i < _seq.size(); ++i) {
 		delete _seq[i];
 	}
-	for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+	for (std::map< std::string, Node * >::const_iterator it = _map.begin();
 		 it != _map.end(); ++it) {
 		delete it->second;
 	}
@@ -75,7 +75,7 @@ void Node::print(const int indent) const {
 		std::cout << ind << Colors::GREEN << Colors::BOLD
 				  << "MAP:" << Colors::RESET << " " << Colors::MAGENTA << _key
 				  << Colors::RESET << std::endl;
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		for (std::map< std::string, Node * >::const_iterator it = _map.begin();
 			 it != _map.end(); ++it) {
 			it->second->print(indent + 2);
 		}
@@ -106,7 +106,7 @@ bool Node::isValidChildNode() const {
 		}
 		break;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		for (std::map< std::string, Node * >::const_iterator it = _map.begin();
 			 it != _map.end(); ++it) {
 			if (it->second->getKey().empty()) {
 				return false;
@@ -142,7 +142,7 @@ void Node::setTypeValue() {
 	_childNodeType = NODE_VAL;
 }
 
-const std::vector<Node *> &Node::getSeq() const {
+const std::vector< Node * > &Node::getSeq() const {
 	if (_childNodeType != NODE_SEQ) {
 		throw std::invalid_argument("Node type is not SEQ");
 	}
@@ -154,7 +154,7 @@ Node *Node::getMapNode(const std::string &key) const {
 		throw std::invalid_argument("Node type is not MAP");
 	}
 
-	std::map<std::string, Node *>::const_iterator it = _map.find(key);
+	std::map< std::string, Node * >::const_iterator it = _map.find(key);
 	if (it != _map.end()) {
 		return it->second;
 	}
@@ -171,7 +171,7 @@ void Node::terminateNode() {
 		}
 		return;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		for (std::map< std::string, Node * >::const_iterator it = _map.begin();
 			 it != _map.end(); ++it) {
 			it->second->setTypeValue();
 			it->second->_childNodeType = NODE_VAL;
@@ -195,7 +195,7 @@ void Node::fixNode() {
 		}
 		return;
 	case NODE_MAP:
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		for (std::map< std::string, Node * >::const_iterator it = _map.begin();
 			 it != _map.end(); ++it) {
 			it->second->fixNode();
 		}
@@ -219,10 +219,10 @@ std::size_t Node::size() const {
 	}
 }
 
-std::vector<std::string> Node::getKeys() const {
-	std::vector<std::string> keys;
+std::vector< std::string > Node::getKeys() const {
+	std::vector< std::string > keys;
 	if (_childNodeType == NODE_MAP) {
-		for (std::map<std::string, Node *>::const_iterator it = _map.begin();
+		for (std::map< std::string, Node * >::const_iterator it = _map.begin();
 			 it != _map.end(); ++it) {
 			keys.push_back(it->first);
 		}

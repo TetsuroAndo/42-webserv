@@ -14,7 +14,7 @@ std::string TimeCache::_cachedIsoTimestamp;
 
 void TimeCache::update() {
 	const time_t now = time(0);
-	if(now == _lastUpdateTime) {
+	if (now == _lastUpdateTime) {
 		return;
 	}
 	_lastUpdateTime = now;

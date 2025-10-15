@@ -55,18 +55,18 @@ void parseLogSpecifics(Node *logNode, ErrorLog &log,
 	}
 }
 
-template <typename LogType>
+template < typename LogType >
 void parseLogs(const Node *node, const std::string &logKey,
-			   const std::set<std::string> &enabledValidKeys,
-			   std::vector<LogType> &configuredLogs) {
+			   const std::set< std::string > &enabledValidKeys,
+			   std::vector< LogType > &configuredLogs) {
 	if (!node)
 		return;
 
-	const std::vector<Node *> &logs = node->getSeq();
+	const std::vector< Node * > &logs = node->getSeq();
 	bool isDisabledFound = false;
 	bool isEnabledFound = false;
 
-	for (std::vector<Node *>::const_iterator it = logs.begin();
+	for (std::vector< Node * >::const_iterator it = logs.begin();
 		 it != logs.end(); ++it) {
 		Node *logNode = *it;
 		if (logNode->getKey() != logKey) {
@@ -173,7 +173,7 @@ void parseLogs(const Node *node, const std::string &logKey,
 } // namespace
 
 void ConfigLogParser::parseAccessLogs(const Node *node) {
-	std::vector<AccessLog> configuredLogs;
+	std::vector< AccessLog > configuredLogs;
 	parseLogs(node, "access_log", ConfigParser::VALID_ACCESS_LOG_KEYS,
 			  configuredLogs);
 
@@ -183,7 +183,7 @@ void ConfigLogParser::parseAccessLogs(const Node *node) {
 }
 
 void ConfigLogParser::parseErrorLogs(const Node *node) {
-	std::vector<ErrorLog> configuredLogs;
+	std::vector< ErrorLog > configuredLogs;
 	parseLogs(node, "error_log", ConfigParser::VALID_ERROR_LOG_KEYS,
 			  configuredLogs);
 

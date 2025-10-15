@@ -22,7 +22,7 @@ unsigned char URI::_parseHexByte(const std::string &str,
 	if (!(iss >> std::hex >> v)) {
 		throw std::invalid_argument("URIError: malformed URI sequence");
 	}
-	return static_cast<unsigned char>(v);
+	return static_cast< unsigned char >(v);
 }
 
 /**
@@ -42,8 +42,8 @@ std::string URI::decodeURI(const std::string &str) {
 			const unsigned char first = _parseHexByte(str, i);
 
 			// 予約文字はデコードせずにそのまま出力
-			if (first < 0x80 &&
-				reserved.find(static_cast<char>(first)) != std::string::npos) {
+			if (first < 0x80 && reserved.find(static_cast< char >(first)) !=
+									std::string::npos) {
 				decoded << str[i] << str[i + 1] << str[i + 2];
 				i += 2;
 				continue;
@@ -69,7 +69,7 @@ std::string URI::decodeURI(const std::string &str) {
 			}
 
 			std::string bytes;
-			bytes += static_cast<char>(first);
+			bytes += static_cast< char >(first);
 
 			// 続行バイトを検証
 			for (std::size_t k = 0; k < expectedCont; ++k) {
@@ -83,7 +83,7 @@ std::string URI::decodeURI(const std::string &str) {
 					throw std::invalid_argument(
 						"URIError: malformed URI sequence");
 				}
-				bytes += static_cast<char>(cont);
+				bytes += static_cast< char >(cont);
 			}
 			decoded << bytes;
 			i += 2 + expectedCont * 3;
@@ -146,12 +146,12 @@ std::string URI::_internalEncodeURILogic(const std::string &str,
 	encoded << std::hex << std::uppercase;
 
 	for (size_t i = 0; i < str.length(); ++i) {
-		const unsigned char c = static_cast<unsigned char>(str[i]);
-		if (unescaped.find(static_cast<char>(c)) != std::string::npos) {
-			encoded << static_cast<char>(c);
+		const unsigned char c = static_cast< unsigned char >(str[i]);
+		if (unescaped.find(static_cast< char >(c)) != std::string::npos) {
+			encoded << static_cast< char >(c);
 		} else {
 			encoded << '%' << std::setw(2) << std::setfill('0')
-					<< static_cast<int>(c);
+					<< static_cast< int >(c);
 		}
 	}
 	return encoded.str();

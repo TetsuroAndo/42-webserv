@@ -38,10 +38,11 @@ void ConfigBuilder::setup(const std::string &configFile) {
 	const MyYAML yaml(configFile);
 	const Node *serversNode = yaml.getData().getMapNode("servers");
 	if (!serversNode) {
-		throw std::runtime_error("ConfigBuilder error: missing 'servers' root node");
+		throw std::runtime_error(
+			"ConfigBuilder error: missing 'servers' root node");
 	}
 
-	const std::vector<Node *> &serverList = serversNode->getSeq();
+	const std::vector< Node * > &serverList = serversNode->getSeq();
 	if (serverList.empty()) {
 		throw std::runtime_error("ConfigBuilder error: no servers configured");
 	}
@@ -83,26 +84,30 @@ void ConfigBuilder::setMaxEvents(const unsigned int maxEvents) {
 	_maxEvents = maxEvents;
 }
 
-void ConfigBuilder::setListens(const std::vector<Listen> &lists) { _listens = lists; }
+void ConfigBuilder::setListens(const std::vector< Listen > &lists) {
+	_listens = lists;
+}
 
-void ConfigBuilder::setAccessLogs(const std::vector<AccessLog> &accessLogs) {
+void ConfigBuilder::setAccessLogs(const std::vector< AccessLog > &accessLogs) {
 	_accessLogs = accessLogs;
 }
 
-void ConfigBuilder::setErrorLogs(const std::vector<ErrorLog> &errorLogs) {
+void ConfigBuilder::setErrorLogs(const std::vector< ErrorLog > &errorLogs) {
 	_errorLogs = errorLogs;
 }
 
-void ConfigBuilder::setRedirects(const std::map<std::string, Redirect> &redirects) {
+void ConfigBuilder::setRedirects(
+	const std::map< std::string, Redirect > &redirects) {
 	_redirects = redirects;
 }
 
 void ConfigBuilder::setRedirect(const Redirect &redirect,
-						 const std::string &redirectKey) {
+								const std::string &redirectKey) {
 	_redirects[redirectKey] = redirect;
 }
 
-void ConfigBuilder::setLocations(const std::map<std::string, Location> &locations) {
+void ConfigBuilder::setLocations(
+	const std::map< std::string, Location > &locations) {
 	_locations = locations;
 }
 
@@ -126,12 +131,13 @@ void ConfigBuilder::setServerDefaultErrorFile(const std::string &errorFile) {
 	_locations[_defaultLocationKey].errorFile = errorFile;
 }
 
-void ConfigBuilder::setServerDefaultUploadStore(const std::string &uploadStore) {
+void ConfigBuilder::setServerDefaultUploadStore(
+	const std::string &uploadStore) {
 	_locations[_defaultLocationKey].uploadStore = uploadStore;
 }
 
-void ConfigBuilder::setServerDefaultCgiConf(const std::string &extension,
-											 const std::string &interpreterPath) {
+void ConfigBuilder::setServerDefaultCgiConf(
+	const std::string &extension, const std::string &interpreterPath) {
 	_locations[_defaultLocationKey].cgiConf[extension] = interpreterPath;
 }
 
@@ -164,7 +170,7 @@ void ConfigBuilder::setServerDefaultIsAllowDelete(bool allow) {
 }
 
 void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
-	std::set<std::string> methodsSet;
+	std::set< std::string > methodsSet;
 	std::istringstream iss(methods);
 	std::string method;
 	while (iss >> method) {
@@ -175,6 +181,7 @@ void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
 	_locations[_defaultLocationKey].allowedMethods = methodsSet;
 }
 
-void ConfigBuilder::setServerDefaultAllowedMethods(const std::set<std::string> &methods) {
+void ConfigBuilder::setServerDefaultAllowedMethods(
+	const std::set< std::string > &methods) {
 	_locations[_defaultLocationKey].allowedMethods = methods;
 }
