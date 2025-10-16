@@ -109,4 +109,15 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 
 	return resolvedPath;
 }
+
+std::string getDirName(const std::string &path) {
+	if (path.empty())
+		return "";
+	std::string::size_type pos = path.find_last_of('/');
+	if (pos == std::string::npos)
+		return ".";
+	if (pos == 0)
+		return "/";
+	return path.substr(0, pos);
+}
 } // namespace HandlerUtil
