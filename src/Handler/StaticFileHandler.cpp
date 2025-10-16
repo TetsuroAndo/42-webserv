@@ -13,32 +13,50 @@
 #include <vector>
 
 namespace {
-enum FileReadStatus {
-	FILE_READ_SUCCESS,
-	FILE_READ_NOT_FOUND,
-	FILE_READ_IS_DIRECTORY,
-	FILE_READ_FORBIDDEN,
-	FILE_READ_ERROR
-};
+enum FileReadStatus { FILE_READ_SUCCESS, FILE_READ_ERROR };
 
 FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 						   const struct stat &fileStat) {
-
 	std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
+
 	if (!file) {
-		LOG(ERROR) << "Failed to open file" << attr("path", filePath)
-				   << attr("error", strerror(errno));
-		return FILE_READ_FORBIDDEN;
+		const int err = errno;
+		switch (err) {
+		case EACCES:
+		case EPERM:
+			LOG(WARNING) << "Permission denied while opening file"
+						 << attr("path", filePath)
+						 << attr("error", strerror(err));
+			break;
+		case ENOENT:
+		case ENOTDIR:
+			LOG(WARNING) << "File not found or invalid path during open"
+						 << attr("path", filePath)
+						 << attr("error", strerror(err));
+			break;
+
+		default:
+			LOG(ERROR) << "OS-level error while opening file"
+					   << attr("path", filePath) << attr("errno", err)
+					   << attr("error", strerror(err));
+			break;
+		}
+		return FILE_READ_ERROR;
 	}
-
-	std::streampos fileSize = fileStat.st_size;
-
+	const std::streampos fileSize = fileStat.st_size;
 	outContent.resize(fileSize);
 	file.read(&outContent[0], fileSize);
-	file.close();
+	if (!file) {
+		const int err = errno;
+		LOG(ERROR) << "Error while reading file" << attr("path", filePath)
+				   << attr("errno", err) << attr("error", strerror(err));
+		return FILE_READ_ERROR;
+	}
 
+	file.close();
 	return FILE_READ_SUCCESS;
 }
+
 } // namespace
 
 StaticFileHandler::StaticFileHandler() {}
@@ -168,18 +186,6 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			}
 			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
 			break;
-		case FILE_READ_NOT_FOUND:
-			HandlerUtil::generateSimpleBody(req.getMethod(), res,
-											HttpStatus::NOT_FOUND);
-			break;
-		case FILE_READ_IS_DIRECTORY:
-			HandlerUtil::generateSimpleBody(req.getMethod(), res,
-											HttpStatus::FORBIDDEN);
-			break;
-		case FILE_READ_FORBIDDEN:
-			HandlerUtil::generateSimpleBody(req.getMethod(), res,
-											HttpStatus::FORBIDDEN);
-			break;
 		case FILE_READ_ERROR:
 			HandlerUtil::generateSimpleBody(req.getMethod(), res,
 											HttpStatus::INTERNAL_SERVER_ERROR);
@@ -189,7 +195,7 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 		LOG(WARNING) << "Requested path is not a regular file or directory"
 					 << attr("path", filePath);
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::FORBIDDEN);
+										HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 	return res;
 }
