@@ -6,7 +6,9 @@
 #include "HandlerUtil.hpp"
 #include <cstdio>
 #include <cstring>
+#include <linux/limits.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 namespace {
 enum FileDeleteStatus {
@@ -27,10 +29,15 @@ FileDeleteStatus tryDeleteFile(const std::string &filePath) {
 		return DELETE_IS_DIRECTORY;
 	}
 
+	const std::string dirPath = HandlerUtil::getDirName(filePath);
+	if (access(dirPath.c_str(), W_OK | X_OK) != 0) {
+		return DELETE_PERMISSION_DENIED;
+	}
+
 	if (std::remove(filePath.c_str()) == 0) {
 		return DELETE_SUCCESS;
 	}
-	return DELETE_PERMISSION_DENIED;
+	return DELETE_UNKNOWN_ERROR;
 }
 } // namespace
 
