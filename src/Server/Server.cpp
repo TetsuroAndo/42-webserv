@@ -189,7 +189,7 @@ void Server::handleClientRead(const int clientFd) {
 		}
 		return;
 	}
-
+	_mainProcessor.handle(*ctx);
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
 										client->getPort(),
