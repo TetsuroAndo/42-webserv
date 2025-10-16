@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <unistd.h>
 
-Server::Server(const Config &config) : _config(config) {
+Server::Server(const Config &config) : _config(config), _cgiManager(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
@@ -84,7 +84,7 @@ void Server::setupListenSockets() {
 
 		Socket *sock = new Socket(listenFd, addr);
 		_listenSockets[listenFd] = sock;
-		_manager.registerSocket(listenFd, EPOLLIN);
+		_socketsManager.registerSocket(listenFd, EPOLLIN);
 		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
 				  << attr("fd", listenFd);
 	}
@@ -94,13 +94,13 @@ void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
 	time_t lastCleanTime = time(NULL);
 	while (true) {
-		const int nEvents = _manager.wait(-1);
+		const int nEvents = _socketsManager.wait(-1);
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
-		const epoll_event *events = _manager.getEvents();
+		const epoll_event *events = _socketsManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
 			int fd = events[i].data.fd;
@@ -157,7 +157,7 @@ void Server::handleNewConnection(const int listenFd) {
 	try {
 		Client *client = new Client(clientFd, clientAddr, _config);
 		_clients[clientFd] = client;
-		_manager.registerSocket(clientFd, EPOLLIN);
+		_socketsManager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {
 		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
 				   << attr("fd", clientFd);
@@ -200,7 +200,7 @@ void Server::handleClientRead(const int clientFd) {
 				client->getSocket()->getSendBuffer() + responseStr);
 		}
 		if (!client->getSocket()->getSendBuffer().empty()) {
-			_manager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
 		}
 	}
 }
@@ -211,7 +211,7 @@ void Server::handleClientWrite(const int clientFd) {
 	const std::string &sendBuffer = sock->getSendBuffer();
 
 	if (sendBuffer.empty()) {
-		_manager.modifySocket(clientFd, EPOLLIN);
+		_socketsManager.modifySocket(clientFd, EPOLLIN);
 		return;
 	}
 
@@ -228,7 +228,7 @@ void Server::handleClientWrite(const int clientFd) {
 			} else {
 				// Keep-Alive:
 				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
-				_manager.modifySocket(clientFd, EPOLLIN);
+				_socketsManager.modifySocket(clientFd, EPOLLIN);
 				ctx->reset();
 			}
 		}
@@ -242,7 +242,7 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::closeConnection(const int clientFd) {
-	_manager.unregisterSocket(clientFd);
+	_socketsManager.unregisterSocket(clientFd);
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Cgi/CgiManager.hpp"
 #include "../Config/Config.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
@@ -21,7 +22,8 @@ private:
 	Server &operator=(const Server &other);
 
 	Config _config;
-	SocketsManager _manager;
+	CgiManager _cgiManager;
+	SocketsManager _socketsManager;
 	std::map< int, Socket * > _listenSockets;
 	std::map< int, Client * > _clients;
 

@@ -8,4 +8,7 @@
 #define SERVER_NAME "webserv/42"
 #define HTTP_VERSION "HTTP/1.0"
 
+// CGI INFO
+#define CGI_VERSION "CGI/1.1"
+
 // Socket Max
