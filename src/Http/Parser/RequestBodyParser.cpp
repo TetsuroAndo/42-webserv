@@ -1,4 +1,5 @@
 #include "RequestBodyParser.hpp"
+#include "../../Lib/Logger/Log.hpp"
 #include "../../Lib/StringOps/StringOps.hpp"
 #include "../Core/HttpRequest.hpp"
 #include "../Core/HttpStatus.hpp"

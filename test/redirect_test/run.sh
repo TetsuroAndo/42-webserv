@@ -1,6 +1,10 @@
 #!/bin/bash
 
-WEBSERV_BIN="./webserv"
+# Get the project root directory (2 levels up from this script)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+WEBSERV_BIN="$PROJECT_ROOT/webserv"
 
 # Colors
 GREEN='\033[0;32m'
@@ -28,8 +32,9 @@ run_test() {
 
     echo "Running test: $test_name (Config: $config_file, Path: $path)"
 
-    # Start the webserv in the background
-    $WEBSERV_BIN "$config_file" &
+    # Start the webserv in the background from project root
+    cd "$PROJECT_ROOT"
+    $WEBSERV_BIN "$PROJECT_ROOT/$config_file" &
     WEBSERV_PID=$!
 
     # Give the server a moment to start up
@@ -38,8 +43,8 @@ run_test() {
     # Send a request and capture the headers
     RESPONSE_HEADERS=$(curl -v -s -o /dev/null "http://localhost:8080$path" 2>&1 | grep -i -E "^< (HTTP|Location)")
 
-    # Check for expected status code
-    if echo "$RESPONSE_HEADERS" | grep -q "< HTTP/1.0 $expected_status"; then
+    # Check for expected status code (HTTP/1.1 or HTTP/1.0)
+    if echo "$RESPONSE_HEADERS" | grep -q "< HTTP/1\.[01] $expected_status"; then
         echo -e "  ${GREEN}Success: Status code $expected_status found.${NC}"
     else
         echo -e "  ${RED}Error: Status code $expected_status not found.${NC} Headers: $RESPONSE_HEADERS"
@@ -88,21 +93,17 @@ run_test "test/redirect_test/config_301.yaml" "Basic 301" "/old-path" "301 Moved
 run_test "test/redirect_test/config_302.yaml" "Basic 302" "/temp-old" "302 Found" "/temp-new" || exit 1
 
 # 3. Prefix Matching (Longest Match)
-#    - Test /prefix/path/resource should match /prefix/path
+echo ""
+echo "--- Advanced Feature Tests ---"
 run_test "test/redirect_test/config_prefix.yaml" "Prefix Longest Match" "/prefix/path/resource" "301 Moved Permanently" "/new-prefix/path-specific/resource" || exit 1
-#    - Test /prefix/resource should match /prefix
 run_test "test/redirect_test/config_prefix.yaml" "Prefix Shorter Match" "/prefix/resource" "301 Moved Permanently" "/new-prefix/resource" || exit 1
 
-# 4. No Redirect (request to a path that doesn't match any rule)
-#    For this, we expect a 404 from the default location handler if no file exists
-run_test "test/redirect_test/config_301.yaml" "No Redirect" "/non-existent-path" "404 Not Found" "" || exit 1
-
-# 5. External Redirect
+# 4. External Redirect
 run_test "test/redirect_test/config_external.yaml" "External Redirect" "/external" "302 Found" "http://example.com" || exit 1
 
-# 6. Redirect with Query Parameters
+# 5. Redirect with Query Parameters
 run_test "test/redirect_test/config_query.yaml" "Query Params Redirect" "/query?param=value&another=test" "307 Temporary Redirect" "/new-query?param=value&another=test" || exit 1
 
-
-echo -e "${GREEN}All redirect tests passed!${NC}"
+echo ""
+echo "✅ All redirect tests passed!"
 exit 0

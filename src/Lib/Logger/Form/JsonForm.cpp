@@ -98,8 +98,8 @@ void JsonForm::formatAccess(const AccessLogContext &ctx, std::ostream &out) {
 	out << "\"method\":\"" << escapeJson(ctx.request->getMethod()) << "\",";
 	out << "\"uri\":\"" << escapeJson(uri) << "\",";
 	out << "\"version\":\"" << escapeJson(ctx.request->getVersion()) << "\",";
-	out << "\"status\":" << ctx.response->getStatusCode() << ",";
-	out << "\"bytes_sent\":" << ctx.response->getBody().length() << ",";
+	out << "\"status\":" << ctx.response->statusCode << ",";
+	out << "\"bytes_sent\":" << ctx.response->body.length() << ",";
 
 	const std::string &referer = ctx.request->getHeader("Referer");
 	out << "\"referer\":\"" << (referer.empty() ? "-" : escapeJson(referer))

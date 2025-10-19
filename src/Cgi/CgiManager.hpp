@@ -4,6 +4,7 @@
 #include "../Socket/FdEventChanges.hpp"
 #include "CgiWorker.hpp"
 #include <map>
+#include <sys/epoll.h>
 #include <vector>
 
 class CgiManager {
@@ -24,7 +25,7 @@ public:
 	 * @param event_type イベントのタイプ (EPOLLIN or EPOLLOUT)
 	 * @return FdEventChanges サーバーのイベントループに登録・変更すべきFDの情報
 	 */
-	FdEventChanges handleEvent(int fd, uint32_t event_type);
+	FdEventChanges handleEvent(int fd, uint32_t eventType);
 
 	/**
 	 * @brief 完了またはタイムアウトしたWorkerをクリーンアップする

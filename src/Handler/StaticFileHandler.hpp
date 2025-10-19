@@ -7,11 +7,10 @@ public:
 	StaticFileHandler();
 	~StaticFileHandler();
 
-	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
-						const Config &config);
+	virtual HttpResponse handle(PipelineContext &ctx);
 
 private:
-	void generateDirectoryListing(HttpResponse &res, const HttpRequest &req,
+	void generateDirectoryListing(PipelineContext &ctx,
 								  const std::string &directoryPath,
 								  const std::string &requestPath);
 

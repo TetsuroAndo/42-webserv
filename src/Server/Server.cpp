@@ -18,7 +18,7 @@ Server::Server(const Config &config) : _config(config), _cgiManager(config) {
 	oss << _config;
 	LOG(DEBUG) << oss.str();
 	setupListenSockets();
-	_builder.buildRoute(_config, &_mainProcessor);
+	_builder.buildRoute(_config, &_cgiManager, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";
 }
 
@@ -94,7 +94,10 @@ void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
 	time_t lastCleanTime = time(NULL);
 	while (true) {
-		const int nEvents = _socketsManager.wait(-1);
+		FdEventChanges cgiChanges = _cgiManager.cleanupTimedOutWorkers();
+		applyCgiChanges(cgiChanges);
+
+		const int nEvents = _socketsManager.wait(1000);
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
@@ -112,7 +115,11 @@ void Server::run() {
 				continue;
 			}
 
-			if (_listenSockets.count(fd)) {
+			if (_cgiManager.isCgiFd(fd)) {
+				FdEventChanges cgiChanges =
+					_cgiManager.handleEvent(fd, eventTypes);
+				applyCgiChanges(cgiChanges);
+			} else if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {
 				if (eventTypes & EPOLLIN) {
@@ -172,12 +179,23 @@ void Server::handleNewConnection(const int listenFd) {
 void Server::handleClientRead(const int clientFd) {
 	Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
+	Socket *sock = client->getSocket();
 	char buffer[4096];
 
 	const ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
 
 	if (bytesRead > 0) {
 		ctx->recvBuffer.append(buffer, bytesRead);
+
+		_mainProcessor.handle(*ctx);
+
+		if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
+			std::string responseStr = ResponseBuilder::build(ctx->res);
+			sock->setSendBuffer(responseStr);
+			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+			LOG(DEBUG) << "Response built and ready to send"
+					   << attr("fd", clientFd);
+		}
 	} else if (bytesRead == 0) {
 		closeConnection(clientFd);
 		return;
@@ -189,29 +207,21 @@ void Server::handleClientRead(const int clientFd) {
 		}
 		return;
 	}
-	_mainProcessor.handle(*ctx);
-	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
-										client->getPort(),
-										ctx->session->getId());
-		const std::string responseStr = ResponseBuilder::build(*ctx->res);
-		if (!responseStr.empty()) {
-			client->getSocket()->setSendBuffer(
-				client->getSocket()->getSendBuffer() + responseStr);
-		}
-		if (!client->getSocket()->getSendBuffer().empty()) {
-			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
-		}
-	}
 }
 
 void Server::handleClientWrite(const int clientFd) {
 	Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
-	const std::string &sendBuffer = sock->getSendBuffer();
+	PipelineContext *ctx = client->getContext(); // Get context here
 
+	const std::string &sendBuffer = sock->getSendBuffer();
 	if (sendBuffer.empty()) {
-		_socketsManager.modifySocket(clientFd, EPOLLIN);
+		if (ctx->res.headers["Connection"] == "close") {
+			closeConnection(clientFd);
+		} else {
+			_socketsManager.modifySocket(clientFd, EPOLLIN);
+			ctx->reset();
+		}
 		return;
 	}
 
@@ -220,14 +230,12 @@ void Server::handleClientWrite(const int clientFd) {
 
 	if (bytesSent > 0) {
 		sock->eraseSendBuffer(0, bytesSent);
-		if (sock->getSendBuffer().empty()) {
-			PipelineContext *ctx = client->getContext();
-			// Connectionヘッダを見て接続を閉じるか判断
-			if (ctx->res->getHeader("Connection") == "close") {
+		if (!sock->getSendBuffer().empty()) {
+			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+		} else {
+			if (ctx->res.headers["Connection"] == "close") {
 				closeConnection(clientFd);
 			} else {
-				// Keep-Alive:
-				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
 				_socketsManager.modifySocket(clientFd, EPOLLIN);
 				ctx->reset();
 			}
@@ -241,8 +249,17 @@ void Server::handleClientWrite(const int clientFd) {
 	}
 }
 
+void Server::applyCgiChanges(const FdEventChanges &changes) {
+	for (size_t i = 0; i < changes.fdsToAdd.size(); ++i) {
+		_socketsManager.registerSocket(changes.fdsToAdd[i].fd,
+									   changes.fdsToAdd[i].event_type);
+	}
+	for (size_t i = 0; i < changes.fdsToRemove.size(); ++i) {
+		_socketsManager.unregisterSocket(changes.fdsToRemove[i]);
+	}
+}
+
 void Server::closeConnection(const int clientFd) {
-	_socketsManager.unregisterSocket(clientFd);
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"

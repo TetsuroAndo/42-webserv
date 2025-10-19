@@ -1,6 +1,4 @@
 #include "Client.hpp"
-#include "../Http/Core/HttpRequest.hpp"
-#include "../Http/Core/HttpResponse.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
 #include <arpa/inet.h>
 #include <sstream>
@@ -20,15 +18,11 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 
 Client::~Client() {
 	delete _socket;
-	delete _context; // PipelineContext destructor handles deleting req and res
+	delete _context;
 }
 
 int Client::getFd() const { return _fd; }
-
 Socket *Client::getSocket() const { return _socket; }
-
 PipelineContext *Client::getContext() const { return _context; }
-
 const std::string &Client::getIp() const { return _ip; }
-
 int Client::getPort() const { return _port; }

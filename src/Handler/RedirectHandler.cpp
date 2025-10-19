@@ -5,13 +5,12 @@ RedirectHandler::RedirectHandler(const std::string &redirectUrl, int statusCode)
 
 RedirectHandler::~RedirectHandler() {}
 
-HttpResponse RedirectHandler::handle(const HttpRequest &req, HttpResponse &res,
-									 const Config &config) {
-	(void)req;
-	(void)config;
-	res.setStatusCode(_statusCode);
-	res.setHeader("Location", _redirectUrl);
-	return res;
+HttpResponse RedirectHandler::handle(PipelineContext &ctx) {
+	(void)ctx.req;
+	(void)ctx.conf;
+	ctx.res.statusCode = _statusCode;
+	ctx.res.headers["Location"] = _redirectUrl;
+	return ctx.res;
 }
 
 // Private copy constructor and assignment operator to prevent copying

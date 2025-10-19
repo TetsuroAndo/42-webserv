@@ -45,9 +45,8 @@ CgiManager::~CgiManager() {
 FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	FdEventChanges changes;
 	try {
-		// TODO: scriptPathとinterpreterPathをConfigから解決するロジックが必要
-		const Location &loc = ctx.conf.getLocation(ctx.req->getPath());
-		std::string scriptPath = ;
+		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
+		std::string scriptPath = loc.root + ctx.req.getPath();
 		std::string interpreterPath;
 		size_t dotPos = scriptPath.rfind('.');
 		if (dotPos != std::string::npos) {
@@ -60,7 +59,7 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		if (interpreterPath.empty()) {
 			LOG(WARNING) << "No CGI interpreter found for the request path: "
 						 << scriptPath;
-			HandlerUtil::generateSimpleBody(ctx.req->getMethod(), *ctx.res,
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 											HttpStatus::NOT_FOUND);
 			return changes;
 		}
@@ -73,11 +72,15 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		_pipeFdToWorker[worker->getWriteFd()] = worker;
 		_clientFdToWorker[worker->getClientFd()] = worker;
 
-		// サーバーに監視対象のFDを通知
-		// CGIスクリプトからの出力を監視
-		changes.fdsToAdd.push_back((FdEvent){worker->getReadFd(), EPOLLIN});
-		// CGIスクリプトへのリクエストボディの書き込みを監視
-		changes.fdsToAdd.push_back((FdEvent){worker->getWriteFd(), EPOLLOUT});
+		FdEvent readEvent;
+		readEvent.fd = worker->getReadFd();
+		readEvent.event_type = EPOLLIN;
+		changes.fdsToAdd.push_back(readEvent);
+
+		FdEvent writeEvent;
+		writeEvent.fd = worker->getWriteFd();
+		writeEvent.event_type = EPOLLOUT;
+		changes.fdsToAdd.push_back(writeEvent);
 
 		LOG(INFO) << "CGI worker created"
 				  << attr("clientFd", worker->getClientFd())
@@ -87,13 +90,13 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 
 	} catch (const std::exception &e) {
 		LOG(ERROR) << "Failed to create CGI worker: " << e.what();
-		HandlerUtil::generateSimpleBody(ctx.req->getMethod(), *ctx.res,
+		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 	return changes;
 }
 
-FdEventChanges CgiManager::handleEvent(int fd, uint32_t event_type) {
+FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 	FdEventChanges changes;
 	std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
 	if (it == _pipeFdToWorker.end()) {
@@ -103,10 +106,10 @@ FdEventChanges CgiManager::handleEvent(int fd, uint32_t event_type) {
 	CgiWorker *worker = it->second;
 	worker->updateLastActivityTime();
 
-	if (event_type & EPOLLIN) { // CGIからの読み込み可能
+	if (eventType & EPOLLIN) {
 		worker->handleRead();
 	}
-	if (event_type & EPOLLOUT) { // CGIへの書き込み可能
+	if (eventType & EPOLLOUT) {
 		worker->handleWrite();
 	}
 
@@ -181,9 +184,9 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 	if (worker->getState() == CgiWorker::CGI_COMPLETE) {
 		worker->createHttpResponse(res);
 	} else if (worker->getState() == CgiWorker::CGI_TIMEOUT) {
-		res.setStatusCode(HttpStatus::GATEWAY_TIMEOUT);
+		res.statusCode = HttpStatus::GATEWAY_TIMEOUT;
 	} else { // CGI_ERROR
-		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		res.statusCode = HttpStatus::INTERNAL_SERVER_ERROR;
 	}
 
 	_removeWorker(worker);

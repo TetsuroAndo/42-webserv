@@ -1,19 +1,21 @@
 #pragma once
 
+#include "../../../Cgi/CgiManager.hpp"
 #include "../../Core/IMiddleware.hpp"
+#include <map>
+#include <string>
 
 class ISubHandler;
 
 class HandlerMiddleware : public IMiddleware {
 public:
-	HandlerMiddleware(const std::map< std::string, ISubHandler * > &handlers);
-	~HandlerMiddleware();
-	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
+	HandlerMiddleware(CgiManager *cgiManager);
+	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *next);
 
 private:
-	std::map< std::string, ISubHandler * > _handlers;
-
+	CgiManager *_cgiManager;
 	std::string getAllowedMethods();
+
 	HandlerMiddleware(const HandlerMiddleware &);
 	HandlerMiddleware &operator=(const HandlerMiddleware &);
 };
