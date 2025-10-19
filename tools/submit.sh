@@ -7,7 +7,6 @@
 
 set -euo pipefail
 
-# 定数
 SUBMIT_FILES=("src/" "config/" "Makefile" ".gitignore")
 REPO_NAME="submit-for-42"
 SUBMIT_BRANCH="master"
@@ -49,7 +48,10 @@ git show-ref --verify --quiet "refs/heads/$SUBMIT_BRANCH" && \
   git branch -D "$SUBMIT_BRANCH"
 git checkout -b "$SUBMIT_BRANCH"
 
-# コミット & プッシュ
+# すべてのファイルをインデックスから削除
+git rm -rf --cached .
+
+# 提出したいファイルだけを強制的にインデックスに追加してコミット
 git add "${SUBMIT_FILES[@]}"
 if ! git diff --cached --quiet; then
   git commit -m "Submit for 42-review"
