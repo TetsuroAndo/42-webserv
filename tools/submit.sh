@@ -56,6 +56,7 @@ if ! git diff --cached --quiet; then
 fi
 
 git push -u "$REPO_NAME" "$SUBMIT_BRANCH" || \
-  git push -u "$REPO_NAME" "$SUBMIT_BRANCH" --force-with-lease
+  { echo "Info: Initial push failed, attempting force-with-lease..."; \
+    git push -u "$REPO_NAME" "$SUBMIT_BRANCH" --force-with-lease; }
 
 echo "✔ Successfully pushed to ${REPO_URL}"
