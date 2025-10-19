@@ -55,8 +55,18 @@ if ! git diff --cached --quiet; then
   git commit -m "Submit for 42-review"
 fi
 
-git push -u "$REPO_NAME" "$SUBMIT_BRANCH" || \
-  { echo "Info: Initial push failed, attempting force-with-lease..."; \
-    git push -u "$REPO_NAME" "$SUBMIT_BRANCH" --force-with-lease; }
+if git push -u "$REPO_NAME" "$SUBMIT_BRANCH"; then
+  :
+else
+  echo "Warning: The push failed. This may be due to remote changes on the branch."
+  echo "If you proceed, a force push (--force-with-lease) may overwrite remote changes."
+  read -p "Do you want to force push with --force-with-lease? [y/N]: " confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    git push -u "$REPO_NAME" "$SUBMIT_BRANCH" --force-with-lease
+  else
+    echo "Aborted force push."
+    exit 1
+  fi
+fi
 
 echo "✔ Successfully pushed to ${REPO_URL}"
