@@ -10,6 +10,9 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Create necessary directories
+mkdir -p "$PROJECT_ROOT/www/upload"
+
 # Function to run a generic test case
 run_curl_test() {
     local test_name=$1
