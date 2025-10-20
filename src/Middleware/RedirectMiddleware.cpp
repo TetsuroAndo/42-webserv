@@ -17,8 +17,6 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 	if (it != _redirects.end()) {
 		std::string redirectUrl =
 			buildRedirectUrl(req, it->second.toUrl, requestPath, requestPath);
-		LOG(DEBUG) << "Redirect: exact match" << attr("from", requestPath)
-				   << attr("to", redirectUrl) << attr("code", it->second.code);
 		RedirectHandler handler(redirectUrl, it->second.code);
 		ctx.res = handler.handle(ctx);
 		return;
@@ -46,9 +44,6 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 		std::string redirectUrl = buildRedirectUrl(req, longestIt->second.toUrl,
 												   longestMatch, requestPath);
 
-		LOG(DEBUG) << "Redirect: prefix match" << attr("from", longestMatch)
-				   << attr("to", redirectUrl)
-				   << attr("code", longestIt->second.code);
 		RedirectHandler handler(redirectUrl, longestIt->second.code);
 		ctx.res = handler.handle(ctx);
 		return;

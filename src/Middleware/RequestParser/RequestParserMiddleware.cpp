@@ -12,9 +12,6 @@ void RequestParserMiddleware::handle(PipelineContext &ctx,
 	}
 
 	ctx.parser.parse(ctx.req, ctx.recvBuffer);
-	LOG(DEBUG) << "RequestParserMiddleware: isComplete="
-			   << ctx.parser.isComplete()
-			   << ", errorCode=" << ctx.parser.getErrorCode();
 
 	if (ctx.parser.getErrorCode() != 0) {
 		ctx.res.statusCode = ctx.parser.getErrorCode();
