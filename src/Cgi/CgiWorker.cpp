@@ -1,4 +1,5 @@
 #include "CgiWorker.hpp"
+#include "../Config/PerformanceConfig.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
@@ -110,7 +111,7 @@ void CgiWorker::handleWrite() {
 }
 
 void CgiWorker::handleRead() {
-	char buffer[4096];
+	char buffer[CGI_BUFFER_SIZE];
 	ssize_t bytes = read(getReadFd(), buffer, sizeof(buffer));
 
 	if (bytes < 0) {

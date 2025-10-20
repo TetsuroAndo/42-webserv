@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "../Config/PerformanceConfig.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
@@ -105,7 +106,7 @@ void Server::run() {
 		FdEventChanges cgiChanges = _cgiManager.cleanupTimedOutWorkers();
 		applyCgiChanges(cgiChanges);
 
-		const int nEvents = _socketsManager.wait(1000);
+		const int nEvents = _socketsManager.wait(POLL_TIMEOUT_MS);
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
@@ -190,7 +191,7 @@ void Server::handleClientRead(const int clientFd) {
 	Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	Socket *sock = client->getSocket();
-	char buffer[4096];
+	char buffer[IO_BUFFER_SIZE];
 
 	const ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
 
@@ -209,12 +210,14 @@ void Server::handleClientRead(const int clientFd) {
 				std::string responseStr = ResponseBuilder::build(ctx->res);
 				sock->setSendBuffer(responseStr);
 				_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
-				LOG(DEBUG) << "Response built and ready to send"
-						   << attr("fd", clientFd);
+				// Frequent debug log commented out for performance
+				// LOG(DEBUG) << "Response built and ready to send"
+				// 		   << attr("fd", clientFd);
 			} else {
 				// CGI処理は非同期で継続中
-				LOG(DEBUG) << "CGI request initiated, waiting for completion"
-						   << attr("fd", clientFd);
+				// Frequent debug log commented out for performance
+				// LOG(DEBUG) << "CGI request initiated, waiting for completion"
+				// 		   << attr("fd", clientFd);
 			}
 		}
 	} else if (bytesRead == 0) {
@@ -271,22 +274,25 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::applyCgiChanges(const FdEventChanges &changes) {
-	LOG(DEBUG) << "applyCgiChanges called"
-			   << attr("fdsToAdd", changes.fdsToAdd.size())
-			   << attr("fdsToRemove", changes.fdsToRemove.size())
-			   << attr("clientFdsToNotify", changes.clientFdsToNotify.size());
+	// Frequent debug log commented out for performance
+	// LOG(DEBUG) << "applyCgiChanges called"
+	// 		   << attr("fdsToAdd", changes.fdsToAdd.size())
+	// 		   << attr("fdsToRemove", changes.fdsToRemove.size())
+	// 		   << attr("clientFdsToNotify", changes.clientFdsToNotify.size());
 
 	for (size_t i = 0; i < changes.fdsToAdd.size(); ++i) {
-		LOG(DEBUG) << "Adding CGI FD to epoll"
-				   << attr("fd", changes.fdsToAdd[i].fd)
-				   << attr("events", changes.fdsToAdd[i].event_type);
+		// Frequent debug log commented out for performance
+		// LOG(DEBUG) << "Adding CGI FD to epoll"
+		// 		   << attr("fd", changes.fdsToAdd[i].fd)
+		// 		   << attr("events", changes.fdsToAdd[i].event_type);
 		_socketsManager.registerSocket(changes.fdsToAdd[i].fd,
 									   changes.fdsToAdd[i].event_type);
 	}
 	for (size_t i = 0; i < changes.fdsToRemove.size(); ++i) {
 		int fd = changes.fdsToRemove[i];
 		if (fd >= 0) {
-			LOG(DEBUG) << "Removing CGI FD from epoll" << attr("fd", fd);
+			// Frequent debug log commented out for performance
+			// LOG(DEBUG) << "Removing CGI FD from epoll" << attr("fd", fd);
 			_socketsManager.unregisterSocket(fd);
 		}
 	}
@@ -308,8 +314,9 @@ void Server::applyCgiChanges(const FdEventChanges &changes) {
 			std::string responseStr = ResponseBuilder::build(ctx->res);
 			sock->setSendBuffer(responseStr);
 			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
-			LOG(DEBUG) << "CGI response built and ready to send"
-					   << attr("fd", clientFd);
+			// Frequent debug log commented out for performance
+			// LOG(DEBUG) << "CGI response built and ready to send"
+			// 		   << attr("fd", clientFd);
 		}
 	}
 }

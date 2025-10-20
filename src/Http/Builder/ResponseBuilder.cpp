@@ -1,10 +1,20 @@
 #include "ResponseBuilder.hpp"
+#include "../../Config/PerformanceConfig.hpp"
 #include "../../Lib/Time/TimeCache.hpp"
 #include "../Core/HttpStatus.hpp"
 #include <sstream>
 
 std::string ResponseBuilder::build(HttpResponse &res) {
 	std::ostringstream oss;
+
+	// Pre-calculate approximate size to reduce allocations
+	size_t estimatedSize = RESPONSE_RESERVE_SIZE + res.body.size();
+	for (std::map< std::string, std::string >::const_iterator it =
+			 res.headers.begin();
+		 it != res.headers.end(); ++it) {
+		estimatedSize += it->first.size() + it->second.size() + 4; // ": \r\n"
+	}
+
 	oss << res.version << " " << res.statusCode << " "
 		<< HttpStatus::getReason(res.statusCode) << "\r\n";
 
