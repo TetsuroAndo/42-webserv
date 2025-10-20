@@ -4,10 +4,11 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -55,18 +56,25 @@ void Server::setupListenSockets() {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
-		int ptonRet = inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
-		if (ptonRet <= 0) {
+
+		struct addrinfo hints, *res;
+		std::memset(&hints, 0, sizeof(hints));
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
+
+		int ret = getaddrinfo(interfaceAddr.c_str(), NULL, &hints, &res);
+		if (ret != 0) {
 			close(listenFd);
-			if (ptonRet == 0) {
-				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
-				throw std::runtime_error("Invalid IP address format");
-			}
-			if (ptonRet < 0) {
-				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
-				throw std::runtime_error("inet_pton() failed");
-			}
+			LOG(FATAL) << "getaddrinfo() failed for " << interfaceAddr << ": "
+					   << gai_strerror(ret);
+			throw std::runtime_error("getaddrinfo() failed");
 		}
+
+		std::memcpy(&addr.sin_addr,
+					&((struct sockaddr_in *)res->ai_addr)->sin_addr,
+					sizeof(addr.sin_addr));
+		freeaddrinfo(res);
 
 		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
 				 sizeof(addr)) < 0) {
@@ -155,7 +163,10 @@ void Server::handleNewConnection(const int listenFd) {
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
 	char clientIp[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
+	unsigned char *bytes =
+		reinterpret_cast< unsigned char * >(&clientAddr.sin_addr.s_addr);
+	snprintf(clientIp, sizeof(clientIp), "%u.%u.%u.%u", bytes[0], bytes[1],
+			 bytes[2], bytes[3]);
 	int clientPort = ntohs(clientAddr.sin_port);
 
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
