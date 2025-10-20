@@ -1,4 +1,5 @@
 #include "PipelineRouteBuilder.hpp"
+#include "../PipelineRouter/Session/SessionMiddleware.hpp"
 #include "../PipelineRouter/handler/HandlerMiddleware.hpp"
 #include "../RedirectMiddleware.hpp"
 #include "../RequestParser/RequestParserMiddleware.hpp"
@@ -10,6 +11,7 @@ void PipelineRouteBuilder::buildRoute(const Config &config,
 									  CgiManager *cgiManager,
 									  MiddlewareProcessor *processor) {
 	processor->addMiddleware(new RequestParserMiddleware());
+	processor->addMiddleware(new SessionMiddleware());
 	processor->addMiddleware(new RedirectMiddleware(config.getRedirects()));
 	processor->addMiddleware(new HandlerMiddleware(cgiManager));
 }
