@@ -12,6 +12,44 @@ NC='\033[0m' # No Color
 
 overall_status=0 # 0 for success, 1 for failure
 
+# Setup function to create required test files
+setup_test_files() {
+    local test_root="$PROJECT_ROOT/www/http_test_root"
+    
+    # Create large_file.txt (10MB) if it doesn't exist
+    if [ ! -f "$test_root/large_file.txt" ]; then
+        dd if=/dev/zero of="$test_root/large_file.txt" bs=1M count=10 2>/dev/null
+    fi
+    
+    # Create no_read.txt with no read permissions if it doesn't exist
+    if [ ! -f "$test_root/no_read.txt" ]; then
+        echo "secret" > "$test_root/no_read.txt"
+        chmod 000 "$test_root/no_read.txt"
+    fi
+}
+
+# Cleanup function to remove test files
+cleanup_test_files() {
+    local test_root="$PROJECT_ROOT/www/http_test_root"
+    
+    # Restore permissions before cleanup
+    if [ -f "$test_root/no_read.txt" ]; then
+        chmod 644 "$test_root/no_read.txt" 2>/dev/null || true
+        rm -f "$test_root/no_read.txt"
+    fi
+    
+    # Remove large file
+    if [ -f "$test_root/large_file.txt" ]; then
+        rm -f "$test_root/large_file.txt"
+    fi
+}
+
+# Setup at start
+setup_test_files
+
+# Cleanup on exit
+trap cleanup_test_files EXIT
+
 # Function to run a test case
 run_test() {
     local config_file=$1
