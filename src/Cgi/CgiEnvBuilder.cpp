@@ -15,6 +15,21 @@ createEnvpArray(const std::map< std::string, std::string > &envMap) {
 	}
 	return envpStrs;
 }
+
+std::string fullURI(const std::string &method, const std::string &ip,
+					const std::string &port, const std::string &scriptPath) {
+	std::string result;
+	const std::string modifiedMethod = StringOps::trim(method, "0123456789. ");
+
+	result += modifiedMethod + "://";
+	result += ip + ":" + port;
+	if (scriptPath[0] != '/') {
+		result += "/";
+	}
+	result += scriptPath;
+	return result;
+}
+
 } // namespace
 
 /**
@@ -23,8 +38,8 @@ createEnvpArray(const std::map< std::string, std::string > &envMap) {
  * 参考: https://4judgement.github.io/rfc-translater/html/rfc3875.html
  *
  * @param ctx リクエストのコンテキスト
- * @param scriptPath 実行するCGIスクリプトのフルパス
- * @return "KEY=VALUE"形式の文字列ベクトル
+ * @param scriptPath 実行するCGIスクリプトのフルパスと'?'以降のクエリ
+ * @return "KEY=VALUE"形式のvector
  */
 std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 												const std::string &scriptPath) {
@@ -33,8 +48,9 @@ std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 	std::map< std::string, std::string > envMap;
 
 	// TODO: 足りない要素をパーサーで解析して埋める
+	(void)scriptPath;
 
-	std::vector< std::string > Authorization =
+	const std::vector< std::string > Authorization =
 		StringOps::split(req.getHeader("Authorization"), " ");
 	std::string remoteUser = "";
 	if (1 <= Authorization.size()) {
@@ -50,8 +66,7 @@ std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 	envMap["PATH_TRANSLATED"] = ""; // リクエストのURIを全文 (文字列操作で作る)
 	envMap["QUERY_STRING"] = "";	// リクエストの?以降をここに
 	envMap["REMOTE_ADDR"] = ctx.ownerClient.getIp();
-	envMap["REMOTE_HOST"] =
-		""; // 空文字で登録(digコマンドを実行する必要あるため)
+	envMap["REMOTE_HOST"] = ""; // 空文字で登録
 	envMap["REMOTE_IDENT"] = ctx.session->getId();
 	envMap["REMOTE_USER"] = remoteUser;
 	envMap["REQUEST_METHOD"] = req.getMethod();
