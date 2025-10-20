@@ -46,7 +46,21 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	FdEventChanges changes;
 	try {
 		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
-		std::string scriptPath = loc.root + ctx.req.getPath();
+
+		// パスを解決（StaticFileHandlerと同じロジック）
+		std::string scriptPath =
+			HandlerUtil::resolvePath(ctx.req.getPath(), ctx.conf);
+		if (scriptPath.empty()) {
+			LOG(WARNING) << "No matching location found for CGI request"
+						 << attr("path", ctx.req.getPath());
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
+											HttpStatus::NOT_FOUND);
+			return changes;
+		}
+
+		LOG(DEBUG) << "Resolved CGI script path"
+				   << attr("scriptPath", scriptPath);
+
 		std::string interpreterPath;
 		size_t dotPos = scriptPath.rfind('.');
 		if (dotPos != std::string::npos) {
@@ -64,12 +78,15 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 			return changes;
 		}
 
+		LOG(DEBUG) << "Using CGI interpreter"
+				   << attr("interpreter", interpreterPath)
+				   << attr("script", scriptPath);
+
 		CgiWorker *worker = new CgiWorker(ctx, scriptPath, interpreterPath);
 		worker->execute(); // pipe, fork, execveの実行
 
 		_workers.push_back(worker);
 		_pipeFdToWorker[worker->getReadFd()] = worker;
-		_pipeFdToWorker[worker->getWriteFd()] = worker;
 		_clientFdToWorker[worker->getClientFd()] = worker;
 
 		FdEvent readEvent;
@@ -77,10 +94,14 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		readEvent.event_type = EPOLLIN;
 		changes.fdsToAdd.push_back(readEvent);
 
-		FdEvent writeEvent;
-		writeEvent.fd = worker->getWriteFd();
-		writeEvent.event_type = EPOLLOUT;
-		changes.fdsToAdd.push_back(writeEvent);
+		// Only add write FD if we have a body to send
+		if (worker->getWriteFd() >= 0) {
+			_pipeFdToWorker[worker->getWriteFd()] = worker;
+			FdEvent writeEvent;
+			writeEvent.fd = worker->getWriteFd();
+			writeEvent.event_type = EPOLLOUT;
+			changes.fdsToAdd.push_back(writeEvent);
+		}
 
 		LOG(INFO) << "CGI worker created"
 				  << attr("clientFd", worker->getClientFd())
@@ -98,14 +119,17 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 
 FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 	FdEventChanges changes;
+
 	std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
 	if (it == _pipeFdToWorker.end()) {
+		LOG(WARNING) << "FD not found in _pipeFdToWorker" << attr("fd", fd);
 		return changes;
 	}
 
 	CgiWorker *worker = it->second;
 	worker->updateLastActivityTime();
 
+	// EPOLLHUPやEPOLLERRが発生した場合も、データを読み切る
 	if (eventType & EPOLLIN) {
 		worker->handleRead();
 	}
@@ -113,10 +137,19 @@ FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 		worker->handleWrite();
 	}
 
+	// EPOLLHUPの場合、パイプが閉じられたので読み取りを試みる
+	if (eventType & EPOLLHUP) {
+		worker->handleRead();
+	}
+
 	// 書き込みが完了したら、書き込みFDの監視を解除
 	if (worker->getState() == CgiWorker::CGI_RECEIVING) {
-		changes.fdsToRemove.push_back(worker->getWriteFd());
-		_pipeFdToWorker.erase(worker->getWriteFd());
+		// writeFdが有効で、かつまだmapに存在する場合のみ削除
+		int writeFd = worker->getWriteFd();
+		if (writeFd >= 0 && _pipeFdToWorker.count(writeFd)) {
+			changes.fdsToRemove.push_back(writeFd);
+			_pipeFdToWorker.erase(writeFd);
+		}
 	}
 
 	// CGIプロセスが完了またはエラーになったかチェック
@@ -130,6 +163,8 @@ FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
 			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
+		// クライアントFDを通知リストに追加
+		changes.clientFdsToNotify.push_back(worker->getClientFd());
 	}
 	return changes;
 }
@@ -141,7 +176,8 @@ FdEventChanges CgiManager::cleanupTimedOutWorkers() {
 
 	for (std::vector< CgiWorker * >::iterator it = _workers.begin();
 		 it != _workers.end(); ++it) {
-		if (now - (*it)->getLastActivityTime() > _timeoutSeconds) {
+		time_t elapsed = now - (*it)->getLastActivityTime();
+		if (elapsed > _timeoutSeconds) {
 			workersToCleanup.push_back(*it);
 		}
 	}
@@ -164,6 +200,9 @@ FdEventChanges CgiManager::cleanupTimedOutWorkers() {
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
 			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
+
+		// クライアントFDを通知リストに追加（レスポンス送信のため）
+		changes.clientFdsToNotify.push_back(worker->getClientFd());
 	}
 	return changes;
 }

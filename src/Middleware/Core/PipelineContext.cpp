@@ -9,9 +9,11 @@ PipelineContext::~PipelineContext() {}
 
 void PipelineContext::reset() {
 	req.clear();
+	res = HttpResponse();
 	recvBuffer.clear();
 	sendBuffer.clear();
 	parser.reset();
+	changes = FdEventChanges();
 }
 
 void PipelineContext::addChanges(const FdEventChanges &additionalChanges) {
@@ -21,4 +23,8 @@ void PipelineContext::addChanges(const FdEventChanges &additionalChanges) {
 	changes.fdsToRemove.insert(changes.fdsToRemove.end(),
 							   additionalChanges.fdsToRemove.begin(),
 							   additionalChanges.fdsToRemove.end());
+	changes.clientFdsToNotify.insert(
+		changes.clientFdsToNotify.end(),
+		additionalChanges.clientFdsToNotify.begin(),
+		additionalChanges.clientFdsToNotify.end());
 }

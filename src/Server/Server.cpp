@@ -109,16 +109,15 @@ void Server::run() {
 			int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
-				LOG(WARNING) << "EPOLLERR or EPOLLHUP for fd: " << fd;
-				closeConnection(fd);
-				continue;
-			}
-
+			// CGI FDのイベントは先にチェック（EPOLLHUPは正常終了の可能性あり）
 			if (_cgiManager.isCgiFd(fd)) {
 				FdEventChanges cgiChanges =
 					_cgiManager.handleEvent(fd, eventTypes);
 				applyCgiChanges(cgiChanges);
+			} else if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
+				LOG(WARNING) << "EPOLLERR or EPOLLHUP for fd: " << fd;
+				closeConnection(fd);
+				continue;
 			} else if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {
@@ -189,12 +188,23 @@ void Server::handleClientRead(const int clientFd) {
 
 		_mainProcessor.handle(*ctx);
 
+		// Apply any CGI FD changes
+		applyCgiChanges(ctx->changes);
+		ctx->changes = FdEventChanges(); // Reset changes
+
 		if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-			std::string responseStr = ResponseBuilder::build(ctx->res);
-			sock->setSendBuffer(responseStr);
-			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
-			LOG(DEBUG) << "Response built and ready to send"
-					   << attr("fd", clientFd);
+			// CGIリクエストの場合は、レスポンス送信をCGI完了まで待つ
+			if (!ctx->res.isCgi) {
+				std::string responseStr = ResponseBuilder::build(ctx->res);
+				sock->setSendBuffer(responseStr);
+				_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+				LOG(DEBUG) << "Response built and ready to send"
+						   << attr("fd", clientFd);
+			} else {
+				// CGI処理は非同期で継続中
+				LOG(DEBUG) << "CGI request initiated, waiting for completion"
+						   << attr("fd", clientFd);
+			}
 		}
 	} else if (bytesRead == 0) {
 		closeConnection(clientFd);
@@ -250,12 +260,46 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::applyCgiChanges(const FdEventChanges &changes) {
+	LOG(DEBUG) << "applyCgiChanges called"
+			   << attr("fdsToAdd", changes.fdsToAdd.size())
+			   << attr("fdsToRemove", changes.fdsToRemove.size())
+			   << attr("clientFdsToNotify", changes.clientFdsToNotify.size());
+
 	for (size_t i = 0; i < changes.fdsToAdd.size(); ++i) {
+		LOG(DEBUG) << "Adding CGI FD to epoll"
+				   << attr("fd", changes.fdsToAdd[i].fd)
+				   << attr("events", changes.fdsToAdd[i].event_type);
 		_socketsManager.registerSocket(changes.fdsToAdd[i].fd,
 									   changes.fdsToAdd[i].event_type);
 	}
 	for (size_t i = 0; i < changes.fdsToRemove.size(); ++i) {
-		_socketsManager.unregisterSocket(changes.fdsToRemove[i]);
+		int fd = changes.fdsToRemove[i];
+		if (fd >= 0) {
+			LOG(DEBUG) << "Removing CGI FD from epoll" << attr("fd", fd);
+			_socketsManager.unregisterSocket(fd);
+		}
+	}
+	// CGI完了したクライアントへレスポンスを送信
+	for (size_t i = 0; i < changes.clientFdsToNotify.size(); ++i) {
+		int clientFd = changes.clientFdsToNotify[i];
+		if (_clients.count(clientFd) == 0) {
+			LOG(WARNING) << "Client already disconnected for CGI completion"
+						 << attr("fd", clientFd);
+			continue;
+		}
+
+		Client *client = _clients[clientFd];
+		PipelineContext *ctx = client->getContext();
+		Socket *sock = client->getSocket();
+
+		// CGI完了のレスポンスを取得
+		if (_cgiManager.isCgiComplete(clientFd, ctx->res)) {
+			std::string responseStr = ResponseBuilder::build(ctx->res);
+			sock->setSendBuffer(responseStr);
+			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
+			LOG(DEBUG) << "CGI response built and ready to send"
+					   << attr("fd", clientFd);
+		}
 	}
 }
 
