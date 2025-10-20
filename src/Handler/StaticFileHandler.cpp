@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace {
+
 enum FileReadStatus { FILE_READ_SUCCESS, FILE_READ_ERROR, FILE_READ_FORBIDDEN };
 
 FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
