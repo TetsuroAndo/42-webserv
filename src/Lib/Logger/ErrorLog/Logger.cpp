@@ -119,3 +119,10 @@ void Logger::updateActiveLevelsMask() {
 		}
 	}
 }
+
+void Logger::flush() {
+	for (std::vector< LogSink * >::iterator it = _ownedSinks.begin();
+		 it != _ownedSinks.end(); ++it) {
+		(*it)->flush();
+	}
+}

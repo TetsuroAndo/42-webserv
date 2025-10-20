@@ -13,6 +13,7 @@ public:
 
 	virtual void log(const LogMessage &msg) = 0;
 	virtual void logAccess(const AccessLogContext &ctx) = 0;
+	virtual void flush() = 0;
 
 	LogType getType() const;
 	LogForm *getForm() const;

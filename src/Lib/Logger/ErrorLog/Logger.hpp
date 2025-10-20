@@ -27,6 +27,7 @@ public:
 
 	void log(const LogMessage &msg);
 	bool isLogLevelActive(LogLevel level) const;
+	void flush();
 
 private:
 	Logger();

@@ -107,3 +107,10 @@ void AccessLogger::log(const HttpRequest *request, const HttpResponse *response,
 }
 
 void AccessLogger::addSink(LogSink *sink) { _sinks.push_back(sink); }
+
+void AccessLogger::flush() {
+	for (std::vector< LogSink * >::iterator it = _sinks.begin();
+		 it != _sinks.end(); ++it) {
+		(*it)->flush();
+	}
+}

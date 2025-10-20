@@ -1,7 +1,5 @@
 #include "FileSink.hpp"
 #include "../../StringOps/StringOps.hpp"
-#include "../Form/ElfForm.hpp"
-#include "../Form/JsonForm.hpp"
 #include "../Log.hpp"
 #include <cstdio>
 #include <dirent.h>
@@ -12,10 +10,18 @@
 #include <string>
 #include <sys/stat.h>
 
+namespace {
+const size_t BUFFER_THRESHOLD = 8192;	// 8KB
+const size_t LOG_COUNT_THRESHOLD = 100; // flush after 100 logs
+const std::time_t TIME_THRESHOLD = 5;	// flush after 5 seconds
+} // namespace
+
 FileSink::FileSink(const std::string &logDir, const std::string &filename,
 				   LogForm *form, const size_t maxFileSize,
 				   const size_t maxBackupFiles)
-	: LogSink(form), _dir(logDir), _fileName(filename),
+	: BufferingSink(form, BUFFER_THRESHOLD, LOG_COUNT_THRESHOLD,
+					TIME_THRESHOLD),
+	  _dir(logDir), _fileName(filename),
 	  _fileStream((logDir + "/" + filename).c_str(),
 				  std::ios::out | std::ios::app),
 	  _maxFileSize(maxFileSize), _maxBackupFiles(maxBackupFiles) {
@@ -26,32 +32,35 @@ FileSink::FileSink(const std::string &logDir, const std::string &filename,
 }
 
 FileSink::~FileSink() {
+	// Base class destructor calls flush() which calls our flushBuffer().
+	// We just need to close the file stream.
 	if (_fileStream.is_open()) {
 		_fileStream.close();
 	}
 }
 
-void FileSink::log(const LogMessage &msg) {
-	if (_fileStream.is_open()) {
-		_form->format(msg, _fileStream);
-		_fileStream << '\n';
-		_fileStream.flush();
-
-		struct stat st;
-		const std::string filepath = _dir + "/" + _fileName;
-		if (stat(filepath.c_str(), &st) == 0 &&
-			static_cast< size_t >(st.st_size) >= _maxFileSize) {
-			rotate();
+void FileSink::flushBuffer() {
+	if (static_cast< size_t >(_buffer.tellp()) > 0 && _fileStream.is_open()) {
+		_fileStream << _buffer.str();
+		if (!_fileStream.good()) {
+			std::cerr << "Error: Failed to write to log file: " << _fileName
+					  << std::endl;
+			_fileStream.clear(); // Attempt to recover stream state
 		}
-	}
-}
-
-void FileSink::logAccess(const AccessLogContext &ctx) {
-	if (_fileStream.is_open()) {
-		_form->formatAccess(ctx, _fileStream);
-		_fileStream << '\n';
 		_fileStream.flush();
+		if (!_fileStream.good()) {
+			std::cerr << "Error: Failed to flush log file: " << _fileName
+					  << std::endl;
+			_fileStream.clear(); // Attempt to recover stream state
+		}
 
+		// Clear buffer and reset counters
+		_buffer.str("");
+		_buffer.clear();
+		_logCount = 0;
+		_lastFlushTime = std::time(NULL);
+
+		// Check if rotation is needed AFTER flushing
 		struct stat st;
 		const std::string filepath = _dir + "/" + _fileName;
 		if (stat(filepath.c_str(), &st) == 0 &&

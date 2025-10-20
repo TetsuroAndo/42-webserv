@@ -1,12 +1,13 @@
 #pragma once
 
-#include "LogSink.hpp"
+#include "BufferingSink.hpp"
 #include <string>
 
-class ConsoleSink : public LogSink {
+class ConsoleSink : public BufferingSink {
 public:
 	ConsoleSink(LogForm *form);
+	virtual ~ConsoleSink();
 
-	virtual void log(const LogMessage &msg);
-	virtual void logAccess(const AccessLogContext &ctx);
+private:
+	virtual void flushBuffer();
 };
