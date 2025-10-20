@@ -19,6 +19,12 @@ HttpResponse CgiHandler::handle(PipelineContext &ctx) {
 
 	ctx.addChanges(changes);
 
+	// createWorkerでエラーが発生した場合、ctx.resにエラーレスポンスが設定されている
+	if (ctx.res.statusCode != 0) {
+		// エラーレスポンスが既に設定されている
+		return ctx.res;
+	}
+
 	HttpResponse res;
 	res.isCgi = true;
 	return res;

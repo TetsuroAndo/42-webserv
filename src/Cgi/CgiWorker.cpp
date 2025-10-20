@@ -1,10 +1,12 @@
 #include "CgiWorker.hpp"
+#include "../Lib/Logger/Log.hpp"
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include <algorithm>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -65,11 +67,22 @@ void CgiWorker::execute() {
 		return;
 	}
 
-	_state = _requestBody.empty() ? CGI_RECEIVING : CGI_SENDING_BODY;
+	if (_requestBody.empty()) {
+		// No body to send, close write pipe immediately
+		_closePipe(_pipeIn[1]);
+		_state = CGI_RECEIVING;
+	} else {
+		_state = CGI_SENDING_BODY;
+	}
 	updateLastActivityTime();
 }
 
 void CgiWorker::handleWrite() {
+	// パイプがすでに閉じられている場合は何もしない
+	if (getWriteFd() < 0) {
+		return;
+	}
+
 	if (_requestBody.empty()) {
 		_closePipe(_pipeIn[1]);
 		_state = CGI_RECEIVING;
@@ -82,6 +95,7 @@ void CgiWorker::handleWrite() {
 		write(getWriteFd(), _requestBody.c_str() + _bytesSent, bytesToWrite);
 
 	if (bytes < 0) {
+		LOG(ERROR) << "Write error in CGI" << attr("error", strerror(errno));
 		_state = CGI_ERROR;
 		_closePipe(_pipeIn[1]);
 		return;
@@ -100,6 +114,7 @@ void CgiWorker::handleRead() {
 	ssize_t bytes = read(getReadFd(), buffer, sizeof(buffer));
 
 	if (bytes < 0) {
+		LOG(ERROR) << "Read error in CGI" << attr("error", strerror(errno));
 		_state = CGI_ERROR;
 		_closePipe(_pipeOut[0]);
 		return;
@@ -122,13 +137,21 @@ void CgiWorker::_childProcess(const std::string &scriptPath,
 	close(_pipeOut[0]);
 
 	if (dup2(_pipeIn[0], STDIN_FILENO) < 0 ||
-		dup2(_pipeOut[1], STDOUT_FILENO) < 0) {
+		dup2(_pipeOut[1], STDOUT_FILENO) < 0 ||
+		dup2(_pipeOut[1], STDERR_FILENO) < 0) {
 		perror("dup2 failed");
 		exit(EXIT_FAILURE);
 	}
 
 	close(_pipeIn[0]);
 	close(_pipeOut[1]);
+
+	// Change to script directory for relative path access
+	std::string scriptDir = scriptPath.substr(0, scriptPath.find_last_of('/'));
+	if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
+		perror("chdir failed");
+		exit(EXIT_FAILURE);
+	}
 
 	std::vector< char * > envp;
 	for (size_t i = 0; i < envp_strs.size(); ++i) {

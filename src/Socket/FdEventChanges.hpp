@@ -10,4 +10,6 @@ struct FdEvent {
 struct FdEventChanges {
 	std::vector< FdEvent > fdsToAdd;
 	std::vector< int > fdsToRemove;
+	std::vector< int >
+		clientFdsToNotify; // CGI完了時にレスポンスを送るべきclientFd
 };
