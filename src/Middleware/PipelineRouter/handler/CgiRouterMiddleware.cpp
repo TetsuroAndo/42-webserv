@@ -15,6 +15,8 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 	const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 	const std::string &path = ctx.req.getPath();
 
+	LOG(DEBUG) << "Checking for CGI" << attr("path", path);
+
 	bool isCgi = false;
 	for (std::map< std::string, std::string >::const_iterator it =
 			 loc.cgiConf.begin();
@@ -22,20 +24,26 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 		const std::string &ext = it->first;
 		if (path.size() >= ext.size() &&
 			path.compare(path.size() - ext.size(), ext.size(), ext) == 0) {
+			LOG(DEBUG) << "Path matches CGI configuration" << attr("ext", ext);
 			isCgi = true;
 			break;
 		}
 	}
 
 	if (isCgi) {
+		LOG(DEBUG) << "Routing to CgiHandler" << attr("path", path);
 		std::auto_ptr< ISubHandler > handler(new CgiHandler(_cgiManager));
 		try {
 			ctx.res = handler->handle(ctx);
 		} catch (const std::exception &e) {
+			LOG(ERROR) << "CgiHandler threw an exception"
+					   << attr("error", e.what()) << attr("path", path);
 			ctx.res.statusCode = HttpStatus::INTERNAL_SERVER_ERROR;
 		}
 		return;
 	}
 
+	LOG(DEBUG) << "Path is not CGI, passing to next middleware"
+			   << attr("path", path);
 	next->next(ctx);
 }

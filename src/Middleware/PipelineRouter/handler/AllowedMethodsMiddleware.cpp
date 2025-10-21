@@ -1,6 +1,7 @@
 #include "AllowedMethodsMiddleware.hpp"
 #include "../../../Config/Config.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
+#include "../../../Lib/Logger/Log.hpp" // Log.hppを追加
 
 AllowedMethodsMiddleware::AllowedMethodsMiddleware() {}
 
@@ -20,20 +21,28 @@ std::string AllowedMethodsMiddleware::getAllowedMethods(
 void AllowedMethodsMiddleware::handle(PipelineContext &ctx,
 									  MiddlewareProcessor *next) {
 	const std::string &method = ctx.req.getMethod();
-	const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
+	const std::string &path = ctx.req.getPath();
+	const Location &loc = ctx.conf.getLocation(path);
+
+	LOG(DEBUG) << "Checking allowed methods" << attr("method", method)
+			   << attr("path", path);
 
 	if (loc.allowedMethods.empty() ||
 		loc.allowedMethods.find(method) == loc.allowedMethods.end()) {
 
-		// メソッドが許可されていない -> 405を返して終了
+		std::string allowHeader = getAllowedMethods(loc.allowedMethods);
+		LOG(INFO) << "Method not allowed" << attr("method", method)
+				  << attr("path", path) << attr("allowed", allowHeader);
+
 		ctx.res.statusCode = HttpStatus::METHOD_NOT_ALLOWED;
 		ctx.res.headers["Content-Type"] = "text/html";
-		ctx.res.headers["Allow"] = getAllowedMethods(loc.allowedMethods);
+		ctx.res.headers["Allow"] = allowHeader;
 		ctx.res.body =
 			"<html><body><h1>405 Method Not Allowed</h1></body></html>";
-		return; // パイプラインをここで停止
+		return;
 	}
 
-	// メソッドが許可されている -> 次のミドルウェアへ
+	LOG(DEBUG) << "Method allowed, passing to next middleware"
+			   << attr("method", method);
 	next->next(ctx);
 }
