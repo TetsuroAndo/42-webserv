@@ -14,9 +14,9 @@ void RequestParserMiddleware::handle(PipelineContext &ctx,
 	ctx.parser.parse(ctx.req, ctx.recvBuffer);
 
 	if (ctx.parser.getErrorCode() != 0) {
-		ctx.res.statusCode = ctx.parser.getErrorCode();
-		ctx.res.headers["Connection"] = "close";
-		ctx.res.body = "<html><body><h1>Error</h1></body></html>";
+		ctx.res.setStatusCode(ctx.parser.getErrorCode());
+		ctx.res.setHeader("Connection", "close");
+		ctx.res.setBody("<html><body><h1>Error</h1></body></html>");
 		return;
 	}
 

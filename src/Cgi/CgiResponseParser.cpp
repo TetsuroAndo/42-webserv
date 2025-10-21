@@ -10,29 +10,33 @@ CgiResponseParser::~CgiResponseParser() {}
 
 void CgiResponseParser::parse(const std::string &rawResponse) {
 	std::string::size_type headerEndPos = rawResponse.find("\r\n\r\n");
+	size_t headerEndLen = 4;
 
 	if (headerEndPos == std::string::npos) {
-		// ヘッダとボディの区切りが見つからない場合は、すべてボディとして扱う
+		headerEndPos = rawResponse.find("\n\n");
+		headerEndLen = 2;
+	}
+
+	if (headerEndPos == std::string::npos) {
 		_body = rawResponse;
 		return;
 	}
 
 	std::string headerBlock = rawResponse.substr(0, headerEndPos);
-	_body = rawResponse.substr(headerEndPos + 4);
+	_body = rawResponse.substr(headerEndPos + headerEndLen);
 
 	_parseHeaders(headerBlock);
 }
 
 void CgiResponseParser::setResponse(HttpResponse &httpResponse) {
-	httpResponse.statusCode = _statusCode;
-	httpResponse.statusMessage = _statusMessage;
-	httpResponse.body = _body;
-	httpResponse.headers["Content-Length"] = StringOps::toString(_body.size());
+	httpResponse.setStatusCode(_statusCode);
+	httpResponse.setBody(_body);
+	httpResponse.setHeader("Content-Length", StringOps::toString(_body.size()));
 
 	for (std::map< std::string, std::string >::const_iterator it =
 			 _headers.begin();
 		 it != _headers.end(); ++it) {
-		httpResponse.headers[it->first] = it->second;
+		httpResponse.setHeader(it->first, it->second);
 	}
 }
 
@@ -47,24 +51,27 @@ void CgiResponseParser::_parseHeaders(const std::string &headerBlock) {
 
 		std::string::size_type colonPos = line.find(":");
 		if (colonPos == std::string::npos) {
-			continue; // 不正な形式のヘッダ
+			continue;
 		}
 
 		std::string key = line.substr(0, colonPos);
 		std::string value = line.substr(colonPos + 1);
 
-		// 前後の空白をトリム
 		key.erase(0, key.find_first_not_of(" \t"));
 		key.erase(key.find_last_not_of(" \t") + 1);
 		value.erase(0, value.find_first_not_of(" \t"));
 		value.erase(value.find_last_not_of(" \t\r") + 1);
 
-		// "Status"ヘッダは特別扱い
 		std::string lowerKey = key;
 		StringOps::toLower(lowerKey);
 		if (lowerKey == "status") {
 			std::istringstream statusIss(value);
 			statusIss >> _statusCode;
+
+			if (_statusCode < 100 || _statusCode > 599) {
+				_statusCode = 500;
+			}
+
 			std::string messagePart;
 			if (std::getline(statusIss, messagePart)) {
 				_statusMessage =

@@ -16,6 +16,22 @@ createEnvpArray(const std::map< std::string, std::string > &envMap) {
 	}
 	return envpStrs;
 }
+
+bool isValidEnvValue(const std::string &value) {
+	const size_t MAX_ENV_VALUE_SIZE = 8192;
+
+	if (value.size() > MAX_ENV_VALUE_SIZE) {
+		return false;
+	}
+
+	for (size_t i = 0; i < value.size(); ++i) {
+		const unsigned char c = static_cast< unsigned char >(value[i]);
+		if (c == 0) {
+			return false;
+		}
+	}
+	return true;
+}
 } // namespace
 
 std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
@@ -30,16 +46,23 @@ std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 	envMap["SCRIPT_NAME"] = req.getPath();
 	envMap["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().httpServerName;
 	envMap["SERVER_NAME"] = req.getHeader("Host");
-	envMap["SERVER_PORT"] = "80"; // ToDo
+	envMap["SERVER_PORT"] =
+		StringOps::toString(ctx.ownerClient.getServerPort());
 	envMap["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	envMap["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
 	envMap["QUERY_STRING"] = req.getQueriesString();
 
 	if (req.hasHeader("Content-Type")) {
-		envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
+		const std::string &contentType = req.getHeader("Content-Type");
+		if (isValidEnvValue(contentType)) {
+			envMap["CONTENT_TYPE"] = contentType;
+		}
 	}
 	if (req.hasHeader("Content-Length")) {
-		envMap["CONTENT_LENGTH"] = req.getHeader("Content-Length");
+		const std::string &contentLength = req.getHeader("Content-Length");
+		if (isValidEnvValue(contentLength)) {
+			envMap["CONTENT_LENGTH"] = contentLength;
+		}
 	}
 
 	const std::map< std::string, std::vector< std::string > > &headers =
@@ -47,13 +70,21 @@ std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 	for (std::map< std::string, std::vector< std::string > >::const_iterator
 			 it = headers.begin();
 		 it != headers.end(); ++it) {
+		if (it->second.empty()) {
+			continue;
+		}
+
+		const std::string &headerValue = it->second.front();
+
+		if (!isValidEnvValue(headerValue)) {
+			continue;
+		}
+
 		std::string httpHeader = "HTTP_" + it->first;
 		std::replace(httpHeader.begin(), httpHeader.end(), '-', '_');
 		std::transform(httpHeader.begin(), httpHeader.end(), httpHeader.begin(),
 					   ::toupper);
-		if (!it->second.empty()) {
-			envMap[httpHeader] = it->second.front();
-		}
+		envMap[httpHeader] = headerValue;
 	}
 
 	return createEnvpArray(envMap);

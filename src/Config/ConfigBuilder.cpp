@@ -15,6 +15,13 @@ void ConfigBuilder::initDefaults() {
 	_maxRequestBodySize = 1024 * 1024;
 	_timeoutSec = 60;
 	_maxEvents = 1024;
+	_ioBufferSize = 4096;
+	_maxCgiResponseSize = 10 * 1024 * 1024;
+	_maxHeaderValueSize = 8192;
+	_maxHeaderKeys = 100;
+	_maxHeaderValuesPerKey = 100;
+	_maxResponseBodySize = 100 * 1024 * 1024;
+	_sessionCleanupIntervalSec = 900;
 	_defaultLocationKey = "/";
 
 	Location defaultLoc;
@@ -71,7 +78,10 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents);
+				  _maxRequestBodySize, _timeoutSec, _maxEvents, _ioBufferSize,
+				  _maxCgiResponseSize, _maxHeaderValueSize, _maxHeaderKeys,
+				  _maxHeaderValuesPerKey, _maxResponseBodySize,
+				  _sessionCleanupIntervalSec);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
@@ -184,4 +194,28 @@ void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
 void ConfigBuilder::setServerDefaultAllowedMethods(
 	const std::set< std::string > &methods) {
 	_locations[_defaultLocationKey].allowedMethods = methods;
+}
+
+void ConfigBuilder::setIoBufferSize(unsigned int size) { _ioBufferSize = size; }
+
+void ConfigBuilder::setMaxCgiResponseSize(unsigned int size) {
+	_maxCgiResponseSize = size;
+}
+
+void ConfigBuilder::setMaxHeaderValueSize(size_t size) {
+	_maxHeaderValueSize = size;
+}
+
+void ConfigBuilder::setMaxHeaderKeys(size_t size) { _maxHeaderKeys = size; }
+
+void ConfigBuilder::setMaxHeaderValuesPerKey(size_t size) {
+	_maxHeaderValuesPerKey = size;
+}
+
+void ConfigBuilder::setMaxResponseBodySize(size_t size) {
+	_maxResponseBodySize = size;
+}
+
+void ConfigBuilder::setSessionCleanupIntervalSec(unsigned int sec) {
+	_sessionCleanupIntervalSec = sec;
 }

@@ -18,11 +18,16 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 			   << attr("clientFd", worker->getClientFd())
 			   << attr("pid", worker->getPid());
 
+	const int readFd = worker->getReadFd();
+	const int writeFd = worker->getWriteFd();
+	const int clientFd = worker->getClientFd();
+
 	_workers.erase(std::remove(_workers.begin(), _workers.end(), worker),
 				   _workers.end());
-	_pipeFdToWorker.erase(worker->getReadFd());
-	_pipeFdToWorker.erase(worker->getWriteFd());
-	_clientFdToWorker.erase(worker->getClientFd());
+
+	_pipeFdToWorker.erase(readFd);
+	_pipeFdToWorker.erase(writeFd);
+	_clientFdToWorker.erase(clientFd);
 
 	delete worker;
 }
@@ -47,7 +52,6 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	try {
 		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 
-		// パスを解決（StaticFileHandlerと同じロジック）
 		std::string scriptPath =
 			HandlerUtil::resolvePath(ctx.req.getPath(), ctx.conf);
 		if (scriptPath.empty()) {
@@ -129,7 +133,18 @@ FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 	CgiWorker *worker = it->second;
 	worker->updateLastActivityTime();
 
-	// EPOLLHUPやEPOLLERRが発生した場合も、データを読み切る
+	if (eventType & EPOLLERR) {
+		LOG(ERROR) << "EPOLLERR on CGI pipe" << attr("fd", fd)
+				   << attr("clientFd", worker->getClientFd());
+		worker->setTimeout();
+		changes.fdsToRemove.push_back(worker->getReadFd());
+		if (_pipeFdToWorker.count(worker->getWriteFd())) {
+			changes.fdsToRemove.push_back(worker->getWriteFd());
+		}
+		changes.clientFdsToNotify.push_back(worker->getClientFd());
+		return changes;
+	}
+
 	if (eventType & EPOLLIN) {
 		worker->handleRead();
 	}
@@ -137,14 +152,11 @@ FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 		worker->handleWrite();
 	}
 
-	// EPOLLHUPの場合、パイプが閉じられたので読み取りを試みる
 	if (eventType & EPOLLHUP) {
 		worker->handleRead();
 	}
 
-	// 書き込みが完了したら、書き込みFDの監視を解除
 	if (worker->getState() == CgiWorker::CGI_RECEIVING) {
-		// writeFdが有効で、かつまだmapに存在する場合のみ削除
 		int writeFd = worker->getWriteFd();
 		if (writeFd >= 0 && _pipeFdToWorker.count(writeFd)) {
 			changes.fdsToRemove.push_back(writeFd);
@@ -152,18 +164,15 @@ FdEventChanges CgiManager::handleEvent(int fd, uint32_t eventType) {
 		}
 	}
 
-	// CGIプロセスが完了またはエラーになったかチェック
 	if (worker->isFinished()) {
 		LOG(INFO) << "CGI worker finished"
 				  << attr("clientFd", worker->getClientFd())
 				  << attr("pid", worker->getPid())
 				  << attr("state", worker->getState());
 		changes.fdsToRemove.push_back(worker->getReadFd());
-		// 書き込みFDがまだ監視対象ならそれも削除リストに追加
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
 			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
-		// クライアントFDを通知リストに追加
 		changes.clientFdsToNotify.push_back(worker->getClientFd());
 	}
 	return changes;
@@ -195,13 +204,11 @@ FdEventChanges CgiManager::cleanupTimedOutWorkers() {
 		}
 		worker->setTimeout();
 
-		// 関連FDを監視対象から削除
 		changes.fdsToRemove.push_back(worker->getReadFd());
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
 			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
 
-		// クライアントFDを通知リストに追加（レスポンス送信のため）
 		changes.clientFdsToNotify.push_back(worker->getClientFd());
 	}
 	return changes;
@@ -211,7 +218,7 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 	std::map< int, CgiWorker * >::iterator it =
 		_clientFdToWorker.find(clientFd);
 	if (it == _clientFdToWorker.end()) {
-		return false; // CGIリクエストではない
+		return false;
 	}
 
 	CgiWorker *worker = it->second;
@@ -219,13 +226,12 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 		return false;
 	}
 
-	// CGIの状態に基づいてHTTPレスポンスを生成
 	if (worker->getState() == CgiWorker::CGI_COMPLETE) {
 		worker->createHttpResponse(res);
 	} else if (worker->getState() == CgiWorker::CGI_TIMEOUT) {
-		res.statusCode = HttpStatus::GATEWAY_TIMEOUT;
-	} else { // CGI_ERROR
-		res.statusCode = HttpStatus::INTERNAL_SERVER_ERROR;
+		res.setStatusCode(HttpStatus::GATEWAY_TIMEOUT);
+	} else {
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 
 	_removeWorker(worker);

@@ -23,8 +23,8 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 
 	if (loc.allowedMethods.empty() ||
 		loc.allowedMethods.find(method) == loc.allowedMethods.end()) {
-		ctx.res.statusCode = HttpStatus::METHOD_NOT_ALLOWED;
-		ctx.res.headers["Content-Type"] = "text/html";
+		ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
+		ctx.res.setHeader("Content-Type", "text/html");
 
 		std::string allowHeader;
 		for (std::set< std::string >::const_iterator it =
@@ -35,10 +35,10 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 			}
 			allowHeader += *it;
 		}
-		ctx.res.headers["Allow"] = allowHeader.empty() ? "" : allowHeader;
+		ctx.res.setHeader("Allow", allowHeader.empty() ? "" : allowHeader);
 
-		ctx.res.body =
-			"<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		ctx.res.setBody(
+			"<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		return;
 	}
 
@@ -72,11 +72,11 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 	} else if (method == "DELETE") {
 		handler.reset(new DeleteHandler());
 	} else {
-		ctx.res.statusCode = HttpStatus::METHOD_NOT_ALLOWED;
-		ctx.res.headers["Content-Type"] = "text/html";
-		ctx.res.headers["Allow"] = getAllowedMethods();
-		ctx.res.body =
-			"<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
+		ctx.res.setHeader("Content-Type", "text/html");
+		ctx.res.setHeader("Allow", getAllowedMethods());
+		ctx.res.setBody(
+			"<html><body><h1>405 Method Not Allowed</h1></body></html>");
 		return;
 	}
 
@@ -84,7 +84,7 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 		try {
 			ctx.res = handler->handle(ctx);
 		} catch (const std::exception &e) {
-			ctx.res.statusCode = HttpStatus::INTERNAL_SERVER_ERROR;
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		}
 	}
 }

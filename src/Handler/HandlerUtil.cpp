@@ -13,7 +13,7 @@ namespace HandlerUtil {
 
 void generateSimpleBody(const std::string &method, HttpResponse &res,
 						const int code, const std::string &description) {
-	res.statusCode = code;
+	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string bodyContent;
 	bodyContent += "<html><head><title>";
@@ -31,11 +31,11 @@ void generateSimpleBody(const std::string &method, HttpResponse &res,
 		bodyContent += "</p>";
 	}
 	bodyContent += "</body></html>";
-	res.headers["Content-Type"] = "text/html";
+	res.setHeader("Content-Type", "text/html");
 	if (method == "HEAD") {
-		res.body = "";
+		res.setBody("");
 	} else {
-		res.body = bodyContent;
+		res.setBody(bodyContent);
 	}
 }
 

@@ -6,8 +6,8 @@ RedirectHandler::RedirectHandler(const std::string &redirectUrl, int statusCode)
 RedirectHandler::~RedirectHandler() {}
 
 HttpResponse RedirectHandler::handle(PipelineContext &ctx) {
-	ctx.res.statusCode = _statusCode;
-	ctx.res.headers["Location"] = _redirectUrl;
+	ctx.res.setStatusCode(_statusCode);
+	ctx.res.setHeader("Location", _redirectUrl);
 	return ctx.res;
 }
 

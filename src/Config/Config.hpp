@@ -89,6 +89,13 @@ private:
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
+	unsigned int _ioBufferSize;
+	unsigned int _maxCgiResponseSize;
+	size_t _maxHeaderValueSize;
+	size_t _maxHeaderKeys;
+	size_t _maxHeaderValuesPerKey;
+	size_t _maxResponseBodySize;
+	unsigned int _sessionCleanupIntervalSec;
 
 public:
 	Config(const std::vector< Listen > &listens,
@@ -97,7 +104,10 @@ public:
 		   const std::vector< AccessLog > &accessLogs,
 		   const std::vector< ErrorLog > &errorLogs,
 		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
-		   unsigned int maxEvents);
+		   unsigned int maxEvents, unsigned int ioBufferSize,
+		   unsigned int maxCgiResponseSize, size_t maxHeaderValueSize,
+		   size_t maxHeaderKeys, size_t maxHeaderValuesPerKey,
+		   size_t maxResponseBodySize, unsigned int sessionCleanupIntervalSec);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
@@ -114,6 +124,13 @@ public:
 	unsigned int getMaxRequestBodySize() const;
 	unsigned int getTimeoutSec() const;
 	unsigned int getMaxEvents() const;
+	unsigned int getIoBufferSize() const;
+	unsigned int getMaxCgiResponseSize() const;
+	size_t getMaxHeaderValueSize() const;
+	size_t getMaxHeaderKeys() const;
+	size_t getMaxHeaderValuesPerKey() const;
+	size_t getMaxResponseBodySize() const;
+	unsigned int getSessionCleanupIntervalSec() const;
 
 	friend std::ostream &operator<<(std::ostream &os, const Config &config);
 };

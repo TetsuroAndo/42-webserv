@@ -16,18 +16,34 @@ Config::Config(const std::vector< Listen > &listens,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
 			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
-			   unsigned int maxEvents)
+			   unsigned int maxEvents, unsigned int ioBufferSize,
+			   unsigned int maxCgiResponseSize, size_t maxHeaderValueSize,
+			   size_t maxHeaderKeys, size_t maxHeaderValuesPerKey,
+			   size_t maxResponseBodySize,
+			   unsigned int sessionCleanupIntervalSec)
 	: _listens(listens), _redirects(redirects), _locations(locations),
 	  _accessLogs(accessLogs), _errorLogs(errorLogs),
 	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
-	  _maxEvents(maxEvents) {}
+	  _maxEvents(maxEvents), _ioBufferSize(ioBufferSize),
+	  _maxCgiResponseSize(maxCgiResponseSize),
+	  _maxHeaderValueSize(maxHeaderValueSize), _maxHeaderKeys(maxHeaderKeys),
+	  _maxHeaderValuesPerKey(maxHeaderValuesPerKey),
+	  _maxResponseBodySize(maxResponseBodySize),
+	  _sessionCleanupIntervalSec(sessionCleanupIntervalSec) {}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
 	  _locations(other._locations), _accessLogs(other._accessLogs),
 	  _errorLogs(other._errorLogs),
 	  _maxRequestBodySize(other._maxRequestBodySize),
-	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
+	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
+	  _ioBufferSize(other._ioBufferSize),
+	  _maxCgiResponseSize(other._maxCgiResponseSize),
+	  _maxHeaderValueSize(other._maxHeaderValueSize),
+	  _maxHeaderKeys(other._maxHeaderKeys),
+	  _maxHeaderValuesPerKey(other._maxHeaderValuesPerKey),
+	  _maxResponseBodySize(other._maxResponseBodySize),
+	  _sessionCleanupIntervalSec(other._sessionCleanupIntervalSec) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -39,6 +55,13 @@ Config &Config::operator=(const Config &other) {
 		_maxRequestBodySize = other._maxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
+		_ioBufferSize = other._ioBufferSize;
+		_maxCgiResponseSize = other._maxCgiResponseSize;
+		_maxHeaderValueSize = other._maxHeaderValueSize;
+		_maxHeaderKeys = other._maxHeaderKeys;
+		_maxHeaderValuesPerKey = other._maxHeaderValuesPerKey;
+		_maxResponseBodySize = other._maxResponseBodySize;
+		_sessionCleanupIntervalSec = other._sessionCleanupIntervalSec;
 	}
 	return *this;
 }
@@ -119,11 +142,39 @@ unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
+unsigned int Config::getIoBufferSize() const { return _ioBufferSize; }
+
+unsigned int Config::getMaxCgiResponseSize() const {
+	return _maxCgiResponseSize;
+}
+
+size_t Config::getMaxHeaderValueSize() const { return _maxHeaderValueSize; }
+
+size_t Config::getMaxHeaderKeys() const { return _maxHeaderKeys; }
+
+size_t Config::getMaxHeaderValuesPerKey() const {
+	return _maxHeaderValuesPerKey;
+}
+
+size_t Config::getMaxResponseBodySize() const { return _maxResponseBodySize; }
+
+unsigned int Config::getSessionCleanupIntervalSec() const {
+	return _sessionCleanupIntervalSec;
+}
+
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
 	os << "  timeoutSec: " << config._timeoutSec << "\n";
 	os << "  maxEvents: " << config._maxEvents << "\n";
+	os << "  ioBufferSize: " << config._ioBufferSize << "\n";
+	os << "  maxCgiResponseSize: " << config._maxCgiResponseSize << "\n";
+	os << "  maxHeaderValueSize: " << config._maxHeaderValueSize << "\n";
+	os << "  maxHeaderKeys: " << config._maxHeaderKeys << "\n";
+	os << "  maxHeaderValuesPerKey: " << config._maxHeaderValuesPerKey << "\n";
+	os << "  maxResponseBodySize: " << config._maxResponseBodySize << "\n";
+	os << "  sessionCleanupIntervalSec: " << config._sessionCleanupIntervalSec
+	   << "\n";
 
 	os << "  listens:\n";
 	for (std::vector< Listen >::const_iterator it = config._listens.begin();

@@ -38,6 +38,13 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("maxRequestBodySize");
 	keys.insert("timeoutSec");
 	keys.insert("maxEvents");
+	keys.insert("ioBufferSize");
+	keys.insert("maxCgiResponseSize");
+	keys.insert("maxHeaderValueSize");
+	keys.insert("maxHeaderKeys");
+	keys.insert("maxHeaderValuesPerKey");
+	keys.insert("maxResponseBodySize");
+	keys.insert("sessionCleanupIntervalSec");
 	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
@@ -290,4 +297,29 @@ void ConfigParser::parseServer(const Node *serverNode) {
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
 		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("ioBufferSize"))
+		_builder->setIoBufferSize(StringOps::sizeByteStrToUInt(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("maxCgiResponseSize"))
+		_builder->setMaxCgiResponseSize(
+			StringOps::sizeByteStrToUInt(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("maxHeaderValueSize"))
+		_builder->setMaxHeaderValueSize(
+			StringOps::sizeByteStrToSizeT(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("maxHeaderKeys"))
+		_builder->setMaxHeaderKeys(StringOps::toSizeT(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("maxHeaderValuesPerKey"))
+		_builder->setMaxHeaderValuesPerKey(StringOps::toSizeT(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("maxResponseBodySize"))
+		_builder->setMaxResponseBodySize(
+			StringOps::sizeByteStrToSizeT(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("sessionCleanupIntervalSec"))
+		_builder->setSessionCleanupIntervalSec(
+			StringOps::stringToInt(n->getValue()));
 }

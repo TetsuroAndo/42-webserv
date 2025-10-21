@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <vector>
 
 Server::Server(const Config &config) : _config(config), _cgiManager(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
@@ -131,7 +132,7 @@ void Server::run() {
 		}
 
 		if (time(NULL) - lastCleanTime >
-			900) { // 暫定的に15分ごとにセッションをクリア
+			_config.getSessionCleanupIntervalSec()) {
 			SessionManager::getInstance().cleanupExpiredSessions();
 			lastCleanTime = time(NULL);
 		}
@@ -161,7 +162,9 @@ void Server::handleNewConnection(const int listenFd) {
 			  << attr("client_port", clientPort) << attr("fd", clientFd);
 
 	try {
-		Client *client = new Client(clientFd, clientAddr, _config);
+		Socket *listenSocket = _listenSockets.at(listenFd);
+		const int serverPort = ntohs(listenSocket->getAddr().sin_port);
+		Client *client = new Client(clientFd, clientAddr, _config, serverPort);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {
@@ -179,12 +182,13 @@ void Server::handleClientRead(const int clientFd) {
 	Client *client = _clients[clientFd];
 	PipelineContext *ctx = client->getContext();
 	Socket *sock = client->getSocket();
-	char buffer[4096];
+	const unsigned int bufSize = ctx->conf.getIoBufferSize();
+	std::vector< char > buffer(bufSize);
 
-	const ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+	const ssize_t bytesRead = recv(clientFd, &buffer[0], bufSize, 0);
 
 	if (bytesRead > 0) {
-		ctx->recvBuffer.append(buffer, bytesRead);
+		ctx->recvBuffer.append(&buffer[0], bytesRead);
 
 		_mainProcessor.handle(*ctx);
 
@@ -194,7 +198,7 @@ void Server::handleClientRead(const int clientFd) {
 
 		if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 			// CGIリクエストの場合は、レスポンス送信をCGI完了まで待つ
-			if (!ctx->res.isCgi) {
+			if (!ctx->res.isCgi()) {
 				std::string responseStr = ResponseBuilder::build(ctx->res);
 				sock->setSendBuffer(responseStr);
 				_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
@@ -226,7 +230,7 @@ void Server::handleClientWrite(const int clientFd) {
 
 	const std::string &sendBuffer = sock->getSendBuffer();
 	if (sendBuffer.empty()) {
-		if (ctx->res.headers["Connection"] == "close") {
+		if (ctx->res.getHeader("Connection") == "close") {
 			closeConnection(clientFd);
 		} else {
 			_socketsManager.modifySocket(clientFd, EPOLLIN);
@@ -243,7 +247,7 @@ void Server::handleClientWrite(const int clientFd) {
 		if (!sock->getSendBuffer().empty()) {
 			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
 		} else {
-			if (ctx->res.headers["Connection"] == "close") {
+			if (ctx->res.getHeader("Connection") == "close") {
 				closeConnection(clientFd);
 			} else {
 				_socketsManager.modifySocket(clientFd, EPOLLIN);

@@ -67,7 +67,7 @@ HttpResponse DeleteHandler::handle(PipelineContext &ctx) {
 	switch (deleteStatus) {
 	case DELETE_SUCCESS:
 		LOG(INFO) << "File deleted successfully" << attr("path", filePath);
-		res.statusCode = HttpStatus::NO_CONTENT;
+		res.setStatusCode(HttpStatus::NO_CONTENT);
 		break;
 	case DELETE_NOT_FOUND:
 		LOG(WARNING) << "File not found for deletion" << attr("path", filePath);

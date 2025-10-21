@@ -16,6 +16,13 @@ private:
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
+	unsigned int _ioBufferSize;
+	unsigned int _maxCgiResponseSize;
+	size_t _maxHeaderValueSize;
+	size_t _maxHeaderKeys;
+	size_t _maxHeaderValuesPerKey;
+	size_t _maxResponseBodySize;
+	unsigned int _sessionCleanupIntervalSec;
 	std::string _defaultLocationKey;
 
 	void initDefaults();
@@ -32,6 +39,13 @@ public:
 	void setMaxRequestBodySize(unsigned int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
+	void setIoBufferSize(unsigned int size);
+	void setMaxCgiResponseSize(unsigned int size);
+	void setMaxHeaderValueSize(size_t size);
+	void setMaxHeaderKeys(size_t size);
+	void setMaxHeaderValuesPerKey(size_t size);
+	void setMaxResponseBodySize(size_t size);
+	void setSessionCleanupIntervalSec(unsigned int sec);
 	void setListens(const std::vector< Listen > &lists);
 	void setAccessLogs(const std::vector< AccessLog > &accessLogs);
 	void setErrorLogs(const std::vector< ErrorLog > &errorLogs);

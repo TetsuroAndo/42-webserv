@@ -107,12 +107,12 @@ void StaticFileHandler::generateDirectoryListing(
 
 	htmlContent += "</pre><hr></body></html>";
 
-	res.statusCode = HttpStatus::OK;
-	res.headers["Content-Type"] = "text/html";
+	res.setStatusCode(HttpStatus::OK);
+	res.setHeader("Content-Type", "text/html");
 	if (req.getMethod() == "GET") {
-		res.body = htmlContent;
+		res.setBody(htmlContent);
 	} else {
-		res.body = "";
+		res.setBody("");
 	}
 }
 
@@ -157,9 +157,9 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 				generateDirectoryListing(ctx, filePath, req.getPath());
 				if (req.getMethod() != "GET") {
 					std::ostringstream oss;
-					oss << res.body.length();
-					res.headers["Content-Length"] = oss.str();
-					res.body = "";
+					oss << res.getBody().length();
+					res.setHeader("Content-Length", oss.str());
+					res.setBody("");
 				}
 			} else {
 				LOG(WARNING) << "Directory listing is disabled for"
@@ -178,14 +178,14 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 
 		switch (readStatus) {
 		case FILE_READ_SUCCESS:
-			res.statusCode = HttpStatus::OK;
-			res.headers["Content-Type"] = MimeType::getMimeType(filePath);
+			res.setStatusCode(HttpStatus::OK);
+			res.setHeader("Content-Type", MimeType::getMimeType(filePath));
 			if (req.getMethod() == "GET") {
-				res.body = fileContent;
+				res.setBody(fileContent);
 			} else {
 				std::ostringstream oss;
 				oss << pathStat.st_size;
-				res.headers["Content-Length"] = oss.str();
+				res.setHeader("Content-Length", oss.str());
 			}
 			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
 			break;

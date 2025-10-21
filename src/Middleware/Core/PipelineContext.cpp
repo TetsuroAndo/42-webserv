@@ -2,14 +2,14 @@
 #include "../../Server/Client.hpp"
 
 PipelineContext::PipelineContext(const Config &c, Client &client)
-	: conf(c), req(c), res(), session(NULL), recvBuffer(""), sendBuffer(""),
+	: conf(c), req(c), res(c), session(NULL), recvBuffer(""), sendBuffer(""),
 	  ownerClient(client) {}
 
 PipelineContext::~PipelineContext() {}
 
 void PipelineContext::reset() {
 	req.clear();
-	res = HttpResponse();
+	res = HttpResponse(conf);
 	recvBuffer.clear();
 	sendBuffer.clear();
 	parser.reset();

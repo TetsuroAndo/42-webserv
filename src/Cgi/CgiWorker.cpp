@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath)
@@ -27,9 +28,20 @@ CgiWorker::~CgiWorker() {
 	_closePipe(_pipeOut[0]);
 
 	if (_pid > 0) {
-		kill(_pid, SIGKILL);
+		kill(_pid, SIGTERM);
 		int status;
-		waitpid(_pid, &status, 0);
+
+		pid_t result = waitpid(_pid, &status, WNOHANG);
+
+		if (result == 0) {
+			usleep(100000);
+			result = waitpid(_pid, &status, WNOHANG);
+
+			if (result == 0) {
+				kill(_pid, SIGKILL);
+				waitpid(_pid, &status, 0);
+			}
+		}
 	}
 }
 
@@ -50,9 +62,19 @@ void CgiWorker::execute() {
 	}
 
 	if (_pid == 0) {
-		std::vector< std::string > envpStrs =
-			CgiEnvBuilder::build(_ctx, _scriptPath);
-		_childProcess(_scriptPath, _interpreterPath, envpStrs);
+		try {
+			std::vector< std::string > envpStrs =
+				CgiEnvBuilder::build(_ctx, _scriptPath);
+			_childProcess(_scriptPath, _interpreterPath, envpStrs);
+		} catch (const std::exception &e) {
+			const char *msg = "CGI environment build failed\n";
+			write(STDERR_FILENO, msg, strlen(msg));
+			_exit(EXIT_FAILURE);
+		} catch (...) {
+			const char *msg = "Unknown error in CGI child process\n";
+			write(STDERR_FILENO, msg, strlen(msg));
+			_exit(EXIT_FAILURE);
+		}
 	}
 
 	_closePipe(_pipeIn[0]);
@@ -68,7 +90,6 @@ void CgiWorker::execute() {
 	}
 
 	if (_requestBody.empty()) {
-		// No body to send, close write pipe immediately
 		_closePipe(_pipeIn[1]);
 		_state = CGI_RECEIVING;
 	} else {
@@ -78,7 +99,6 @@ void CgiWorker::execute() {
 }
 
 void CgiWorker::handleWrite() {
-	// パイプがすでに閉じられている場合は何もしない
 	if (getWriteFd() < 0) {
 		return;
 	}
@@ -125,6 +145,15 @@ void CgiWorker::handleRead() {
 		_state = CGI_COMPLETE;
 		_responseParser.parse(_responseBuffer);
 	} else {
+		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;
+		if (_responseBuffer.size() + bytes > MAX_CGI_RESPONSE_SIZE) {
+			LOG(ERROR) << "CGI response exceeds maximum size"
+					   << attr("current", _responseBuffer.size())
+					   << attr("limit", MAX_CGI_RESPONSE_SIZE);
+			_state = CGI_ERROR;
+			_closePipe(_pipeOut[0]);
+			return;
+		}
 		_responseBuffer.append(buffer, bytes);
 	}
 	updateLastActivityTime();
@@ -146,7 +175,6 @@ void CgiWorker::_childProcess(const std::string &scriptPath,
 	close(_pipeIn[0]);
 	close(_pipeOut[1]);
 
-	// Change to script directory for relative path access
 	std::string scriptDir = scriptPath.substr(0, scriptPath.find_last_of('/'));
 	if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
 		perror("chdir failed");
