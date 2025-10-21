@@ -151,6 +151,9 @@ NAME_PATTERNS=(
 	"*.css"
 	"*.html"
 	"*.json"
+	"*.yaml"
+	"*.yml"
+	"*.sh"
 	"Makefile"
 )
 
