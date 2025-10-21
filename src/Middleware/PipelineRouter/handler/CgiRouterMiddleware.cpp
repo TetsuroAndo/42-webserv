@@ -4,6 +4,7 @@
 #include "../../../Handler/CgiHandler.hpp"
 #include "../../../Handler/ISubHandler.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
+#include "../../../Lib/Logger/Log.hpp"
 #include <memory>
 
 CgiRouterMiddleware::CgiRouterMiddleware(CgiManager *cgiManager)
@@ -36,5 +37,5 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 
-	next->handle(ctx);
+	next->next(ctx);
 }

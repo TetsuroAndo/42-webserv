@@ -35,5 +35,5 @@ void AllowedMethodsMiddleware::handle(PipelineContext &ctx,
 	}
 
 	// メソッドが許可されている -> 次のミドルウェアへ
-	next->handle(ctx);
+	next->next(ctx);
 }
