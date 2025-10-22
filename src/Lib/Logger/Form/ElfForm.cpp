@@ -112,8 +112,8 @@ void ElfForm::formatAccess(const AccessLogContext &ctx, std::ostream &out) {
 		out << queryString << " ";
 	}
 
-	out << ctx.response->statusCode << " ";
-	out << ctx.response->body.length() << " ";
+	out << ctx.response->getStatusCode() << " ";
+	out << ctx.response->getBody().length() << " ";
 	out << (ctx.request->getVersion().empty() ? "-" : ctx.request->getVersion())
 		<< " ";
 

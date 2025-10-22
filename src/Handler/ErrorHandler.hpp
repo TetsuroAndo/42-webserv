@@ -7,7 +7,7 @@ public:
 	ErrorHandler();
 	~ErrorHandler();
 
-	virtual HttpResponse handle(PipelineContext &ctx);
+	HttpResponse handle(const HttpRequest &req, const Config &config);
 
 private:
 	ErrorHandler(const ErrorHandler &);

@@ -64,7 +64,6 @@ public:
 	void createHttpResponse(HttpResponse &res);
 
 private:
-	PipelineContext &_ctx;
 	CgiState _state;
 	int _clientFd;
 	pid_t _pid;
@@ -81,7 +80,7 @@ private:
 
 	void _childProcess(const std::string &scriptPath,
 					   const std::string &interpreterPath,
-					   const std::vector< std::string > &envpStrs);
+					   const std::vector< std::string > &envp_strs);
 	void _closePipe(int &fd);
 	void _updateLastActivityTime();
 

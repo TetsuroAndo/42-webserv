@@ -1,26 +1,11 @@
 #!/bin/bash
 
-# Get the project root directory (2 levels up from this script)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-WEBSERV_BIN="$PROJECT_ROOT/webserv"
+WEBSERV_BIN="./webserv"
 
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
-
-# Create necessary directories
-mkdir -p "$PROJECT_ROOT/www/upload"
-
-# Cleanup function
-cleanup() {
-    # Remove created test directories and files
-    rm -rf "$PROJECT_ROOT/www/upload"
-}
-
-# Register cleanup on exit
-trap cleanup EXIT
 
 # Function to run a generic test case
 run_curl_test() {
@@ -31,8 +16,7 @@ run_curl_test() {
 
     echo "Running test: $test_name"
 
-    # Start the webserv in the background from project root
-    cd "$PROJECT_ROOT"
+    # Start the webserv in the background
     $WEBSERV_BIN "$config_file" &
     WEBSERV_PID=$!
     sleep 1
@@ -50,14 +34,13 @@ run_curl_test() {
     fi
 
     kill $WEBSERV_PID
-    sleep 0.5
     echo ""
 }
 
 
 # --- Test Case 1: Invalid Method in Config ---
 echo "Running test: Invalid Method (PUT)"
-ERROR_OUTPUT=$($WEBSERV_BIN "$PROJECT_ROOT/test/allowed_method_test/config_invalid_method.yaml" 2>&1)
+ERROR_OUTPUT=$($WEBSERV_BIN test/allowed_method_test/config_invalid_method.yaml 2>&1)
 if echo "$ERROR_OUTPUT" | grep -q "Config error: invalid HTTP method 'PUT'"; then
     echo -e "  ${GREEN}Success: Server failed to start with the expected error message.${NC}"
 else
@@ -70,41 +53,41 @@ echo ""
 
 # --- Test Case 2: No allowedMethods in Config ---
 run_curl_test "No allowedMethods (GET)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_no_methods.yaml" \
+              "test/allowed_method_test/config_no_methods.yaml" \
               "http://localhost:8080/" \
               "405"
 
 run_curl_test "No allowedMethods (POST)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_no_methods.yaml" \
+              "test/allowed_method_test/config_no_methods.yaml" \
               "-X POST http://localhost:8080/" \
               "405"
 
 
 # --- Test Case 3: Disallowed Method ---
 run_curl_test "Disallowed Method (POST to GET-only)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_get_only.yaml" \
+              "test/allowed_method_test/config_get_only.yaml" \
               "-X POST http://localhost:8080/" \
               "405"
 
 
 # --- Test Case 4: Multiple Locations ---
 run_curl_test "Multiple Locations (GET on /)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_multiple_locations.yaml" \
+              "test/allowed_method_test/config_multiple_locations.yaml" \
               "http://localhost:8080/" \
               "200"
 
 run_curl_test "Multiple Locations (POST on /)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_multiple_locations.yaml" \
+              "test/allowed_method_test/config_multiple_locations.yaml" \
               "-X POST http://localhost:8080/" \
               "405"
 
 run_curl_test "Multiple Locations (POST on /api)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_multiple_locations.yaml" \
+              "test/allowed_method_test/config_multiple_locations.yaml" \
               "-X POST --data 'test' http://localhost:8080/api" \
               "201"
 
 run_curl_test "Multiple Locations (GET on /api)" \
-              "$PROJECT_ROOT/test/allowed_method_test/config_multiple_locations.yaml" \
+              "test/allowed_method_test/config_multiple_locations.yaml" \
               "http://localhost:8080/api" \
               "405"
 
