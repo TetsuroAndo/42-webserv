@@ -1,15 +1,20 @@
 #include "CgiWorker.hpp"
-#include "Client.hpp"
+#include "../Server/Client.hpp"
 #include <algorithm>
 #include <unistd.h>
 
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath)
 	: _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
-	  _pipeIn{-1, -1}, _pipeOut{-1, -1}, _requestBody(ctx.recvBuffer),
-	  _bytesSent(0), _responseBuffer(ctx.recvBuffer), _scriptPath(scriptPath),
-	  _interpreterPath(interpreterPath), _responseParser(),
-	  _lastActivityTime(time(NULL)) {}
+	  _requestBody(ctx.recvBuffer), _bytesSent(0),
+	  _responseBuffer(ctx.recvBuffer), _scriptPath(scriptPath),
+	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)) {
+
+	_pipeIn[0] = -1;
+	_pipeIn[1] = -1;
+	_pipeOut[0] = -1;
+	_pipeOut[1] = -1;
+}
 
 CgiWorker::~CgiWorker() { // TODO: プロセス終了の待機
 }

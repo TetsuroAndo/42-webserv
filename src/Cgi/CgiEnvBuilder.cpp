@@ -26,23 +26,29 @@ createEnvpArray(const std::map< std::string, std::string > &envMap) {
 std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 												const std::string &scriptPath) {
 	const Config &c = ctx.conf;
-	const HttpRequest &req = ctx.req;
-	const HttpResponse &res = ctx.res;
+	const HttpRequest &req = *ctx.req;
+	const HttpResponse &res = *ctx.res;
+
+	(void)c;
+	(void)req;
+	(void)res;
 	std::map< std::string, std::string > envMap;
 
-	envMap["GATEWAY_INTERFACE"] = ;
-	envMap["SERVER_PROTOCOL"] = ;
-	envMap["REQUEST_METHOD"] = ;
-	envMap["SCRIPT_FILENAME"] = ;
-	envMap["SCRIPT_NAME"] = ;
-	envMap["SERVER_SOFTWARE"] = ;
-	envMap["SERVER_NAME"] = ;
-	envMap["SERVER_PORT"] = ;
-	envMap["REMOTE_ADDR"] = ;
-	envMap["REMOTE_PORT"] = ;
-	envMap["QUERY_STRING"] = ;
-	envMap["CONTENT_TYPE"] = ;
-	envMap["CONTENT_LENGTH"] = ;
+	(void)scriptPath;
+
+	envMap["GATEWAY_INTERFACE"] = "";
+	envMap["SERVER_PROTOCOL"] = "";
+	envMap["REQUEST_METHOD"] = "";
+	envMap["SCRIPT_FILENAME"] = "";
+	envMap["SCRIPT_NAME"] = "";
+	envMap["SERVER_SOFTWARE"] = "";
+	envMap["SERVER_NAME"] = "";
+	envMap["SERVER_PORT"] = "";
+	envMap["REMOTE_ADDR"] = "";
+	envMap["REMOTE_PORT"] = "";
+	envMap["QUERY_STRING"] = "";
+	envMap["CONTENT_TYPE"] = "";
+	envMap["CONTENT_LENGTH"] = "";
 
 	return createEnvpArray(envMap);
 }
