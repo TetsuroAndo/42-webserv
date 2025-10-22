@@ -45,8 +45,10 @@ DeleteHandler::DeleteHandler() {}
 
 DeleteHandler::~DeleteHandler() {}
 
-HttpResponse DeleteHandler::handle(const HttpRequest &req, HttpResponse &res,
-								   const Config &config) {
+HttpResponse DeleteHandler::handle(PipelineContext &ctx) {
+	const HttpRequest &req = ctx.req;
+	HttpResponse &res = ctx.res;
+	const Config &config = ctx.conf;
 	LOG(INFO) << "DeleteHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
@@ -65,7 +67,7 @@ HttpResponse DeleteHandler::handle(const HttpRequest &req, HttpResponse &res,
 	switch (deleteStatus) {
 	case DELETE_SUCCESS:
 		LOG(INFO) << "File deleted successfully" << attr("path", filePath);
-		res.setStatusCode(HttpStatus::NO_CONTENT);
+		res.statusCode = HttpStatus::NO_CONTENT;
 		break;
 	case DELETE_NOT_FOUND:
 		LOG(WARNING) << "File not found for deletion" << attr("path", filePath);

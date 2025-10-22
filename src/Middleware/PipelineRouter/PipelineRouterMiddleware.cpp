@@ -18,7 +18,7 @@ struct CompareRoutes {
 
 void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 									  MiddlewareProcessor *proc) {
-	const std::string requestPath = ctx.req->getPath();
+	const std::string requestPath = ctx.req.getPath();
 	MiddlewareProcessor *nextProcessor = 0;
 
 	std::vector< std::pair< std::string, MiddlewareProcessor * > > sortedRoutes;

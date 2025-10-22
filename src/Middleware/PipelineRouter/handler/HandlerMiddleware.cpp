@@ -1,66 +1,90 @@
 #include "HandlerMiddleware.hpp"
-#include "../../../Handler/ISubHandler.hpp"
+#include "../../../Handler/CgiHandler.hpp"
+#include "../../../Handler/DeleteHandler.hpp"
+#include "../../../Handler/ErrorHandler.hpp"
+#include "../../../Handler/PostHandler.hpp"
+#include "../../../Handler/StaticFileHandler.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
+#include <memory>
 
-#include <map>
-#include <sstream>
+HandlerMiddleware::HandlerMiddleware(CgiManager *cgiManager)
+	: _cgiManager(cgiManager) {}
 
 std::string HandlerMiddleware::getAllowedMethods() {
-	const char *order[] = {"GET", "HEAD", "POST", "DELETE"};
-	const size_t orderSize = sizeof(order) / sizeof(order[0]);
-
-	std::stringstream ss;
-	bool first = true;
-
-	for (size_t i = 0; i < orderSize; ++i) {
-		if (_handlers.find(order[i]) != _handlers.end()) {
-			if (!first) {
-				ss << ", ";
-			}
-			ss << order[i];
-			first = false;
-		}
-	}
-	return ss.str();
-}
-
-HandlerMiddleware::HandlerMiddleware(
-	const std::map< std::string, ISubHandler * > &handlers)
-	: _handlers(handlers) {}
-
-HandlerMiddleware::~HandlerMiddleware() {
-	for (std::map< std::string, ISubHandler * >::iterator it =
-			 _handlers.begin();
-		 it != _handlers.end(); ++it) {
-		delete it->second;
-	}
-	_handlers.clear();
+	return "GET, POST, DELETE";
 }
 
 void HandlerMiddleware::handle(PipelineContext &ctx,
-							   MiddlewareProcessor *proc) {
-	(void)proc;
-	const std::string &method = ctx.req->getMethod();
+							   MiddlewareProcessor *next) {
+	(void)next;
 
-	const std::map< std::string, ISubHandler * >::const_iterator it =
-		_handlers.find(method);
+	const std::string &method = ctx.req.getMethod();
+	const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 
-	if (it != _handlers.end()) {
-		ISubHandler *handler = it->second;
-		try {
-			*ctx.res = handler->handle(*ctx.req, *ctx.res, ctx.conf);
-		} catch (...) {
-			ctx.res->setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
-			ctx.res->setHeader("Content-Type", "text/html");
-			ctx.res->setBody(
-				"<html><body><h1>500 Internal Server Error</h1></body></html>");
+	if (loc.allowedMethods.empty() ||
+		loc.allowedMethods.find(method) == loc.allowedMethods.end()) {
+		ctx.res.statusCode = HttpStatus::METHOD_NOT_ALLOWED;
+		ctx.res.headers["Content-Type"] = "text/html";
+
+		std::string allowHeader;
+		for (std::set< std::string >::const_iterator it =
+				 loc.allowedMethods.begin();
+			 it != loc.allowedMethods.end(); ++it) {
+			if (!allowHeader.empty()) {
+				allowHeader += ", ";
+			}
+			allowHeader += *it;
 		}
+		ctx.res.headers["Allow"] = allowHeader.empty() ? "" : allowHeader;
+
+		ctx.res.body =
+			"<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		return;
+	}
+
+	std::auto_ptr< ISubHandler > handler;
+
+	bool isCgi = false;
+	const std::string &path = ctx.req.getPath();
+	for (std::map< std::string, std::string >::const_iterator it =
+			 loc.cgiConf.begin();
+		 it != loc.cgiConf.end(); ++it) {
+		const std::string &ext = it->first;
+		if (path.size() >= ext.size() &&
+			path.compare(path.size() - ext.size(), ext.size(), ext) == 0) {
+			isCgi = true;
+			break;
+		}
+	}
+
+	if (method == "GET" || method == "HEAD") {
+		if (isCgi) {
+			handler.reset(new CgiHandler(_cgiManager));
+		} else {
+			handler.reset(new StaticFileHandler());
+		}
+	} else if (method == "POST") {
+		if (isCgi) {
+			handler.reset(new CgiHandler(_cgiManager));
+		} else {
+			handler.reset(new PostHandler());
+		}
+	} else if (method == "DELETE") {
+		handler.reset(new DeleteHandler());
 	} else {
-		// 対応するハンドラがない場合
-		ctx.res->setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
-		ctx.res->setHeader("Content-Type", "text/html");
-		ctx.res->setHeader("Allow", getAllowedMethods());
-		ctx.res->setBody(
-			"<html><body><h1>405 Method Not Allowed</h1></body></html>");
+		ctx.res.statusCode = HttpStatus::METHOD_NOT_ALLOWED;
+		ctx.res.headers["Content-Type"] = "text/html";
+		ctx.res.headers["Allow"] = getAllowedMethods();
+		ctx.res.body =
+			"<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		return;
+	}
+
+	if (handler.get()) {
+		try {
+			ctx.res = handler->handle(ctx);
+		} catch (const std::exception &e) {
+			ctx.res.statusCode = HttpStatus::INTERNAL_SERVER_ERROR;
+		}
 	}
 }

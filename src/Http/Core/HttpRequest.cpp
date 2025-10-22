@@ -105,6 +105,19 @@ const std::string &HttpRequest::getQuery(const std::string &key) const {
 	return empty;
 }
 
+std::string HttpRequest::getQueriesString() const {
+	std::string queryString;
+	for (std::map< std::string, std::string >::const_iterator it =
+			 _query.begin();
+		 it != _query.end(); ++it) {
+		if (!queryString.empty()) {
+			queryString += "&";
+		}
+		queryString += it->first + "=" + it->second;
+	}
+	return queryString;
+}
+
 bool HttpRequest::hasQuery(const std::string &key) const {
 	return _query.count(key) > 0;
 }

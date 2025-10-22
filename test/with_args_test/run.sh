@@ -33,6 +33,13 @@ ADDRESS="127.0.0.1:$PORT"
 
 function setup_test_env() {
     echo -e "${BLUE}Setting up test environment...${NC}"
+    
+    # Clean up previous test artifacts and restore permissions
+    if [ -d "$NO_PERMS_DIR" ]; then
+        chmod -R 755 "$NO_PERMS_DIR" 2>/dev/null || true
+        rm -rf "$NO_PERMS_DIR"
+    fi
+    
     mkdir -p "$GET_ROOT"
     mkdir -p "$NO_AUTOINDEX_DIR"
     mkdir -p "$UPLOAD_DIR"
@@ -76,7 +83,7 @@ trap cleanup EXIT
 setup_test_env
 
 echo "Starting webserv for methods test..."
-./webserv "$TEST_CONF" & 
+$WEBSERV_EXEC "$TEST_CONF" & 
 WEBSERV_PID=$!
 sleep 1
 
@@ -142,7 +149,7 @@ echo -e "${GREEN}[GET no autoindex] OK${NC}"
 echo -e "\n${BLUE}--- Testing POST... ---${NC}"
 
 # Test 1: POST 201 Created (Upload)
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload/ignored_filename")
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload/uploaded_file.bin")
 if [[ "$HTTP_STATUS" -ne 201 ]]; then
     echo -e "${RED}[POST 201] FAIL: Expected status 201, got $HTTP_STATUS${NC}"
     exit 1

@@ -13,7 +13,8 @@
 #include <vector>
 
 namespace {
-enum FileReadStatus { FILE_READ_SUCCESS, FILE_READ_ERROR };
+
+enum FileReadStatus { FILE_READ_SUCCESS, FILE_READ_ERROR, FILE_READ_FORBIDDEN };
 
 FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 						   const struct stat &fileStat) {
@@ -27,7 +28,7 @@ FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 			LOG(WARNING) << "Permission denied while opening file"
 						 << attr("path", filePath)
 						 << attr("error", strerror(err));
-			break;
+			return FILE_READ_FORBIDDEN;
 		case ENOENT:
 		case ENOTDIR:
 			LOG(WARNING) << "File not found or invalid path during open"
@@ -64,8 +65,10 @@ StaticFileHandler::StaticFileHandler() {}
 StaticFileHandler::~StaticFileHandler() {}
 
 void StaticFileHandler::generateDirectoryListing(
-	HttpResponse &res, const HttpRequest &req, const std::string &directoryPath,
+	PipelineContext &ctx, const std::string &directoryPath,
 	const std::string &requestPath) {
+	HttpResponse &res = ctx.res;
+	const HttpRequest &req = ctx.req;
 	DIR *dir = opendir(directoryPath.c_str());
 	if (!dir) {
 		LOG(ERROR) << "Failed to open directory for listing"
@@ -104,19 +107,19 @@ void StaticFileHandler::generateDirectoryListing(
 
 	htmlContent += "</pre><hr></body></html>";
 
-	res.setStatusCode(HttpStatus::OK);
-	res.setHeader("Content-Type", "text/html");
-	res.setBody(htmlContent);
+	res.statusCode = HttpStatus::OK;
+	res.headers["Content-Type"] = "text/html";
 	if (req.getMethod() == "GET") {
-		res.setBody(htmlContent);
+		res.body = htmlContent;
 	} else {
-		res.setBody("");
+		res.body = "";
 	}
 }
 
-HttpResponse StaticFileHandler::handle(const HttpRequest &req,
-									   HttpResponse &res,
-									   const Config &config) {
+HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
+	const HttpRequest &req = ctx.req;
+	HttpResponse &res = ctx.res;
+	const Config &config = ctx.conf;
 	LOG(INFO) << "StaticFileHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
@@ -151,12 +154,12 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 			if (loc.autoindex) {
 				LOG(INFO) << "Generating directory listing for"
 						  << attr("path", filePath);
-				generateDirectoryListing(res, req, filePath, req.getPath());
+				generateDirectoryListing(ctx, filePath, req.getPath());
 				if (req.getMethod() != "GET") {
 					std::ostringstream oss;
-					oss << res.getBody().length();
-					res.setHeader("Content-Length", oss.str());
-					res.setBody("");
+					oss << res.body.length();
+					res.headers["Content-Length"] = oss.str();
+					res.body = "";
 				}
 			} else {
 				LOG(WARNING) << "Directory listing is disabled for"
@@ -175,16 +178,20 @@ HttpResponse StaticFileHandler::handle(const HttpRequest &req,
 
 		switch (readStatus) {
 		case FILE_READ_SUCCESS:
-			res.setStatusCode(HttpStatus::OK);
-			res.setHeader("Content-Type", MimeType::getMimeType(filePath));
+			res.statusCode = HttpStatus::OK;
+			res.headers["Content-Type"] = MimeType::getMimeType(filePath);
 			if (req.getMethod() == "GET") {
-				res.setBody(fileContent);
+				res.body = fileContent;
 			} else {
 				std::ostringstream oss;
 				oss << pathStat.st_size;
-				res.setHeader("Content-Length", oss.str());
+				res.headers["Content-Length"] = oss.str();
 			}
 			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
+			break;
+		case FILE_READ_FORBIDDEN:
+			HandlerUtil::generateSimpleBody(req.getMethod(), res,
+											HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_ERROR:
 			HandlerUtil::generateSimpleBody(req.getMethod(), res,

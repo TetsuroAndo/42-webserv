@@ -43,6 +43,7 @@ public:
 	// Query Parameters (?以降のキーバリュー)
 	const std::map< std::string, std::string > &getQueries() const;
 	const std::string &getQuery(const std::string &key) const;
+	std::string getQueriesString() const;
 	bool hasQuery(const std::string &key) const;
 	void addQuery(const std::string &key, const std::string &value);
 

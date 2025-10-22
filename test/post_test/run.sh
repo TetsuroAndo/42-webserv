@@ -1,8 +1,12 @@
 #!/bin/bash
 
-WEBSERV_BIN="./webserv"
-CONFIG_FILE="./test/post_test/post_test.yaml"
-UPLOAD_DIR="./test/post_test/uploads"
+# Get the project root directory (2 levels up from this script)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+WEBSERV_BIN="$PROJECT_ROOT/webserv"
+CONFIG_FILE="$PROJECT_ROOT/test/post_test/post_test.yaml"
+UPLOAD_DIR="$PROJECT_ROOT/test/post_test/uploads"
 
 # Colors
 GREEN='\033[0;32m'
@@ -19,7 +23,8 @@ run_post_test() {
 
     echo "Running POST test with: $file_path (expect $expected_status)"
 
-    # Start server
+    # Start server from project root
+    cd "$PROJECT_ROOT"
     $WEBSERV_BIN "$CONFIG_FILE" &
     WEBSERV_PID=$!
     sleep 1
@@ -82,10 +87,20 @@ run_post_test() {
 # Clean any leftovers before starting
 rm -f "$UPLOAD_DIR"/* 2>/dev/null || true
 
+# Create temporary test files (1, 2, 3 bytes)
+TMP_DIR="$PROJECT_ROOT/test/post_test/tmp"
+mkdir -p "$TMP_DIR"
+echo -n "a" > "$TMP_DIR/size1.txt"
+echo -n "ab" > "$TMP_DIR/size2.txt"
+echo -n "abc" > "$TMP_DIR/size3.txt"
+
 # Files sized 1, 2, 3 bytes respectively
-run_post_test "test/post_test/size1.txt" "201" 1
-run_post_test "test/post_test/size2.txt" "201" 1
-run_post_test "test/post_test/size3.txt" "413" 0
+run_post_test "$TMP_DIR/size1.txt" "201" 1
+run_post_test "$TMP_DIR/size2.txt" "201" 1
+run_post_test "$TMP_DIR/size3.txt" "413" 0
+
+# Clean up temporary files
+rm -rf "$TMP_DIR"
 
 echo -e "${GREEN}All POST size limit tests passed!${NC}"
 exit 0

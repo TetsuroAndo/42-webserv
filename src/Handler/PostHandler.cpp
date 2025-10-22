@@ -34,22 +34,16 @@ std::string removeSpaceColonCommaHyphen(const std::string &str) {
 
 } // namespace
 
-HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res,
-								 const Config &config) {
+HttpResponse PostHandler::handle(PipelineContext &ctx) {
+	const HttpRequest &req = ctx.req;
+	HttpResponse &res = ctx.res;
+	const Config &config = ctx.conf;
 	LOG(INFO) << "PostHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
 	const std::string filePath =
 		HandlerUtil::resolvePath(req.getPath(), config);
 	const Location &loc = config.getLocation(req.getPath());
-
-	// ファイルパスが不正
-	if (req.getPath() != loc.path) {
-		LOG(INFO) << "Requested path does not match actual path";
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::NOT_FOUND);
-		return res;
-	}
 
 	const std::string uploadStore = loc.uploadStore;
 
@@ -70,22 +64,47 @@ HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
-	const std::string expansion =
-		MimeType::getExtension(req.getHeader("Content-Type"));
-	// このサーバーで処理できないMimeType
-	if (expansion.empty()) {
-		LOG(INFO) << "PostHandler : This Content-Type is Not Supported";
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
-		return res;
+	std::string targetFilename;
+	std::string requestPath = req.getPath();
+
+	if (requestPath.find(loc.path) == 0) {
+		std::string relativePath = requestPath.substr(loc.path.size());
+		if (!relativePath.empty() && relativePath[0] == '/') {
+			relativePath = relativePath.substr(1);
+		}
+		if (!relativePath.empty()) {
+			targetFilename = relativePath;
+		}
 	}
-	std::string target_filename =
-		removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) + "-" +
-		removeSpaceColonCommaHyphen(TimeCache::getGmtTime()) + "_" +
-		Token::genToken(
-			8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") +
-		expansion;
-	std::string target = uploadStore + "/" + target_filename;
+
+	if (targetFilename.empty()) {
+		const std::string expansion =
+			MimeType::getExtension(req.getHeader("Content-Type"));
+		std::string fileExtension = expansion;
+		if (fileExtension.empty()) {
+			const std::string contentType = req.getHeader("Content-Type");
+			if (contentType.find("application/x-www-form-urlencoded") !=
+					std::string::npos ||
+				contentType.find("text/plain") != std::string::npos) {
+				fileExtension = ".txt";
+			} else {
+				LOG(INFO)
+					<< "PostHandler : This Content-Type is Not Supported: "
+					<< contentType;
+				HandlerUtil::generateSimpleBody(
+					req.getMethod(), res, HttpStatus::UNSUPPORTED_MEDIA_TYPE);
+				return res;
+			}
+		}
+		targetFilename =
+			removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) + "-" +
+			removeSpaceColonCommaHyphen(TimeCache::getGmtTime()) + "_" +
+			Token::genToken(
+				8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") +
+			fileExtension;
+	}
+
+	std::string target = uploadStore + "/" + targetFilename;
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
@@ -99,7 +118,7 @@ HttpResponse PostHandler::handle(const HttpRequest &req, HttpResponse &res,
 	file << req.getBody();
 	file.close();
 	HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::CREATED,
-									"Created : " + target_filename);
+									"Created : " + targetFilename);
 	LOG(INFO) << "PostHandler : File \"" << target
 			  << "\" created successfully.";
 	return res;
