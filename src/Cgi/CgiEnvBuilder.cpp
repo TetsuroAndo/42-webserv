@@ -83,13 +83,12 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	const HttpRequest &req = *ctx.req;
 	std::map< std::string, std::string > envMap;
 
-	// TODO: 足りない要素をパーサーで解析して埋める
 	std::string fullPath = HandlerUtil::resolvePath(requestedPath, c);
 
 	const std::vector< std::string > Authorization =
 		StringOps::split(req.getHeader("Authorization"), " ");
 	std::string remoteUser = "";
-	if (1 <= Authorization.size()) {
+	if (1 < Authorization.size()) {
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
@@ -97,7 +96,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 
 	envMap["AUTH_TYPE"] =
 		StringOps::split(req.getHeader("Authorization"), " ")[0];
-	envMap["CONTENT_LENGTH"] = req.getBody().size();
+	envMap["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
 	envMap["PATH_INFO"] = pathInfo(requestedPath); // Locationsのroot+ファイル名
