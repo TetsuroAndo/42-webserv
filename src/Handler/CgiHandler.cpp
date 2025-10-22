@@ -12,41 +12,38 @@ CgiHandler::CgiHandler(CgiManager *cgiManager) : _cgiManager(cgiManager) {}
 
 CgiHandler::~CgiHandler() {}
 
-HttpResponse CgiHandler::handle(PipelineContext &ctx) {
-	const Config &config = ctx.conf;
-	HttpRequest *req = ctx.req;
-	HttpResponse *res = ctx.res;
+HttpResponse CgiHandler::handle(const HttpRequest &req, HttpResponse &res,
+								const Config &config) {
 
 	LOG(INFO) << "CgiHandler processing request"
-			  << attr("method", req->getMethod())
-			  << attr("uri", req->getPath());
+			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
-	if (req->getMethod() != "POST") {
+	if (req.getMethod() != "POST") {
 		LOG(WARNING) << "Method not allowed for CgiHandler"
-					 << attr("method", req->getMethod());
-		HandlerUtil::generateSimpleBody(req->getMethod(), *res,
+					 << attr("method", req.getMethod());
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::METHOD_NOT_ALLOWED);
-		return *res;
+		return res;
 	}
 
-	const Location &loc = config.getLocation(req->getPath());
+	const Location &loc = config.getLocation(req.getPath());
 	std::string uploadStore = loc.uploadStore;
 
 	if (uploadStore.empty()) {
 		LOG(ERROR) << "Upload store is not configured for this location"
-				   << attr("uri", req->getPath());
-		HandlerUtil::generateSimpleBody(req->getMethod(), *res,
+				   << attr("uri", req.getPath());
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
-		return *res;
+		return res;
 	}
 
 	struct stat s;
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
 		LOG(ERROR) << "Upload store path is not a valid directory"
 				   << attr("path", uploadStore);
-		HandlerUtil::generateSimpleBody(req->getMethod(), *res,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
-		return *res;
+		return res;
 	}
 
 	std::string filename = "uploaded_file.bin";
@@ -57,21 +54,21 @@ HttpResponse CgiHandler::handle(PipelineContext &ctx) {
 		LOG(ERROR) << "Failed to open file for writing"
 				   << attr("path", fullUploadPath)
 				   << attr("error", strerror(errno));
-		HandlerUtil::generateSimpleBody(req->getMethod(), *res,
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
-		return *res;
+		return res;
 	}
 
-	ofs.write(req->getBody().c_str(), req->getBody().length());
+	ofs.write(req.getBody().c_str(), req.getBody().length());
 	ofs.close();
 
 	LOG(INFO) << "File uploaded successfully" << attr("path", fullUploadPath)
-			  << attr("size", req->getBody().length());
+			  << attr("size", req.getBody().length());
 
-	res->setStatusCode(HttpStatus::CREATED);
-	res->setHeader("Location", req->getPath() + "/" + filename);
-	res->setBody("File uploaded successfully to " + fullUploadPath);
-	res->setHeader("Content-Type", "text/plain");
+	res.setStatusCode(HttpStatus::CREATED);
+	res.setHeader("Location", req.getPath() + "/" + filename);
+	res.setBody("File uploaded successfully to " + fullUploadPath);
+	res.setHeader("Content-Type", "text/plain");
 
-	return *res;
+	return res;
 }
