@@ -1,11 +1,12 @@
 #include "Client.hpp"
+#include "../Http/Core/HttpRequest.hpp"
+#include "../Http/Core/HttpResponse.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sstream>
 
 Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	: _fd(fd) {
-	// Format IP address manually (inet_ntop not in allowed function list)
 	std::stringstream ipStream;
 	uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	ipStream << ((ip_addr >> 24) & 0xFF) << "." << ((ip_addr >> 16) & 0xFF)
@@ -19,11 +20,15 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 
 Client::~Client() {
 	delete _socket;
-	delete _context;
+	delete _context; // PipelineContext destructor handles deleting req and res
 }
 
 int Client::getFd() const { return _fd; }
+
 Socket *Client::getSocket() const { return _socket; }
+
 PipelineContext *Client::getContext() const { return _context; }
+
 const std::string &Client::getIp() const { return _ip; }
+
 int Client::getPort() const { return _port; }

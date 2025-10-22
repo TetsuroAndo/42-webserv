@@ -150,24 +150,24 @@ void ConfigParser::parseListens(const Node *node) {
 	std::vector< Listen > listens;
 	for (std::vector< Node * >::const_iterator it = listensNodes.begin();
 		 it != listensNodes.end(); ++it) {
-		Node *lNode = *it;
-		if (lNode->getKey() != "listen") {
+		Node *l_node = *it;
+		if (l_node->getKey() != "listen") {
 			throw std::runtime_error(
 				"Config error: missing 'listen' key in listen item");
 		}
 
 		const char *validKeysArr[] = {"interface", "port"};
 		std::set< std::string > validKeys(validKeysArr, validKeysArr + 2);
-		validateKeys(lNode, validKeys, "listen block");
+		validateKeys(l_node, validKeys, "listen block");
 
 		Listen l;
-		Node *interfaceNode = lNode->getMapNode("interface");
+		Node *interfaceNode = l_node->getMapNode("interface");
 		if (!interfaceNode)
 			throw std::runtime_error(
 				"Config error: missing 'interface' in listen item");
 		l.interface = interfaceNode->getValue();
 
-		Node *portNode = lNode->getMapNode("port");
+		Node *portNode = l_node->getMapNode("port");
 		if (!portNode)
 			throw std::runtime_error(
 				"Config error: missing 'port' in listen item");
@@ -191,29 +191,29 @@ void ConfigParser::parseRedirects(Node *node) {
 	const std::vector< Node * > &redirects = node->getSeq();
 	for (std::vector< Node * >::const_iterator it = redirects.begin();
 		 it != redirects.end(); ++it) {
-		Node *rNode = *it;
-		if (rNode->getKey() != "redirect") {
+		Node *r_node = *it;
+		if (r_node->getKey() != "redirect") {
 			continue;
 		}
 
 		const char *validKeysArr[] = {"from", "to", "code"};
 		std::set< std::string > validKeys(validKeysArr, validKeysArr + 3);
-		validateKeys(rNode, validKeys, "redirect block");
+		validateKeys(r_node, validKeys, "redirect block");
 
 		Redirect r;
-		Node *fromNode = rNode->getMapNode("from");
+		Node *fromNode = r_node->getMapNode("from");
 		if (!fromNode)
 			throw std::runtime_error(
 				"Config error: missing 'from' key in redirect item");
 		r.fromPath = fromNode->getValue();
 
-		Node *toNode = rNode->getMapNode("to");
+		Node *toNode = r_node->getMapNode("to");
 		if (!toNode)
 			throw std::runtime_error(
 				"Config error: missing 'to' key in redirect item");
 		r.toUrl = toNode->getValue();
 
-		Node *codeNode = rNode->getMapNode("code");
+		Node *codeNode = r_node->getMapNode("code");
 		if (!codeNode)
 			throw std::runtime_error(
 				"Config error: missing 'code' key in redirect item");
@@ -274,10 +274,11 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("cgi")) {
 		const std::vector< std::string > &cgiKeys = n->getKeys();
-		for (std::vector< std::string >::const_iterator cgiIt = cgiKeys.begin();
-			 cgiIt != cgiKeys.end(); ++cgiIt) {
+		for (std::vector< std::string >::const_iterator cgi_it =
+				 cgiKeys.begin();
+			 cgi_it != cgiKeys.end(); ++cgi_it) {
 			_builder->setServerDefaultCgiConf(
-				*cgiIt, n->getMapNode(*cgiIt)->getValue());
+				*cgi_it, n->getMapNode(*cgi_it)->getValue());
 		}
 	}
 

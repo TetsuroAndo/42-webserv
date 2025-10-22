@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# Get the project root directory (2 levels up from this script)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-WEBSERV_BIN="$PROJECT_ROOT/webserv"
+WEBSERV_BIN="./webserv"
 
 # Colors
 GREEN='\033[0;32m'
@@ -11,44 +8,6 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 overall_status=0 # 0 for success, 1 for failure
-
-# Setup function to create required test files
-setup_test_files() {
-    local test_root="$PROJECT_ROOT/www/http_test_root"
-    
-    # Create large_file.txt (10MB) if it doesn't exist
-    if [ ! -f "$test_root/large_file.txt" ]; then
-        dd if=/dev/zero of="$test_root/large_file.txt" bs=1M count=10 2>/dev/null
-    fi
-    
-    # Create no_read.txt with no read permissions if it doesn't exist
-    if [ ! -f "$test_root/no_read.txt" ]; then
-        echo "secret" > "$test_root/no_read.txt"
-        chmod 000 "$test_root/no_read.txt"
-    fi
-}
-
-# Cleanup function to remove test files
-cleanup_test_files() {
-    local test_root="$PROJECT_ROOT/www/http_test_root"
-    
-    # Restore permissions before cleanup
-    if [ -f "$test_root/no_read.txt" ]; then
-        chmod 644 "$test_root/no_read.txt" 2>/dev/null || true
-        rm -f "$test_root/no_read.txt"
-    fi
-    
-    # Remove large file
-    if [ -f "$test_root/large_file.txt" ]; then
-        rm -f "$test_root/large_file.txt"
-    fi
-}
-
-# Setup at start
-setup_test_files
-
-# Cleanup on exit
-trap cleanup_test_files EXIT
 
 # Function to run a test case
 run_test() {
@@ -62,8 +21,7 @@ run_test() {
 
     echo "Running test: $test_name (Config: $config_file, Path: $path)"
 
-    # Start the webserv in the background from project root
-    cd "$PROJECT_ROOT"
+    # Start the webserv in the background
     $WEBSERV_BIN "$config_file" &
     WEBSERV_PID=$!
 
@@ -71,8 +29,7 @@ run_test() {
     sleep 1
 
     # Get response for HEAD request
-    # Use -I instead of -X HEAD for proper HEAD request handling
-    HEAD_RESPONSE=$(curl -s $curl_opts -I "http://localhost:8081$path" 2>&1)
+    HEAD_RESPONSE=$(curl -s $curl_opts -X HEAD -i "http://localhost:8081$path" 2>&1)
     # Get HTTP status code for HEAD request
     HEAD_HTTP_STATUS=$(echo "$HEAD_RESPONSE" | grep -i -E "^HTTP" | awk '{print $2}')
     # Get headers
@@ -142,9 +99,7 @@ run_test() {
 
 
     # Kill the webserv process
-    kill $WEBSERV_PID 2>/dev/null
-    wait $WEBSERV_PID 2>/dev/null
-    sleep 0.5
+    kill $WEBSERV_PID
     echo ""
     return 0
 }
@@ -152,64 +107,61 @@ run_test() {
 # --- Test Cases ---
 
 # 1. HEAD request for a static file
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request" "/hello.txt" "200" "" ""
+run_test "test/head_test/config.yaml" "HEAD Request" "/hello.txt" "200" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 2. HEAD request for a non-existent file
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request for Non-Existent File" "/non-existent-file.txt" "404" "" ""
+run_test "test/head_test/config.yaml" "HEAD Request for Non-Existent File" "/non-existent-file.txt" "404" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 3. HEAD request for a directory with index file
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request for Directory" "/" "200" "" ""
+run_test "test/head_test/config.yaml" "HEAD Request for Directory" "/" "200" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 4. HEAD request for a location where HEAD is not allowed
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request for Disallowed Method" "/no_head/hello.txt" "405" "" ""
+run_test "test/head_test/config.yaml" "HEAD Request for Disallowed Method" "/no_head/hello.txt" "405" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 5. HEAD request for a directory with autoindex on
-run_test "$PROJECT_ROOT/test/head_test/config_autoindex_on.yaml" "HEAD Request for Autoindex On" "/no_autoindex_dir/" "200" "" ""
+run_test "test/head_test/config_autoindex_on.yaml" "HEAD Request for Autoindex On" "/no_autoindex_dir/" "404" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 6. HEAD request for a redirect
-run_test "$PROJECT_ROOT/test/head_test/config_redirect.yaml" "HEAD Request for Redirect" "/redirect" "301" "http://localhost:8081/hello.txt" ""
+run_test "test/head_test/config_redirect.yaml" "HEAD Request for Redirect" "/redirect" "301" "http://localhost:8081/hello.txt" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 7. HEAD request for a large file
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request for Large File" "/large_file.txt" "200" "" "10485760"
+run_test "test/head_test/config.yaml" "HEAD Request for Large File" "/large_file.txt" "200" "" "10485760"
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
 # 8. HEAD request for a file with no read permissions
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request for No Read File" "/no_read.txt" "403" "" ""
+run_test "test/head_test/config.yaml" "HEAD Request for No Read File" "/no_read.txt" "403" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi
 
-# 9. HEAD request with a body (SKIPPED: curl -I and -d are mutually exclusive)
-# run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request with Body" "/hello.txt" "200" "" "" "-d 'some body'"
-# if [ $? -ne 0 ]; then
-#     overall_status=1
-# fi
-echo "Running test: HEAD Request with Body (Config: $PROJECT_ROOT/test/head_test/config.yaml, Path: /hello.txt)"
-echo "  Skipped: This test is not applicable (curl -I and -d are mutually exclusive)"
-echo ""
+# 9. HEAD request with a body
+run_test "test/head_test/config.yaml" "HEAD Request with Body" "/hello.txt" "200" "" "" "-d 'some body'"
+if [ $? -ne 0 ]; then
+    overall_status=1
+fi
 
 # 10. HEAD request with query parameters
-run_test "$PROJECT_ROOT/test/head_test/config.yaml" "HEAD Request with Query" "/hello.txt?a=1&b=2" "200" "" ""
+run_test "test/head_test/config.yaml" "HEAD Request with Query" "/hello.txt?a=1&b=2" "200" "" ""
 if [ $? -ne 0 ]; then
     overall_status=1
 fi

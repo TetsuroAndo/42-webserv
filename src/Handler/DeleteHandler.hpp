@@ -7,7 +7,8 @@ public:
 	DeleteHandler();
 	~DeleteHandler();
 
-	virtual HttpResponse handle(PipelineContext &ctx);
+	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
+						const Config &config);
 
 private:
 	DeleteHandler(const DeleteHandler &);

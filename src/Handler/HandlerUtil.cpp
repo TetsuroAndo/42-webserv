@@ -13,29 +13,30 @@ namespace HandlerUtil {
 
 void generateSimpleBody(const std::string &method, HttpResponse &res,
 						const int code, const std::string &description) {
-	res.statusCode = code;
+	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
-	std::string bodyContent;
-	bodyContent += "<html><head><title>";
-	bodyContent += StringOps::toString(code);
-	bodyContent += " ";
-	bodyContent += reason;
-	bodyContent += "</title></head><body><h1>";
-	bodyContent += StringOps::toString(code);
-	bodyContent += " ";
-	bodyContent += reason;
-	bodyContent += "</h1>";
+	std::string body;
+	body += "<html><head><title>";
+	body += StringOps::toString(code);
+	body += " ";
+	body += reason;
+	body += "</title></head><body><h1>";
+	body += StringOps::toString(code);
+	body += " ";
+	body += reason;
+	body += "</h1>";
 	if (description.empty() == false) {
-		bodyContent += "<p>";
-		bodyContent += description;
-		bodyContent += "</p>";
+		body += "<p>";
+		body += description;
+		body += "</p>";
 	}
-	bodyContent += "</body></html>";
-	res.headers["Content-Type"] = "text/html";
+	body += "</body></html>";
+	res.setBody(body);
+	res.setHeader("Content-Type", "text/html");
 	if (method == "HEAD") {
-		res.body = "";
+		res.setBody("");
 	} else {
-		res.body = bodyContent;
+		res.setBody(body);
 	}
 }
 

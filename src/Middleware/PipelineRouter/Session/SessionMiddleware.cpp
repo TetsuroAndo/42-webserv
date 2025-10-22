@@ -105,11 +105,9 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 							   MiddlewareProcessor *proc) {
 	SessionManager &manager = SessionManager::getInstance();
 	std::string token;
-
-	// ctx.req and ctx.res are now values, not pointers
-	if (ctx.req.getHeader("Cookie").empty() == false) {
+	if (ctx.req->getHeader("Cookie").empty() == false) {
 		std::map< std::string, std::string > reqCookie =
-			parseCookieField(ctx.req.getHeader("Cookie"));
+			parseCookieField(ctx.req->getHeader("Cookie"));
 		if (reqCookie.count("sessionId") > 0) {
 			token = reqCookie["sessionId"];
 			// std::cout << "Received sessionId: " << token << std::endl;
@@ -128,24 +126,23 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	}
 	ctx.session = currentSession;
 
-	// Set-Cookie headers using appendHeader for multiple cookies
 	{
 		std::string response = "sessionId=\"";
 		response.append(currentSession->getId());
 		response.append("\"; Path=/; HttpOnly");
-		ctx.res.appendHeader("Set-Cookie", response);
+		ctx.res->appendHeader("Set-Cookie", response);
 	}
 	{
 		std::string response = "lastAccessTime=";
 		response.append(TimeCache::getLocalTimestamp());
 		response.append("; Path=/");
-		ctx.res.appendHeader("Set-Cookie", response);
+		ctx.res->appendHeader("Set-Cookie", response);
 	}
 	{
 		std::string response = "serverName=";
-		response.append(ctx.conf.getAppInfo().httpServerName);
+		response.append(ctx.res->getServerName());
 		response.append("; Path=/");
-		ctx.res.appendHeader("Set-Cookie", response);
+		ctx.res->appendHeader("Set-Cookie", response);
 	}
 
 	if (proc) {

@@ -1,0 +1,19 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8888
+      error_logs:
+        - error_log:
+            sink: file
+            filename: test_error.log
+            logDir: ../../logs
+      access_logs:
+        - access_log:
+            sink: file
+            filename: rotation_test.log
+            format: elf
+            maxSize: 1024
+            maxBackup: 2
+            logDir: ../../logs

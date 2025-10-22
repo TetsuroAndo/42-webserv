@@ -12,7 +12,6 @@ RED=$(printf '\033[0;31m')
 BLUE=$(printf '\033[0;34m')
 NC=$(printf '\033[0m')
 
-cd "$(dirname "$0")/../.."
 PROJECT_ROOT=$(pwd)
 WEBSERV_EXEC="$PROJECT_ROOT/webserv"
 
@@ -35,34 +34,17 @@ UPLOAD_DST_FILE="$UPLOAD_DIR/uploaded_file.bin"
 
 function setup_test_env() {
     echo -e "${BLUE}Setting up comprehensive test environment...${NC}"
-    
-    # Clean up previous test artifacts and restore permissions
-    if [ -d "$NO_PERMS_DIR" ]; then
-        chmod -R 755 "$NO_PERMS_DIR" 2>/dev/null || true
-        rm -rf "$NO_PERMS_DIR"
-    fi
-    
     mkdir -p "$ROOT_DIR"
     mkdir -p "$NO_AUTOINDEX_DIR"
     mkdir -p "$UPLOAD_DIR"
     mkdir -p "$NO_PERMS_DIR"
 
-    # Create directories for default config (relative paths from project root)
-    mkdir -p "$PROJECT_ROOT/tmp/www"
-    mkdir -p "$PROJECT_ROOT/tmp/uploads"
-    mkdir -p "$PROJECT_ROOT/tmp/default_uploads"
-    
-    # Create index.html in ROOT_DIR - but NOT in the default location
-    # The default config uses ./tmp/www which already has index.html
-    # So we don't need to create it again
-    # echo "Default index.html" > "$GET_FILE"
-    
+    echo "Default index.html" > "$GET_FILE"
     echo "secret content" > "$FORBIDDEN_FILE"
     chmod 000 "$FORBIDDEN_FILE"
     echo "This is a file to be uploaded for the comprehensive test." > "$UPLOAD_SRC_FILE"
 
     echo "Building webserv..."
-    cd "$PROJECT_ROOT"
     make > /dev/null
 }
 
@@ -88,8 +70,7 @@ trap cleanup EXIT
 setup_test_env
 
 echo "Starting webserv with no arguments..."
-cd "$PROJECT_ROOT"
-$WEBSERV_EXEC & 
+./webserv & 
 WEBSERV_PID=$!
 sleep 2
 
@@ -119,13 +100,9 @@ HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://$ADDRESS/forbidden/
 if [[ "$HTTP_STATUS" -ne 403 ]]; then echo -e "${RED}[GET 403] FAIL${NC}"; exit 1; fi
 echo -e "${GREEN}[GET 403] OK${NC}"
 
-# Test: GET Directory with autoindex on (or index file)
+# Test: GET Directory with autoindex on
 RESPONSE_BODY=$(curl -s "http://$ADDRESS/")
-# Check if we got a valid response (either autoindex listing or index file)
-if ! echo "$RESPONSE_BODY" | grep -qE "(index\.html|<html|<!DOCTYPE)"; then 
-    echo -e "${RED}[GET autoindex] FAIL: No valid response${NC}"
-    exit 1
-fi
+if ! echo "$RESPONSE_BODY" | grep -q "index.html"; then echo -e "${RED}[GET autoindex] FAIL${NC}"; exit 1; fi
 echo -e "${GREEN}[GET autoindex] OK${NC}"
 
 # Test: GET Directory with autoindex off
@@ -140,12 +117,7 @@ echo -e "\n${BLUE}--- Testing POST... ---${NC}"
 
 # Test: POST 201 Created (Upload)
 HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload/ignored_filename")
-# Check if upload succeeded (201) and at least one file was created in upload directory
-UPLOAD_COUNT=$(ls -1 "$PROJECT_ROOT/tmp/uploads/" 2>/dev/null | wc -l)
-if [[ "$HTTP_STATUS" -ne 201 || "$UPLOAD_COUNT" -lt 1 ]]; then 
-    echo -e "${RED}[POST 201] FAIL (Status: $HTTP_STATUS, Files: $UPLOAD_COUNT)${NC}"
-    exit 1
-fi
+if [[ "$HTTP_STATUS" -ne 201 || ! -f "$UPLOAD_DST_FILE" ]]; then echo -e "${RED}[POST 201] FAIL${NC}"; exit 1; fi
 echo -e "${GREEN}[POST 201] OK${NC}"
 
 # Test: POST 405 Method Not Allowed
@@ -159,22 +131,8 @@ echo -e "${GREEN}[POST 405] OK${NC}"
 echo -e "\n${BLUE}--- Testing DELETE... ---${NC}"
 
 # Test: DELETE 204 No Content
-# Get the first uploaded file name from POST test
-UPLOADED_FILE=$(ls -1 "$PROJECT_ROOT/tmp/uploads/" 2>/dev/null | head -1)
-if [ -z "$UPLOADED_FILE" ]; then
-    echo -e "${RED}[DELETE 204] FAIL - No uploaded files found${NC}"
-    exit 1
-fi
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://$ADDRESS/upload/$UPLOADED_FILE")
-if [[ "$HTTP_STATUS" -ne 204 ]]; then 
-    echo -e "${RED}[DELETE 204] FAIL (Status: $HTTP_STATUS)${NC}"
-    exit 1
-fi
-# Verify file was actually deleted
-if [ -f "$PROJECT_ROOT/tmp/uploads/$UPLOADED_FILE" ]; then
-    echo -e "${RED}[DELETE 204] FAIL - File still exists${NC}"
-    exit 1
-fi
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://$ADDRESS/upload/uploaded_file.bin")
+if [[ "$HTTP_STATUS" -ne 204 || -f "$UPLOAD_DST_FILE" ]]; then echo -e "${RED}[DELETE 204] FAIL${NC}"; exit 1; fi
 echo -e "${GREEN}[DELETE 204] OK${NC}"
 
 # Test: DELETE 404 Not Found

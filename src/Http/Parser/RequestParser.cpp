@@ -88,9 +88,8 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 			if (res == PARSE_COMPLETE) {
 				_state = STATE_COMPLETE;
 				LOG(DEBUG) << "Request parsing complete.";
-				return PARSE_COMPLETE;
 			}
-			return PARSE_INCOMPLETE;
+			return res;
 		}
 		case STATE_COMPLETE:
 			return PARSE_COMPLETE;

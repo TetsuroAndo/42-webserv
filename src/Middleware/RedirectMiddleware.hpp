@@ -1,21 +1,20 @@
 #pragma once
 
 #include "../Config/Config.hpp"
+#include "../Handler/RedirectHandler.hpp"
+#include "../Http/Core/HttpRequest.hpp"
+#include "../Http/Core/HttpResponse.hpp"
 #include "Core/IMiddleware.hpp"
 
 class RedirectMiddleware : public IMiddleware {
 public:
-	RedirectMiddleware(const std::map< std::string, Redirect > &redirects);
+	RedirectMiddleware(const Config &config);
 	~RedirectMiddleware();
-	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *next);
+
+	void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
 
 private:
-	const std::map< std::string, Redirect > _redirects;
-
-	std::string buildRedirectUrl(const HttpRequest &req,
-								 const std::string &toUrl,
-								 const std::string &matchedPath,
-								 const std::string &requestPath);
+	const Config &_config;
 
 	RedirectMiddleware(const RedirectMiddleware &other);
 	RedirectMiddleware &operator=(const RedirectMiddleware &other);

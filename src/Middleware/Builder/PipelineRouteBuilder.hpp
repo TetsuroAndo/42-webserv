@@ -7,8 +7,6 @@
 
 typedef std::map< std::string, class MiddlewareProcessor * > RouteMap;
 
-#include "../../Cgi/CgiManager.hpp"
-
 class PipelineRouteBuilder {
 public:
 	PipelineRouteBuilder();
@@ -20,8 +18,7 @@ public:
 	 * @param conf サーバ設定
 	 * @param proc ミドルウェアプロセッサの先頭ノード
 	 */
-	void buildRoute(const Config &conf, CgiManager *cgiManager,
-					MiddlewareProcessor *mainProc);
+	void buildRoute(const Config &conf, MiddlewareProcessor *mainProc);
 
 private:
 	std::vector< MiddlewareProcessor * > _createdProcessors;
