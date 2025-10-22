@@ -2,6 +2,7 @@
 
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Server/Client.hpp"
+#include "../lib/Base64/Base64.hpp"
 
 namespace {
 std::vector< std::string >
@@ -16,12 +17,13 @@ createEnvpArray(const std::map< std::string, std::string > &envMap) {
 	return envpStrs;
 }
 
-std::string fullURI(const std::string &method, const std::string &ip,
+std::string fullURI(const std::string &version, const std::string &ip,
 					const std::string &port, const std::string &scriptPath) {
 	std::string result;
-	const std::string modifiedMethod = StringOps::trim(method, "0123456789. ");
+	const std::string modifiedVersion =
+		StringOps::trim(version, "0123456789. ");
 
-	result += modifiedMethod + "://";
+	result += modifiedVersion + "://";
 	result += ip + ":" + port;
 	if (scriptPath[0] != '/') {
 		result += "/";
@@ -54,7 +56,7 @@ std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 		StringOps::split(req.getHeader("Authorization"), " ");
 	std::string remoteUser = "";
 	if (1 <= Authorization.size()) {
-		remoteUser = Authorization[1]; // TODO:BASE64でデコードする
+		remoteUser = Base64::decode(Authorization[1]);
 	}
 
 	envMap["AUTH_TYPE"] =
@@ -62,9 +64,11 @@ std::vector< std::string > CgiEnvBuilder::build(const PipelineContext &ctx,
 	envMap["CONTENT_LENGTH"] = req.getBody().size();
 	envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
-	envMap["PATH_INFO"] = "";		// Locationsのroot+ファイル名
-	envMap["PATH_TRANSLATED"] = ""; // リクエストのURIを全文 (文字列操作で作る)
-	envMap["QUERY_STRING"] = "";	// リクエストの?以降をここに
+	envMap["PATH_INFO"] = ""; // Locationsのroot+ファイル名
+	envMap["PATH_TRANSLATED"] =
+		::fullURI(c.getAppInfo().httpProtocolVersion, "", "",
+				  "");			 // リクエストのURIを全文 (文字列操作で作る)
+	envMap["QUERY_STRING"] = ""; // リクエストの?以降をここに
 	envMap["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	envMap["REMOTE_HOST"] = ""; // 空文字で登録
 	envMap["REMOTE_IDENT"] = ctx.session->getId();
