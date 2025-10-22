@@ -7,8 +7,14 @@ CgiResponseParser::CgiResponseParser()
 
 CgiResponseParser::~CgiResponseParser() {}
 
-void CgiResponseParser::parse(const std::string &rawResponse) {}
+void CgiResponseParser::parse(const std::string &rawResponse) {
+	(void)rawResponse;
+}
 
-void CgiResponseParser::setResponse(HttpResponse &httpResponse) {}
+void CgiResponseParser::setResponse(HttpResponse &httpResponse) {
+	(void)httpResponse;
+}
 
-void CgiResponseParser::_parseHeaders(const std::string &headerBlock) {}
+void CgiResponseParser::_parseHeaders(const std::string &headerBlock) {
+	(void)headerBlock;
+}
