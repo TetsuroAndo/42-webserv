@@ -149,7 +149,7 @@ void Server::handleNewConnection(const int listenFd) {
 
 	char clientIp[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
-	int clientPort = ntohs(clientAddr.sin_port);
+	const int clientPort = ntohs(clientAddr.sin_port);
 
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
 			  << attr("client_port", clientPort) << attr("fd", clientFd);

@@ -47,7 +47,7 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	try {
 		// TODO: scriptPathとinterpreterPathをConfigから解決するロジックが必要
 		const Location &loc = ctx.conf.getLocation(ctx.req->getPath());
-		std::string scriptPath = ;
+		std::string scriptPath = "";
 		std::string interpreterPath;
 		size_t dotPos = scriptPath.rfind('.');
 		if (dotPos != std::string::npos) {
@@ -75,9 +75,19 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 
 		// サーバーに監視対象のFDを通知
 		// CGIスクリプトからの出力を監視
-		changes.fdsToAdd.push_back((FdEvent){worker->getReadFd(), EPOLLIN});
+		{
+			FdEvent ev;
+			ev.fd = worker->getReadFd();
+			ev.event_type = EPOLLIN;
+			changes.fdsToAdd.push_back(ev);
+		}
 		// CGIスクリプトへのリクエストボディの書き込みを監視
-		changes.fdsToAdd.push_back((FdEvent){worker->getWriteFd(), EPOLLOUT});
+		{
+			FdEvent ev;
+			ev.fd = worker->getWriteFd();
+			ev.event_type = EPOLLOUT;
+			changes.fdsToAdd.push_back(ev);
+		}
 
 		LOG(INFO) << "CGI worker created"
 				  << attr("clientFd", worker->getClientFd())
