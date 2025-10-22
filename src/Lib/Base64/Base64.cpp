@@ -23,7 +23,7 @@ static const std::string table =
 
 std::string encode(const std::string &input) {
 	std::string output;
-	int i = 0;
+	std::string::size_type i = 0;
 	while (i < input.size()) {
 		unsigned char buf3[3];
 		unsigned char buf4[4];
@@ -61,7 +61,7 @@ std::string decode(const std::string &input) {
 	unsigned int buf4[4];
 
 	int count = 0;
-	for (int i = 0; i < input.size(); i++) {
+	for (std::string::size_type i = 0; i < input.size(); i++) {
 		if (input[i] == '=')
 			break;
 		const int val = decodeChar(input[i]);
