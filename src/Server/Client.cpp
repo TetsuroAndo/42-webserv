@@ -5,9 +5,9 @@
 #include <netinet/in.h>
 #include <sstream>
 
-Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
+Client::Client(const int fd, const sockaddr_in &addr, CgiManager &cgiManager,
+			   const Config &config)
 	: _fd(fd) {
-	// Format IP address manually (inet_ntop not in allowed function list)
 	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	ipStream << ((ip_addr >> 24) & 0xFF) << "." << ((ip_addr >> 16) & 0xFF)
@@ -16,7 +16,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	_port = ntohs(addr.sin_port);
 
 	_socket = new Socket(fd, addr);
-	_context = new PipelineContext(config, *this);
+	_context = new PipelineContext(config, *this, cgiManager);
 }
 
 Client::~Client() {
