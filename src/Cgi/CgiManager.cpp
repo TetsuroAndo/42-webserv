@@ -45,13 +45,14 @@ CgiManager::~CgiManager() {
 FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	FdEventChanges changes;
 	try {
-		// TODO: scriptPathとinterpreterPathをConfigから解決するロジックが必要
 		const Location &loc = ctx.conf.getLocation(ctx.req->getPath());
-		std::string scriptPath = "";
+		const std::string scriptPath =
+			HandlerUtil::resolvePath(ctx.req->getPath(), ctx.conf);
 		std::string interpreterPath;
-		size_t dotPos = scriptPath.rfind('.');
+		const size_t dotPos = scriptPath.rfind('.');
+
 		if (dotPos != std::string::npos) {
-			std::string ext = scriptPath.substr(dotPos);
+			const std::string ext = scriptPath.substr(dotPos);
 			if (loc.cgiConf.count(ext)) {
 				interpreterPath = loc.cgiConf.at(ext);
 			}
@@ -65,12 +66,15 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 			return changes;
 		}
 
+		LOG(DEBUG) << "Using CGI interpreter"
+				   << attr("interpreter", interpreterPath)
+				   << attr("script", scriptPath);
+
 		CgiWorker *worker = new CgiWorker(ctx, scriptPath, interpreterPath);
 		worker->execute(); // pipe, fork, execveの実行
 
 		_workers.push_back(worker);
 		_pipeFdToWorker[worker->getReadFd()] = worker;
-		_pipeFdToWorker[worker->getWriteFd()] = worker;
 		_clientFdToWorker[worker->getClientFd()] = worker;
 
 		// サーバーに監視対象のFDを通知
@@ -103,9 +107,10 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	return changes;
 }
 
-FdEventChanges CgiManager::handleEvent(int fd, uint32_t event_type) {
+FdEventChanges CgiManager::handleEvent(const int fd,
+									   const uint32_t event_type) {
 	FdEventChanges changes;
-	std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
+	const std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
 	if (it == _pipeFdToWorker.end()) {
 		return changes;
 	}
@@ -176,7 +181,7 @@ FdEventChanges CgiManager::cleanupTimedOutWorkers() {
 }
 
 bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
-	std::map< int, CgiWorker * >::iterator it =
+	const std::map< int, CgiWorker * >::iterator it =
 		_clientFdToWorker.find(clientFd);
 	if (it == _clientFdToWorker.end()) {
 		return false; // CGIリクエストではない
