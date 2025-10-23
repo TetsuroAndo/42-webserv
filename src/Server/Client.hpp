@@ -4,7 +4,7 @@
 #include "../Socket/Socket.hpp"
 #include <string>
 
-class PipelineContext;
+struct PipelineContext;
 
 class Client {
 public:
