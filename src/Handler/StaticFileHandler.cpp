@@ -1,4 +1,5 @@
 #include "StaticFileHandler.hpp"
+#include "../Config/PerformanceConfig.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
 #include "../Lib/Logger/Log.hpp"
