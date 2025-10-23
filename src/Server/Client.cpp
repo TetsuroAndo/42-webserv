@@ -2,11 +2,12 @@
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
-#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sstream>
 
 Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	: _fd(fd) {
+	// Format IP address manually (inet_ntop not in allowed function list)
 	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	ipStream << ((ip_addr >> 24) & 0xFF) << "." << ((ip_addr >> 16) & 0xFF)
