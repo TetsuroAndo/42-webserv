@@ -31,6 +31,10 @@ void HttpResponse::setVersion(const std::string &version) {
 	_version = version;
 }
 
+bool HttpResponse::isCgi() const { return _isCgi; }
+
+void HttpResponse::setIsCgi(const bool isCgi) { _isCgi = isCgi; }
+
 // Headers
 const std::map< std::string, std::vector< std::string > > &
 HttpResponse::getHeaders() const {
