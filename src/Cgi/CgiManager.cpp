@@ -42,7 +42,7 @@ CgiManager::~CgiManager() {
 	_workers.clear();
 }
 
-FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
+void CgiManager::createWorker(PipelineContext &ctx) {
 	FdEventChanges changes;
 	try {
 		const Location &loc = ctx.conf.getLocation(ctx.req->getPath());
@@ -63,7 +63,8 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 						 << scriptPath;
 			HandlerUtil::generateSimpleBody(ctx.req->getMethod(), *ctx.res,
 											HttpStatus::NOT_FOUND);
-			return changes;
+			_queue.push(changes);
+			return;
 		}
 
 		LOG(DEBUG) << "Using CGI interpreter"
@@ -104,15 +105,15 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		HandlerUtil::generateSimpleBody(ctx.req->getMethod(), *ctx.res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 	}
-	return changes;
+	_queue.push(changes);
 }
 
-FdEventChanges CgiManager::handleEvent(const int fd,
-									   const uint32_t event_type) {
+void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 	FdEventChanges changes;
 	const std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
 	if (it == _pipeFdToWorker.end()) {
-		return changes;
+		_queue.push(changes);
+		return;
 	}
 
 	CgiWorker *worker = it->second;
@@ -143,10 +144,10 @@ FdEventChanges CgiManager::handleEvent(const int fd,
 			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
 	}
-	return changes;
+	_queue.push(changes);
 }
 
-FdEventChanges CgiManager::cleanupTimedOutWorkers() {
+void CgiManager::cleanupTimedOutWorkers() {
 	FdEventChanges changes;
 	time_t now = time(NULL);
 	std::vector< CgiWorker * > workersToCleanup;
@@ -177,7 +178,7 @@ FdEventChanges CgiManager::cleanupTimedOutWorkers() {
 			changes.fdsToRemove.push_back(worker->getWriteFd());
 		}
 	}
-	return changes;
+	_queue.push(changes);
 }
 
 bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
@@ -206,3 +207,5 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 }
 
 bool CgiManager::isCgiFd(int fd) const { return _pipeFdToWorker.count(fd) > 0; }
+
+size_t CgiManager::eventSize() const { return _queue.size(); }
