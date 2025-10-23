@@ -2,11 +2,12 @@
 #include "../../Handler/DeleteHandler.hpp"
 #include "../../Handler/PostHandler.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
+#include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
-#include "../PipelineRouter/Redirect/RedirectMiddleware.hpp"
-#include "../PipelineRouter/Session/SessionMiddleware.hpp"
-#include "../PipelineRouter/handler/HandlerMiddleware.hpp"
 #include "../RequestParser/RequestParserMiddleware.hpp"
+#include "../SubPipeline/Handler/HandlerMiddleware.hpp"
+#include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
+#include "../SubPipeline/Session/SessionMiddleware.hpp"
 // #include "../../Handler/CgiHandler.hpp"
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
@@ -25,9 +26,8 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 	for (std::map< std::string, Location >::const_iterator it =
 			 locations.begin();
 		 it != locations.end(); ++it) {
-		const Location &currentLocation = it->second;
-		std::map< std::string, ISubHandler * > handlers;
 
+		const Location &currentLocation = it->second;
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
 
@@ -35,19 +35,32 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 			routeProcessor->addMiddleware(new SessionMiddleware());
 		}
 
+		// CgiRouterMiddleware
+		if (!currentLocation.cgiConf.empty()) {
+			routeProcessor->addMiddleware(new CgiRouterMiddleware());
+		}
+
+		// HandlerMiddleware (静的ファイル・アップロード・削除用)
+		// CgiRouterMiddlewareを通過したリクエスト(＝CGIではない)のみが処理される
+		std::map< std::string, ISubHandler * > staticHandlers;
 		if (currentLocation.allowedMethods.count("GET")) {
-			handlers["GET"] = new StaticFileHandler();
+			staticHandlers["GET"] = new StaticFileHandler();
 		}
 		if (currentLocation.allowedMethods.count("HEAD")) {
-			handlers["HEAD"] = new StaticFileHandler();
+			staticHandlers["HEAD"] = new StaticFileHandler();
 		}
 		if (currentLocation.allowedMethods.count("POST")) {
-			handlers["POST"] = new PostHandler();
+			staticHandlers["POST"] = new PostHandler();
 		}
 		if (currentLocation.allowedMethods.count("DELETE")) {
-			handlers["DELETE"] = new DeleteHandler();
+			staticHandlers["DELETE"] = new DeleteHandler();
 		}
-		routeProcessor->addMiddleware(new HandlerMiddleware(handlers));
+
+		if (!staticHandlers.empty()) {
+			routeProcessor->addMiddleware(
+				new HandlerMiddleware(staticHandlers));
+		}
+
 		routes[currentLocation.path] = routeProcessor;
 	}
 

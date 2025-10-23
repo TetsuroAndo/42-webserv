@@ -4,7 +4,7 @@
 PipelineContext::PipelineContext(const Config &c, Client &client,
 								 CgiManager &serverCgiManager)
 	: conf(c), req(c), res(c), session(NULL), recvBuffer(""), sendBuffer(""),
-	  ownerClient(client), cgiManager(serverCgiManager) {}
+	  ownerClient(client), cgiManager(serverCgiManager), isCgi(false) {}
 
 PipelineContext::~PipelineContext() {}
 
@@ -13,5 +13,6 @@ void PipelineContext::reset(const Config &c) {
 	res.clear(c);
 	recvBuffer.clear();
 	sendBuffer.clear();
+	isCgi = false;
 	parser.reset();
 }

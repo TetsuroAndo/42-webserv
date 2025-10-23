@@ -1,9 +1,13 @@
 // src/Cgi/CgiManager.cpp
 
 #include "CgiManager.hpp"
+#include "../Config/Config.hpp"
 #include "../Handler/HandlerUtil.hpp"
+#include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Middleware/Core/PipelineContext.hpp"
+#include "CgiWorker.hpp"
 #include <algorithm>
 #include <signal.h>
 #include <sys/epoll.h>

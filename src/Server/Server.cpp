@@ -148,12 +148,32 @@ void Server::run() {
 			applyCgiChanges();
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
+			} else if (_cgiManager.isCgiFd(fd)) {
+				_cgiManager.handleEvent(fd, eventTypes);
 			} else if (_clients.count(fd)) {
-				if (eventTypes & EPOLLIN) {
-					handleClientRead(fd);
-				}
-				if (eventTypes & EPOLLOUT) {
-					handleClientWrite(fd);
+				HttpResponse cgiRes(_config);
+				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
+					AccessLogger::getInstance().log(
+						&_clients[fd]->getContext()->req, &cgiRes,
+						_clients[fd]->getIp(), _clients[fd]->getPort(),
+						_clients[fd]->getContext()->session->getId());
+					const std::string responseStr =
+						ResponseBuilder::build(cgiRes);
+					if (!responseStr.empty()) {
+						_clients[fd]->getSocket()->setSendBuffer(
+							_clients[fd]->getSocket()->getSendBuffer() +
+							responseStr);
+					}
+					if (!_clients[fd]->getSocket()->getSendBuffer().empty()) {
+						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
+					}
+				} else {
+					if (eventTypes & EPOLLIN) {
+						handleClientRead(fd);
+					}
+					if (eventTypes & EPOLLOUT) {
+						handleClientWrite(fd);
+					}
 				}
 			}
 		}
@@ -230,6 +250,14 @@ void Server::handleClientRead(const int clientFd) {
 		return;
 	}
 	_mainProcessor.handle(*ctx);
+
+	// CGIが起動されたばかりかチェック
+	if (ctx->isCgi) {
+		// 次のEPOLLINイベントで isCgiComplete() がチェックされるのを待つ。
+		ctx->isCgi = false;
+		return;
+	}
+
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
 		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
 										client->getPort(),

@@ -7,10 +7,6 @@ HttpRequest::HttpRequest(const Config &config)
 
 HttpRequest::~HttpRequest() {}
 
-// CGI
-bool HttpRequest::isCgi() const { return _isCgi; }
-void HttpRequest::setIsCgi(const bool isCgi) { _isCgi = isCgi; }
-
 // Max
 size_t HttpRequest::getMaxBodySize() const { return _maxBodySize; }
 void HttpRequest::setMaxBodySize(const size_t size) { _maxBodySize = size; }
@@ -128,7 +124,6 @@ void HttpRequest::appendBody(const char *data, const size_t len) {
 
 void HttpRequest::clear(const Config &c) {
 	_maxBodySize = c.getMaxRequestBodySize();
-	_isCgi = false;
 	_method.clear();
 	_path.clear();
 	_version.clear();

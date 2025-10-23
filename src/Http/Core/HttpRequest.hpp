@@ -10,10 +10,6 @@ public:
 	HttpRequest(const Config &config);
 	~HttpRequest();
 
-	// CGI
-	bool isCgi() const;
-	void setIsCgi(bool isCgi);
-
 	// Max
 	size_t getMaxBodySize() const;
 	void setMaxBodySize(size_t size);
@@ -60,7 +56,6 @@ public:
 
 private:
 	size_t _maxBodySize;
-	bool _isCgi;
 	std::string _method;
 	std::string _path;
 	std::string _version;

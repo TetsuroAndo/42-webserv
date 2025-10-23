@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Cgi/CgiManager.hpp"
 #include "../../Config/Config.hpp"
 #include "../../Http/Core/HttpRequest.hpp"
 #include "../../Http/Core/HttpResponse.hpp"
@@ -21,9 +22,10 @@ struct PipelineContext {
 	Session *session;
 	std::string recvBuffer;
 	std::string sendBuffer;
-	RequestParser parser;
 	Client &ownerClient;
 	CgiManager &cgiManager;
+	bool isCgi;
+	RequestParser parser;
 
 	PipelineContext(const Config &c, Client &client,
 					CgiManager &serverCgiManager);

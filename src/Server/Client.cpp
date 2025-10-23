@@ -6,12 +6,16 @@
 #include <sstream>
 
 namespace {
-std::stringstream ipToString(uint32_t ip_addr) {
+// clang-format off
+std::string ipToString(uint32_t ip_addr) {
 	std::stringstream ss;
-	ss << ((ip_addr >> 24) & 0xFF) << "." << ((ip_addr >> 16) & 0xFF) << "."
-	   << ((ip_addr >> 8) & 0xFF) << "." << (ip_addr & 0xFF);
-	return ss;
+	ss << ((ip_addr >> 24) & 0xFF) << "."
+	   << ((ip_addr >> 16) & 0xFF) << "."
+	   << ((ip_addr >> 8) & 0xFF) << "."
+	   << (ip_addr & 0xFF);
+	return ss.str();
 }
+// clang-format on
 } // namespace
 
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
@@ -19,7 +23,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 	: _fd(fd), _listenPort(listenPort) {
 	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
-	_ip = ipToString(ip_addr).str();
+	_ip = ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 
 	_socket = new Socket(fd, addr);

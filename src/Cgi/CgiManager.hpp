@@ -1,12 +1,17 @@
 #pragma once
 
-#include "../Middleware/Core/PipelineContext.hpp"
 #include "../Socket/FdEventChanges.hpp"
-#include "CgiWorker.hpp"
 #include <bits/stdint-uintn.h>
+#include <cstddef>
+#include <ctime>
 #include <map>
 #include <queue>
 #include <vector>
+
+class Config;
+class PipelineContext;
+class HttpResponse;
+class CgiWorker;
 
 class CgiManager {
 public:
