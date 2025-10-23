@@ -4,9 +4,9 @@
 #include "../../Http/Core/HttpRequest.hpp"
 #include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Parser/RequestParser.hpp"
+#include "../../Server/Client.hpp"
 #include "../../Session/Session.hpp"
-
-class Client;
+#include "../../Socket/FdEventChanges.hpp"
 
 /**
  * @brief ミドルウェア間で引き回す情報をまとめた構造体
@@ -21,8 +21,10 @@ struct PipelineContext {
 	std::string sendBuffer;
 	RequestParser parser;
 	Client &ownerClient;
+	FdEventChanges changes;
 
 	PipelineContext(const Config &c, Client &client);
 	~PipelineContext();
 	void reset();
+	void addChanges(const FdEventChanges &additionalChanges);
 };
