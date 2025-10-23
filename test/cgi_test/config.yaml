@@ -11,7 +11,9 @@ servers:
 
       error_logs:
         - error_log:
-            sink: console
+            sink: file
+            filename: error.log
+            logDir: ./logs
             level: debug
 
       locations:

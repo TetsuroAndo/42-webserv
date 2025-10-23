@@ -8,7 +8,6 @@
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
 #include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
 #include "../SubPipeline/Session/SessionMiddleware.hpp"
-// #include "../../Handler/CgiHandler.hpp"
 
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 
