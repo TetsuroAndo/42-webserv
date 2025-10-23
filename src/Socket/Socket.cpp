@@ -1,9 +1,14 @@
 #include "Socket.hpp"
+#include "../Config/PerformanceConfig.hpp"
 
-Socket::Socket(const int fd) : _fd(fd), _listen(false), _addr() {}
+Socket::Socket(const int fd) : _fd(fd), _listen(false), _addr() {
+	_sendBuffer.reserve(RESPONSE_RESERVE_SIZE);
+}
 
 Socket::Socket(const int fd, const sockaddr_in &addr)
-	: _fd(fd), _listen(false), _addr(addr) {}
+	: _fd(fd), _listen(false), _addr(addr) {
+	_sendBuffer.reserve(RESPONSE_RESERVE_SIZE);
+}
 
 Socket::~Socket() {}
 
