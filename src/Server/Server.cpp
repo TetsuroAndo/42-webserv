@@ -12,7 +12,8 @@
 #include <stdexcept>
 #include <unistd.h>
 
-Server::Server(const Config &config) : _config(config), _cgiManager(config) {
+Server::Server(const Config &config)
+	: _config(config), _cgiManager(config), _socketsManager(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
