@@ -10,4 +10,5 @@ struct FdEvent {
 struct FdEventChanges {
 	std::vector< FdEvent > fdsToAdd;
 	std::vector< int > fdsToRemove;
+	std::vector< int > clientFdsToNotify;
 };
