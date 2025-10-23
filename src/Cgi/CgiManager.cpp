@@ -112,7 +112,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 }
 
 void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
-	const std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
+	std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
 	if (it == _pipeFdToWorker.end()) {
 		return;
 	}
