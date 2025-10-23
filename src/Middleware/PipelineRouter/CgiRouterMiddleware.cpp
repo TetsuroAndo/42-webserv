@@ -7,23 +7,23 @@ CgiRouterMiddleware::CgiRouterMiddleware() { _cgiHandler = new CgiHandler(); }
 
 CgiRouterMiddleware::~CgiRouterMiddleware() { delete _cgiHandler; }
 
+/**
+ * @brief リクエストがCGI実行対象か（拡張子と設定が一致するか）を判定
+ */
 bool CgiRouterMiddleware::isCgiRequest(PipelineContext &ctx,
 									   const Location &loc) const {
 	const std::string &path = ctx.req.getPath();
 
-	// cgiConfが空ならCGIは無効
 	if (loc.cgiConf.empty()) {
 		return false;
 	}
 
 	const size_t dotPos = path.rfind('.');
 	if (dotPos == std::string::npos) {
-		return false; // 拡張子なし
+		return false;
 	}
 
-	const std::string ext = path.substr(dotPos); // 例: ".py"
-
-	// cgiConfマップにその拡張子が存在するか
+	const std::string ext = path.substr(dotPos);
 	return loc.cgiConf.count(ext) > 0;
 }
 
@@ -32,13 +32,12 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 	const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 
 	if (isCgiRequest(ctx, loc)) {
-		// --- CGIリクエストの処理 ---
 		LOG(DEBUG) << "CgiRouterMiddleware: Detected CGI request."
 				   << attr("path", ctx.req.getPath());
 
 		const std::string &method = ctx.req.getMethod();
 
-		// CGIで許可するメソッドか？ (GET/POSTのみ)
+		// GIで許可するメソッドか？ (GET/POSTのみ)
 		if (method != "GET" && method != "POST") {
 			LOG(WARNING) << "CgiRouterMiddleware: Method not allowed for CGI."
 						 << attr("method", method);
@@ -61,7 +60,6 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 		// CgiHandlerに処理を委譲（CGIプロセス起動）
 		try {
 			ctx.res = _cgiHandler->handle(ctx);
-			// CgiHandler::handle()はCGI起動を試み、失敗時のみctx.resにエラーを設定する
 
 			if (ctx.res.getStatusCode() < 400) {
 				// Server::handleClientReadが即時レスポンスを返さないようフラグを立てる

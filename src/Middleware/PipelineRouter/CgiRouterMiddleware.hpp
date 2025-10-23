@@ -17,4 +17,8 @@ public:
 	virtual ~CgiRouterMiddleware();
 
 	virtual void handle(PipelineContext &ctx, MiddlewareProcessor *proc);
+
+private:
+	CgiRouterMiddleware(const CgiRouterMiddleware &);
+	CgiRouterMiddleware &operator=(const CgiRouterMiddleware &);
 };
