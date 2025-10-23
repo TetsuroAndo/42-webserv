@@ -82,7 +82,8 @@ void Server::setupListenSockets() {
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
 
-		struct addrinfo hints = {}, *res;
+		struct addrinfo hints, *res;
+		std::memset(&hints, 0, sizeof(hints));
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
@@ -191,7 +192,7 @@ void Server::handleNewConnection(const int listenFd) {
 			  << attr("client_port", clientPort) << attr("fd", clientFd);
 
 	try {
-		Socket *listenSocket = _listenSockets.at(listenFd);
+		const Socket *listenSocket = _listenSockets.at(listenFd);
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
 		Client *client =
 			new Client(clientFd, clientAddr, listenPort, _cgiManager, _config);
