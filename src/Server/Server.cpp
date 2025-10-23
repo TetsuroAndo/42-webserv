@@ -4,7 +4,6 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
@@ -30,6 +29,31 @@ Server::~Server() {
 	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
 		delete it->second;
+	}
+}
+
+void Server::applyCgiChanges() {
+	while (_cgiManager.eventSize()) {
+		const FdEventChange event = _cgiManager.popChange();
+		try {
+			switch (event.changeType) {
+			case (FdChangeType_ADD):
+				_socketsManager.registerSocket(
+					event.fd, static_cast< uint32_t >(event.eventType));
+				break;
+			case (FdChangeType_REMOVE):
+				_socketsManager.unregisterSocket(event.fd);
+				break;
+			case (FdChangeType_NOTIFY):
+				_socketsManager.modifySocket(
+					event.fd, static_cast< uint32_t >(event.eventType));
+				break;
+			}
+		} catch (const std::exception &e) {
+			LOG(ERROR) << "applyCgiChanges failed" << attr("fd", event.fd)
+					   << attr("type", event.changeType)
+					   << attr("what", e.what());
+		}
 	}
 }
 
@@ -111,7 +135,7 @@ void Server::run() {
 				closeConnection(fd);
 				continue;
 			}
-
+			applyCgiChanges();
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {

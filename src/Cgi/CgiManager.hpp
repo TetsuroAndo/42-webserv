@@ -52,6 +52,12 @@ public:
 	bool isCgiFd(int fd) const;
 
 	/**
+	 * @brief queueから情報を一個取り出す
+	 * @return queueの一番先頭の要素
+	 */
+	FdEventChange popChange();
+
+	/**
 	 * @brief 残っているFdEventChangesの数を返す
 	 * @return 残っているFdEventChangesの数
 	 */
@@ -65,7 +71,7 @@ private:
 	// ClientFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _clientFdToWorker;
 	// FdEventChangesを貯めるキュー
-	std::queue< FdEventChanges > _queue;
+	std::queue< FdEventChange > _queue;
 
 	void _removeWorker(CgiWorker *worker);
 

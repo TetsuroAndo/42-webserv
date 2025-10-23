@@ -21,10 +21,8 @@ struct PipelineContext {
 	std::string sendBuffer;
 	RequestParser parser;
 	Client &ownerClient;
-	FdEventChanges changes;
 
 	PipelineContext(const Config &c, Client &client);
 	~PipelineContext();
 	void reset();
-	void addChanges(const FdEventChanges &additionalChanges);
 };
