@@ -205,7 +205,7 @@ void CgiManager::cleanupTimedOutWorkers() {
 }
 
 bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
-	const std::map< int, CgiWorker * >::iterator it =
+	std::map< int, CgiWorker * >::iterator it =
 		_clientFdToWorker.find(clientFd);
 	if (it == _clientFdToWorker.end()) {
 		return false; // CGIリクエストではない
