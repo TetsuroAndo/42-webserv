@@ -14,7 +14,7 @@
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath)
 	: _ctx(ctx), _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
-	  _requestBody(ctx.req->getBody()), _bytesSent(0), _scriptPath(scriptPath),
+	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
 	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)) {
 	_pipeIn[0] = -1;
 	_pipeIn[1] = -1;

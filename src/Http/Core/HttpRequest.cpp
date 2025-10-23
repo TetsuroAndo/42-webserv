@@ -3,13 +3,17 @@
 #include "../../Lib/StringOps/StringOps.hpp"
 
 HttpRequest::HttpRequest(const Config &config)
-	: maxBodySize(config.getMaxRequestBodySize()) {}
+	: _maxBodySize(config.getMaxRequestBodySize()) {}
 
 HttpRequest::~HttpRequest() {}
 
+// CGI
+bool HttpRequest::isCgi() const { return _isCgi; }
+void HttpRequest::setIsCgi(const bool isCgi) { _isCgi = isCgi; }
+
 // Max
-size_t HttpRequest::getMaxBodySize() const { return maxBodySize; }
-void HttpRequest::setMaxBodySize(const size_t size) { maxBodySize = size; }
+size_t HttpRequest::getMaxBodySize() const { return _maxBodySize; }
+void HttpRequest::setMaxBodySize(const size_t size) { _maxBodySize = size; }
 
 // Method
 const std::string &HttpRequest::getMethod() const { return _method; }
@@ -122,7 +126,9 @@ void HttpRequest::appendBody(const char *data, const size_t len) {
 	_body.append(data, len);
 }
 
-void HttpRequest::clear() {
+void HttpRequest::clear(const Config &c) {
+	_maxBodySize = c.getMaxRequestBodySize();
+	_isCgi = false;
 	_method.clear();
 	_path.clear();
 	_version.clear();

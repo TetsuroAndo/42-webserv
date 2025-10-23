@@ -10,6 +10,10 @@ public:
 	HttpRequest(const Config &config);
 	~HttpRequest();
 
+	// CGI
+	bool isCgi() const;
+	void setIsCgi(bool isCgi);
+
 	// Max
 	size_t getMaxBodySize() const;
 	void setMaxBodySize(size_t size);
@@ -52,12 +56,11 @@ public:
 	void appendBody(const std::string &data);
 	void appendBody(const char *data, size_t len);
 
-	// 内部状態をリセット
-	void clear();
+	void clear(const Config &c);
 
 private:
-	size_t maxBodySize;
-
+	size_t _maxBodySize;
+	bool _isCgi;
 	std::string _method;
 	std::string _path;
 	std::string _version;

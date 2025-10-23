@@ -191,10 +191,10 @@ void Server::handleClientRead(const int clientFd) {
 	}
 	_mainProcessor.handle(*ctx);
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
+		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
 										client->getPort(),
 										ctx->session->getId());
-		const std::string responseStr = ResponseBuilder::build(*ctx->res);
+		const std::string responseStr = ResponseBuilder::build(ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
 				client->getSocket()->getSendBuffer() + responseStr);
@@ -223,13 +223,13 @@ void Server::handleClientWrite(const int clientFd) {
 		if (sock->getSendBuffer().empty()) {
 			PipelineContext *ctx = client->getContext();
 			// Connectionヘッダを見て接続を閉じるか判断
-			if (ctx->res->getHeader("Connection") == "close") {
+			if (ctx->res.getHeader("Connection") == "close") {
 				closeConnection(clientFd);
 			} else {
 				// Keep-Alive:
 				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
 				_socketsManager.modifySocket(clientFd, EPOLLIN);
-				ctx->reset();
+				ctx->reset(_config);
 			}
 		}
 	} else {

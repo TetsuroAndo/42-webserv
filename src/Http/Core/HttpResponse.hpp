@@ -23,10 +23,6 @@ public:
 	const std::string &getVersion() const;
 	void setVersion(const std::string &version);
 
-	// CGI
-	bool isCgi() const;
-	void setIsCgi(bool isCgi);
-
 	// Headers
 	const std::map< std::string, std::vector< std::string > > &
 	getHeaders() const;
@@ -45,7 +41,7 @@ public:
 
 	HttpResponse(const HttpResponse &other)
 		: _serverName(other._serverName), _statusCode(other._statusCode),
-		  _version(other._version), _isCgi(false), _headers(other._headers),
+		  _version(other._version), _headers(other._headers),
 		  _body(other._body) {}
 
 	HttpResponse &operator=(const HttpResponse &other) {
@@ -53,7 +49,6 @@ public:
 			_serverName = other._serverName;
 			_statusCode = other._statusCode;
 			_version = other._version;
-			_isCgi = other._isCgi;
 			_headers = other._headers;
 			_body = other._body;
 		}
@@ -63,9 +58,7 @@ public:
 private:
 	std::string _serverName;
 	int _statusCode;
-	std::string _statusMessage;
 	std::string _version;
-	bool _isCgi;
 	std::map< std::string, std::vector< std::string > > _headers;
 	std::string _body;
 

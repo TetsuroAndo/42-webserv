@@ -15,15 +15,14 @@ CgiHandler::~CgiHandler() {}
 HttpResponse CgiHandler::handle(PipelineContext &ctx) {
 	LOG(INFO) << "CgiHandler processing request";
 
-	const FdEventChanges changes = _cgiManager->createWorker(ctx);
-	ctx.addChanges(changes);
+	_cgiManager->createWorker(ctx);
 
-	HttpResponse &response = *ctx.res;
-
-	if (response.getStatusCode() >= 400) {
-		return response;
+	if (ctx.res.getStatusCode() >= 400) {
+		LOG(INFO) << "CGI setup failed with status code"
+				  << attr("status", ctx.res.getStatusCode());
+		return ctx.res;
 	}
 
-	response.setIsCgi(true);
-	return response;
+	LOG(INFO) << "CgiHandler: CGI process started successfully";
+	return ctx.res;
 }

@@ -3,9 +3,9 @@
 #include "../../Handler/PostHandler.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
+#include "../PipelineRouter/Redirect/RedirectMiddleware.hpp"
 #include "../PipelineRouter/Session/SessionMiddleware.hpp"
 #include "../PipelineRouter/handler/HandlerMiddleware.hpp"
-#include "../RedirectMiddleware.hpp"
 #include "../RequestParser/RequestParserMiddleware.hpp"
 // #include "../../Handler/CgiHandler.hpp"
 

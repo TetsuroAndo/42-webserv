@@ -40,7 +40,7 @@ HandlerMiddleware::~HandlerMiddleware() {
 void HandlerMiddleware::handle(PipelineContext &ctx,
 							   MiddlewareProcessor *proc) {
 	(void)proc;
-	const std::string &method = ctx.req->getMethod();
+	const std::string &method = ctx.req.getMethod();
 
 	const std::map< std::string, ISubHandler * >::const_iterator it =
 		_handlers.find(method);
@@ -48,19 +48,19 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 	if (it != _handlers.end()) {
 		ISubHandler *handler = it->second;
 		try {
-			*ctx.res = handler->handle(ctx);
+			ctx.res = handler->handle(ctx);
 		} catch (...) {
-			ctx.res->setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
-			ctx.res->setHeader("Content-Type", "text/html");
-			ctx.res->setBody(
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.res.setHeader("Content-Type", "text/html");
+			ctx.res.setBody(
 				"<html><body><h1>500 Internal Server Error</h1></body></html>");
 		}
 	} else {
 		// 対応するハンドラがない場合
-		ctx.res->setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
-		ctx.res->setHeader("Content-Type", "text/html");
-		ctx.res->setHeader("Allow", getAllowedMethods());
-		ctx.res->setBody(
+		ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
+		ctx.res.setHeader("Content-Type", "text/html");
+		ctx.res.setHeader("Allow", getAllowedMethods());
+		ctx.res.setBody(
 			"<html><body><h1>405 Method Not Allowed</h1></body></html>");
 	}
 }

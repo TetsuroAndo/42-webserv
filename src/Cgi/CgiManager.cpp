@@ -45,9 +45,9 @@ CgiManager::~CgiManager() {
 FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 	FdEventChanges changes;
 	try {
-		const Location &loc = ctx.conf.getLocation(ctx.req->getPath());
+		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 		const std::string scriptPath =
-			HandlerUtil::resolvePath(ctx.req->getPath(), ctx.conf);
+			HandlerUtil::resolvePath(ctx.req.getPath(), ctx.conf);
 		std::string interpreterPath;
 		const size_t dotPos = scriptPath.rfind('.');
 
@@ -61,7 +61,7 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		if (interpreterPath.empty()) {
 			LOG(WARNING) << "No CGI interpreter found for the request path: "
 						 << scriptPath;
-			HandlerUtil::generateSimpleBody(ctx.req->getMethod(), *ctx.res,
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 											HttpStatus::NOT_FOUND);
 			return changes;
 		}
@@ -101,7 +101,7 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 
 	} catch (const std::exception &e) {
 		LOG(ERROR) << "Failed to create CGI worker: " << e.what();
-		HandlerUtil::generateSimpleBody(ctx.req->getMethod(), *ctx.res,
+		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 	return changes;

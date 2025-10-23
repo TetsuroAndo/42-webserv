@@ -80,7 +80,7 @@ std::vector< std::string >
 CgiEnvBuilder::build(const PipelineContext &ctx,
 					 const std::string &requestedPath) {
 	const Config &c = ctx.conf;
-	const HttpRequest &req = *ctx.req;
+	const HttpRequest &req = ctx.req;
 	std::map< std::string, std::string > envMap;
 
 	std::string fullPath = HandlerUtil::resolvePath(requestedPath, c);
