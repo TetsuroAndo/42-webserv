@@ -8,14 +8,14 @@
 #include <iostream>
 #include <sys/stat.h>
 
-CgiHandler::CgiHandler(CgiManager *cgiManager) : _cgiManager(cgiManager) {}
+CgiHandler::CgiHandler() {}
 
 CgiHandler::~CgiHandler() {}
 
 HttpResponse CgiHandler::handle(PipelineContext &ctx) {
 	LOG(INFO) << "CgiHandler processing request";
 
-	_cgiManager->createWorker(ctx);
+	ctx.cgiManager.createWorker(ctx);
 
 	if (ctx.res.getStatusCode() >= 400) {
 		LOG(INFO) << "CGI setup failed with status code"

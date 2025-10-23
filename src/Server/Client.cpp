@@ -2,7 +2,7 @@
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
-#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sstream>
 
 namespace {
@@ -15,14 +15,15 @@ std::stringstream ipToString(uint32_t ip_addr) {
 } // namespace
 
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
-			   const Config &config)
+			   CgiManager &cgiManager, const Config &config)
 	: _fd(fd), _listenPort(listenPort) {
+	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = ipToString(ip_addr).str();
 	_port = ntohs(addr.sin_port);
 
 	_socket = new Socket(fd, addr);
-	_context = new PipelineContext(config, *this);
+	_context = new PipelineContext(config, *this, cgiManager);
 }
 
 Client::~Client() {

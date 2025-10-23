@@ -4,10 +4,11 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -33,6 +34,31 @@ Server::~Server() {
 	}
 }
 
+void Server::applyCgiChanges() {
+	while (_cgiManager.eventSize()) {
+		const FdEventChange event = _cgiManager.popChange();
+		try {
+			switch (event.changeType) {
+			case (FdChangeType_ADD):
+				_socketsManager.registerSocket(
+					event.fd, static_cast< uint32_t >(event.eventType));
+				break;
+			case (FdChangeType_REMOVE):
+				_socketsManager.unregisterSocket(event.fd);
+				break;
+			case (FdChangeType_NOTIFY):
+				_socketsManager.modifySocket(
+					event.fd, static_cast< uint32_t >(event.eventType));
+				break;
+			}
+		} catch (const std::exception &e) {
+			LOG(ERROR) << "applyCgiChanges failed" << attr("fd", event.fd)
+					   << attr("type", event.changeType)
+					   << attr("what", e.what());
+		}
+	}
+}
+
 void Server::setupListenSockets() {
 	const std::vector< Listen > &listens = _config.getListens();
 	for (std::vector< Listen >::const_iterator it = listens.begin();
@@ -55,18 +81,25 @@ void Server::setupListenSockets() {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
-		int ptonRet = inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
-		if (ptonRet <= 0) {
+
+		struct addrinfo hints = {}, *res;
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
+
+		int ret = getaddrinfo(interfaceAddr.c_str(), NULL, &hints, &res);
+		if (ret != 0) {
 			close(listenFd);
-			if (ptonRet == 0) {
-				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
-				throw std::runtime_error("Invalid IP address format");
-			}
-			if (ptonRet < 0) {
-				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
-				throw std::runtime_error("inet_pton() failed");
-			}
+			LOG(FATAL) << "getaddrinfo() failed for " << interfaceAddr << ": "
+					   << gai_strerror(ret);
+			throw std::runtime_error("getaddrinfo() failed");
 		}
+
+		std::memcpy(
+			&addr.sin_addr,
+			&reinterpret_cast< struct sockaddr_in * >(res->ai_addr)->sin_addr,
+			sizeof(addr.sin_addr));
+		freeaddrinfo(res);
 
 		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
 				 sizeof(addr)) < 0) {
@@ -111,7 +144,7 @@ void Server::run() {
 				closeConnection(fd);
 				continue;
 			}
-
+			applyCgiChanges();
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {
@@ -148,7 +181,10 @@ void Server::handleNewConnection(const int listenFd) {
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
 	char clientIp[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
+	unsigned char *bytes =
+		reinterpret_cast< unsigned char * >(&clientAddr.sin_addr.s_addr);
+	snprintf(clientIp, sizeof(clientIp), "%u.%u.%u.%u", bytes[0], bytes[1],
+			 bytes[2], bytes[3]);
 	const int clientPort = ntohs(clientAddr.sin_port);
 
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
@@ -157,7 +193,8 @@ void Server::handleNewConnection(const int listenFd) {
 	try {
 		Socket *listenSocket = _listenSockets.at(listenFd);
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
-		Client *client = new Client(clientFd, clientAddr, listenPort, _config);
+		Client *client =
+			new Client(clientFd, clientAddr, listenPort, _cgiManager, _config);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {

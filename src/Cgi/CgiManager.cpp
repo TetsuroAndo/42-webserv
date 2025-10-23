@@ -42,8 +42,7 @@ CgiManager::~CgiManager() {
 	_workers.clear();
 }
 
-FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
-	FdEventChanges changes;
+void CgiManager::createWorker(PipelineContext &ctx) {
 	try {
 		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 		const std::string scriptPath =
@@ -63,7 +62,7 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 						 << scriptPath;
 			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 											HttpStatus::NOT_FOUND);
-			return changes;
+			return;
 		}
 
 		LOG(DEBUG) << "Using CGI interpreter"
@@ -77,20 +76,22 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		_pipeFdToWorker[worker->getReadFd()] = worker;
 		_clientFdToWorker[worker->getClientFd()] = worker;
 
-		// サーバーに監視対象のFDを通知
+		// サーバーに監視対象のFDを追加
 		// CGIスクリプトからの出力を監視
 		{
-			FdEvent ev;
+			FdEventChange ev;
 			ev.fd = worker->getReadFd();
-			ev.event_type = EPOLLIN;
-			changes.fdsToAdd.push_back(ev);
+			ev.eventType = EPOLLIN;
+			ev.changeType = FdChangeType_ADD;
+			_queue.push(ev);
 		}
 		// CGIスクリプトへのリクエストボディの書き込みを監視
 		{
-			FdEvent ev;
+			FdEventChange ev;
 			ev.fd = worker->getWriteFd();
-			ev.event_type = EPOLLOUT;
-			changes.fdsToAdd.push_back(ev);
+			ev.eventType = EPOLLOUT;
+			ev.changeType = FdChangeType_ADD;
+			_queue.push(ev);
 		}
 
 		LOG(INFO) << "CGI worker created"
@@ -104,15 +105,12 @@ FdEventChanges CgiManager::createWorker(PipelineContext &ctx) {
 		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 	}
-	return changes;
 }
 
-FdEventChanges CgiManager::handleEvent(const int fd,
-									   const uint32_t event_type) {
-	FdEventChanges changes;
+void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 	const std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
 	if (it == _pipeFdToWorker.end()) {
-		return changes;
+		return;
 	}
 
 	CgiWorker *worker = it->second;
@@ -127,7 +125,12 @@ FdEventChanges CgiManager::handleEvent(const int fd,
 
 	// 書き込みが完了したら、書き込みFDの監視を解除
 	if (worker->getState() == CgiWorker::CGI_RECEIVING) {
-		changes.fdsToRemove.push_back(worker->getWriteFd());
+		{
+			FdEventChange ev;
+			ev.fd = worker->getWriteFd();
+			ev.changeType = FdChangeType_REMOVE;
+			_queue.push(ev);
+		}
 		_pipeFdToWorker.erase(worker->getWriteFd());
 	}
 
@@ -137,18 +140,26 @@ FdEventChanges CgiManager::handleEvent(const int fd,
 				  << attr("clientFd", worker->getClientFd())
 				  << attr("pid", worker->getPid())
 				  << attr("state", worker->getState());
-		changes.fdsToRemove.push_back(worker->getReadFd());
+		{
+			FdEventChange ev;
+			ev.fd = worker->getReadFd();
+			ev.changeType = FdChangeType_REMOVE;
+			_queue.push(ev);
+		}
 		// 書き込みFDがまだ監視対象ならそれも削除リストに追加
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
-			changes.fdsToRemove.push_back(worker->getWriteFd());
+			{
+				FdEventChange ev;
+				ev.fd = worker->getWriteFd();
+				ev.changeType = FdChangeType_REMOVE;
+				_queue.push(ev);
+			}
 		}
 	}
-	return changes;
 }
 
-FdEventChanges CgiManager::cleanupTimedOutWorkers() {
-	FdEventChanges changes;
-	time_t now = time(NULL);
+void CgiManager::cleanupTimedOutWorkers() {
+	const time_t now = time(NULL);
 	std::vector< CgiWorker * > workersToCleanup;
 
 	for (std::vector< CgiWorker * >::iterator it = _workers.begin();
@@ -172,12 +183,21 @@ FdEventChanges CgiManager::cleanupTimedOutWorkers() {
 		worker->setTimeout();
 
 		// 関連FDを監視対象から削除
-		changes.fdsToRemove.push_back(worker->getReadFd());
+		{
+			FdEventChange ev;
+			ev.fd = worker->getReadFd();
+			ev.changeType = FdChangeType_REMOVE;
+			_queue.push(ev);
+		}
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
-			changes.fdsToRemove.push_back(worker->getWriteFd());
+			{
+				FdEventChange ev;
+				ev.fd = worker->getWriteFd();
+				ev.changeType = FdChangeType_REMOVE;
+				_queue.push(ev);
+			}
 		}
 	}
-	return changes;
 }
 
 bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
@@ -205,4 +225,14 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 	return true;
 }
 
-bool CgiManager::isCgiFd(int fd) const { return _pipeFdToWorker.count(fd) > 0; }
+bool CgiManager::isCgiFd(const int fd) const {
+	return _pipeFdToWorker.count(fd) > 0;
+}
+
+FdEventChange CgiManager::popChange() {
+	const FdEventChange change = _queue.front();
+	_queue.pop();
+	return change;
+}
+
+size_t CgiManager::eventSize() const { return _queue.size(); }

@@ -2,14 +2,16 @@
 
 #include "../Config/Config.hpp"
 #include "../Socket/Socket.hpp"
+#include <netinet/in.h>
 #include <string>
 
 struct PipelineContext;
+class CgiManager;
 
 class Client {
 public:
 	Client(int fd, const sockaddr_in &addr, const int listenPort,
-		   const Config &config);
+		   CgiManager &cgiManager, const Config &config);
 	~Client();
 
 	int getFd() const;

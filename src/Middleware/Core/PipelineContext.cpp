@@ -1,9 +1,10 @@
 #include "PipelineContext.hpp"
 #include "../../Server/Client.hpp"
 
-PipelineContext::PipelineContext(const Config &c, Client &client)
+PipelineContext::PipelineContext(const Config &c, Client &client,
+								 CgiManager &serverCgiManager)
 	: conf(c), req(c), res(c), session(NULL), recvBuffer(""), sendBuffer(""),
-	  ownerClient(client) {}
+	  ownerClient(client), cgiManager(serverCgiManager) {}
 
 PipelineContext::~PipelineContext() {}
 
