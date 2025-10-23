@@ -2,10 +2,11 @@
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
-#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sstream>
 
-Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
+Client::Client(const int fd, const sockaddr_in &addr, CgiManager &cgiManager,
+			   const Config &config)
 	: _fd(fd) {
 	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
@@ -15,7 +16,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	_port = ntohs(addr.sin_port);
 
 	_socket = new Socket(fd, addr);
-	_context = new PipelineContext(config, *this);
+	_context = new PipelineContext(config, *this, cgiManager);
 }
 
 Client::~Client() {
