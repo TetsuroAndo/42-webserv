@@ -155,7 +155,9 @@ void Server::handleNewConnection(const int listenFd) {
 			  << attr("client_port", clientPort) << attr("fd", clientFd);
 
 	try {
-		Client *client = new Client(clientFd, clientAddr, _config);
+		Socket *listenSocket = _listenSockets.at(listenFd);
+		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
+		Client *client = new Client(clientFd, clientAddr, listenPort, _config);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
 	} catch (const std::bad_alloc &e) {
