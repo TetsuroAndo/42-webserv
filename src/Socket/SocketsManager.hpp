@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Config/PerformanceConfig.hpp"
 #include <sys/epoll.h>
 #include <vector>
 
