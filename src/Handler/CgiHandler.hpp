@@ -15,8 +15,7 @@ public:
 	 * @note このメソッドは即座にレスポンスを返さず、CGIプロセスを起動する。
 	 *       レスポンスにはCGI実行中を示す内部的なステータスを設定する。
 	 */
-	virtual HttpResponse handle(const HttpRequest &req, HttpResponse &res,
-								const Config &config);
+	virtual HttpResponse handle(PipelineContext &ctx);
 
 private:
 	CgiManager *_cgiManager;
