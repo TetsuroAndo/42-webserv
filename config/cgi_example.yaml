@@ -29,8 +29,8 @@ servers:
             allowedMethods:
               - GET
               - POST
-            cgi:
-              .php: /usr/bin/php-cgi
+            interpreterPath:
+              .php: /usr/bin/php-interpreterPath
               .py: /usr/bin/python3
 
         # Alternative location for Python CGI scripts only
@@ -40,7 +40,7 @@ servers:
             allowedMethods:
               - GET
               - POST
-            cgi:
+            interpreterPath:
               .py: /usr/bin/python3
 
         # Static files (no CGI)

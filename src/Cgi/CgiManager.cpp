@@ -91,7 +91,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
-		if (access(scriptPath.c_str(), F_OK) != 0) {
+		// スクリプトファイルの読み取り権限チェック
+		if (access(scriptPath.c_str(), R_OK) != 0) {
 			int err = errno;
 			if (err == ENOENT) {
 				LOG(WARNING) << "CGI script file not found: " << scriptPath;
@@ -110,6 +111,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
+		// インタプリタの実行権限チェック
 		if (access(interpreterPath.c_str(), X_OK) != 0) {
 			LOG(ERROR) << "CGI interpreter is not found or not executable: "
 					   << interpreterPath << attr("errno", errno);
