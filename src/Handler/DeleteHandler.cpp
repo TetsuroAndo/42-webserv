@@ -45,8 +45,11 @@ DeleteHandler::DeleteHandler() {}
 
 DeleteHandler::~DeleteHandler() {}
 
-HttpResponse DeleteHandler::handle(const HttpRequest &req, HttpResponse &res,
-								   const Config &config) {
+HttpResponse DeleteHandler::handle(PipelineContext &ctx) {
+	const HttpRequest &req = ctx.req;
+	HttpResponse &res = ctx.res;
+	const Config &config = ctx.conf;
+
 	LOG(INFO) << "DeleteHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 

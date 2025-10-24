@@ -1,11 +1,12 @@
 #pragma once
 
+#include "../Config/Config.hpp"
 #include <sys/epoll.h>
 #include <vector>
 
 class SocketsManager {
 public:
-	SocketsManager();
+	SocketsManager(const Config &conf);
 	~SocketsManager();
 
 	void registerSocket(int fd, uint32_t events) const;
@@ -17,4 +18,8 @@ public:
 private:
 	int _epoll_fd;
 	std::vector< struct epoll_event > _events;
+
+	SocketsManager();
+	SocketsManager(const SocketsManager &other);
+	SocketsManager &operator=(const SocketsManager &other);
 };

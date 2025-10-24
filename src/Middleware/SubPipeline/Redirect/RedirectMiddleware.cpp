@@ -7,7 +7,7 @@ RedirectMiddleware::~RedirectMiddleware() {}
 
 void RedirectMiddleware::handle(PipelineContext &ctx,
 								MiddlewareProcessor *proc) {
-	const HttpRequest &req = *ctx.req;
+	const HttpRequest &req = ctx.req;
 	const Redirect &redirect = _config.getRedirect(req.getPath());
 
 	if (!redirect.fromPath.empty()) {
@@ -37,7 +37,7 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 			}
 		}
 		res.setHeader("Location", newLocation);
-		*ctx.res = res;
+		ctx.res = res;
 		// Stop further processing
 		return;
 	}

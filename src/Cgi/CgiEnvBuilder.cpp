@@ -5,6 +5,7 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Server/Client.hpp"
+#include <map>
 
 namespace {
 std::vector< std::string >
@@ -23,7 +24,7 @@ std::string fullURI(const std::string &version, const std::string &ip,
 					const std::string &port, const std::string &scriptPath) {
 	std::string result;
 	const std::string modifiedVersion =
-		StringOps::trim(version, "0123456789. ");
+		StringOps::toLower(StringOps::trim(version, "0123456789. /"));
 
 	result += modifiedVersion + "://";
 	result += ip + ":" + port;
@@ -34,9 +35,18 @@ std::string fullURI(const std::string &version, const std::string &ip,
 	return result;
 }
 
-std::string queryString(const std::string &scriptPath) {
-	std::string trimmed = StringOps::trim(scriptPath);
-	return trimmed.substr(trimmed.find('?'), trimmed.size());
+std::string queryString(const HttpRequest &req) {
+	const std::map< std::string, std::string > map = req.getQueries();
+	std::string result;
+	for (std::map< std::string, std::string >::const_iterator it = map.begin();
+		 it != map.end();) {
+		result += it->first + "=" + it->second;
+		++it;
+		if (it != map.end()) {
+			result += "&";
+		}
+	}
+	return result;
 }
 
 std::string fileName(const std::string &scriptPath) {
@@ -53,18 +63,6 @@ std::string fileName(const std::string &scriptPath) {
 
 	return "/" + name;
 }
-
-std::string pathInfo(const std::string &input) {
-	std::string trimmed = input;
-	trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r"));
-	trimmed.erase(trimmed.find_last_not_of(" \t\n\r") + 1);
-
-	std::size_t pos = trimmed.find('?');
-	if (pos != std::string::npos)
-		trimmed = trimmed.substr(0, pos);
-	return trimmed;
-}
-
 } // namespace
 
 /**
@@ -80,10 +78,8 @@ std::vector< std::string >
 CgiEnvBuilder::build(const PipelineContext &ctx,
 					 const std::string &requestedPath) {
 	const Config &c = ctx.conf;
-	const HttpRequest &req = *ctx.req;
+	const HttpRequest &req = ctx.req;
 	std::map< std::string, std::string > envMap;
-
-	std::string fullPath = HandlerUtil::resolvePath(requestedPath, c);
 
 	const std::vector< std::string > Authorization =
 		StringOps::split(req.getHeader("Authorization"), " ");
@@ -99,12 +95,12 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	envMap["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
-	envMap["PATH_INFO"] = pathInfo(requestedPath); // Locationsのroot+ファイル名
-	envMap["PATH_TRANSLATED"] =
-		::fullURI(c.getAppInfo().httpProtocolVersion, "", "",
-				  ""); // リクエストのURIを全文 (文字列操作で作る)
-	envMap["QUERY_STRING"] =
-		queryString(requestedPath); // リクエストの?以降をここに
+	envMap["PATH_INFO"] = requestedPath; // Locationsのroot+ファイル名
+	envMap["PATH_TRANSLATED"] = ::fullURI(
+		c.getAppInfo().httpProtocolVersion, c.getListens()[0].interface,
+		StringOps::toString(c.getListens()[0].port),
+		ctx.req.getPath()); // リクエストのURIを全文 (文字列操作で作る)
+	envMap["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	envMap["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	envMap["REMOTE_HOST"] = ""; // 空文字で登録
 	envMap["REMOTE_IDENT"] = ctx.session->getId();
@@ -115,19 +111,20 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	envMap["SERVER_NAME"] =
 		c.getListens()[0]
 			.interface; // Locationsで指定されるIPアドレス(0番目で固定)
-	envMap["SERVER_PORT"] =
+	envMap["SERVER_PORT"] = StringOps::toString(
 		c.getListens()[0]
-			.port; // Locationsのうち、scriptPathが属す場所のポート(0番目で固定)
+			.port); // Locationsのうち、scriptPathが属す場所のポート(0番目で固定)
 	envMap["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
 	envMap["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
 	envMap["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
 
-	LOG(DEBUG) << "Env map created: ";
-	for (std::map< std::string, std::string >::const_iterator it =
-			 envMap.begin();
-		 it != envMap.end(); ++it) {
-		LOG(DEBUG) << "  " << it->first << "=" << it->second;
-	}
+	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
+	// LOG(DEBUG) << "Env map created: ";
+	// for (std::map< std::string, std::string >::const_iterator it =
+	// 		 envMap.begin();
+	// 	 it != envMap.end(); ++it) {
+	// 	LOG(DEBUG) << "  " << it->first << "=" << it->second;
+	// }
 
 	return createEnvpArray(envMap);
 }
