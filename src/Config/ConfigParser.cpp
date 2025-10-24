@@ -74,6 +74,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("interpreterPath");
 	keys.insert("redirects");
 	keys.insert("errorFile");
+	keys.insert("session");
 	return keys;
 }
 

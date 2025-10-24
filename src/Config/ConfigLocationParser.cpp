@@ -50,6 +50,10 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		if (autoindexNode)
 			loc.autoindex = (autoindexNode->getValue() == "true");
 
+		Node *sessionNode = l_node->getMapNode("session");
+		if (sessionNode)
+			loc.session = (sessionNode->getValue() == "true");
+
 		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
 			const std::vector< Node * > &methods = allowMethodsNode->getSeq();
 			for (std::vector< Node * >::const_iterator m_it = methods.begin();

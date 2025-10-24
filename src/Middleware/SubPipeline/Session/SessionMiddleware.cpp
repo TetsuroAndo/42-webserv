@@ -105,6 +105,8 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 							   MiddlewareProcessor *proc) {
 	SessionManager &manager = SessionManager::getInstance();
 	std::string token;
+	bool isNewSession = false;
+
 	if (ctx.req.getHeader("Cookie").empty() == false) {
 		std::map< std::string, std::string > reqCookie =
 			parseCookieField(ctx.req.getHeader("Cookie"));
@@ -123,15 +125,17 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 	if (NULL == currentSession) {
 		currentSession = manager.createSession();
 		LOG(INFO) << "Created session: " << currentSession->getId();
+		isNewSession = true;
 	}
 	ctx.session = currentSession;
 
-	{
+	if (isNewSession) {
 		std::string response = "sessionId=\"";
 		response.append(currentSession->getId());
 		response.append("\"; Path=/; HttpOnly");
 		ctx.res.appendHeader("Set-Cookie", response);
 	}
+
 	{
 		std::string response = "lastAccessTime=";
 		response.append(TimeCache::getLocalTimestamp());
