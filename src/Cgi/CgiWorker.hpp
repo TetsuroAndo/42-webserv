@@ -48,6 +48,9 @@ public:
 	/// @brief 状態をタイムアウトに設定する
 	void setTimeout();
 
+	/// @brief 状態をエラーに設定する
+	void setError();
+
 	/// @brief 最終活動時刻を取得する
 	time_t getLastActivityTime() const;
 
@@ -72,10 +75,11 @@ private:
 	int _pipeOut[2];
 	std::string _requestBody;
 	size_t _bytesSent;
-	std::string _responseBuffer;
 	std::string _scriptPath;
 	std::string _interpreterPath;
 	time_t _lastActivityTime;
+	std::string _responseBuffer;
+	std::vector< char > _readBuffer;
 
 	CgiResponseParser _responseParser;
 
