@@ -155,8 +155,16 @@ void CgiWorker::handleRead() {
 
 	if (bytes == 0) {
 		_closePipe(_pipeOut[0]);
-		_state = CGI_COMPLETE;
-		_responseParser.parse(_responseBuffer);
+		if (_responseBuffer.empty()) {
+			// execve が失敗したか、CGIがヘッダを一切出力せずに異常終了した
+			LOG(WARNING) << "CGI worker terminated without any output."
+						 << attr("pid", _pid) << attr("script", _scriptPath);
+			_state = CGI_ERROR;
+		} else {
+			// 正常終了 (CGIからの出力あり)
+			_state = CGI_COMPLETE;
+			_responseParser.parse(_responseBuffer);
+		}
 	} else {
 		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;
 		if (MAX_CGI_RESPONSE_SIZE < _responseBuffer.size() + bytes) {

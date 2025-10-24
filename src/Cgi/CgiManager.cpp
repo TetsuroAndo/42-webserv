@@ -93,36 +93,6 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
-		// スクリプトファイルの読み取り権限チェック
-		if (access(scriptPath.c_str(), R_OK) != 0) {
-			int err = errno;
-			if (err == ENOENT) {
-				LOG(WARNING) << "CGI script file not found: " << scriptPath;
-				HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-												HttpStatus::NOT_FOUND);
-			} else if (err == EACCES) {
-				LOG(WARNING) << "CGI script permission denied: " << scriptPath;
-				HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-												HttpStatus::FORBIDDEN);
-			} else {
-				LOG(WARNING) << "CGI script access error: " << scriptPath
-							 << attr("errno", err);
-				HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-												HttpStatus::NOT_FOUND);
-			}
-			return;
-		}
-
-		// インタプリタの実行権限チェック
-		if (access(interpreterPath.c_str(), X_OK) != 0) {
-			LOG(ERROR) << "CGI interpreter is not found or not executable: "
-					   << interpreterPath << attr("errno", errno);
-			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-											HttpStatus::INTERNAL_SERVER_ERROR,
-											"CGI configuration error");
-			return;
-		}
-
 		LOG(DEBUG) << "Using CGI interpreter"
 				   << attr("interpreter", interpreterPath)
 				   << attr("script", scriptPath);
