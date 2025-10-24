@@ -28,20 +28,21 @@ CgiWorker::~CgiWorker() {
 	_closePipe(_pipeOut[0]);
 
 	if (0 < _pid) {
-		kill(_pid, SIGTERM);
+		// プロセスがまだ終了していないか確認（非ブロッキング）
 		int status;
-
 		pid_t result = waitpid(_pid, &status, WNOHANG);
 
 		if (result == 0) {
-			usleep(100000);
-			result = waitpid(_pid, &status, WNOHANG);
-
-			if (result == 0) {
-				kill(_pid, SIGKILL);
-				waitpid(_pid, &status, 0);
-			}
+			// プロセスはまだ実行中
+			LOG(DEBUG)
+				<< "CgiWorker destroyed, sending SIGKILL to running child"
+				<< attr("pid", _pid);
+			kill(_pid, SIGKILL);
+			// ここで waitpid(..., 0) を呼んで待つ必要はない。
+			// OS (init) がそのうち回収する (ゾンビになるが許容する)
 		}
+		// result > 0 (既に終了) または result == -1 (ECHILD)
+		// の場合は何もしなくて良い
 	}
 }
 
@@ -155,15 +156,35 @@ void CgiWorker::handleRead() {
 
 	if (bytes == 0) {
 		_closePipe(_pipeOut[0]);
-		if (_responseBuffer.empty()) {
-			// execve が失敗したか、CGIがヘッダを一切出力せずに異常終了した
-			LOG(WARNING) << "CGI worker terminated without any output."
-						 << attr("pid", _pid) << attr("script", _scriptPath);
+		_responseParser.parse(_responseBuffer);
+		bool headersFound = _responseParser.headersFound();
+
+		// 子プロセスのステータスを非ブロッキングで回収
+		int status = 0;
+		pid_t result = waitpid(_pid, &status, WNOHANG);
+
+		if (result == -1) {
+			// ECHILD (既に回収済み) 以外はエラーログ
+			if (errno != ECHILD) {
+				LOG(WARNING) << "waitpid(WNOHANG) failed for CGI process"
+							 << attr("pid", _pid) << attr("errno", errno);
+			}
+		} else if (result == 0) {
+			// まだプロセスが終了していなかった (稀なケース)
+			// この場合、デストラクタが後で回収するので問題ない
+			LOG(DEBUG) << "CGI process EOF detected, but waitpid(WNOHANG) "
+						  "returned 0"
+					   << attr("pid", _pid);
+		}
+
+		// ヘッダが見つからない場合のみ CGI_ERROR と判定
+		if (!headersFound) {
+			LOG(WARNING) << "CGI response has no headers" << attr("pid", _pid)
+						 << attr("output", _responseBuffer);
 			_state = CGI_ERROR;
 		} else {
-			// 正常終了 (CGIからの出力あり)
+			// CGIレスポンスの受信完了
 			_state = CGI_COMPLETE;
-			_responseParser.parse(_responseBuffer);
 		}
 	} else {
 		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;
