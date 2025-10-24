@@ -15,14 +15,13 @@ AppInfo::AppInfo()
 	  httpProtocolVersion(HTTP_VERSION),
 	  cgiVersion(CGI_VERSION) {}
 
+unsigned int Performance::ioBuffersSize = IO_BUFFER_SIZE;
+unsigned int Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
 Performance::Performance()
-	: ioBuffersSize(IO_BUFFER_SIZE),
-	  cgiBuffersSize(CGI_BUFFER_SIZE),
-	  responseReserveSize(RESPONSE_RESERVE_SIZE),
+	: responseReserveSize(RESPONSE_RESERVE_SIZE),
 	  pollTimeoutMs(POLL_TIMEOUT_MS),
 	  cgiMinWorkers(CGI_MIN_WORKERS),
-	  cgiMaxWorkers(CGI_MAX_WORKERS),
-	  cgiIoBufferSize(CGI_IO_BUFFER_SIZE) {}
+	  cgiMaxWorkers(CGI_MAX_WORKERS) {}
 
 // clang-format on
 

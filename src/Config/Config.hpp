@@ -23,14 +23,13 @@ struct AppInfo {
 };
 
 struct Performance {
-	unsigned int ioBuffersSize;
-	unsigned int cgiBuffersSize;
+	static unsigned int ioBuffersSize;
 	unsigned int responseReserveSize;
 	unsigned int pollTimeoutMs;
 
+	static unsigned int cgiIoBufferSize;
 	unsigned int cgiMinWorkers;
 	unsigned int cgiMaxWorkers;
-	unsigned int cgiIoBufferSize;
 
 	Performance();
 };
