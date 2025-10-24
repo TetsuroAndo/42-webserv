@@ -115,6 +115,10 @@ void CgiWorker::handleWrite() {
 		write(getWriteFd(), _requestBody.c_str() + _bytesSent, bytesToWrite);
 
 	if (bytes < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+			// 次のEPOLLOUTで再試行
+			return;
+		}
 		LOG(ERROR) << "Write error in CGI" << attr("error", strerror(errno));
 		_state = CGI_ERROR;
 		_closePipe(_pipeIn[1]);
@@ -138,6 +142,10 @@ void CgiWorker::handleRead() {
 	const ssize_t bytes = read(getReadFd(), buffer, sizeof(buffer));
 
 	if (bytes < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+			// 次のEPOLLINで再試行
+			return;
+		}
 		LOG(ERROR) << "Read error in CGI" << attr("error", strerror(errno));
 		_state = CGI_ERROR;
 		_closePipe(_pipeOut[0]);
