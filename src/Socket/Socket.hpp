@@ -1,14 +1,15 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
 
+#include "../Config/Config.hpp"
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
 
 class Socket {
 public:
-	Socket(int fd);
-	Socket(int fd, const sockaddr_in &addr);
+	Socket(const Config &c, int fd);
+	Socket(const Config &c, int fd, const sockaddr_in &addr);
 	~Socket();
 
 	int getFd() const;

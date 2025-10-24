@@ -15,7 +15,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
 	_ip = ipStream.str();
 	_port = ntohs(addr.sin_port);
 
-	_socket = new Socket(fd, addr);
+	_socket = new Socket(config, fd, addr);
 	_context = new PipelineContext(config, *this);
 }
 
