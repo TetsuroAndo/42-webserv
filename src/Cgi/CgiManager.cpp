@@ -44,7 +44,9 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 }
 
 CgiManager::CgiManager(const Config &config)
-	: _timeoutSeconds(config.getTimeoutSec()) {}
+	: _timeoutSeconds(config.getTimeoutSec()),
+	  _maxWorkers(std::max< size_t >(
+		  16, std::min< size_t >(config.getMaxEvents(), 256))) {}
 
 CgiManager::~CgiManager() {
 	std::vector< CgiWorker * >::iterator it = _workers.begin();
@@ -60,6 +62,14 @@ CgiManager::~CgiManager() {
 
 void CgiManager::createWorker(PipelineContext &ctx) {
 	try {
+		if (_workers.size() >= _maxWorkers) {
+			LOG(WARNING) << "CGI worker limit reached"
+						 << attr("limit", _maxWorkers);
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
+											HttpStatus::SERVICE_UNAVAILABLE,
+											"CGI capacity reached");
+			return;
+		}
 		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
 		const std::string scriptPath =
 			HandlerUtil::resolvePath(ctx.req.getPath(), ctx.conf);
@@ -89,7 +99,9 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		worker->execute(); // pipe, fork, execveの実行
 
 		_workers.push_back(worker);
-		_pipeFdToWorker[worker->getReadFd()] = worker;
+		if (worker->getReadFd() >= 0) {
+			_pipeFdToWorker[worker->getReadFd()] = worker;
+		}
 		if (worker->getWriteFd() >= 0) {
 			_pipeFdToWorker[worker->getWriteFd()] = worker;
 		}
@@ -97,7 +109,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 
 		// サーバーに監視対象のFDを追加
 		// CGIスクリプトからの出力を監視
-		{
+		if (worker->getReadFd() >= 0) {
 			FdEventChange ev;
 			ev.fd = worker->getReadFd();
 			ev.eventType = EPOLLIN;
@@ -264,3 +276,35 @@ FdEventChange CgiManager::popChange() {
 }
 
 size_t CgiManager::eventSize() const { return _queue.size(); }
+
+void CgiManager::abortClient(const int clientFd) {
+	std::map< int, CgiWorker * >::iterator it =
+		_clientFdToWorker.find(clientFd);
+	if (it == _clientFdToWorker.end())
+		return;
+
+	CgiWorker *worker = it->second;
+	// epoll監視から外す（現在のマッピングに基づく）
+	{
+		std::vector< int > keys;
+		for (std::map< int, CgiWorker * >::iterator it2 =
+				 _pipeFdToWorker.begin();
+			 it2 != _pipeFdToWorker.end(); ++it2) {
+			if (it2->second == worker)
+				keys.push_back(it2->first);
+		}
+		for (size_t i = 0; i < keys.size(); ++i) {
+			FdEventChange ev;
+			ev.fd = keys[i];
+			ev.changeType = FdChangeType_REMOVE;
+			_queue.push(ev);
+			_pipeFdToWorker.erase(keys[i]);
+		}
+	}
+	// プロセスを確実に終了
+	if (worker->getPid() > 0) {
+		kill(worker->getPid(), SIGKILL);
+		waitpid(worker->getPid(), NULL, 0);
+	}
+	_removeWorker(worker);
+}

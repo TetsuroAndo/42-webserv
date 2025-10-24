@@ -355,6 +355,12 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::closeConnection(const int clientFd) {
+	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する
+	try {
+		_cgiManager.abortClient(clientFd);
+	} catch (...) {
+		// best-effort: ここでの失敗は致命的ではない
+	}
 	_socketsManager.unregisterSocket(clientFd);
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {

@@ -57,6 +57,11 @@ public:
 	bool isCgiFd(int fd) const;
 
 	/**
+	 * @brief 指定クライアントFDに紐づくCGIを中断・後始末する
+	 */
+	void abortClient(int clientFd);
+
+	/**
 	 * @brief queueから情報を一個取り出す
 	 * @return queueの一番先頭の要素
 	 */
@@ -70,6 +75,7 @@ public:
 
 private:
 	const time_t _timeoutSeconds;
+	size_t _maxWorkers;
 	std::vector< CgiWorker * > _workers;
 	// pipeFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _pipeFdToWorker;
