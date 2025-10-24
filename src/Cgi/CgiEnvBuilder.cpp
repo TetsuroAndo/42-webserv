@@ -37,12 +37,12 @@ std::string fullURI(const std::string &version, const std::string &ip,
 
 std::string queryString(const HttpRequest &req) {
 	const std::map< std::string, std::string > map = req.getQueries();
-	std::map< std::string, std::string >::const_iterator it = map.begin();
 	std::string result;
-	for (; it != map.end(); ++it) {
+	for (std::map< std::string, std::string >::const_iterator it = map.begin();
+		 it != map.end();) {
 		result += it->first + "=" + it->second;
-		std::map< std::string, std::string >::const_iterator nextIt = ++it;
-		if (nextIt != map.end()) {
+		++it;
+		if (it != map.end()) {
 			result += "&";
 		}
 	}

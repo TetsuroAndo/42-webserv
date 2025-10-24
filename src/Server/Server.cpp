@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <vector>
 
 Server::Server(const Config &config)
 	: _config(config), _cgiManager(config), _socketsManager(config) {
@@ -141,17 +142,28 @@ void Server::run() {
 			int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
-				LOG(WARNING) << "EPOLLERR or EPOLLHUP for fd: " << fd;
-				closeConnection(fd);
+			applyCgiChanges();
+			// まずCGI用FDを優先的に処理（HUP/ERRでもクローズしない）
+			if (_cgiManager.isCgiFd(fd)) {
+				uint32_t ev = eventTypes;
+				// HUPのみ届いた場合でも、残データの読み出し・EOF処理のために読み取りを促す
+				if (eventTypes & EPOLLHUP) {
+					ev |= EPOLLIN;
+				}
+				_cgiManager.handleEvent(fd, ev);
 				continue;
 			}
-			applyCgiChanges();
+
+			// リッスンソケット
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
-			} else if (_cgiManager.isCgiFd(fd)) {
-				_cgiManager.handleEvent(fd, eventTypes);
 			} else if (_clients.count(fd)) {
+				if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
+					LOG(WARNING)
+						<< "EPOLLERR or EPOLLHUP for client fd: " << fd;
+					closeConnection(fd);
+					continue;
+				}
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
 					AccessLogger::getInstance().log(
@@ -174,6 +186,41 @@ void Server::run() {
 					}
 					if (eventTypes & EPOLLOUT) {
 						handleClientWrite(fd);
+					}
+				}
+			}
+		}
+
+		// このループ中に発生したCGI側のFD変更や完了通知を即時反映
+		applyCgiChanges();
+
+		// CGI完了済みのクライアントがあれば、ここでレスポンスを組み立てて送信準備
+		{
+			std::vector< int > clientFds;
+			clientFds.reserve(_clients.size());
+			for (std::map< int, Client * >::iterator it = _clients.begin();
+				 it != _clients.end(); ++it) {
+				clientFds.push_back(it->first);
+			}
+			for (size_t i = 0; i < clientFds.size(); ++i) {
+				const int cfd = clientFds[i];
+				if (_clients.count(cfd) == 0)
+					continue; // 念のため
+				HttpResponse cgiRes(_config);
+				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
+					AccessLogger::getInstance().log(
+						&_clients[cfd]->getContext()->req, &cgiRes,
+						_clients[cfd]->getIp(), _clients[cfd]->getPort(),
+						_clients[cfd]->getContext()->session->getId());
+					const std::string responseStr =
+						ResponseBuilder::build(cgiRes);
+					if (!responseStr.empty()) {
+						_clients[cfd]->getSocket()->setSendBuffer(
+							_clients[cfd]->getSocket()->getSendBuffer() +
+							responseStr);
+					}
+					if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
+						_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
 					}
 				}
 			}
@@ -254,6 +301,10 @@ void Server::handleClientRead(const int clientFd) {
 
 	// CGIが起動されたばかりかチェック
 	if (ctx->isCgi) {
+		// CGIワーカー作成直後に追加されたFD変更を即時反映させる。
+		// これによりCGIのpipe(読み取り/書き込み)がepollに登録され、
+		// 次のイベントを待たずにCGIの入出力を監視開始できる。
+		applyCgiChanges();
 		// 次のEPOLLINイベントで isCgiComplete() がチェックされるのを待つ。
 		ctx->isCgi = false;
 		return;

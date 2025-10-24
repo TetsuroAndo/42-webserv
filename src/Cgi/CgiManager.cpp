@@ -78,6 +78,9 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 
 		_workers.push_back(worker);
 		_pipeFdToWorker[worker->getReadFd()] = worker;
+		if (worker->getWriteFd() >= 0) {
+			_pipeFdToWorker[worker->getWriteFd()] = worker;
+		}
 		_clientFdToWorker[worker->getClientFd()] = worker;
 
 		// サーバーに監視対象のFDを追加
@@ -90,7 +93,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			_queue.push(ev);
 		}
 		// CGIスクリプトへのリクエストボディの書き込みを監視
-		{
+		// 書き込みFDが存在する場合のみ登録する（GETなどで不要な場合は-1）
+		if (worker->getWriteFd() >= 0) {
 			FdEventChange ev;
 			ev.fd = worker->getWriteFd();
 			ev.eventType = EPOLLOUT;
@@ -129,7 +133,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 
 	// 書き込みが完了したら、書き込みFDの監視を解除
 	if (worker->getState() == CgiWorker::CGI_RECEIVING) {
-		{
+		if (worker->getWriteFd() >= 0) {
 			FdEventChange ev;
 			ev.fd = worker->getWriteFd();
 			ev.changeType = FdChangeType_REMOVE;
@@ -158,6 +162,16 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 				ev.changeType = FdChangeType_REMOVE;
 				_queue.push(ev);
 			}
+		}
+
+		// クライアントFDに対して送信可能イベントを通知して、
+		// Server側でisCgiComplete()のチェックをトリガーする
+		{
+			FdEventChange notify;
+			notify.fd = worker->getClientFd();
+			notify.eventType = EPOLLIN | EPOLLOUT;
+			notify.changeType = FdChangeType_NOTIFY;
+			_queue.push(notify);
 		}
 	}
 }
