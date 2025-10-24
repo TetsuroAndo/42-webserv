@@ -22,6 +22,19 @@ struct AppInfo {
 	AppInfo();
 };
 
+struct Performance {
+	unsigned int ioBuffersSize;
+	unsigned int cgiBuffersSize;
+	unsigned int responseReserveSize;
+	unsigned int pollTimeoutMs;
+
+	unsigned int cgiMinWorkers;
+	unsigned int cgiMaxWorkers;
+	unsigned int cgiIoBufferSize;
+
+	Performance();
+};
+
 struct Listen {
 	std::string interface;
 	int port;

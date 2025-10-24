@@ -9,4 +9,9 @@
 // Poll/Epoll/Kqueue configuration
 #define POLL_TIMEOUT_MS 1000 // Poll timeout in milliseconds
 
+// CgiWorker configuration
+#define CGI_MIN_WORKERS 16
+#define CGI_MAX_WORKERS 256
+#define CGI_IO_BUFFER_SIZE 8192
+
 #endif // PERFORMANCE_CONFIG_HPP

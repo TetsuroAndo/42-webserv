@@ -138,8 +138,9 @@ void CgiWorker::handleRead() {
 		// 既にクローズ済み。余計なエラーを出さずに無視する。
 		return;
 	}
-	char buffer[4096];
-	const ssize_t bytes = read(getReadFd(), buffer, sizeof(buffer));
+	char *buffer = new char[_ctx.conf.getPerformance().cgiIoBufferSize];
+	const ssize_t bytes =
+		read(getReadFd(), buffer, _ctx.conf.getPerformance().cgiIoBufferSize);
 
 	if (bytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
