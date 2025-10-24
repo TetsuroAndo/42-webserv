@@ -92,8 +92,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			ev.changeType = FdChangeType_ADD;
 			_queue.push(ev);
 		}
-		// CGIスクリプトへのリクエストボディの書き込みを監視
-		// 書き込みFDが存在する場合のみ登録する（GETなどで不要な場合は-1）
+		// CGIスクリプトへのリクエストボディの書き込みを監視（fdが有効な場合）
 		if (worker->getWriteFd() >= 0) {
 			FdEventChange ev;
 			ev.fd = worker->getWriteFd();
@@ -164,8 +163,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 			}
 		}
 
-		// クライアントFDに対して送信可能イベントを通知して、
-		// Server側でisCgiComplete()のチェックをトリガーする
+		// 完了したことをクライアントFDへ通知（MOD）して、即座にチェックさせる
 		{
 			FdEventChange notify;
 			notify.fd = worker->getClientFd();

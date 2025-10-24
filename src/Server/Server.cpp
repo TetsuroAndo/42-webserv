@@ -84,8 +84,7 @@ void Server::setupListenSockets() {
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
 
-		struct addrinfo hints, *res;
-		std::memset(&hints, 0, sizeof(hints));
+		addrinfo hints = {}, *res;
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
@@ -98,10 +97,9 @@ void Server::setupListenSockets() {
 			throw std::runtime_error("getaddrinfo() failed");
 		}
 
-		std::memcpy(
-			&addr.sin_addr,
-			&reinterpret_cast< struct sockaddr_in * >(res->ai_addr)->sin_addr,
-			sizeof(addr.sin_addr));
+		std::memcpy(&addr.sin_addr,
+					&reinterpret_cast< sockaddr_in * >(res->ai_addr)->sin_addr,
+					sizeof(addr.sin_addr));
 		freeaddrinfo(res);
 
 		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
@@ -143,18 +141,17 @@ void Server::run() {
 			const uint32_t eventTypes = events[i].events;
 
 			applyCgiChanges();
-			// まずCGI用FDを優先的に処理（HUP/ERRでもクローズしない）
+
+			// CGIのFDを優先的に処理する
 			if (_cgiManager.isCgiFd(fd)) {
 				uint32_t ev = eventTypes;
-				// HUPのみ届いた場合でも、残データの読み出し・EOF処理のために読み取りを促す
 				if (eventTypes & EPOLLHUP) {
-					ev |= EPOLLIN;
+					ev |= EPOLLIN; // EOF処理のため
 				}
 				_cgiManager.handleEvent(fd, ev);
 				continue;
 			}
 
-			// リッスンソケット
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {
@@ -191,10 +188,10 @@ void Server::run() {
 			}
 		}
 
-		// このループ中に発生したCGI側のFD変更や完了通知を即時反映
+		// このラウンドでCgiManagerから出た変更・通知を反映
 		applyCgiChanges();
 
-		// CGI完了済みのクライアントがあれば、ここでレスポンスを組み立てて送信準備
+		// 完了したCGIがあれば即レスポンス組立て・送信準備
 		{
 			std::vector< int > clientFds;
 			clientFds.reserve(_clients.size());
@@ -205,7 +202,7 @@ void Server::run() {
 			for (size_t i = 0; i < clientFds.size(); ++i) {
 				const int cfd = clientFds[i];
 				if (_clients.count(cfd) == 0)
-					continue; // 念のため
+					continue;
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
 					AccessLogger::getInstance().log(
@@ -250,7 +247,7 @@ void Server::handleNewConnection(const int listenFd) {
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
 	char clientIp[INET_ADDRSTRLEN];
-	unsigned char *bytes =
+	const unsigned char *bytes =
 		reinterpret_cast< unsigned char * >(&clientAddr.sin_addr.s_addr);
 	snprintf(clientIp, sizeof(clientIp), "%u.%u.%u.%u", bytes[0], bytes[1],
 			 bytes[2], bytes[3]);
@@ -301,11 +298,7 @@ void Server::handleClientRead(const int clientFd) {
 
 	// CGIが起動されたばかりかチェック
 	if (ctx->isCgi) {
-		// CGIワーカー作成直後に追加されたFD変更を即時反映させる。
-		// これによりCGIのpipe(読み取り/書き込み)がepollに登録され、
-		// 次のイベントを待たずにCGIの入出力を監視開始できる。
 		applyCgiChanges();
-		// 次のEPOLLINイベントで isCgiComplete() がチェックされるのを待つ。
 		ctx->isCgi = false;
 		return;
 	}
@@ -326,7 +319,7 @@ void Server::handleClientRead(const int clientFd) {
 }
 
 void Server::handleClientWrite(const int clientFd) {
-	Client *client = _clients[clientFd];
+	const Client *client = _clients[clientFd];
 	Socket *sock = client->getSocket();
 	const std::string &sendBuffer = sock->getSendBuffer();
 
