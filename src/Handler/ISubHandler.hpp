@@ -1,13 +1,10 @@
 #pragma once
 
-#include "../Config/Config.hpp"
-#include "../Http/Core/HttpRequest.hpp"
-#include "../Http/Core/HttpResponse.hpp"
+#include "../Middleware/Core/PipelineContext.hpp"
 
 class ISubHandler {
 public:
 	virtual ~ISubHandler() {}
 
-	virtual HttpResponse handle(const HttpRequest &req, HttpResponse &res,
-								const Config &config) = 0;
+	virtual HttpResponse handle(PipelineContext &ctx) = 0;
 };

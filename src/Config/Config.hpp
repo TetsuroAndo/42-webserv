@@ -22,6 +22,15 @@ struct AppInfo {
 	AppInfo();
 };
 
+struct Performance {
+	unsigned int ioBuffersSize;
+	unsigned int cgiBuffersSize;
+	unsigned int responseReserveSize;
+	unsigned int pollTimeoutMs;
+
+	Performance();
+};
+
 struct Listen {
 	std::string interface;
 	int port;
@@ -81,6 +90,7 @@ struct ErrorLog {
 class Config {
 private:
 	AppInfo _appInfo;
+	Performance _performance;
 	std::vector< Listen > _listens;
 	std::map< std::string, Redirect > _redirects;
 	std::map< std::string, Location > _locations;
@@ -103,6 +113,7 @@ public:
 	~Config();
 
 	const AppInfo &getAppInfo() const;
+	const Performance &getPerformance() const;
 	const std::vector< Listen > &getListens() const;
 	const std::map< std::string, Redirect > &getRedirects() const;
 	const Redirect &getRedirect(const std::string &path) const;

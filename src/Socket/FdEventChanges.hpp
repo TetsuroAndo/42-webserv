@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vector>
-
-struct FdEvent {
-	int fd;
-	int event_type; // EPOLLIN, EPOLLOUT など
+enum FdChangeType {
+	FdChangeType_ADD,
+	FdChangeType_REMOVE,
+	FdChangeType_NOTIFY
 };
 
-struct FdEventChanges {
-	std::vector< FdEvent > fdsToAdd;
-	std::vector< int > fdsToRemove;
+struct FdEventChange {
+	int fd;
+	int eventType;
+	FdChangeType changeType;
 };

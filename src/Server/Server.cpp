@@ -4,14 +4,17 @@
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
 #include "Logging/Logging.hpp"
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <vector>
 
-Server::Server(const Config &config) : _config(config) {
+Server::Server(const Config &config)
+	: _config(config), _cgiManager(config), _socketsManager(config) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
@@ -30,6 +33,31 @@ Server::~Server() {
 	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
 		delete it->second;
+	}
+}
+
+void Server::applyCgiChanges() {
+	while (_cgiManager.eventSize()) {
+		const FdEventChange event = _cgiManager.popChange();
+		try {
+			switch (event.changeType) {
+			case (FdChangeType_ADD):
+				_socketsManager.registerSocket(
+					event.fd, static_cast< uint32_t >(event.eventType));
+				break;
+			case (FdChangeType_REMOVE):
+				_socketsManager.unregisterSocket(event.fd);
+				break;
+			case (FdChangeType_NOTIFY):
+				_socketsManager.modifySocket(
+					event.fd, static_cast< uint32_t >(event.eventType));
+				break;
+			}
+		} catch (const std::exception &e) {
+			LOG(ERROR) << "applyCgiChanges failed" << attr("fd", event.fd)
+					   << attr("type", event.changeType)
+					   << attr("what", e.what());
+		}
 	}
 }
 
@@ -55,18 +83,24 @@ void Server::setupListenSockets() {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
-		int ptonRet = inet_pton(AF_INET, interfaceAddr.c_str(), &addr.sin_addr);
-		if (ptonRet <= 0) {
+
+		addrinfo hints = {}, *res;
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
+
+		int ret = getaddrinfo(interfaceAddr.c_str(), NULL, &hints, &res);
+		if (ret != 0) {
 			close(listenFd);
-			if (ptonRet == 0) {
-				LOG(FATAL) << "Invalid IP address format: " << interfaceAddr;
-				throw std::runtime_error("Invalid IP address format");
-			}
-			if (ptonRet < 0) {
-				LOG(FATAL) << "inet_pton() failed: " << strerror(errno);
-				throw std::runtime_error("inet_pton() failed");
-			}
+			LOG(FATAL) << "getaddrinfo() failed for " << interfaceAddr << ": "
+					   << gai_strerror(ret);
+			throw std::runtime_error("getaddrinfo() failed");
 		}
+
+		std::memcpy(&addr.sin_addr,
+					&reinterpret_cast< sockaddr_in * >(res->ai_addr)->sin_addr,
+					sizeof(addr.sin_addr));
+		freeaddrinfo(res);
 
 		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
 				 sizeof(addr)) < 0) {
@@ -82,7 +116,7 @@ void Server::setupListenSockets() {
 			throw std::runtime_error("listen() failed");
 		}
 
-		Socket *sock = new Socket(listenFd, addr);
+		Socket *sock = new Socket(_config, listenFd, addr);
 		_listenSockets[listenFd] = sock;
 		_socketsManager.registerSocket(listenFd, EPOLLIN);
 		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
@@ -108,20 +142,85 @@ void Server::run() {
 			int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
-				LOG(WARNING) << "EPOLLERR or EPOLLHUP for fd: " << fd;
-				closeConnection(fd);
+			applyCgiChanges();
+
+			// CGIのFDを優先的に処理する
+			if (_cgiManager.isCgiFd(fd)) {
+				uint32_t ev = eventTypes;
+				if (eventTypes & EPOLLHUP) {
+					ev |= EPOLLIN; // EOF処理のため
+				}
+				_cgiManager.handleEvent(fd, ev);
 				continue;
 			}
 
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {
-				if (eventTypes & EPOLLIN) {
-					handleClientRead(fd);
+				if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
+					LOG(WARNING)
+						<< "EPOLLERR or EPOLLHUP for client fd: " << fd;
+					closeConnection(fd);
+					continue;
 				}
-				if (eventTypes & EPOLLOUT) {
-					handleClientWrite(fd);
+				HttpResponse cgiRes(_config);
+				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
+					AccessLogger::getInstance().log(
+						&_clients[fd]->getContext()->req, &cgiRes,
+						_clients[fd]->getIp(), _clients[fd]->getPort(),
+						_clients[fd]->getContext()->session->getId());
+					const std::string responseStr =
+						ResponseBuilder::build(cgiRes);
+					if (!responseStr.empty()) {
+						_clients[fd]->getSocket()->setSendBuffer(
+							_clients[fd]->getSocket()->getSendBuffer() +
+							responseStr);
+					}
+					if (!_clients[fd]->getSocket()->getSendBuffer().empty()) {
+						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
+					}
+				} else {
+					if (eventTypes & EPOLLIN) {
+						handleClientRead(fd);
+					}
+					if (eventTypes & EPOLLOUT) {
+						handleClientWrite(fd);
+					}
+				}
+			}
+		}
+
+		// このラウンドでCgiManagerから出た変更・通知を反映
+		applyCgiChanges();
+
+		// 完了したCGIがあれば即レスポンス組立て・送信準備
+		{
+			std::vector< int > clientFds;
+			clientFds.reserve(_clients.size());
+			for (std::map< int, Client * >::iterator it = _clients.begin();
+				 it != _clients.end(); ++it) {
+				clientFds.push_back(it->first);
+			}
+			for (size_t i = 0; i < clientFds.size(); ++i) {
+				const int cfd = clientFds[i];
+				if (_clients.count(cfd) == 0)
+					continue;
+				HttpResponse cgiRes(_config);
+				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
+					AccessLogger::getInstance().log(
+						&_clients[cfd]->getContext()->req, &cgiRes,
+						_clients[cfd]->getIp(), _clients[cfd]->getPort(),
+						_clients[cfd]->getContext()->session->getId());
+					const std::string responseStr =
+						ResponseBuilder::build(cgiRes);
+					if (!responseStr.empty()) {
+						_clients[cfd]->getSocket()->setSendBuffer(
+							_clients[cfd]->getSocket()->getSendBuffer() +
+							responseStr);
+					}
+					if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
+						_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
+					}
 				}
 			}
 		}
@@ -150,14 +249,20 @@ void Server::handleNewConnection(const int listenFd) {
 	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 
 	char clientIp[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
-	int clientPort = ntohs(clientAddr.sin_port);
+	const unsigned char *bytes =
+		reinterpret_cast< unsigned char * >(&clientAddr.sin_addr.s_addr);
+	snprintf(clientIp, sizeof(clientIp), "%u.%u.%u.%u", bytes[0], bytes[1],
+			 bytes[2], bytes[3]);
+	const int clientPort = ntohs(clientAddr.sin_port);
 
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
 			  << attr("client_port", clientPort) << attr("fd", clientFd);
 
 	try {
-		Client *client = new Client(clientFd, clientAddr, _config, this);
+		const Socket *listenSocket = _listenSockets.at(listenFd);
+		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
+		Client *client = new Client(clientFd, clientAddr, listenPort,
+									_cgiManager, _config, this);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
 		_timeoutManager.add(client, _config.getTimeoutSec());
@@ -193,12 +298,20 @@ void Server::handleClientRead(const int clientFd) {
 		}
 		return;
 	}
+	_mainProcessor.handle(*ctx);
+
+	// CGIが起動されたばかりかチェック
+	if (ctx->isCgi) {
+		applyCgiChanges();
+		ctx->isCgi = false;
+		return;
+	}
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		AccessLogger::getInstance().log(ctx->req, ctx->res, client->getIp(),
+		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
 										client->getPort(),
 										ctx->session->getId());
-		const std::string responseStr = ResponseBuilder::build(*ctx->res);
+		const std::string responseStr = ResponseBuilder::build(ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
 				client->getSocket()->getSendBuffer() + responseStr);
@@ -228,13 +341,13 @@ void Server::handleClientWrite(const int clientFd) {
 		if (sock->getSendBuffer().empty()) {
 			PipelineContext *ctx = client->getContext();
 			// Connectionヘッダを見て接続を閉じるか判断
-			if (ctx->res->getHeader("Connection") == "close") {
+			if (ctx->res.getHeader("Connection") == "close") {
 				closeConnection(clientFd);
 			} else {
 				// Keep-Alive:
 				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
 				_socketsManager.modifySocket(clientFd, EPOLLIN);
-				ctx->reset();
+				ctx->reset(_config);
 			}
 		}
 	} else {
@@ -247,6 +360,12 @@ void Server::handleClientWrite(const int clientFd) {
 }
 
 void Server::closeConnection(const int clientFd) {
+	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する
+	try {
+		_cgiManager.abortClient(clientFd);
+	} catch (...) {
+		// best-effort: ここでの失敗は致命的ではない
+	}
 	_socketsManager.unregisterSocket(clientFd);
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {

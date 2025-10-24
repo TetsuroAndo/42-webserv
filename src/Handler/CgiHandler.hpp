@@ -7,7 +7,7 @@ class CgiManager;
 
 class CgiHandler : public ISubHandler {
 public:
-	explicit CgiHandler(CgiManager *cgiManager);
+	explicit CgiHandler();
 	~CgiHandler();
 
 	/**
@@ -18,8 +18,6 @@ public:
 	virtual HttpResponse handle(PipelineContext &ctx);
 
 private:
-	CgiManager *_cgiManager;
-
 	CgiHandler(const CgiHandler &);
 	CgiHandler &operator=(const CgiHandler &);
 };

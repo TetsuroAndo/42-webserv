@@ -1,10 +1,17 @@
 #pragma once
 
-#include "../Middleware/Core/PipelineContext.hpp"
 #include "../Socket/FdEventChanges.hpp"
-#include "CgiWorker.hpp"
+#include <bits/stdint-uintn.h>
+#include <cstddef>
+#include <ctime>
 #include <map>
+#include <queue>
 #include <vector>
+
+class Config;
+class PipelineContext;
+class HttpResponse;
+class CgiWorker;
 
 class CgiManager {
 public:
@@ -14,34 +21,30 @@ public:
 	/**
 	 * @brief 新しいCgiWorkerを生成し、監視対象のFDリストを返す
 	 * @param ctx リクエストのコンテキスト
-	 * @return Serverのepollに追加・削除すべきFDの情報
 	 */
-	FdEventChanges createWorker(PipelineContext &ctx);
+	void createWorker(PipelineContext &ctx);
 
 	/**
 	 * @brief CGIのパイプFDでイベントが発生した際にServerから呼ばれる
 	 * @param fd イベントが発生したファイルディスクリプタ
-	 * @return 状態変化によりepollへの登録内容を変更するための情報
+	 * @param event_type イベントのタイプ (EPOLLIN or EPOLLOUT)
 	 */
-	FdEventChanges handleEvent(int fd);
-
+	void handleEvent(int fd, uint32_t event_type);
 	/**
 	 * @brief 完了またはタイムアウトしたWorkerをクリーンアップする
-	 * @return epollから削除すべきFDの情報
 	 */
-	FdEventChanges cleanupWorkers();
+	void cleanupWorkers();
 
 	/**
 	 * @brief タイムアウトしたWorkerをクリーンアップする
-	 * @return epollから削除すべきFDの情報
 	 */
-	FdEventChanges cleanupTimedOutWorkers();
+	void cleanupTimedOutWorkers();
 
 	/**
 	 * @brief 指定したクライアント向けのCGI処理が完了したか確認する
 	 * @param clientFd クライアントのファイルディスクリプタ
 	 * @param res
-	 * 処理が完了していた場合、このHttpResponseオブジェクトに結果が格納される
+	 * ステータス関係なく完了していればHttpResponseを構築してワーカーを削除する
 	 * @return 処理が完了していればtrue、そうでなければfalse
 	 */
 	bool isCgiComplete(int clientFd, HttpResponse &res);
@@ -53,13 +56,33 @@ public:
 	 */
 	bool isCgiFd(int fd) const;
 
+	/**
+	 * @brief 指定クライアントFDに紐づくCGIを中断・後始末する
+	 */
+	void abortClient(int clientFd);
+
+	/**
+	 * @brief queueから情報を一個取り出す
+	 * @return queueの一番先頭の要素
+	 */
+	FdEventChange popChange();
+
+	/**
+	 * @brief 残っているFdEventChangesの数を返す
+	 * @return 残っているFdEventChangesの数
+	 */
+	size_t eventSize() const;
+
 private:
 	const time_t _timeoutSeconds;
+	size_t _maxWorkers;
 	std::vector< CgiWorker * > _workers;
-	// pipeFD(ReadFd)からWorkerを引くためのマップ
+	// pipeFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _pipeFdToWorker;
 	// ClientFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _clientFdToWorker;
+	// FdEventChangesを貯めるキュー
+	std::queue< FdEventChange > _queue;
 
 	void _removeWorker(CgiWorker *worker);
 
