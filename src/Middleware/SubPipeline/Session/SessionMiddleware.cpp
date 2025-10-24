@@ -112,7 +112,6 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 			parseCookieField(ctx.req.getHeader("Cookie"));
 		if (reqCookie.count("sessionId") > 0) {
 			token = reqCookie["sessionId"];
-			// std::cout << "Received sessionId: " << token << std::endl;
 		}
 	}
 	Session *currentSession = NULL;
@@ -133,19 +132,6 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 		std::string response = "sessionId=\"";
 		response.append(currentSession->getId());
 		response.append("\"; Path=/; HttpOnly");
-		ctx.res.appendHeader("Set-Cookie", response);
-	}
-
-	{
-		std::string response = "lastAccessTime=";
-		response.append(TimeCache::getLocalTimestamp());
-		response.append("; Path=/");
-		ctx.res.appendHeader("Set-Cookie", response);
-	}
-	{
-		std::string response = "serverName=";
-		response.append(ctx.res.getServerName());
-		response.append("; Path=/");
 		ctx.res.appendHeader("Set-Cookie", response);
 	}
 
