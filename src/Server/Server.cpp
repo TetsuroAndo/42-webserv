@@ -116,7 +116,7 @@ void Server::setupListenSockets() {
 			throw std::runtime_error("listen() failed");
 		}
 
-		Socket *sock = new Socket(listenFd, addr);
+		Socket *sock = new Socket(_config, listenFd, addr);
 		_listenSockets[listenFd] = sock;
 		_socketsManager.registerSocket(listenFd, EPOLLIN);
 		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port

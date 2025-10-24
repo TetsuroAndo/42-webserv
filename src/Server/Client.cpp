@@ -26,7 +26,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 	_ip = ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 
-	_socket = new Socket(fd, addr);
+	_socket = new Socket(config, fd, addr);
 	_context = new PipelineContext(config, *this, cgiManager);
 }
 
