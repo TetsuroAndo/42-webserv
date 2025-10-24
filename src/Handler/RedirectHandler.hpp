@@ -10,8 +10,7 @@ public:
 	RedirectHandler(const std::string &redirectUrl, int statusCode);
 	~RedirectHandler();
 
-	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
-						const Config &config);
+	HttpResponse handle(PipelineContext &ctx);
 
 private:
 	std::string _redirectUrl;

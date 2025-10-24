@@ -1,21 +1,18 @@
 #include "PipelineContext.hpp"
 #include "../../Server/Client.hpp"
 
-PipelineContext::PipelineContext(const Config &c, Client &client)
-	: conf(c), req(new HttpRequest(c)), res(new HttpResponse(c)), session(NULL),
-	  recvBuffer(""), sendBuffer(""), ownerClient(client) {}
+PipelineContext::PipelineContext(const Config &c, Client &client,
+								 CgiManager &serverCgiManager)
+	: conf(c), req(c), res(c), session(NULL), recvBuffer(""), sendBuffer(""),
+	  ownerClient(client), cgiManager(serverCgiManager), isCgi(false) {}
 
-PipelineContext::~PipelineContext() {
-	delete req;
-	delete res;
-}
+PipelineContext::~PipelineContext() {}
 
-void PipelineContext::reset() {
-	delete req;
-	delete res;
-	req = new HttpRequest(conf);
-	res = new HttpResponse(conf);
+void PipelineContext::reset(const Config &c) {
+	req.clear(c);
+	res.clear(c);
 	recvBuffer.clear();
 	sendBuffer.clear();
+	isCgi = false;
 	parser.reset();
 }

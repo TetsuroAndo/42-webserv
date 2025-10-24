@@ -1,0 +1,62 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      maxRequestBodySize: 1048576
+      timeoutSec: 60
+      maxEvents: 1024
+
+      access_logs:
+        - access_log:
+            sink: file
+            filename: cgi_access.log
+            logDir: ./logs
+            format: ELF
+
+      error_logs:
+        - error_log:
+            sink: console
+            level: debug
+
+      locations:
+        # CGI-bin directory for .php and .py scripts
+        - location:
+            path: /cgi-bin
+            root: ./cgi-bin
+            allowedMethods:
+              - GET
+              - POST
+            cgi:
+              .php: /usr/bin/php-cgi
+              .py: /usr/bin/python3
+
+        # Alternative location for Python CGI scripts only
+        - location:
+            path: /python
+            root: ./cgi-bin/python
+            allowedMethods:
+              - GET
+              - POST
+            cgi:
+              .py: /usr/bin/python3
+
+        # Static files (no CGI)
+        - location:
+            path: /static
+            root: ./www
+            autoindex: true
+            allowedMethods:
+              - GET
+              - HEAD
+
+        # File upload location
+        - location:
+            path: /upload
+            root: ./www/uploads
+            uploadStore: ./www/uploads
+            allowedMethods:
+              - POST
+              - DELETE

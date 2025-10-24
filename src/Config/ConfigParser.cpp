@@ -71,7 +71,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("autoindex");
 	keys.insert("indexFile");
 	keys.insert("uploadStore");
-	keys.insert("cgi");
+	keys.insert("interpreterPath");
 	keys.insert("redirects");
 	keys.insert("errorFile");
 	return keys;

@@ -5,23 +5,34 @@
 #include <netinet/in.h>
 #include <sstream>
 
-Client::Client(const int fd, const sockaddr_in &addr, const Config &config)
-	: _fd(fd) {
-	// Format IP address manually (inet_ntop not in allowed function list)
+namespace {
+// clang-format off
+std::string ipToString(uint32_t ip_addr) {
+	std::stringstream ss;
+	ss << ((ip_addr >> 24) & 0xFF) << "."
+	   << ((ip_addr >> 16) & 0xFF) << "."
+	   << ((ip_addr >> 8) & 0xFF) << "."
+	   << (ip_addr & 0xFF);
+	return ss.str();
+}
+// clang-format on
+} // namespace
+
+Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
+			   CgiManager &cgiManager, const Config &config)
+	: _fd(fd), _listenPort(listenPort) {
 	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
-	ipStream << ((ip_addr >> 24) & 0xFF) << "." << ((ip_addr >> 16) & 0xFF)
-			 << "." << ((ip_addr >> 8) & 0xFF) << "." << (ip_addr & 0xFF);
-	_ip = ipStream.str();
+	_ip = ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 
 	_socket = new Socket(fd, addr);
-	_context = new PipelineContext(config, *this);
+	_context = new PipelineContext(config, *this, cgiManager);
 }
 
 Client::~Client() {
 	delete _socket;
-	delete _context; // PipelineContext destructor handles deleting req and res
+	delete _context;
 }
 
 int Client::getFd() const { return _fd; }
@@ -33,3 +44,5 @@ PipelineContext *Client::getContext() const { return _context; }
 const std::string &Client::getIp() const { return _ip; }
 
 int Client::getPort() const { return _port; }
+
+int Client::getListenPort() const { return _listenPort; }

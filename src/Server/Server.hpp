@@ -30,8 +30,7 @@ private:
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
 
-	bool isCgiFd(int fd) const;
-	void applyCgiChanges(const FdEventChanges &changes);
+	void applyCgiChanges();
 	void setupListenSockets();
 	void handleNewConnection(int listenFd);
 	void handleClientRead(int clientFd);
