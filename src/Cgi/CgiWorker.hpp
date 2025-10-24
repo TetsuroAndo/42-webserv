@@ -72,10 +72,11 @@ private:
 	int _pipeOut[2];
 	std::string _requestBody;
 	size_t _bytesSent;
-	std::string _responseBuffer;
 	std::string _scriptPath;
 	std::string _interpreterPath;
 	time_t _lastActivityTime;
+	std::string _responseBuffer;
+	std::vector< char > _readBuffer;
 
 	CgiResponseParser _responseParser;
 

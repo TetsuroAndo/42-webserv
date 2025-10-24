@@ -3,10 +3,10 @@
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include <algorithm>
+#include <cstring>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -15,7 +15,8 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath)
 	: _ctx(ctx), _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
-	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)) {
+	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)),
+	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
 	_pipeIn[0] = -1;
 	_pipeIn[1] = -1;
 	_pipeOut[0] = -1;
@@ -138,9 +139,8 @@ void CgiWorker::handleRead() {
 		// 既にクローズ済み。余計なエラーを出さずに無視する。
 		return;
 	}
-	char *buffer = new char[_ctx.conf.getPerformance().cgiIoBufferSize];
 	const ssize_t bytes =
-		read(getReadFd(), buffer, _ctx.conf.getPerformance().cgiIoBufferSize);
+		read(getReadFd(), &_readBuffer[0], _readBuffer.size());
 
 	if (bytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
@@ -167,7 +167,7 @@ void CgiWorker::handleRead() {
 			_closePipe(_pipeOut[0]);
 			return;
 		}
-		_responseBuffer.append(buffer, bytes);
+		_responseBuffer.append(&_readBuffer[0], bytes);
 	}
 	updateLastActivityTime();
 }
