@@ -48,6 +48,9 @@ public:
 	/// @brief 状態をタイムアウトに設定する
 	void setTimeout();
 
+	/// @brief 状態をエラーに設定する
+	void setError();
+
 	/// @brief 最終活動時刻を取得する
 	time_t getLastActivityTime() const;
 

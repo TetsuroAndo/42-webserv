@@ -159,23 +159,9 @@ void CgiWorker::handleRead() {
 		_responseParser.parse(_responseBuffer);
 		bool headersFound = _responseParser.headersFound();
 
-		// 子プロセスのステータスを非ブロッキングで回収
-		int status = 0;
-		pid_t result = waitpid(_pid, &status, WNOHANG);
-
-		if (result == -1) {
-			// ECHILD (既に回収済み) 以外はエラーログ
-			if (errno != ECHILD) {
-				LOG(WARNING) << "waitpid(WNOHANG) failed for CGI process"
-							 << attr("pid", _pid) << attr("errno", errno);
-			}
-		} else if (result == 0) {
-			// まだプロセスが終了していなかった (稀なケース)
-			// この場合、デストラクタが後で回収するので問題ない
-			LOG(DEBUG) << "CGI process EOF detected, but waitpid(WNOHANG) "
-						  "returned 0"
-					   << attr("pid", _pid);
-		}
+		// ★ 削除：waitpid() はメインループで一元管理される
+		// 子プロセスのステータス回収は CgiManager::cleanupFinishedWorkers()
+		// で非ブロッキングに行う
 
 		// ヘッダが見つからない場合のみ CGI_ERROR と判定
 		if (!headersFound) {
@@ -256,6 +242,8 @@ pid_t CgiWorker::getPid() const { return _pid; }
 CgiWorker::CgiState CgiWorker::getState() const { return _state; }
 
 void CgiWorker::setTimeout() { _state = CGI_TIMEOUT; }
+
+void CgiWorker::setError() { _state = CGI_ERROR; }
 
 time_t CgiWorker::getLastActivityTime() const { return _lastActivityTime; }
 
