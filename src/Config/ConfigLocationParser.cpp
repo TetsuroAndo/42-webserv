@@ -63,6 +63,15 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
+		Node *cgiConfigNode = l_node->getMapNode("interpreterPath");
+		if (cgiConfigNode) {
+			std::vector< std::string > keys = cgiConfigNode->getKeys();
+			std::vector< std::string >::iterator keysIt = keys.begin();
+			for (; keysIt != keys.end(); ++keysIt) {
+				loc.cgiConf[*keysIt] =
+					cgiConfigNode->getMapNode(*keysIt)->getValue();
+			}
+		}
 		_builder->setLocation(loc);
 	}
 }

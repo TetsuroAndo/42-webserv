@@ -9,6 +9,8 @@
 #include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
 #include "../SubPipeline/Session/SessionMiddleware.hpp"
 
+#include <iostream>
+
 PipelineRouteBuilder::PipelineRouteBuilder() {}
 
 PipelineRouteBuilder::~PipelineRouteBuilder() {
