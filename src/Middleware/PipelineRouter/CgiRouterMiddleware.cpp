@@ -37,7 +37,7 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 
 		const std::string &method = ctx.req.getMethod();
 
-		// GIで許可するメソッドか？ (GET/POSTのみ)
+		// CGIで許可するメソッドか？ (GET/POSTのみ)
 		if (method != "GET" && method != "POST") {
 			LOG(WARNING) << "CgiRouterMiddleware: Method not allowed for CGI."
 						 << attr("method", method);
