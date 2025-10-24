@@ -130,6 +130,10 @@ void CgiWorker::handleWrite() {
 }
 
 void CgiWorker::handleRead() {
+	if (getReadFd() < 0) {
+		// 既にクローズ済み。余計なエラーを出さずに無視する。
+		return;
+	}
 	char buffer[4096];
 	const ssize_t bytes = read(getReadFd(), buffer, sizeof(buffer));
 

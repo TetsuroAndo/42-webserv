@@ -13,6 +13,7 @@
 #include <sys/epoll.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 void CgiManager::_removeWorker(CgiWorker *worker) {
 	if (!worker)
@@ -24,8 +25,19 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 
 	_workers.erase(std::remove(_workers.begin(), _workers.end(), worker),
 				   _workers.end());
-	_pipeFdToWorker.erase(worker->getReadFd());
-	_pipeFdToWorker.erase(worker->getWriteFd());
+	// 値がworkerのエントリをすべて削除する（fdが-1に変更された後でも安全）
+	{
+		std::vector< int > keys;
+		for (std::map< int, CgiWorker * >::iterator it2 =
+				 _pipeFdToWorker.begin();
+			 it2 != _pipeFdToWorker.end(); ++it2) {
+			if (it2->second == worker)
+				keys.push_back(it2->first);
+		}
+		for (size_t i = 0; i < keys.size(); ++i) {
+			_pipeFdToWorker.erase(keys[i]);
+		}
+	}
 	_clientFdToWorker.erase(worker->getClientFd());
 
 	delete worker;
@@ -147,12 +159,14 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 				  << attr("clientFd", worker->getClientFd())
 				  << attr("pid", worker->getPid())
 				  << attr("state", worker->getState());
+		// このイベントを発火させたfdを確実に削除
 		{
 			FdEventChange ev;
-			ev.fd = worker->getReadFd();
+			ev.fd = fd;
 			ev.changeType = FdChangeType_REMOVE;
 			_queue.push(ev);
 		}
+		_pipeFdToWorker.erase(fd);
 		// 書き込みFDがまだ監視対象ならそれも削除リストに追加
 		if (_pipeFdToWorker.count(worker->getWriteFd())) {
 			{
@@ -161,16 +175,12 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 				ev.changeType = FdChangeType_REMOVE;
 				_queue.push(ev);
 			}
+			_pipeFdToWorker.erase(worker->getWriteFd());
 		}
 
-		// 完了したことをクライアントFDへ通知（MOD）して、即座にチェックさせる
-		{
-			FdEventChange notify;
-			notify.fd = worker->getClientFd();
-			notify.eventType = EPOLLIN | EPOLLOUT;
-			notify.changeType = FdChangeType_NOTIFY;
-			_queue.push(notify);
-		}
+		// クライアントFDへの明示的なNOTIFYは行わない。
+		// Server側でイベント処理後にisCgiComplete()をスイープし、
+		// 即時にレスポンス送出へ進む設計とする。
 	}
 }
 
@@ -198,19 +208,21 @@ void CgiManager::cleanupTimedOutWorkers() {
 		}
 		worker->setTimeout();
 
-		// 関連FDを監視対象から削除
+		// 関連FDを監視対象から削除（現在のマッピングに基づいて安全に）
 		{
-			FdEventChange ev;
-			ev.fd = worker->getReadFd();
-			ev.changeType = FdChangeType_REMOVE;
-			_queue.push(ev);
-		}
-		if (_pipeFdToWorker.count(worker->getWriteFd())) {
-			{
+			std::vector< int > keys;
+			for (std::map< int, CgiWorker * >::iterator it2 =
+					 _pipeFdToWorker.begin();
+				 it2 != _pipeFdToWorker.end(); ++it2) {
+				if (it2->second == worker)
+					keys.push_back(it2->first);
+			}
+			for (size_t i = 0; i < keys.size(); ++i) {
 				FdEventChange ev;
-				ev.fd = worker->getWriteFd();
+				ev.fd = keys[i];
 				ev.changeType = FdChangeType_REMOVE;
 				_queue.push(ev);
+				_pipeFdToWorker.erase(keys[i]);
 			}
 		}
 	}
