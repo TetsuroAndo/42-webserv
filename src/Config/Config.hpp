@@ -51,8 +51,9 @@ struct Location {
 	std::string errorFile;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
+	bool session;
 
-	Location() : autoindex(false) {}
+	Location() : autoindex(false), session(false) {}
 };
 
 struct AccessLog {

@@ -32,7 +32,8 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
 
-		if (!currentLocation.allowedMethods.empty()) {
+		if (currentLocation.session == true &&
+			!currentLocation.allowedMethods.empty()) {
 			routeProcessor->addMiddleware(new SessionMiddleware());
 		}
 

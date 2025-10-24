@@ -55,4 +55,5 @@ public:
 	void setServerDefaultIsAllowDelete(bool allow);
 	void setServerDefaultAllowedMethods(const std::string &methods);
 	void setServerDefaultAllowedMethods(const std::set< std::string > &methods);
+	void setServerDefaultSession(bool enable);
 };
