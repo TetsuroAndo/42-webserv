@@ -24,7 +24,6 @@ std::string ipToString(uint32_t ip_addr) {
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 			   CgiManager &cgiManager, const Config &config, Server *server)
 	: _fd(fd), _listenPort(listenPort), _server(server) {
-	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
