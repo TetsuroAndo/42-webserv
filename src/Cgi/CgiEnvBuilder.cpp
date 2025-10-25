@@ -28,7 +28,7 @@ std::string fullURI(const std::string &version, const std::string &ip,
 
 	result += modifiedVersion + "://";
 	result += ip + ":" + port;
-	if (scriptPath[0] != '/') {
+	if (!scriptPath.empty() && scriptPath[0] != '/') {
 		result += "/";
 	}
 	result += scriptPath;
@@ -51,8 +51,17 @@ std::string queryString(const HttpRequest &req) {
 
 std::string fileName(const std::string &scriptPath) {
 	std::string trimmed = scriptPath;
-	trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r"));
-	trimmed.erase(trimmed.find_last_not_of(" \t\n\r") + 1);
+	const size_t start = trimmed.find_first_not_of(" \t\n\r");
+	if (start != std::string::npos) {
+		trimmed.erase(0, start);
+	} else {
+		trimmed.clear();
+		return "/";
+	}
+	const size_t end = trimmed.find_last_not_of(" \t\n\r");
+	if (end != std::string::npos) {
+		trimmed.erase(end + 1);
+	}
 
 	std::size_t pos = trimmed.find('?');
 	if (pos != std::string::npos)
@@ -84,36 +93,40 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	const std::vector< std::string > Authorization =
 		StringOps::split(req.getHeader("Authorization"), " ");
 	std::string remoteUser = "";
+	std::string authType = "";
+	if (!Authorization.empty()) {
+		authType = Authorization[0];
+	}
 	if (1 < Authorization.size()) {
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
 	Location loc = c.getLocation(requestedPath);
 
-	envMap["AUTH_TYPE"] =
-		StringOps::split(req.getHeader("Authorization"), " ")[0];
+	if (c.getListens().empty()) {
+		LOG(ERROR) << "CgiEnvBuilder: No listen configuration found";
+		return std::vector< std::string >();
+	}
+
+	const Listen &listen = c.getListens()[0];
+
+	envMap["AUTH_TYPE"] = authType;
 	envMap["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
-	envMap["PATH_INFO"] = requestedPath; // Locationsのroot+ファイル名
-	envMap["PATH_TRANSLATED"] = ::fullURI(
-		c.getAppInfo().httpProtocolVersion, c.getListens()[0].interface,
-		StringOps::toString(c.getListens()[0].port),
-		ctx.req.getPath()); // リクエストのURIを全文 (文字列操作で作る)
-	envMap["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
+	envMap["PATH_INFO"] = requestedPath;
+	envMap["PATH_TRANSLATED"] =
+		::fullURI(c.getAppInfo().httpProtocolVersion, listen.interface,
+				  StringOps::toString(listen.port), ctx.req.getPath());
+	envMap["QUERY_STRING"] = queryString(ctx.req);
 	envMap["REMOTE_ADDR"] = ctx.ownerClient.getIp();
-	envMap["REMOTE_HOST"] = ""; // 空文字で登録
-	envMap["REMOTE_IDENT"] = ctx.session->getId();
+	envMap["REMOTE_HOST"] = "";
+	envMap["REMOTE_IDENT"] = ctx.session ? ctx.session->getId() : "";
 	envMap["REMOTE_USER"] = remoteUser;
 	envMap["REQUEST_METHOD"] = req.getMethod();
-	envMap["SCRIPT_NAME"] =
-		fileName(requestedPath); // まっさらなCGIのファイル名
-	envMap["SERVER_NAME"] =
-		c.getListens()[0]
-			.interface; // Locationsで指定されるIPアドレス(0番目で固定)
-	envMap["SERVER_PORT"] = StringOps::toString(
-		c.getListens()[0]
-			.port); // Locationsのうち、scriptPathが属す場所のポート(0番目で固定)
+	envMap["SCRIPT_NAME"] = fileName(requestedPath);
+	envMap["SERVER_NAME"] = listen.interface;
+	envMap["SERVER_PORT"] = StringOps::toString(listen.port);
 	envMap["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
 	envMap["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
 	envMap["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());

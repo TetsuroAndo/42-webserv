@@ -58,6 +58,12 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 		}
 
 		// CgiHandlerに処理を委譲（CGIプロセス起動）
+		if (_cgiHandler == NULL) {
+			LOG(ERROR) << "CgiHandler is NULL";
+			HandlerUtil::generateSimpleBody(method, ctx.res,
+											HttpStatus::INTERNAL_SERVER_ERROR);
+			return;
+		}
 		try {
 			ctx.res = _cgiHandler->handle(ctx);
 

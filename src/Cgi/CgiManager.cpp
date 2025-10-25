@@ -3,6 +3,7 @@
 #include "CgiManager.hpp"
 #include "../Config/Config.hpp"
 #include "../Handler/HandlerUtil.hpp"
+#include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
@@ -78,8 +79,10 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 
 		if (dotPos != std::string::npos) {
 			const std::string ext = scriptPath.substr(dotPos);
-			if (loc.cgiConf.count(ext)) {
-				interpreterPath = loc.cgiConf.at(ext);
+			std::map< std::string, std::string >::const_iterator it =
+				loc.cgiConf.find(ext);
+			if (it != loc.cgiConf.end()) {
+				interpreterPath = it->second;
 			}
 		}
 
@@ -95,17 +98,26 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				   << attr("interpreter", interpreterPath)
 				   << attr("script", scriptPath);
 
-		CgiWorker *worker = new CgiWorker(ctx, scriptPath, interpreterPath);
-		worker->execute(); // pipe, fork, execveの実行
+		CgiWorker *worker = NULL;
+		try {
+			worker = new CgiWorker(ctx, scriptPath, interpreterPath);
+			worker->execute(); // pipe, fork, execveの実行
 
-		_workers.push_back(worker);
-		if (worker->getReadFd() >= 0) {
-			_pipeFdToWorker[worker->getReadFd()] = worker;
+			_workers.push_back(worker);
+			if (worker->getReadFd() >= 0) {
+				_pipeFdToWorker[worker->getReadFd()] = worker;
+			}
+			if (worker->getWriteFd() >= 0) {
+				_pipeFdToWorker[worker->getWriteFd()] = worker;
+			}
+			_clientFdToWorker[worker->getClientFd()] = worker;
+		} catch (const std::exception &e) {
+			delete worker;
+			LOG(ERROR) << "Failed to create or execute CgiWorker: " << e.what();
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
+											HttpStatus::INTERNAL_SERVER_ERROR);
+			return;
 		}
-		if (worker->getWriteFd() >= 0) {
-			_pipeFdToWorker[worker->getWriteFd()] = worker;
-		}
-		_clientFdToWorker[worker->getClientFd()] = worker;
 
 		// サーバーに監視対象のFDを追加
 		// CGIスクリプトからの出力を監視
@@ -270,6 +282,10 @@ bool CgiManager::isCgiFd(const int fd) const {
 }
 
 FdEventChange CgiManager::popChange() {
+	if (_queue.empty()) {
+		LOG(ERROR) << "popChange called on empty queue";
+		return FdEventChange();
+	}
 	const FdEventChange change = _queue.front();
 	_queue.pop();
 	return change;

@@ -45,9 +45,8 @@ void extractKeyValue(std::map< std::string, std::string > &result,
 			std::string value = current.substr(pos + 1);
 			StringOps::trim(key);
 			StringOps::trim(value);
-			const bool hadOuterQuotes =
-				(value.size() >= 2 && *value.begin() == '"' &&
-				 *(value.end() - 1) == '"');
+			const bool hadOuterQuotes = (value.size() >= 2 && value[0] == '"' &&
+										 value[value.size() - 1] == '"');
 			if (hadOuterQuotes) {
 				value = value.substr(1, value.size() - 2);
 			}

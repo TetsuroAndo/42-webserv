@@ -277,8 +277,14 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		for (std::vector< std::string >::const_iterator cgi_it =
 				 cgiKeys.begin();
 			 cgi_it != cgiKeys.end(); ++cgi_it) {
-			_builder->setServerDefaultCgiConf(
-				*cgi_it, n->getMapNode(*cgi_it)->getValue());
+			Node *cgiValueNode = n->getMapNode(*cgi_it);
+			if (!cgiValueNode) {
+				throw std::runtime_error(
+					"Config error: invalid structure in cgi block for key '" +
+					*cgi_it + "'");
+			}
+			_builder->setServerDefaultCgiConf(*cgi_it,
+											  cgiValueNode->getValue());
 		}
 	}
 

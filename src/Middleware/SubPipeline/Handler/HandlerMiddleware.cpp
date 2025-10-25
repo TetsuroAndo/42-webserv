@@ -1,6 +1,7 @@
 #include "HandlerMiddleware.hpp"
 #include "../../../Handler/ISubHandler.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
+#include "../../../Lib/Logger/Log.hpp"
 
 #include <map>
 #include <sstream>
@@ -47,9 +48,17 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 
 	if (it != _handlers.end()) {
 		ISubHandler *handler = it->second;
+		if (handler == NULL) {
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.res.setHeader("Content-Type", "text/html");
+			ctx.res.setBody(
+				"<html><body><h1>500 Internal Server Error</h1></body></html>");
+			return;
+		}
 		try {
 			ctx.res = handler->handle(ctx);
-		} catch (...) {
+		} catch (const std::exception &e) {
+			LOG(ERROR) << "Handler exception: " << e.what();
 			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 			ctx.res.setHeader("Content-Type", "text/html");
 			ctx.res.setBody(
