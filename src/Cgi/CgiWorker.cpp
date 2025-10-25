@@ -64,8 +64,9 @@ void CgiWorker::execute() {
 
 	if (_pid == 0) {
 		try {
+			CgiEnvBuilder envBuilder;
 			const std::vector< std::string > envpStrs =
-				CgiEnvBuilder::build(_ctx, _scriptPath);
+				envBuilder.build(_ctx, _scriptPath);
 			_childProcess(_scriptPath, _interpreterPath, envpStrs);
 		} catch (const std::exception &e) {
 			const std::string msg =

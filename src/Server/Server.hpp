@@ -3,9 +3,10 @@
 #include "../Cgi/CgiManager.hpp"
 #include "../Config/Config.hpp"
 #include "../Lib/Timeout/TimeoutManager.hpp"
-#include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Middleware/Core/MiddlewareProcessor.hpp"
+#include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Socket/FdEventChanges.hpp"
+#include "../Socket/Socket.hpp"
 #include "../Socket/SocketsManager.hpp"
 #include "Client.hpp"
 #include <map>
