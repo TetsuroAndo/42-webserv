@@ -17,6 +17,14 @@ public:
 
 	void run();
 	void closeConnection(int clientFd);
+	void applyCgiChanges();
+
+	// Clientから参照されるゲッター
+	TimeoutManager &getTimeoutManager();
+	SocketsManager &getSocketsManager();
+	MiddlewareProcessor &getMainProcessor();
+	CgiManager &getCgiManager();
+	const Config &getConfig() const;
 
 private:
 	Server();
@@ -32,12 +40,11 @@ private:
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
 
-	void applyCgiChanges();
 	void setupListenSockets();
 	void handleNewConnection(int listenFd);
-	void handleClientRead(int clientFd);
-	void handleClientWrite(int clientFd);
-	void closeConnection(int clientFd);
+	// Clientへ移譲
+	// void handleClientRead(int clientFd);
+	// void handleClientWrite(int clientFd);
 
 	std::string getSessionId(const PipelineContext *ctx) const;
 };

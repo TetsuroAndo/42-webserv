@@ -31,18 +31,22 @@ Config::Config(const std::vector< Listen > &listens,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
 			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
-			   unsigned int maxEvents)
+			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
+			   unsigned int requestBodyTimeoutSec)
 	: _listens(listens), _redirects(redirects), _locations(locations),
 	  _accessLogs(accessLogs), _errorLogs(errorLogs),
 	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
-	  _maxEvents(maxEvents) {}
+	  _maxEvents(maxEvents), _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
+	  _requestBodyTimeoutSec(requestBodyTimeoutSec) {}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _redirects(other._redirects),
 	  _locations(other._locations), _accessLogs(other._accessLogs),
 	  _errorLogs(other._errorLogs),
 	  _maxRequestBodySize(other._maxRequestBodySize),
-	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents) {}
+	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
+	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
+	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -54,6 +58,8 @@ Config &Config::operator=(const Config &other) {
 		_maxRequestBodySize = other._maxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
+		_requestHeaderTimeoutSec = other._requestHeaderTimeoutSec;
+		_requestBodyTimeoutSec = other._requestBodyTimeoutSec;
 	}
 	return *this;
 }
@@ -136,10 +142,21 @@ unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
 
 unsigned int Config::getMaxEvents() const { return _maxEvents; }
 
+unsigned int Config::getRequestHeaderTimeoutSec() const {
+	return _requestHeaderTimeoutSec;
+}
+
+unsigned int Config::getRequestBodyTimeoutSec() const {
+	return _requestBodyTimeoutSec;
+}
+
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
 	os << "  timeoutSec: " << config._timeoutSec << "\n";
+	os << "  requestHeaderTimeoutSec: " << config._requestHeaderTimeoutSec
+	   << "\n";
+	os << "  requestBodyTimeoutSec: " << config._requestBodyTimeoutSec << "\n";
 	os << "  maxEvents: " << config._maxEvents << "\n";
 
 	os << "  listens:\n";

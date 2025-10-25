@@ -37,6 +37,8 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("error_logs");
 	keys.insert("maxRequestBodySize");
 	keys.insert("timeoutSec");
+	keys.insert("requestHeaderTimeoutSec");
+	keys.insert("requestBodyTimeoutSec");
 	keys.insert("maxEvents");
 	keys.insert("root");
 	keys.insert("allowedMethods");
@@ -292,6 +294,13 @@ void ConfigParser::parseServer(const Node *serverNode) {
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
 		_builder->setTimeoutSec(StringOps::stringToInt(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("requestHeaderTimeoutSec"))
+		_builder->setRequestHeaderTimeoutSec(
+			StringOps::stringToInt(n->getValue()));
+	if (Node *n = serverNode->getMapNode("requestBodyTimeoutSec"))
+		_builder->setRequestBodyTimeoutSec(
+			StringOps::stringToInt(n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
 		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));

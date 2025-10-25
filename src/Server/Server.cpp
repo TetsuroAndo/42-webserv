@@ -36,6 +36,13 @@ Server::~Server() {
 	}
 }
 
+// Clientから参照されるゲッター
+TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
+SocketsManager &Server::getSocketsManager() { return _socketsManager; }
+MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
+CgiManager &Server::getCgiManager() { return _cgiManager; }
+const Config &Server::getConfig() const { return _config; }
+
 void Server::applyCgiChanges() {
 	while (_cgiManager.eventSize()) {
 		const FdEventChange event = _cgiManager.popChange();
@@ -184,10 +191,10 @@ void Server::run() {
 					}
 				} else {
 					if (eventTypes & EPOLLIN) {
-						handleClientRead(fd);
+						_clients[fd]->handleReadEvent();
 					}
-					if (eventTypes & EPOLLOUT) {
-						handleClientWrite(fd);
+					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
+						_clients[fd]->handleWriteEvent();
 					}
 				}
 			}
@@ -268,7 +275,8 @@ void Server::handleNewConnection(const int listenFd) {
 									_cgiManager, _config, this);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
-		_timeoutManager.add(client, _config.getTimeoutSec());
+		// 最初はヘッダ受信待ちのタイムアウトを設定
+		client->updateTimeout();
 	} catch (const std::bad_alloc &e) {
 		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
 				   << attr("fd", clientFd);
@@ -280,86 +288,7 @@ void Server::handleNewConnection(const int listenFd) {
 	}
 }
 
-void Server::handleClientRead(const int clientFd) {
-	Client *client = _clients[clientFd];
-	PipelineContext *ctx = client->getContext();
-	char buffer[4096];
-
-	const ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
-
-	if (bytesRead > 0) {
-		ctx->recvBuffer.append(buffer, bytesRead);
-		_timeoutManager.add(client, _config.getTimeoutSec());
-	} else if (bytesRead == 0) {
-		closeConnection(clientFd);
-		return;
-	} else {
-		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG(ERROR) << "recv() failed" << attr("fd", clientFd)
-					   << attr("error", strerror(errno));
-			closeConnection(clientFd);
-		}
-		return;
-	}
-	_mainProcessor.handle(*ctx);
-
-	// CGIが起動されたばかりかチェック
-	if (ctx->isCgi) {
-		applyCgiChanges();
-		ctx->isCgi = false;
-		return;
-	}
-
-	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
-										client->getPort(), getSessionId(ctx));
-		const std::string responseStr = ResponseBuilder::build(ctx->res);
-		if (!responseStr.empty()) {
-			client->getSocket()->setSendBuffer(
-				client->getSocket()->getSendBuffer() + responseStr);
-		}
-		if (!client->getSocket()->getSendBuffer().empty()) {
-			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
-		}
-	}
-}
-
-void Server::handleClientWrite(const int clientFd) {
-	Client *client = _clients[clientFd];
-	Socket *sock = client->getSocket();
-	const std::string &sendBuffer = sock->getSendBuffer();
-
-	if (sendBuffer.empty()) {
-		_socketsManager.modifySocket(clientFd, EPOLLIN);
-		return;
-	}
-
-	const ssize_t bytesSent =
-		send(clientFd, sendBuffer.c_str(), sendBuffer.size(), 0);
-
-	if (bytesSent > 0) {
-		sock->eraseSendBuffer(0, bytesSent);
-		_timeoutManager.add(client, _config.getTimeoutSec());
-		if (sock->getSendBuffer().empty()) {
-			PipelineContext *ctx = client->getContext();
-			// Connectionヘッダを見て接続を閉じるか判断
-			if (ctx->res.getHeader("Connection") == "close") {
-				closeConnection(clientFd);
-			} else {
-				// Keep-Alive:
-				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
-				_socketsManager.modifySocket(clientFd, EPOLLIN);
-				ctx->reset(_config);
-			}
-		}
-	} else {
-		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG(ERROR) << "send() failed" << attr("fd", clientFd)
-					   << attr("error", strerror(errno));
-			closeConnection(clientFd);
-		}
-	}
-}
+// 削除: handleClientRead / handleClientWrite (Clientに委譲)
 
 void Server::closeConnection(const int clientFd) {
 	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する

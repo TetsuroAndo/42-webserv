@@ -17,6 +17,9 @@ private:
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
 	std::string _defaultLocationKey;
+	// (追加) パーサ状態ごとのタイムアウト
+	unsigned int _requestHeaderTimeoutSec;
+	unsigned int _requestBodyTimeoutSec;
 
 	void initDefaults();
 	void setup(const std::string &configFile);
@@ -56,4 +59,8 @@ public:
 	void setServerDefaultAllowedMethods(const std::string &methods);
 	void setServerDefaultAllowedMethods(const std::set< std::string > &methods);
 	void setServerDefaultSession(bool enable);
+
+	// (追加) 新規セッター
+	void setRequestHeaderTimeoutSec(unsigned int sec);
+	void setRequestBodyTimeoutSec(unsigned int sec);
 };

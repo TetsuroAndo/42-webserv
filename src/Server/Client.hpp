@@ -9,6 +9,7 @@
 
 struct PipelineContext;
 class CgiManager;
+class Server;
 
 class Client : public ITimeoutable {
 public:
@@ -24,6 +25,11 @@ public:
 	int getListenPort() const;
 
 	virtual void onTimeout() override;
+
+	// (追加) Serverから委譲されるイベント
+	void handleReadEvent();
+	void handleWriteEvent();
+	void updateTimeout();
 
 private:
 	int _fd;

@@ -15,6 +15,10 @@ void ConfigBuilder::initDefaults() {
 	_maxRequestBodySize = 1024 * 1024;
 	_timeoutSec = 60;
 	_maxEvents = 1024;
+	// (追加) デフォルトタイムアウト
+	_requestHeaderTimeoutSec = 20;
+	_requestBodyTimeoutSec = 30;
+
 	_defaultLocationKey = "/";
 
 	Location defaultLoc;
@@ -72,7 +76,8 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents);
+				  _maxRequestBodySize, _timeoutSec, _maxEvents,
+				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
@@ -189,4 +194,12 @@ void ConfigBuilder::setServerDefaultAllowedMethods(
 
 void ConfigBuilder::setServerDefaultSession(bool enable) {
 	_locations[_defaultLocationKey].session = enable;
+}
+
+void ConfigBuilder::setRequestHeaderTimeoutSec(const unsigned int sec) {
+	_requestHeaderTimeoutSec = sec;
+}
+
+void ConfigBuilder::setRequestBodyTimeoutSec(const unsigned int sec) {
+	_requestBodyTimeoutSec = sec;
 }
