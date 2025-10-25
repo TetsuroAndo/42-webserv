@@ -75,8 +75,6 @@ std::string formatHeaderKeyForCgi(std::string key) {
 }
 } // namespace
 
-CgiEnvBuilder::CgiEnvBuilder() {}
-CgiEnvBuilder::~CgiEnvBuilder() {}
 
 /**
  * @brief PipelineContextからCGI環境変数のリストを生成する
@@ -102,38 +100,39 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 
 	Location loc = c.getLocation(requestedPath);
 
-	_env["AUTH_TYPE"] =
+	std::map< std::string, std::string > env;
+	env["AUTH_TYPE"] =
 		StringOps::split(req.getHeader("Authorization"), " ")[0];
-	_env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
-	_env["CONTENT_TYPE"] = req.getHeader("Content-Type");
-	_env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
-	_env["PATH_INFO"] = requestedPath; // Locationsのroot+ファイル名
-	_env["PATH_TRANSLATED"] = ::fullURI(
+	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
+	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
+	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
+	env["PATH_INFO"] = requestedPath; // Locationsのroot+ファイル名
+	env["PATH_TRANSLATED"] = ::fullURI(
 		c.getAppInfo().httpProtocolVersion, c.getListens()[0].interface,
 		StringOps::toString(c.getListens()[0].port),
 		ctx.req.getPath()); // リクエストのURIを全文 (文字列操作で作る)
-	_env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
-	_env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
-	_env["REMOTE_HOST"] = ""; // 空文字で登録
-	_env["REMOTE_IDENT"] = ctx.session->getId();
-	_env["REMOTE_USER"] = remoteUser;
-	_env["REQUEST_METHOD"] = req.getMethod();
-	_env["SCRIPT_NAME"] = fileName(requestedPath); // まっさらなCGIのファイル名
-	_env["SERVER_NAME"] =
+	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
+	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
+	env["REMOTE_HOST"] = ""; // 空文字で登録
+	env["REMOTE_IDENT"] = ctx.session->getId();
+	env["REMOTE_USER"] = remoteUser;
+	env["REQUEST_METHOD"] = req.getMethod();
+	env["SCRIPT_NAME"] = fileName(requestedPath); // まっさらなCGIのファイル名
+	env["SERVER_NAME"] =
 		c.getListens()[0]
 			.interface; // Locationsで指定されるIPアドレス(0番目で固定)
-	_env["SERVER_PORT"] = StringOps::toString(
+	env["SERVER_PORT"] = StringOps::toString(
 		c.getListens()[0]
 			.port); // Locationsのうち、scriptPathが属す場所のポート(0番目で固定)
-	_env["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
-	_env["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
-	_env["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
+	env["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
+	env["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
+	env["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
 
 	// HTTPヘッダーを環境変数に変換
-	_headerToEnvMap(req);
+	_headerToEnvMap(req, env);
 
 	if (ctx.session != NULL) {
-		_env["HTTP_X_WEBSERV_SESSION_ID"] = ctx.session->getId();
+		env["HTTP_X_WEBSERV_SESSION_ID"] = ctx.session->getId();
 	}
 
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
@@ -144,10 +143,11 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	// 	LOG(DEBUG) << "  " << it->first << "=" << it->second;
 	// }
 
-	return createEnvpArray(_env);
+	return createEnvpArray(env);
 }
 
-void CgiEnvBuilder::_headerToEnvMap(const HttpRequest &req) {
+void CgiEnvBuilder::_headerToEnvMap(const HttpRequest &req,
+									std::map< std::string, std::string > &env) {
 	const std::map< std::string, std::vector< std::string > > &headers =
 		req.getHeaders();
 
@@ -170,7 +170,7 @@ void CgiEnvBuilder::_headerToEnvMap(const HttpRequest &req) {
 			std::string cgiKey = "HTTP_" + formatHeaderKeyForCgi(key);
 
 			// HttpRequestの実装に従い、複数ヘッダーがある場合は最後の値を使用
-			_env[cgiKey] = values.back();
+			env[cgiKey] = values.back();
 		}
 	}
 }
