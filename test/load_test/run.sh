@@ -50,3 +50,30 @@ $PY "$LOAD" --url "http://${ADDR}/cgi-bin/echo.py?foo=bar&baz=qux" --concurrency
 
 echo -e "\n${GREEN}Done.${NC}"
 
+# Check for zombie processes left by webserv (children with state Z)
+check_zombies() {
+  echo -e "${BLUE}Checking for zombie child processes...${NC}"
+  # Give a brief grace period for the server to reap children
+  sleep 1
+  # ps output: pid ppid state command; filter by PPID == WEBSERV_PID and state contains Z
+  if ps -o pid=,ppid=,stat=,comm= -ax >/dev/null 2>&1; then
+    ZOMBIES=$(ps -o pid=,ppid=,stat=,comm= -ax | awk -v ppid="$WEBSERV_PID" '$2==ppid && $3 ~ /Z/')
+  else
+    # Fallback for minimal ps implementations
+    ZOMBIES=$(ps -A -o pid=,ppid=,stat=,comm= | awk -v ppid="$WEBSERV_PID" '$2==ppid && $3 ~ /Z/')
+  fi
+
+  if [[ -n "$ZOMBIES" ]]; then
+    echo -e "${RED}Zombie processes detected (PID PPID STAT COMM):${NC}"
+    echo "$ZOMBIES"
+    return 1
+  else
+    echo -e "${GREEN}No zombie child processes detected.${NC}"
+    return 0
+  fi
+}
+
+if ! check_zombies; then
+  # Non-zero exit to signal failure; cleanup trap will still run
+  exit 1
+fi
