@@ -3,10 +3,10 @@
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include <algorithm>
+#include <cstring>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -15,7 +15,8 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath)
 	: _ctx(ctx), _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
-	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)) {
+	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)),
+	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
 	_pipeIn[0] = -1;
 	_pipeIn[1] = -1;
 	_pipeOut[0] = -1;
@@ -27,20 +28,21 @@ CgiWorker::~CgiWorker() {
 	_closePipe(_pipeOut[0]);
 
 	if (0 < _pid) {
-		kill(_pid, SIGTERM);
+		// プロセスがまだ終了していないか確認（非ブロッキング）
 		int status;
-
 		pid_t result = waitpid(_pid, &status, WNOHANG);
 
 		if (result == 0) {
-			usleep(100000);
-			result = waitpid(_pid, &status, WNOHANG);
-
-			if (result == 0) {
-				kill(_pid, SIGKILL);
-				waitpid(_pid, &status, 0);
-			}
+			// プロセスはまだ実行中
+			LOG(DEBUG)
+				<< "CgiWorker destroyed, sending SIGKILL to running child"
+				<< attr("pid", _pid);
+			kill(_pid, SIGKILL);
+			// ここで waitpid(..., 0) を呼んで待つ必要はない。
+			// OS (init) がそのうち回収する (ゾンビになるが許容する)
 		}
+		// result > 0 (既に終了) または result == -1 (ECHILD)
+		// の場合は何もしなくて良い
 	}
 }
 
@@ -138,8 +140,8 @@ void CgiWorker::handleRead() {
 		// 既にクローズ済み。余計なエラーを出さずに無視する。
 		return;
 	}
-	char buffer[4096];
-	const ssize_t bytes = read(getReadFd(), buffer, sizeof(buffer));
+	const ssize_t bytes =
+		read(getReadFd(), &_readBuffer[0], _readBuffer.size());
 
 	if (bytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
@@ -154,8 +156,22 @@ void CgiWorker::handleRead() {
 
 	if (bytes == 0) {
 		_closePipe(_pipeOut[0]);
-		_state = CGI_COMPLETE;
 		_responseParser.parse(_responseBuffer);
+		bool headersFound = _responseParser.headersFound();
+
+		// ★ 削除：waitpid() はメインループで一元管理される
+		// 子プロセスのステータス回収は CgiManager::cleanupFinishedWorkers()
+		// で非ブロッキングに行う
+
+		// ヘッダが見つからない場合のみ CGI_ERROR と判定
+		if (!headersFound) {
+			LOG(WARNING) << "CGI response has no headers" << attr("pid", _pid)
+						 << attr("output", _responseBuffer);
+			_state = CGI_ERROR;
+		} else {
+			// CGIレスポンスの受信完了
+			_state = CGI_COMPLETE;
+		}
 	} else {
 		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;
 		if (MAX_CGI_RESPONSE_SIZE < _responseBuffer.size() + bytes) {
@@ -166,7 +182,7 @@ void CgiWorker::handleRead() {
 			_closePipe(_pipeOut[0]);
 			return;
 		}
-		_responseBuffer.append(buffer, bytes);
+		_responseBuffer.append(&_readBuffer[0], bytes);
 	}
 	updateLastActivityTime();
 }
@@ -226,6 +242,8 @@ pid_t CgiWorker::getPid() const { return _pid; }
 CgiWorker::CgiState CgiWorker::getState() const { return _state; }
 
 void CgiWorker::setTimeout() { _state = CGI_TIMEOUT; }
+
+void CgiWorker::setError() { _state = CGI_ERROR; }
 
 time_t CgiWorker::getLastActivityTime() const { return _lastActivityTime; }
 

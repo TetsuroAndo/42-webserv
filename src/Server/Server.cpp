@@ -134,6 +134,9 @@ void Server::run() {
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
+		// wait()から戻ったら、まず終了したCGIプロセスを回収する
+		_cgiManager.cleanupFinishedWorkers();
+
 		const epoll_event *events = _socketsManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
