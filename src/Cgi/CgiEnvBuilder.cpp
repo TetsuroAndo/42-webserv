@@ -7,6 +7,7 @@
 #include "../Server/Client.hpp"
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <map>
 
 namespace {
@@ -20,21 +21,6 @@ createEnvpArray(const std::map< std::string, std::string > &_env) {
 		envpStrs.push_back(it->first + "=" + it->second);
 	}
 	return envpStrs;
-}
-
-std::string fullURI(const std::string &version, const std::string &ip,
-					const std::string &port, const std::string &scriptPath) {
-	std::string result;
-	const std::string modifiedVersion =
-		StringOps::toLower(StringOps::trim(version, "0123456789. /"));
-
-	result += modifiedVersion + "://";
-	result += ip + ":" + port;
-	if (scriptPath[0] != '/') {
-		result += "/";
-	}
-	result += scriptPath;
-	return result;
 }
 
 std::string queryString(const HttpRequest &req) {
@@ -66,6 +52,18 @@ std::string fileName(const std::string &scriptPath) {
 	return "/" + name;
 }
 
+std::string extractPathInfo(std::string fullPath) {
+	try {
+		const std::size_t dotPos = fullPath.find('.');
+		const std::size_t slashPos = fullPath.substr(dotPos).find('/');
+		std::string trim =
+			fullPath.substr(dotPos, std::string::npos).substr(slashPos);
+		return trim;
+	} catch (...) {
+		return "";
+	}
+}
+
 /// @brief HTTPヘッダーキーをCGI環境変数名形式 (大文字 + アンダースコア)
 /// に変換する
 std::string formatHeaderKeyForCgi(std::string key) {
@@ -74,7 +72,6 @@ std::string formatHeaderKeyForCgi(std::string key) {
 	return key;
 }
 } // namespace
-
 
 /**
  * @brief PipelineContextからCGI環境変数のリストを生成する
@@ -98,23 +95,25 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
-	Location loc = c.getLocation(requestedPath);
+	const Location loc = c.getLocation(req.getPath());
 
 	std::map< std::string, std::string > env;
-	env["AUTH_TYPE"] =
-		StringOps::split(req.getHeader("Authorization"), " ")[0];
+	env["AUTH_TYPE"] = StringOps::split(req.getHeader("Authorization"), " ")[0];
 	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
-	env["PATH_INFO"] = requestedPath; // Locationsのroot+ファイル名
-	env["PATH_TRANSLATED"] = ::fullURI(
-		c.getAppInfo().httpProtocolVersion, c.getListens()[0].interface,
-		StringOps::toString(c.getListens()[0].port),
-		ctx.req.getPath()); // リクエストのURIを全文 (文字列操作で作る)
+	env["PATH_INFO"] =
+		extractPathInfo(ctx.req.getPath()); // cgiのパス以降のパス
+	env["PATH_TRANSLATED"] =
+		env["PATH_INFO"].empty()
+			? ""
+			: HandlerUtil::resolvePath(env["PATH_INFO"],
+									   c);		// PATH_INFOを取得するURI
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	env["REMOTE_HOST"] = ""; // 空文字で登録
-	env["REMOTE_IDENT"] = ctx.session->getId();
+	if (ctx.session)
+		env["REMOTE_IDENT"] = ctx.session->getId();
 	env["REMOTE_USER"] = remoteUser;
 	env["REQUEST_METHOD"] = req.getMethod();
 	env["SCRIPT_NAME"] = fileName(requestedPath); // まっさらなCGIのファイル名
@@ -136,13 +135,13 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	}
 
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
-	// LOG(DEBUG) << "Env map created: ";
+	// std::cout << "Env map created: \n";
 	// for (std::map< std::string, std::string >::const_iterator it =
-	// 		 envMap.begin();
-	// 	 it != envMap.end(); ++it) {
-	// 	LOG(DEBUG) << "  " << it->first << "=" << it->second;
+	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " <<
+	// it->first <<
+	// "=" << it->second << "\n";
 	// }
-
+	// std::cout << std::endl;
 	return createEnvpArray(env);
 }
 

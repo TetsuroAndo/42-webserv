@@ -9,7 +9,7 @@
 #include <vector>
 
 class Config;
-class PipelineContext;
+struct PipelineContext;
 class HttpResponse;
 class CgiWorker;
 
