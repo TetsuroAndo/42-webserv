@@ -37,25 +37,26 @@ Server::~Server() {
 }
 
 void Server::applyCgiChanges() {
-	while (_cgiManager.eventSize()) {
-		const FdEventChange event = _cgiManager.popChange();
+	FdEventChange event;
+	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent() ||
+		   _cgiManager.sizeNotifyEvent()) {
 		try {
-			switch (event.changeType) {
-			case (FdChangeType_ADD):
+			while (_cgiManager.sizeAddEvent()) {
+				event = _cgiManager.popAddChange();
 				_socketsManager.registerSocket(
 					event.fd, static_cast< uint32_t >(event.eventType));
-				break;
-			case (FdChangeType_REMOVE):
+			}
+			while (_cgiManager.sizeRemoveEvent()) {
+				event = _cgiManager.popRemoveChange();
 				_socketsManager.unregisterSocket(event.fd);
-				break;
-			case (FdChangeType_NOTIFY):
+			}
+			while (_cgiManager.sizeNotifyEvent()) {
+				event = _cgiManager.popNotifyChange();
 				_socketsManager.modifySocket(
 					event.fd, static_cast< uint32_t >(event.eventType));
-				break;
 			}
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "applyCgiChanges failed" << attr("fd", event.fd)
-					   << attr("type", event.changeType)
 					   << attr("what", e.what());
 		}
 	}

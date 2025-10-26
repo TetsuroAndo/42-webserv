@@ -145,16 +145,14 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			FdEventChange ev;
 			ev.fd = worker->getReadFd();
 			ev.eventType = EPOLLIN;
-			ev.changeType = FdChangeType_ADD;
-			_queue.push(ev);
+			_add.push(ev);
 		}
 		// CGIスクリプトへのリクエストボディの書き込みを監視（fdが有効な場合）
 		if (worker->getWriteFd() >= 0) {
 			FdEventChange ev;
 			ev.fd = worker->getWriteFd();
 			ev.eventType = EPOLLOUT;
-			ev.changeType = FdChangeType_ADD;
-			_queue.push(ev);
+			_add.push(ev);
 		}
 
 		LOG(INFO) << "CGI worker created"
@@ -191,8 +189,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 		if (worker->getWriteFd() >= 0) {
 			FdEventChange ev;
 			ev.fd = worker->getWriteFd();
-			ev.changeType = FdChangeType_REMOVE;
-			_queue.push(ev);
+			_remove.push(ev);
 		}
 		_pipeFdToWorker.erase(worker->getWriteFd());
 	}
@@ -207,8 +204,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 		{
 			FdEventChange ev;
 			ev.fd = fd;
-			ev.changeType = FdChangeType_REMOVE;
-			_queue.push(ev);
+			_remove.push(ev);
 		}
 		_pipeFdToWorker.erase(fd);
 		// 書き込みFDがまだ監視対象ならそれも削除リストに追加
@@ -216,8 +212,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 			{
 				FdEventChange ev;
 				ev.fd = worker->getWriteFd();
-				ev.changeType = FdChangeType_REMOVE;
-				_queue.push(ev);
+				_remove.push(ev);
 			}
 			_pipeFdToWorker.erase(worker->getWriteFd());
 		}
@@ -266,8 +261,7 @@ void CgiManager::cleanupTimedOutWorkers() {
 			for (size_t i = 0; i < keys.size(); ++i) {
 				FdEventChange ev;
 				ev.fd = keys[i];
-				ev.changeType = FdChangeType_REMOVE;
-				_queue.push(ev);
+				_remove.push(ev);
 				_pipeFdToWorker.erase(keys[i]);
 			}
 		}
@@ -310,14 +304,12 @@ void CgiManager::cleanupFinishedWorkers() {
 				if (worker->getReadFd() >= 0) {
 					FdEventChange ev;
 					ev.fd = worker->getReadFd();
-					ev.changeType = FdChangeType_REMOVE;
-					_queue.push(ev);
+					_remove.push(ev);
 				}
 				if (worker->getWriteFd() >= 0) {
 					FdEventChange ev;
 					ev.fd = worker->getWriteFd();
-					ev.changeType = FdChangeType_REMOVE;
-					_queue.push(ev);
+					_remove.push(ev);
 				}
 				worker->setError();
 			}
@@ -366,14 +358,6 @@ bool CgiManager::isCgiFd(const int fd) const {
 	return _pipeFdToWorker.count(fd) > 0;
 }
 
-FdEventChange CgiManager::popChange() {
-	const FdEventChange change = _queue.front();
-	_queue.pop();
-	return change;
-}
-
-size_t CgiManager::eventSize() const { return _queue.size(); }
-
 void CgiManager::abortClient(const int clientFd) {
 	std::map< int, CgiWorker * >::iterator it =
 		_clientFdToWorker.find(clientFd);
@@ -393,8 +377,7 @@ void CgiManager::abortClient(const int clientFd) {
 		for (size_t i = 0; i < keys.size(); ++i) {
 			FdEventChange ev;
 			ev.fd = keys[i];
-			ev.changeType = FdChangeType_REMOVE;
-			_queue.push(ev);
+			_remove.push(ev);
 			_pipeFdToWorker.erase(keys[i]);
 		}
 	}
@@ -407,3 +390,27 @@ void CgiManager::abortClient(const int clientFd) {
 	}
 	_removeWorker(worker);
 }
+
+FdEventChange CgiManager::popAddChange() {
+	const FdEventChange change = _add.front();
+	_add.pop();
+	return change;
+}
+
+FdEventChange CgiManager::popRemoveChange() {
+	const FdEventChange change = _remove.front();
+	_remove.pop();
+	return change;
+}
+
+FdEventChange CgiManager::popNotifyChange() {
+	const FdEventChange change = _notify.front();
+	_notify.pop();
+	return change;
+}
+
+size_t CgiManager::sizeAddEvent() const { return _add.size(); }
+
+size_t CgiManager::sizeRemoveEvent() const { return _remove.size(); }
+
+size_t CgiManager::sizeNotifyEvent() const { return _notify.size(); }

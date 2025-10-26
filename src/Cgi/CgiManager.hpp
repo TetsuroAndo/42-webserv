@@ -67,16 +67,38 @@ public:
 	void abortClient(int clientFd);
 
 	/**
-	 * @brief queueから情報を一個取り出す
-	 * @return queueの一番先頭の要素
+	 * @brief _addから情報を一個取り出す
+	 * @return _addの一番先頭の要素
 	 */
-	FdEventChange popChange();
+	FdEventChange popAddChange();
 
 	/**
-	 * @brief 残っているFdEventChangesの数を返す
-	 * @return 残っているFdEventChangesの数
+	 * @brief _deleteから情報を一個取り出す
+	 * @return _deleteの一番先頭の要素
 	 */
-	size_t eventSize() const;
+	FdEventChange popRemoveChange();
+
+	/**
+	 * @brief _notifyから情報を一個取り出す
+	 * @return _notifyの一番先頭の要素
+	 */
+	FdEventChange popNotifyChange();
+
+	/**
+	 * @brief 残っているaddのFdEventChangesの数を返す
+	 * @return 残っているaddのFdEventChangesの数
+	 */
+	size_t sizeAddEvent() const;
+	/**
+	 * @brief 残っているdeleteのFdEventChangesの数を返す
+	 * @return 残っているdeleteのFdEventChangesの数
+	 */
+	size_t sizeRemoveEvent() const;
+	/**
+	 * @brief 残っているnotifyのFdEventChangesの数を返す
+	 * @return 残っているnotifyのFdEventChangesの数
+	 */
+	size_t sizeNotifyEvent() const;
 
 private:
 	const time_t _timeoutSeconds;
@@ -90,7 +112,9 @@ private:
 	std::map< pid_t, CgiWorker * > _pidToWorker;
 
 	// FdEventChangesを貯めるキュー
-	std::queue< FdEventChange > _queue;
+	std::queue< FdEventChange > _add;
+	std::queue< FdEventChange > _remove;
+	std::queue< FdEventChange > _notify;
 
 	void _removeWorker(CgiWorker *worker);
 
