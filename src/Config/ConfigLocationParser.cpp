@@ -70,19 +70,6 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
-		Node *cgiNode = l_node->getMapNode("cgi");
-		if (cgiNode) {
-			const std::vector< std::string > &keys = cgiNode->getKeys();
-			for (std::vector< std::string >::const_iterator it = keys.begin();
-				 it != keys.end(); ++it) {
-				const std::string &ext = *it;
-				Node *pathNode = cgiNode->getMapNode(ext);
-				if (pathNode) {
-					loc.cgiConf[ext] = pathNode->getValue();
-				}
-			}
-		}
-
 		Node *interpreterNode = l_node->getMapNode("interpreterPath");
 		if (interpreterNode) {
 			const std::vector< std::string > &keys = interpreterNode->getKeys();
