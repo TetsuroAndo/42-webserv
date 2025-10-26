@@ -45,6 +45,7 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("errorFile");
 	keys.insert("uploadStore");
 	keys.insert("cgi");
+	keys.insert("session");
 	return keys;
 }
 
@@ -74,6 +75,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("interpreterPath");
 	keys.insert("redirects");
 	keys.insert("errorFile");
+	keys.insert("session");
 	return keys;
 }
 
@@ -281,6 +283,8 @@ void ConfigParser::parseServer(const Node *serverNode) {
 				*cgi_it, n->getMapNode(*cgi_it)->getValue());
 		}
 	}
+	if (Node *n = serverNode->getMapNode("session"))
+		_builder->setServerDefaultSession(n->getValue() == "true");
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
 		_builder->setMaxRequestBodySize(

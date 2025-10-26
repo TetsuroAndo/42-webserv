@@ -110,6 +110,44 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	return resolvedPath;
 }
 
+bool extractCgiScript(const std::string &requestPath, const Location &loc,
+					  std::string &scriptVirtual, std::string &pathInfo) {
+	// Locationにマッチしているか
+	const std::string &base = loc.path;
+	if (requestPath.rfind(base, 0) != 0) {
+		return false;
+	}
+
+	// Location基準のパスに変換
+	std::string inLoc = requestPath.substr(base.size());
+	if (!inLoc.empty() && inLoc[0] == '/') {
+		inLoc.erase(0, 1);
+	}
+
+	// 先頭セグメントをスクリプト候補とする
+	if (inLoc.empty()) {
+		return false;
+	}
+	const std::string::size_type slash = inLoc.find('/');
+	const std::string scriptSeg =
+		(slash == std::string::npos) ? inLoc : inLoc.substr(0, slash);
+
+	// scriptVirtual の構築
+	scriptVirtual = base;
+	if (!scriptVirtual.empty() && scriptVirtual != "/" &&
+		scriptVirtual[scriptVirtual.size() - 1] != '/') {
+		scriptVirtual += "/";
+	}
+	scriptVirtual += scriptSeg;
+
+	// PATH_INFO の構築
+	pathInfo = (slash == std::string::npos) ? "" : inLoc.substr(slash);
+	if (!pathInfo.empty() && pathInfo[0] != '/') {
+		pathInfo = "/" + pathInfo; // 念のため先頭に'/'を付ける
+	}
+	return true;
+}
+
 std::string getDirName(const std::string &path) {
 	if (path.empty())
 		return "";
