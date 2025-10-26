@@ -23,21 +23,6 @@ createEnvpArray(const std::map< std::string, std::string > &_env) {
 	return envpStrs;
 }
 
-std::string fullURI(const std::string &version, const std::string &ip,
-					const std::string &port, const std::string &scriptPath) {
-	std::string result;
-	const std::string modifiedVersion =
-		StringOps::toLower(StringOps::trim(version, "0123456789. /"));
-
-	result += modifiedVersion + "://";
-	result += ip + ":" + port;
-	if (scriptPath[0] != '/') {
-		result += "/";
-	}
-	result += scriptPath;
-	return result;
-}
-
 std::string queryString(const HttpRequest &req) {
 	const std::map< std::string, std::string > map = req.getQueries();
 	std::string result;
@@ -110,7 +95,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
-	Location loc = c.getLocation(requestedPath);
+	const Location loc = c.getLocation(req.getPath());
 
 	std::map< std::string, std::string > env;
 	env["AUTH_TYPE"] = StringOps::split(req.getHeader("Authorization"), " ")[0];
@@ -122,10 +107,8 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["PATH_TRANSLATED"] =
 		env["PATH_INFO"].empty()
 			? ""
-			: ::fullURI(c.getAppInfo().httpProtocolVersion,
-						c.getListens()[0].interface,
-						StringOps::toString(c.getListens()[0].port),
-						env["PATH_INFO"]);		// PATH_INFOを取得するURI
+			: HandlerUtil::resolvePath(env["PATH_INFO"],
+									   c);		// PATH_INFOを取得するURI
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	env["REMOTE_HOST"] = ""; // 空文字で登録
@@ -154,7 +137,8 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
 	// std::cout << "Env map created: \n";
 	// for (std::map< std::string, std::string >::const_iterator it =
-	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " << it->first <<
+	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " <<
+	// it->first <<
 	// "=" << it->second << "\n";
 	// }
 	// std::cout << std::endl;

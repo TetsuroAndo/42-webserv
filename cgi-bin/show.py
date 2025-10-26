@@ -28,37 +28,55 @@ def respond_error(status: str, message: str) -> None:
 
 
 def main() -> int:
-    path_info = os.environ.get("PATH_INFO", "") or ""
+    # Prefer PATH_TRANSLATED if provided
+    translated = os.environ.get("PATH_TRANSLATED", "") or ""
 
-    # Expect PATH_INFO like "/relative/path"
-    # Normalize and ensure it's confined to ./cgi-bin
-    rel_path = os.path.normpath(path_info.lstrip("/"))
-
-    base_dir = os.path.realpath(os.path.dirname(__file__))
-    target = os.path.realpath(os.path.join(base_dir, rel_path))
-
-    # Security checks: must be within base_dir
-    if not target.startswith(base_dir + os.sep) and target != base_dir:
-        respond_error("403 Forbidden", "Forbidden: path traversal is not allowed")
+    # Help if nothing specified
+    if translated.strip() == "":
+        print_headers()
+        print("show.py - display resource from PATH_TRANSLATED or PATH_INFO")
+        print("Examples:")
+        print("  /cgi-bin/show.py/hello.txt  -> PATH_INFO='/hello.txt'")
+        print("  PATH_TRANSLATED may be a URL like 'http://host:port/hello.txt'")
         return 0
 
-    # If no file specified, show brief help
-    if rel_path in ("", "."):
+    # If PATH_TRANSLATED looks like a URL, fetch it
+    lower = translated.lower()
+    if lower.startswith("http://") or lower.startswith("https://"):
+        try:
+            import urllib.request
+            with urllib.request.urlopen(translated, timeout=5) as resp:
+                data = resp.read()
+            # Decode as UTF-8 text for display purposes
+            content = data.decode("utf-8", errors="replace")
+        except Exception as e:
+            respond_error("502 Bad Gateway", f"Failed to fetch PATH_TRANSLATED: {e}")
+            return 0
+
         print_headers()
-        print("show.py - display a file under ./cgi-bin via PATH_INFO")
-        print("Usage: /cgi-bin/show.py/<relative/path>")
+        sys.stdout.write(content)
+        return 0
+
+    # Otherwise, treat it as a filesystem path. If relative, anchor to ./cgi-bin
+    base_dir = os.path.realpath(os.path.dirname(__file__))
+    target = translated
+    if not os.path.isabs(target):
+        target = os.path.join(base_dir, target)
+    target = os.path.realpath(target)
+
+    # Security: confine to ./cgi-bin to avoid arbitrary reads
+    if not target.startswith(base_dir + os.sep) and target != base_dir:
+        respond_error("403 Forbidden", "Forbidden: path traversal is not allowed")
         return 0
 
     if not os.path.exists(target):
         respond_error("404 Not Found", "Not Found: file does not exist")
         return 0
-
     if not os.path.isfile(target):
         respond_error("403 Forbidden", "Forbidden: not a regular file")
         return 0
 
     try:
-        # Read as text; replace undecodable bytes to avoid 500s
         with open(target, "r", encoding="utf-8", errors="replace") as f:
             content = f.read()
     except Exception as e:
@@ -66,11 +84,9 @@ def main() -> int:
         return 0
 
     print_headers()
-    # Output file content as plain text
     sys.stdout.write(content)
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
-
