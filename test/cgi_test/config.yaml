@@ -23,5 +23,5 @@ servers:
             allowedMethods:
               - GET
               - POST
-            interpreterPath:
+            cgi:
               .py: /usr/bin/python3

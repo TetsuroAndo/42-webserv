@@ -16,6 +16,7 @@ void MimeType::_setMimeTypes() {
 	_mimeMap[".pdf"] = "application/pdf";
 	_mimeMap[".zip"] = "application/zip";
 	_mimeMap[".txt"] = "text/plain";
+	_mimeMap[".form"] = "application/x-www-form-urlencoded";
 
 	// Images
 	_mimeMap[".jpeg"] = "image/jpeg";

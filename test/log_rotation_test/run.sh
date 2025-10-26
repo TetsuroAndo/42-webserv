@@ -78,7 +78,8 @@ fi
 
 
 # --- Cleanup ---
-echo -e "\n--- Cleaning Up Build Files ---"
+echo -e "\n--- Cleaning Up ---"
 make fclean
+rm -f "$LOG_DIR/$LOG_FILE"*
 
 echo -e "\n${GREEN}SIMPLE LOG ROTATION TEST PASSED${NC}"

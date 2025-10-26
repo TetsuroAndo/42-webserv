@@ -1,0 +1,16 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8082
+
+      locations:
+        - location:
+            path: /cgi-bin/
+            root: ./
+            allowedMethods:
+              - GET
+              - POST
+            cgi:
+              - .py: /usr/bin/python3

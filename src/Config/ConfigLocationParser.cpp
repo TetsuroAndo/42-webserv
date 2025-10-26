@@ -47,10 +47,17 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		if (indexNode)
 			loc.indexFile = indexNode->getValue();
 		Node *autoindexNode = l_node->getMapNode("autoindex");
-		if (autoindexNode)
-			loc.autoindex = (autoindexNode->getValue() == "true");
+		if (autoindexNode) {
+			std::string value = autoindexNode->getValue();
+			loc.autoindex =
+				(value == "true" || value == "on" || value == "yes");
+		}
+
+		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;
 
 		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
+			loc.allowedMethods.clear();
+
 			const std::vector< Node * > &methods = allowMethodsNode->getSeq();
 			for (std::vector< Node * >::const_iterator m_it = methods.begin();
 				 m_it != methods.end(); ++m_it) {
@@ -63,13 +70,29 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
-		Node *cgiConfigNode = l_node->getMapNode("interpreterPath");
-		if (cgiConfigNode) {
-			std::vector< std::string > keys = cgiConfigNode->getKeys();
-			std::vector< std::string >::iterator keysIt = keys.begin();
-			for (; keysIt != keys.end(); ++keysIt) {
-				loc.cgiConf[*keysIt] =
-					cgiConfigNode->getMapNode(*keysIt)->getValue();
+		Node *cgiNode = l_node->getMapNode("cgi");
+		if (cgiNode) {
+			const std::vector< std::string > &keys = cgiNode->getKeys();
+			for (std::vector< std::string >::const_iterator it = keys.begin();
+				 it != keys.end(); ++it) {
+				const std::string &ext = *it;
+				Node *pathNode = cgiNode->getMapNode(ext);
+				if (pathNode) {
+					loc.cgiConf[ext] = pathNode->getValue();
+				}
+			}
+		}
+
+		Node *interpreterNode = l_node->getMapNode("interpreterPath");
+		if (interpreterNode) {
+			const std::vector< std::string > &keys = interpreterNode->getKeys();
+			for (std::vector< std::string >::const_iterator it = keys.begin();
+				 it != keys.end(); ++it) {
+				const std::string &ext = *it;
+				Node *pathNode = interpreterNode->getMapNode(ext);
+				if (pathNode) {
+					loc.cgiConf[ext] = pathNode->getValue();
+				}
 			}
 		}
 		_builder->setLocation(loc);
