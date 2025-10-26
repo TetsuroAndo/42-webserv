@@ -7,6 +7,7 @@
 #include "../Server/Client.hpp"
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <map>
 
 namespace {
@@ -75,7 +76,6 @@ std::string formatHeaderKeyForCgi(std::string key) {
 }
 } // namespace
 
-
 /**
  * @brief PipelineContextからCGI環境変数のリストを生成する
  * RFC 3875
@@ -101,8 +101,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	Location loc = c.getLocation(requestedPath);
 
 	std::map< std::string, std::string > env;
-	env["AUTH_TYPE"] =
-		StringOps::split(req.getHeader("Authorization"), " ")[0];
+	env["AUTH_TYPE"] = StringOps::split(req.getHeader("Authorization"), " ")[0];
 	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
@@ -114,7 +113,8 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	env["REMOTE_HOST"] = ""; // 空文字で登録
-	env["REMOTE_IDENT"] = ctx.session->getId();
+	if (ctx.session)
+		env["REMOTE_IDENT"] = ctx.session->getId();
 	env["REMOTE_USER"] = remoteUser;
 	env["REQUEST_METHOD"] = req.getMethod();
 	env["SCRIPT_NAME"] = fileName(requestedPath); // まっさらなCGIのファイル名
@@ -136,13 +136,12 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	}
 
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
-	// LOG(DEBUG) << "Env map created: ";
-	// for (std::map< std::string, std::string >::const_iterator it =
-	// 		 envMap.begin();
-	// 	 it != envMap.end(); ++it) {
-	// 	LOG(DEBUG) << "  " << it->first << "=" << it->second;
-	// }
-
+	std::cout << "Env map created: \n";
+	for (std::map< std::string, std::string >::const_iterator it = env.begin();
+		 it != env.end(); ++it) {
+		std::cout << "  " << it->first << "=" << it->second << "\n";
+	}
+	std::cout << std::endl;
 	return createEnvpArray(env);
 }
 
