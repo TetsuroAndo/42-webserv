@@ -100,6 +100,18 @@ public:
 	 */
 	size_t sizeNotifyEvent() const;
 
+	/**
+	 * @brief 完了通知（クライアントFD）を一件取り出す
+	 * @return 完了したクライアントFD
+	 */
+	int popCompletedClientFd();
+
+	/**
+	 * @brief 残っている完了通知の数を返す
+	 * @return 残っている完了通知の数
+	 */
+	size_t sizeCompletedClientFd() const;
+
 private:
 	const time_t _timeoutSeconds;
 	size_t _maxWorkers;
@@ -115,6 +127,9 @@ private:
 	std::queue< FdEventChange > _add;
 	std::queue< FdEventChange > _remove;
 	std::queue< FdEventChange > _notify;
+
+	// 完了・エラー・タイムアウトしたCGIに紐づくクライアントFD通知キュー
+	std::queue< int > _completedClients;
 
 	void _removeWorker(CgiWorker *worker);
 

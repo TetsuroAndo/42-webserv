@@ -137,6 +137,8 @@ void Server::run() {
 
 		// wait()から戻ったら、まず終了したCGIプロセスを回収する
 		_cgiManager.cleanupFinishedWorkers();
+		// タイムアウトのチェックも行う（イベント駆動で完了通知を積む）
+		_cgiManager.cleanupTimedOutWorkers();
 
 		const epoll_event *events = _socketsManager.getEvents();
 
@@ -195,34 +197,25 @@ void Server::run() {
 		// このラウンドでCgiManagerから出た変更・通知を反映
 		applyCgiChanges();
 
-		// 完了したCGIがあれば即レスポンス組立て・送信準備
-		{
-			std::vector< int > clientFds;
-			clientFds.reserve(_clients.size());
-			for (std::map< int, Client * >::iterator it = _clients.begin();
-				 it != _clients.end(); ++it) {
-				clientFds.push_back(it->first);
-			}
-			for (size_t i = 0; i < clientFds.size(); ++i) {
-				const int cfd = clientFds[i];
-				if (_clients.count(cfd) == 0)
-					continue;
-				HttpResponse cgiRes(_config);
-				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
-					AccessLogger::getInstance().log(
-						&_clients[cfd]->getContext()->req, &cgiRes,
-						_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-						getSessionId(_clients[cfd]->getContext()));
-					const std::string responseStr =
-						ResponseBuilder::build(cgiRes);
-					if (!responseStr.empty()) {
-						_clients[cfd]->getSocket()->setSendBuffer(
-							_clients[cfd]->getSocket()->getSendBuffer() +
-							responseStr);
-					}
-					if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
-						_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
-					}
+		// 完了通知が来たクライアントのみレスポンス組立て・送信準備（O(1)/O(M)）
+		while (_cgiManager.sizeCompletedClientFd()) {
+			const int cfd = _cgiManager.popCompletedClientFd();
+			if (_clients.count(cfd) == 0)
+				continue;
+			HttpResponse cgiRes(_config);
+			if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
+				AccessLogger::getInstance().log(
+					&_clients[cfd]->getContext()->req, &cgiRes,
+					_clients[cfd]->getIp(), _clients[cfd]->getPort(),
+					getSessionId(_clients[cfd]->getContext()));
+				const std::string responseStr = ResponseBuilder::build(cgiRes);
+				if (!responseStr.empty()) {
+					_clients[cfd]->getSocket()->setSendBuffer(
+						_clients[cfd]->getSocket()->getSendBuffer() +
+						responseStr);
+				}
+				if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
+					_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
 				}
 			}
 		}

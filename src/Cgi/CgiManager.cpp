@@ -217,9 +217,8 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 			_pipeFdToWorker.erase(worker->getWriteFd());
 		}
 
-		// クライアントFDへの明示的なNOTIFYは行わない。
-		// Server側でイベント処理後にisCgiComplete()をスイープし、
-		// 即時にレスポンス送出へ進む設計とする。
+		// 完了したクライアントFDを通知キューに積む（イベント駆動化）
+		_completedClients.push(worker->getClientFd());
 	}
 }
 
@@ -248,6 +247,9 @@ void CgiManager::cleanupTimedOutWorkers() {
 			_pidToWorker.erase(pid);
 		}
 		worker->setTimeout();
+
+		// 完了通知を積む（タイムアウト）
+		_completedClients.push(worker->getClientFd());
 
 		// 関連FDを監視対象から削除（現在のマッピングに基づいて安全に）
 		{
@@ -312,6 +314,8 @@ void CgiManager::cleanupFinishedWorkers() {
 					_remove.push(ev);
 				}
 				worker->setError();
+				// 予期せぬ終了を通知
+				_completedClients.push(worker->getClientFd());
 			}
 		} else {
 			// _pidToWorker リストにないPID = おそらく handleRead の
@@ -414,3 +418,13 @@ size_t CgiManager::sizeAddEvent() const { return _add.size(); }
 size_t CgiManager::sizeRemoveEvent() const { return _remove.size(); }
 
 size_t CgiManager::sizeNotifyEvent() const { return _notify.size(); }
+
+int CgiManager::popCompletedClientFd() {
+	const int cfd = _completedClients.front();
+	_completedClients.pop();
+	return cfd;
+}
+
+size_t CgiManager::sizeCompletedClientFd() const {
+	return _completedClients.size();
+}
