@@ -47,6 +47,16 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 		HandlerUtil::resolvePath(req.getPath(), config);
 	const Location &loc = config.getLocation(req.getPath());
 
+	// ファイルパスが不正
+	if (req.getPath() != loc.path) {
+		LOG(INFO) << "Requested path does not match location path"
+				  << attr("request_path", req.getPath())
+				  << attr("location_path", loc.path);
+		HandlerUtil::generateSimpleBody(req.getMethod(), res,
+										HttpStatus::NOT_FOUND);
+		return res;
+	}
+
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
 		LOG(ERROR) << "PostHandler: Upload store is empty";

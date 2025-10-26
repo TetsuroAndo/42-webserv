@@ -125,7 +125,7 @@ echo -e "${GREEN}[GET no autoindex] OK${NC}"
 echo -e "\n${BLUE}--- Testing POST... ---${NC}"
 
 # Test: POST 201 Created (Upload)
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload/ignored_filename")
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload")
 FILE_COUNT_AFTER=$(find "$UPLOAD_DIR" -type f 2>/dev/null | wc -l)
 if [[ "$HTTP_STATUS" -ne 201 ]]; then echo -e "${RED}[POST 201] FAIL: Status=$HTTP_STATUS${NC}"; exit 1; fi
 if [[ $FILE_COUNT_AFTER -eq 0 ]]; then echo -e "${RED}[POST 201] FAIL: No file created${NC}"; exit 1; fi
