@@ -216,8 +216,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 			}
 			_pipeFdToWorker.erase(worker->getWriteFd());
 		}
-
-		// 完了したクライアントFDを通知キューに積む（イベント駆動化）
+		// 完了したクライアントFDを通知キューに積む
 		_completedClients.push(worker->getClientFd());
 	}
 }
