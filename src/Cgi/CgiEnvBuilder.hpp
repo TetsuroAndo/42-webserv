@@ -13,7 +13,6 @@ public:
 	 * @return "KEY=VALUE"形式の文字列配列
 	 */
 	static std::vector< std::string > build(const PipelineContext &ctx,
-											const std::string &scriptVirtual,
 											const std::string &pathInfo);
 
 private:
