@@ -68,11 +68,15 @@ std::string fileName(const std::string &scriptPath) {
 }
 
 std::string extractPathInfo(std::string fullPath) {
-	const std::size_t dotPos = fullPath.find('.');
-	const std::size_t slashPos = fullPath.substr(dotPos).find('/');
-	std::string trim =
-		fullPath.substr(dotPos, std::string::npos).substr(slashPos);
-	return trim;
+	try {
+		const std::size_t dotPos = fullPath.find('.');
+		const std::size_t slashPos = fullPath.substr(dotPos).find('/');
+		std::string trim =
+			fullPath.substr(dotPos, std::string::npos).substr(slashPos);
+		return trim;
+	} catch (...) {
+		return "";
+	}
 }
 
 /// @brief HTTPヘッダーキーをCGI環境変数名形式 (大文字 + アンダースコア)
@@ -148,12 +152,12 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	}
 
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
-	std::cout << "Env map created: \n";
-	for (std::map< std::string, std::string >::const_iterator it = env.begin();
-		 it != env.end(); ++it) {
-		std::cout << "  " << it->first << "=" << it->second << "\n";
-	}
-	std::cout << std::endl;
+	// std::cout << "Env map created: \n";
+	// for (std::map< std::string, std::string >::const_iterator it =
+	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " << it->first <<
+	// "=" << it->second << "\n";
+	// }
+	// std::cout << std::endl;
 	return createEnvpArray(env);
 }
 
