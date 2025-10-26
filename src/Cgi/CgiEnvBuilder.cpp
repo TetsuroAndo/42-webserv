@@ -67,6 +67,14 @@ std::string fileName(const std::string &scriptPath) {
 	return "/" + name;
 }
 
+std::string extractPathInfo(std::string fullPath) {
+	const std::size_t dotPos = fullPath.find('.');
+	const std::size_t slashPos = fullPath.substr(dotPos).find('/');
+	std::string trim =
+		fullPath.substr(dotPos, std::string::npos).substr(slashPos);
+	return trim;
+}
+
 /// @brief HTTPヘッダーキーをCGI環境変数名形式 (大文字 + アンダースコア)
 /// に変換する
 std::string formatHeaderKeyForCgi(std::string key) {
@@ -105,11 +113,15 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
-	env["PATH_INFO"] = requestedPath; // Locationsのroot+ファイル名
-	env["PATH_TRANSLATED"] = ::fullURI(
-		c.getAppInfo().httpProtocolVersion, c.getListens()[0].interface,
-		StringOps::toString(c.getListens()[0].port),
-		ctx.req.getPath()); // リクエストのURIを全文 (文字列操作で作る)
+	env["PATH_INFO"] =
+		extractPathInfo(ctx.req.getPath()); // cgiのパス以降のパス
+	env["PATH_TRANSLATED"] =
+		env["PATH_INFO"].empty()
+			? ""
+			: ::fullURI(c.getAppInfo().httpProtocolVersion,
+						c.getListens()[0].interface,
+						StringOps::toString(c.getListens()[0].port),
+						env["PATH_INFO"]);		// PATH_INFOを取得するURI
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	env["REMOTE_HOST"] = ""; // 空文字で登録

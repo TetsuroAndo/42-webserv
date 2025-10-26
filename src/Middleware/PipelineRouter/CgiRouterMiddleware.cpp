@@ -76,10 +76,7 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 			HandlerUtil::generateSimpleBody(method, ctx.res,
 											HttpStatus::INTERNAL_SERVER_ERROR);
 		}
-		return;
-
 	} else {
-		LOG(DEBUG) << "CgiRouterMiddleware: Not allowed CGI.";
 		proc->next(ctx);
 	}
 }
