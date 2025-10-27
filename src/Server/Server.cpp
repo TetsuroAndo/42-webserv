@@ -188,32 +188,28 @@ void Server::run() {
 				}
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
-					std::string sessionId =
-						_clients[fd]->getContext()->session
-							? _clients[fd]->getContext()->session->getId()
-							: "";
 					AccessLogger::getInstance().log(
-						&_clients[fd]->getContext()->req, &cgiRes,
+						&_clients[fd]->getContext().req, &cgiRes,
 						_clients[fd]->getIp(), _clients[fd]->getPort(),
-						getSessionId(_clients[fd]->getContext()));
+						getSessionId(&_clients[fd]->getContext()));
 					const std::string responseStr =
 						ResponseBuilder::build(cgiRes);
 					if (!responseStr.empty()) {
-						_clients[fd]->getSocket()->setSendBuffer(
-							_clients[fd]->getSocket()->getSendBuffer() +
+						_clients[fd]->getSocket().setSendBuffer(
+							_clients[fd]->getSocket().getSendBuffer() +
 							responseStr);
 					}
-					if (!_clients[fd]->getSocket()->getSendBuffer().empty()) {
+					if (!_clients[fd]->getSocket().getSendBuffer().empty()) {
 						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
 					}
 				} else {
 					if (eventTypes & EPOLLIN) {
-						_clients[fd]->handleReadEvent();
+							_clients[fd]->handleReadEvent();
+						}
+						if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
+							_clients[fd]->handleWriteEvent();
+						}
 					}
-					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
-						_clients[fd]->handleWriteEvent();
-					}
-				}
 			}
 		}
 
@@ -228,16 +224,16 @@ void Server::run() {
 			HttpResponse cgiRes(_config);
 			if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
 				AccessLogger::getInstance().log(
-					&_clients[cfd]->getContext()->req, &cgiRes,
+					&_clients[cfd]->getContext().req, &cgiRes,
 					_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-					getSessionId(_clients[cfd]->getContext()));
+					getSessionId(&_clients[cfd]->getContext()));
 				const std::string responseStr = ResponseBuilder::build(cgiRes);
 				if (!responseStr.empty()) {
-					_clients[cfd]->getSocket()->setSendBuffer(
-						_clients[cfd]->getSocket()->getSendBuffer() +
+					_clients[cfd]->getSocket().setSendBuffer(
+						_clients[cfd]->getSocket().getSendBuffer() +
 						responseStr);
 				}
-				if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
+				if (!_clients[cfd]->getSocket().getSendBuffer().empty()) {
 					_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
 				}
 			}
@@ -292,8 +288,7 @@ void Server::handleNewConnection(const int listenFd) {
 			return;
 		}
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
-		Client *client = new Client(clientFd, clientAddr, listenPort,
-									_cgiManager, _config, this);
+		Client *client = new Client(clientFd, clientAddr, listenPort, *this);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
 		// 最初はヘッダ受信待ちのタイムアウトを設定

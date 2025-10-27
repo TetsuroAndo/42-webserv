@@ -22,7 +22,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 	  _listenPort(listenPort),
 	  _socket(server.getConfig(), fd, addr),
 	  _context(server.getConfig(), *this, server.getCgiManager()),
-	  _httpConnection(this, &_context, this)
+	  _httpConnection(this, _context, *this)
 {
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = StringOps::ipToString(ip_addr);
@@ -34,9 +34,9 @@ Client::~Client() {}
 
 Server &Client::getServer() const { return _server; }
 
-const int Client::getFd() const { return _fd; }
-const int Client::getPort() const { return _port; }
-const int Client::getListenPort() const { return _listenPort; }
+int Client::getFd() const { return _fd; }
+int Client::getPort() const { return _port; }
+int Client::getListenPort() const { return _listenPort; }
 const std::string &Client::getIp() const { return _ip; }
 
 Socket &Client::getSocket() { return _socket; }

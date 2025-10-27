@@ -95,7 +95,7 @@ time_t HttpConnection::calculateTimeout() const {
 }
 
 RequestParser::ParseState HttpConnection::getParserState() const {
-	return _context.parser.getState()
+	return _context.parser.getState();
 }
 
 void HttpConnection::parseRequest() {
@@ -131,5 +131,5 @@ void HttpConnection::generateResponse() {
 
 void HttpConnection::resetForNextRequest() {
 	// 次のリクエストのためにコンテキストをリセット
-	_context.reset(_client->getServer().getConfig())
+	_context.reset(_client->getServer().getConfig());
 }

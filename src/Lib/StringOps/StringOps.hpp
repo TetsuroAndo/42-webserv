@@ -1,6 +1,7 @@
 #pragma once
 
-#include <sstream> // for toString
+#include <stdint.h>
+#include <sstream>
 #include <string>
 #include <vector>
 

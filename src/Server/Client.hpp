@@ -19,9 +19,9 @@ public:
 	/// @brief Serverへのアクセス（HttpConnectionから使用を想定）
 	Server &getServer() const;
 
-	const int getFd() const;
-	const int getPort() const;
-	const int getListenPort() const;
+	int getFd() const;
+	int getPort() const;
+	int getListenPort() const;
 	const std::string &getIp() const;
 
 	Socket &getSocket();
@@ -48,14 +48,13 @@ public:
 
 private:
 	Server &_server;
-	HttpConnection _httpConnection;
-
 	int _fd;
 	int _port;
 	int _listenPort;
 	std::string _ip;
 	Socket _socket;
 	PipelineContext _context;
+	HttpConnection _httpConnection;
 
 	Client(const Client &);
 	Client &operator=(const Client &);
