@@ -15,7 +15,7 @@
 
 ### 依存ライブラリのインストール:
 ```bash
-pip install -r requirements.txt
+cd .. && make pyinit
 ```
 
 ### Webservバイナリのビルド:
@@ -23,6 +23,10 @@ pip install -r requirements.txt
 
 ### 全テストの実行:
 プロジェクトルートから`pytest`を実行します。
+```bash
+make test
+```
+または
 ```bash
 pytest
 ```
