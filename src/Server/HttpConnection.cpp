@@ -100,10 +100,10 @@ RequestParser::ParseState HttpConnection::getParserState() const {
 
 void HttpConnection::parseRequest() {
 	// ミドルウェア処理
-	_client->getServer().getMainProcessor().handle(_context)
+	_client->getServer().getMainProcessor().handle(_context);
 
-		// CGI開始チェック
-		if (_context.isCgi) {
+	// CGI開始チェック
+	if (_context.isCgi) {
 		_eventHandler.onCgiChanges();
 		_context.isCgi = false;
 		return;
