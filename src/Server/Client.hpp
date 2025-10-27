@@ -2,41 +2,43 @@
 
 #include "../Config/Config.hpp"
 #include "../Lib/Timeout/ITimeoutable.hpp"
+#include "../Middleware/Core/PipelineContext.hpp"
 #include "../Socket/Socket.hpp"
+#include "HttpConnection.hpp"
 #include "HttpConnectionEventHandler.hpp"
 #include <netinet/in.h>
 #include <string>
 
-struct PipelineContext;
-class CgiManager;
-class Server;
-class HttpConnection;
+class Server; // Serverは参照で持つため前方宣言のままでOK
 
 class Client : public ITimeoutable, public HttpConnectionEventHandler {
 public:
-	Client(int fd, const sockaddr_in &addr, const int listenPort,
-		   CgiManager &cgiManager, const Config &config, Server *server);
+	Client(int fd, const sockaddr_in &addr, int listenPort, Server &server);
 	~Client();
 
-	int getFd() const;
-	Socket *getSocket() const;
-	PipelineContext *getContext() const;
-	const std::string &getIp() const;
-	int getPort() const;
-	int getListenPort() const;
+	/// @brief Serverへのアクセス（HttpConnectionから使用を想定）
+	Server &getServer() const;
 
+	const int getFd() const;
+	const int getPort() const;
+	const int getListenPort() const;
+	const std::string &getIp() const;
+
+	Socket &getSocket();
+	const Socket &getSocket() const;
+	PipelineContext &getContext();
+	const PipelineContext &getContext() const;
+
+	HttpConnection &getHttpConnection();
+	const HttpConnection &getHttpConnection() const;
+
+	/// @brief Timeout処理
 	virtual void onTimeout();
 
-	// (追加) Serverから委譲されるイベント
+	// Serverから委譲されるイベント
 	void handleReadEvent();
 	void handleWriteEvent();
 	void updateTimeout();
-
-	// HttpConnectionへのアクセス
-	HttpConnection *getHttpConnection() const;
-
-	// Serverへのアクセス（HttpConnectionから使用）
-	Server *getServer() const;
 
 	// HttpConnectionEventHandlerの実装
 	virtual void onConnectionClose(int fd);
@@ -45,14 +47,15 @@ public:
 	virtual void onRequestProcessed();
 
 private:
+	Server &_server;
+	HttpConnection _httpConnection;
+
 	int _fd;
-	std::string _ip;
 	int _port;
 	int _listenPort;
-	Socket *_socket;
-	PipelineContext *_context;
-	HttpConnection *_httpConnection;
-	Server *_server;
+	std::string _ip;
+	Socket _socket;
+	PipelineContext _context;
 
 	Client(const Client &);
 	Client &operator=(const Client &);

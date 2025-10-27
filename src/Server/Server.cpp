@@ -36,7 +36,6 @@ Server::~Server() {
 	}
 }
 
-// Clientから参照されるゲッター
 TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
 SocketsManager &Server::getSocketsManager() { return _socketsManager; }
 MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
@@ -309,8 +308,6 @@ void Server::handleNewConnection(const int listenFd) {
 		close(clientFd);
 	}
 }
-
-// 削除: handleClientRead / handleClientWrite (Clientに委譲)
 
 void Server::closeConnection(const int clientFd) {
 	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する

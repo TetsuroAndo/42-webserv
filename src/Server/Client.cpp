@@ -14,84 +14,63 @@
 #include <sstream>
 #include <unistd.h>
 
+// clang-format off
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
-			   CgiManager &cgiManager, const Config &config, Server *server)
-	: _fd(fd), _listenPort(listenPort), _socket(NULL), _context(NULL),
-	  _httpConnection(NULL), _server(server) {
+			Server &server)
+	: _server(server),
+	  _fd(fd),
+	  _listenPort(listenPort),
+	  _socket(server.getConfig(), fd, addr),
+	  _context(server.getConfig(), *this, server.getCgiManager()),
+	  _httpConnection(this, &_context, this)
+{
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = StringOps::ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
-
-	try {
-		_socket = new Socket(config, fd, addr);
-		_context = new PipelineContext(config, *this, cgiManager);
-		_httpConnection = new HttpConnection(this, _context, this->_server);
-	} catch (...) {
-		delete _socket;
-		delete _context;
-		delete _httpConnection;
-		_socket = NULL;
-		_context = NULL;
-		_httpConnection = NULL;
-		throw;
-	}
 }
+// clang-format on
 
-Client::~Client() {
-	delete _httpConnection;
-	delete _socket;
-	delete _context;
+Client::~Client() {}
+
+Server &Client::getServer() const { return _server; }
+
+const int Client::getFd() const { return _fd; }
+const int Client::getPort() const { return _port; }
+const int Client::getListenPort() const { return _listenPort; }
+const std::string &Client::getIp() const { return _ip; }
+
+Socket &Client::getSocket() { return _socket; }
+const Socket &Client::getSocket() const { return _socket; }
+PipelineContext &Client::getContext() { return _context; }
+const PipelineContext &Client::getContext() const { return _context; }
+
+HttpConnection &Client::getHttpConnection() { return _httpConnection; }
+const HttpConnection &Client::getHttpConnection() const {
+	return _httpConnection;
 }
 
 void Client::onTimeout() {
-	if (_server) {
-		LOG(INFO) << "Client timed out for fd: " << _fd;
-		_server->closeConnection(this->getFd());
-	}
+	LOG(INFO) << "Client timed out for fd: " << _fd;
+	_server.closeConnection(this->getFd());
 }
 
+void Client::handleReadEvent() { _httpConnection.handleReadEvent(); }
+void Client::handleWriteEvent() { _httpConnection.handleWriteEvent(); }
 void Client::updateTimeout() {
-	if (_server == NULL)
-		return;
-
-	time_t timeoutSec = _httpConnection->calculateTimeout();
-	_server->getTimeoutManager().add(this, timeoutSec);
+	time_t timeoutSec = _httpConnection.calculateTimeout();
+	_server.getTimeoutManager().add(this, timeoutSec);
 }
-
-void Client::handleReadEvent() { _httpConnection->handleReadEvent(); }
-
-void Client::handleWriteEvent() { _httpConnection->handleWriteEvent(); }
-
-int Client::getFd() const { return _fd; }
-Socket *Client::getSocket() const { return _socket; }
-PipelineContext *Client::getContext() const { return _context; }
-HttpConnection *Client::getHttpConnection() const { return _httpConnection; }
-Server *Client::getServer() const { return _server; }
 
 // HttpConnectionEventHandlerの実装
-void Client::onConnectionClose(int fd) {
-	if (_server) {
-		_server->closeConnection(fd);
-	}
-}
+void Client::onConnectionClose(int fd) { _server.closeConnection(fd); }
 
 void Client::onSocketModify(int fd, uint32_t events) {
-	if (_server) {
-		_server->getSocketsManager().modifySocket(fd, events);
-	}
+	_server.getSocketsManager().modifySocket(fd, events);
 }
 
-void Client::onCgiChanges() {
-	if (_server) {
-		_server->applyCgiChanges();
-	}
-}
+void Client::onCgiChanges() { _server.applyCgiChanges(); }
 
 void Client::onRequestProcessed() {
 	// リクエスト処理完了時のタイムアウト更新
 	updateTimeout();
 }
-
-const std::string &Client::getIp() const { return _ip; }
-int Client::getPort() const { return _port; }
-int Client::getListenPort() const { return _listenPort; }

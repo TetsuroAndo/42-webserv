@@ -20,7 +20,6 @@ public:
 	void closeConnection(int clientFd);
 	void applyCgiChanges();
 
-	// Clientから参照されるゲッター
 	TimeoutManager &getTimeoutManager();
 	SocketsManager &getSocketsManager();
 	MiddlewareProcessor &getMainProcessor();
@@ -43,9 +42,6 @@ private:
 
 	void setupListenSockets();
 	void handleNewConnection(int listenFd);
-	// Clientへ移譲
-	// void handleClientRead(int clientFd);
-	// void handleClientWrite(int clientFd);
 
 	std::string getSessionId(const PipelineContext *ctx) const;
 };
