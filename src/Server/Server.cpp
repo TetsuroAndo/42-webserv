@@ -146,6 +146,9 @@ void Server::run() {
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
+		// wait()から戻ったら、まず終了したCGIプロセスを回収する
+		_cgiManager.cleanupFinishedWorkers();
+
 		const epoll_event *events = _socketsManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
@@ -175,10 +178,14 @@ void Server::run() {
 				}
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
+					std::string sessionId =
+						_clients[fd]->getContext()->session
+							? _clients[fd]->getContext()->session->getId()
+							: "";
 					AccessLogger::getInstance().log(
 						&_clients[fd]->getContext()->req, &cgiRes,
 						_clients[fd]->getIp(), _clients[fd]->getPort(),
-						_clients[fd]->getContext()->session->getId());
+						getSessionId(_clients[fd]->getContext()));
 					const std::string responseStr =
 						ResponseBuilder::build(cgiRes);
 					if (!responseStr.empty()) {
@@ -217,10 +224,14 @@ void Server::run() {
 					continue;
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
+					std::string sessionId =
+						_clients[cfd]->getContext()->session
+							? _clients[cfd]->getContext()->session->getId()
+							: "";
 					AccessLogger::getInstance().log(
 						&_clients[cfd]->getContext()->req, &cgiRes,
 						_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-						_clients[cfd]->getContext()->session->getId());
+						getSessionId(_clients[cfd]->getContext()));
 					const std::string responseStr =
 						ResponseBuilder::build(cgiRes);
 					if (!responseStr.empty()) {
@@ -329,9 +340,9 @@ void Server::handleClientRead(const int clientFd) {
 	}
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		AccessLogger::getInstance().log(
-			&ctx->req, &ctx->res, client->getIp(), client->getPort(),
-			ctx->session ? ctx->session->getId() : "");
+		std::string sessionId = ctx->session ? ctx->session->getId() : "";
+		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
+										client->getPort(), getSessionId(ctx));
 		const std::string responseStr = ResponseBuilder::build(ctx->res);
 		if (!responseStr.empty()) {
 			client->getSocket()->setSendBuffer(
@@ -396,4 +407,11 @@ void Server::closeConnection(const int clientFd) {
 			<< clientFd;
 	}
 	close(clientFd);
+}
+
+std::string Server::getSessionId(const PipelineContext *ctx) const {
+	if (ctx == NULL || ctx->session == NULL) {
+		return "";
+	}
+	return ctx->session->getId();
 }

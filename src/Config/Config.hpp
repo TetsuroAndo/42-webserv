@@ -23,10 +23,13 @@ struct AppInfo {
 };
 
 struct Performance {
-	unsigned int ioBuffersSize;
-	unsigned int cgiBuffersSize;
+	static unsigned int ioBuffersSize;
 	unsigned int responseReserveSize;
 	unsigned int pollTimeoutMs;
+
+	static unsigned int cgiIoBufferSize;
+	unsigned int cgiMinWorkers;
+	unsigned int cgiMaxWorkers;
 
 	Performance();
 };
@@ -51,8 +54,9 @@ struct Location {
 	std::string errorFile;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
+	bool session;
 
-	Location() : autoindex(false) {}
+	Location() : autoindex(false), session(false) {}
 };
 
 struct AccessLog {

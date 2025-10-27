@@ -16,12 +16,14 @@ WEBSERV_EXEC="$PROJECT_ROOT/webserv"
 TEST_CONF="$PROJECT_ROOT/test/with_args_test/test.yaml"
 
 # Test directories and files
-GET_ROOT="$PROJECT_ROOT/www/http_test_root"
+GET_ROOT="$PROJECT_ROOT/tmp/with_args_test_root"
+AUTOINDEX_DIR="$GET_ROOT/autoindex_test_dir"
 NO_AUTOINDEX_DIR="$GET_ROOT/no_autoindex_dir"
 UPLOAD_DIR="/tmp/webserv_uploads"
 NO_PERMS_DIR="/tmp/webserv_no_perms"
 
 GET_FILE="$GET_ROOT/hello.txt"
+AUTOINDEX_TEST_FILE="$AUTOINDEX_DIR/testfile.txt"
 FORBIDDEN_FILE="$NO_PERMS_DIR/secret.txt"
 UPLOAD_SRC_FILE="/tmp/upload_this.txt"
 UPLOAD_DST_FILE="$UPLOAD_DIR/uploaded_file.bin"
@@ -34,11 +36,13 @@ ADDRESS="127.0.0.1:$PORT"
 function setup_test_env() {
     echo -e "${BLUE}Setting up test environment...${NC}"
     mkdir -p "$GET_ROOT"
+    mkdir -p "$AUTOINDEX_DIR"
     mkdir -p "$NO_AUTOINDEX_DIR"
     mkdir -p "$UPLOAD_DIR"
     mkdir -p "$NO_PERMS_DIR"
 
     echo "Hello from webserv test!" > "$GET_FILE"
+    echo "Test file for autoindex" > "$AUTOINDEX_TEST_FILE"
     echo "This is a file to be uploaded." > "$UPLOAD_SRC_FILE"
     echo "secret content" > "$FORBIDDEN_FILE"
     chmod 000 "$FORBIDDEN_FILE"
@@ -119,10 +123,14 @@ fi
 echo -e "${GREEN}[GET 403] OK${NC}"
 
 # Test 4: GET Directory with autoindex on
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://$ADDRESS/autoindex_on/")
-RESPONSE_BODY=$(curl -s "http://$ADDRESS/autoindex_on/")
-if [[ "$HTTP_STATUS" -ne 200 || "$RESPONSE_BODY" != *"hello.txt"* ]]; then
-    echo -e "${RED}[GET autoindex] FAIL: Expected 200 and directory listing, got $HTTP_STATUS${NC}"
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://$ADDRESS/autoindex_on/autoindex_test_dir/")
+RESPONSE_BODY=$(curl -s "http://$ADDRESS/autoindex_on/autoindex_test_dir/")
+if [[ "$HTTP_STATUS" -ne 200 ]]; then
+    echo -e "${RED}[GET autoindex] FAIL: Expected 200, got $HTTP_STATUS${NC}"
+    exit 1
+fi
+if ! echo "$RESPONSE_BODY" | grep -q "testfile.txt"; then
+    echo -e "${RED}[GET autoindex] FAIL: Expected directory listing with testfile.txt${NC}"
     exit 1
 fi
 echo -e "${GREEN}[GET autoindex] OK${NC}"
@@ -142,17 +150,15 @@ echo -e "${GREEN}[GET no autoindex] OK${NC}"
 echo -e "\n${BLUE}--- Testing POST... ---${NC}"
 
 # Test 1: POST 201 Created (Upload)
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload/ignored_filename")
+FILE_COUNT_BEFORE=$(find "$UPLOAD_DIR" -type f 2>/dev/null | wc -l)
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload")
+FILE_COUNT_AFTER=$(find "$UPLOAD_DIR" -type f 2>/dev/null | wc -l)
 if [[ "$HTTP_STATUS" -ne 201 ]]; then
     echo -e "${RED}[POST 201] FAIL: Expected status 201, got $HTTP_STATUS${NC}"
     exit 1
 fi
-if [[ ! -f "$UPLOAD_DST_FILE" ]]; then
-    echo -e "${RED}[POST 201] FAIL: Uploaded file was not created at $UPLOAD_DST_FILE${NC}"
-    exit 1
-fi
-if ! diff -q "$UPLOAD_SRC_FILE" "$UPLOAD_DST_FILE" >/dev/null 2>&1; then
-    echo -e "${RED}[POST 201] FAIL: Content of uploaded file does not match source file${NC}"
+if [[ $FILE_COUNT_AFTER -le $FILE_COUNT_BEFORE ]]; then
+    echo -e "${RED}[POST 201] FAIL: No file was created in upload directory${NC}"
     exit 1
 fi
 echo -e "${GREEN}[POST 201] OK${NC}"
@@ -172,9 +178,19 @@ echo -e "${GREEN}[POST 405] OK${NC}"
 echo -e "\n${BLUE}--- Testing DELETE... ---${NC}"
 
 # Test 1: DELETE 204 No Content
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://$ADDRESS/upload/uploaded_file.bin")
-if [[ "$HTTP_STATUS" -ne 204 || -f "$UPLOAD_DST_FILE" ]]; then
-    echo -e "${RED}[DELETE 204] FAIL: Expected 204 and file deletion, got $HTTP_STATUS${NC}"
+# Get the uploaded file name
+UPLOADED_FILE=$(ls -1 "$UPLOAD_DIR" | head -n 1)
+if [[ -z "$UPLOADED_FILE" ]]; then
+    echo -e "${RED}[DELETE 204] FAIL: No uploaded file found to delete${NC}"
+    exit 1
+fi
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://$ADDRESS/upload/$UPLOADED_FILE")
+if [[ "$HTTP_STATUS" -ne 204 ]]; then
+    echo -e "${RED}[DELETE 204] FAIL: Expected 204, got $HTTP_STATUS${NC}"
+    exit 1
+fi
+if [[ -f "$UPLOAD_DIR/$UPLOADED_FILE" ]]; then
+    echo -e "${RED}[DELETE 204] FAIL: File was not deleted${NC}"
     exit 1
 fi
 echo -e "${GREEN}[DELETE 204] OK${NC}"

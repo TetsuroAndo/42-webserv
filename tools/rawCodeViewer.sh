@@ -161,15 +161,53 @@ if [[ "$SHOW_VIEW" == true ]]; then
 		local input_file="$1"
 		local relative_path="${input_file#$TARGET_PATH/}"
 		local file_ext="${input_file##*.}"
+		local file_name="${input_file##*/}" # Makefile, Dockerfileなど拡張子がないファイル用
+
 		{
 			echo "----------------------------------------"
 			echo "File: $relative_path"
 			echo "----------------------------------------"
 
 			if [[ "$REMOVE_COMMENTS" == true ]]; then
-				if [[ "$relative_path" == *"Makefile"* ]]; then
+
+				if [[ "$file_name" == "Makefile" || \
+					"$file_name" == "Dockerfile" || \
+					"$file_ext" == "sh" || \
+					"$file_ext" == "rb" || \
+					"$file_ext" == "pl" || \
+					"$file_ext" == "yaml" || \
+					"$file_ext" == "yml" ]]; then
+					# 's/#.*$//' は # 以降を削除
 					sed 's/#.*$//' "$input_file" | awk 'NF'
-				else
+				
+				elif [[ "$file_ext" == "py" ]]; then
+					sed '
+						# 1行の docstring/複数行文字列 を削除
+						s/""".*"""//g;
+						s/''''.*''''//g;
+						# 複数行の docstring/複数行文字列 を削除
+						/"""/,/"""/d;
+						/'''/,/'''/d;
+						# 通常の # コメントを削除
+						s/#.*$//
+					' "$input_file" | awk 'NF'
+
+				elif [[ "$file_ext" == "c" || \
+						"$file_ext" == "h" || \
+						"$file_ext" == "cpp" || \
+						"$file_ext" == "hpp" || \
+						"$file_ext" == "cs" || \
+						"$file_ext" == "go" || \
+						"$file_ext" == "java" || \
+						"$file_ext" == "js" || \
+						"$file_ext" == "ts" || \
+						"$file_ext" == "jsx" || \
+						"$file_ext" == "tsx" || \
+						"$file_ext" == "swift" || \
+						"$file_ext" == "php" || \
+						"$file_ext" == "css" || \
+						"$file_ext" == "scss" || \
+						"$file_ext" == "less" ]]; then
 					sed '
 						# 1行内で完結するブロックコメント /* ... */ を削除
 						s/\/\*.*\*\///g;
@@ -178,6 +216,17 @@ if [[ "$SHOW_VIEW" == true ]]; then
 						# 行末コメント // ... を削除（コード部分は残す）
 						s/\/\/.*$//
 					' "$input_file" | awk 'NF'
+				
+				elif [[ "$file_ext" == "html" || \
+						"$file_ext" == "xml" || \
+						"$file_ext" == "svg" ]]; then
+					sed '
+						s/<!--.*-->//g;
+						//d
+					' "$input_file" | awk 'NF'
+
+				else
+					cat "$input_file"
 				fi
 			else
 				cat "$input_file"

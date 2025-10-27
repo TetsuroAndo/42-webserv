@@ -13,7 +13,11 @@
 #include <vector>
 
 namespace {
-enum FileReadStatus { FILE_READ_SUCCESS, FILE_READ_ERROR };
+enum FileReadStatus {
+	FILE_READ_SUCCESS,
+	FILE_READ_ERROR_PERMISSION,
+	FILE_READ_ERROR
+};
 
 FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 						   const struct stat &fileStat) {
@@ -27,7 +31,7 @@ FileReadStatus tryReadFile(const std::string &filePath, std::string &outContent,
 			LOG(WARNING) << "Permission denied while opening file"
 						 << attr("path", filePath)
 						 << attr("error", strerror(err));
-			break;
+			return FILE_READ_ERROR_PERMISSION;
 		case ENOENT:
 		case ENOTDIR:
 			LOG(WARNING) << "File not found or invalid path during open"
@@ -187,6 +191,10 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 				res.setHeader("Content-Length", oss.str());
 			}
 			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
+			break;
+		case FILE_READ_ERROR_PERMISSION:
+			HandlerUtil::generateSimpleBody(req.getMethod(), res,
+											HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_ERROR:
 			HandlerUtil::generateSimpleBody(req.getMethod(), res,

@@ -9,7 +9,7 @@ NC='\033[0m'
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-CONFIG_PATH="${1:-test/cgi_test/config.yaml}"
+CONFIG_PATH="${1:-test/load_test/config.yaml}"
 PORT=8082
 ADDR="127.0.0.1:${PORT}"
 WEBSERV_EXEC="${ROOT_DIR}/webserv"
@@ -27,7 +27,7 @@ echo -e "${BLUE}Building webserv...${NC}"
 make -s
 
 echo -e "${BLUE}Starting webserv...${NC}"
-"$WEBSERV_EXEC" "$CONFIG_PATH" >/dev/null 2>&1 &
+"$WEBSERV_EXEC" "$CONFIG_PATH" >/dev/null &
 WEBSERV_PID=$!
 sleep 1
 if ! kill -0 "$WEBSERV_PID" 2>/dev/null; then

@@ -11,3 +11,4 @@ servers:
             root: ./www/http_test_root
             allowedMethods:
               - GET
+              - HEAD

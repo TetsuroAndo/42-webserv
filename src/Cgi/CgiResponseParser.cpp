@@ -4,11 +4,14 @@
 #include <sstream>
 
 CgiResponseParser::CgiResponseParser()
-	: _statusCode(200), _statusMessage("OK") {}
+	: _statusCode(200), _statusMessage("OK"), _headersParsed(false) {}
 
 CgiResponseParser::~CgiResponseParser() {}
 
+bool CgiResponseParser::headersFound() const { return _headersParsed; }
+
 void CgiResponseParser::parse(const std::string &rawResponse) {
+	_headersParsed = false;
 	std::string::size_type headerEndPos = rawResponse.find("\r\n\r\n");
 	size_t headerEndLen = 4;
 
@@ -22,6 +25,7 @@ void CgiResponseParser::parse(const std::string &rawResponse) {
 		return;
 	}
 
+	_headersParsed = true;
 	const std::string headerBlock = rawResponse.substr(0, headerEndPos);
 	const size_t bodyStartPos = headerEndPos + headerEndLen;
 	if (bodyStartPos <= rawResponse.size()) {

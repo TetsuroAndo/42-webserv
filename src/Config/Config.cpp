@@ -6,15 +6,24 @@
 #include <sstream>
 #include <stdexcept>
 
+// clang-format off
+
 AppInfo::AppInfo()
-	: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
-	  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION),
+	: softwareName(SOFTWARE_NAME),
+	  softwareVersion(VERSION),
+	  httpServerName(SERVER_NAME),
+	  httpProtocolVersion(HTTP_VERSION),
 	  cgiVersion(CGI_VERSION) {}
 
+unsigned int Performance::ioBuffersSize = IO_BUFFER_SIZE;
+unsigned int Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
 Performance::Performance()
-	: ioBuffersSize(IO_BUFFER_SIZE), cgiBuffersSize(CGI_BUFFER_SIZE),
-	  responseReserveSize(RESPONSE_RESERVE_SIZE),
-	  pollTimeoutMs(POLL_TIMEOUT_MS) {}
+	: responseReserveSize(RESPONSE_RESERVE_SIZE),
+	  pollTimeoutMs(POLL_TIMEOUT_MS),
+	  cgiMinWorkers(CGI_MIN_WORKERS),
+	  cgiMaxWorkers(CGI_MAX_WORKERS) {}
+
+// clang-format on
 
 Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Redirect > &redirects,

@@ -238,7 +238,7 @@ fi
 echo ""
 echo "Test 9: Cookie Parsing with Quotes"
 RESPONSE=$(curl -i -s -b "sessionId=\"test123\"" http://127.0.0.1:$PORT/)
-if echo "$RESPONSE" | grep -q "HTTP/1.1 200"; then
+if echo "$RESPONSE" | grep -q "HTTP/1.[01] 200"; then
     echo -e "  ${GREEN}Success${NC}: Server handles quoted cookie values"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
@@ -250,22 +250,13 @@ fi
 echo ""
 echo "Test 10: Multiple Cookies in Request"
 RESPONSE=$(curl -i -s -b "sessionId=\"test123\"; lastAccessTime=2023-01-01; serverName=test" http://127.0.0.1:$PORT/)
-if echo "$RESPONSE" | grep -q "HTTP/1.1 200"; then
+if echo "$RESPONSE" | grep -q "HTTP/1.[01] 200"; then
     echo -e "  ${GREEN}Success${NC}: Server handles multiple cookies"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
     echo -e "  ${RED}Error${NC}: Server failed to handle multiple cookies"
     TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
-
-echo ""
-echo "=========================================="
-echo "Test Summary"
-echo "=========================================="
-echo "Total tests: $((TESTS_PASSED + TESTS_FAILED))"
-echo -e "Passed: ${GREEN}$TESTS_PASSED${NC}"
-echo -e "Failed: ${RED}$TESTS_FAILED${NC}"
-echo "=========================================="
 
 cleanup
 

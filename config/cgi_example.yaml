@@ -29,7 +29,7 @@ servers:
             allowedMethods:
               - GET
               - POST
-            cgi:
+            interpreterPath:
               .php: /usr/bin/php-cgi
               .py: /usr/bin/python3
 
@@ -40,7 +40,7 @@ servers:
             allowedMethods:
               - GET
               - POST
-            cgi:
+            interpreterPath:
               .py: /usr/bin/python3
 
         # Static files (no CGI)

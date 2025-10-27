@@ -5,16 +5,19 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Server/Client.hpp"
+#include <algorithm>
+#include <cctype>
+#include <iostream>
 #include <map>
 
 namespace {
 std::vector< std::string >
-createEnvpArray(const std::map< std::string, std::string > &envMap) {
+createEnvpArray(const std::map< std::string, std::string > &_env) {
 	std::vector< std::string > envpStrs;
-	envpStrs.reserve(envMap.size());
+	envpStrs.reserve(_env.size());
 
-	std::map< std::string, std::string >::const_iterator it = envMap.begin();
-	for (; it != envMap.end(); ++it) {
+	std::map< std::string, std::string >::const_iterator it = _env.begin();
+	for (; it != _env.end(); ++it) {
 		envpStrs.push_back(it->first + "=" + it->second);
 	}
 	return envpStrs;
@@ -72,23 +75,42 @@ std::string fileName(const std::string &scriptPath) {
 
 	return "/" + name;
 }
+
+std::string extractPathInfo(std::string fullPath) {
+	try {
+		const std::size_t dotPos = fullPath.find('.');
+		const std::size_t slashPos = fullPath.substr(dotPos).find('/');
+		std::string trim =
+			fullPath.substr(dotPos, std::string::npos).substr(slashPos);
+		return trim;
+	} catch (...) {
+		return "";
+	}
+}
+
+/// @brief HTTPヘッダーキーをCGI環境変数名形式 (大文字 + アンダースコア)
+/// に変換する
+std::string formatHeaderKeyForCgi(std::string key) {
+	StringOps::toUpper(key);
+	std::replace(key.begin(), key.end(), '-', '_');
+	return key;
+}
 } // namespace
 
 /**
- * @brief PipelineContextからCGI環境変数のリストを生成する
- * RFC 3875
- * 参考: https://4judgement.github.io/rfc-translater/html/rfc3875.html
- *
- * @param ctx リクエストのコンテキスト
- * @param requestedPath リクエストのパス
- * @return "KEY=VALUE"形式のvector
- */
+ * @brief PipelineContextからCGI環境変数のリストを生成する
+ * RFC 3875
+ * 参考: https://4judgement.github.io/rfc-translater/html/rfc3875.html
+ *
+ * @param ctx リクエストのコンテキスト
+ * @param requestedPath リクエストのパス
+ * @return "KEY=VALUE"形式のvector
+ */
 std::vector< std::string >
 CgiEnvBuilder::build(const PipelineContext &ctx,
 					 const std::string &requestedPath) {
 	const Config &c = ctx.conf;
 	const HttpRequest &req = ctx.req;
-	std::map< std::string, std::string > envMap;
 
 	const std::vector< std::string > Authorization =
 		StringOps::split(req.getHeader("Authorization"), " ");
@@ -101,7 +123,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
-	Location loc = c.getLocation(requestedPath);
+	const Location loc = c.getLocation(req.getPath());
 
 	if (c.getListens().empty()) {
 		LOG(ERROR) << "CgiEnvBuilder: No listen configuration found";
@@ -110,34 +132,71 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 
 	const Listen &listen = c.getListens()[0];
 
-	envMap["AUTH_TYPE"] = authType;
-	envMap["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
-	envMap["CONTENT_TYPE"] = req.getHeader("Content-Type");
-	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
-	envMap["PATH_INFO"] = requestedPath;
-	envMap["PATH_TRANSLATED"] =
+	std::map< std::string, std::string > env;
+	env["AUTH_TYPE"] = authType;
+	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
+	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
+	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
+	env["PATH_INFO"] = requestedPath;
+	env["PATH_TRANSLATED"] =
 		::fullURI(c.getAppInfo().httpProtocolVersion, listen.interface,
 				  StringOps::toString(listen.port), ctx.req.getPath());
-	envMap["QUERY_STRING"] = queryString(ctx.req);
-	envMap["REMOTE_ADDR"] = ctx.ownerClient.getIp();
-	envMap["REMOTE_HOST"] = "";
-	envMap["REMOTE_IDENT"] = ctx.session ? ctx.session->getId() : "";
-	envMap["REMOTE_USER"] = remoteUser;
-	envMap["REQUEST_METHOD"] = req.getMethod();
-	envMap["SCRIPT_NAME"] = fileName(requestedPath);
-	envMap["SERVER_NAME"] = listen.interface;
-	envMap["SERVER_PORT"] = StringOps::toString(listen.port);
-	envMap["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
-	envMap["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
-	envMap["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
+	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
+	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
+	env["REMOTE_HOST"] = "";
+	env["REMOTE_IDENT"] = ctx.session ? ctx.session->getId() : "";
+	env["REMOTE_USER"] = remoteUser;
+	env["REQUEST_METHOD"] = req.getMethod();
+	env["SCRIPT_NAME"] = fileName(requestedPath);
+	env["SERVER_NAME"] = listen.interface;
+	env["SERVER_PORT"] = StringOps::toString(listen.port);
+	env["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
+	env["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
+	env["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
+
+	// HTTPヘッダーを環境変数に変換
+	_headerToEnvMap(req, env);
+
+	if (ctx.session != NULL) {
+		env["HTTP_X_WEBSERV_SESSION_ID"] = ctx.session->getId();
+	}
 
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
-	// LOG(DEBUG) << "Env map created: ";
+	// std::cout << "Env map created: \n";
 	// for (std::map< std::string, std::string >::const_iterator it =
-	// 		 envMap.begin();
-	// 	 it != envMap.end(); ++it) {
-	// 	LOG(DEBUG) << "  " << it->first << "=" << it->second;
+	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " <<
+	// it->first <<
+	// "=" << it->second << "\n";
 	// }
+	// std::cout << std::endl;
+	return createEnvpArray(env);
+}
 
-	return createEnvpArray(envMap);
+void CgiEnvBuilder::_headerToEnvMap(const HttpRequest &req,
+									std::map< std::string, std::string > &env) {
+	const std::map< std::string, std::vector< std::string > > &headers =
+		req.getHeaders();
+
+	for (std::map< std::string, std::vector< std::string > >::const_iterator
+			 it = headers.begin();
+		 it != headers.end(); ++it) {
+
+		const std::string &key = it->first;
+		const std::vector< std::string > &values = it->second;
+
+		if (StringOps::equalsIgnoreCase(key, "Content-Length") ||
+			StringOps::equalsIgnoreCase(key, "Content-Type") ||
+			StringOps::equalsIgnoreCase(key, "Authorization")) {
+			continue;
+		}
+
+		// ヘッダーが存在する場合、CGI形式で環境変数に追加
+		if (!values.empty()) {
+			// キーをCGI形式 (HTTP_COOKIE など) に変換
+			std::string cgiKey = "HTTP_" + formatHeaderKeyForCgi(key);
+
+			// HttpRequestの実装に従い、複数ヘッダーがある場合は最後の値を使用
+			env[cgiKey] = values.back();
+		}
+	}
 }

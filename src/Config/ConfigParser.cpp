@@ -44,7 +44,8 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("indexFile");
 	keys.insert("errorFile");
 	keys.insert("uploadStore");
-	keys.insert("cgi");
+	keys.insert("interpreterPath");
+	keys.insert("session");
 	return keys;
 }
 
@@ -74,6 +75,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("interpreterPath");
 	keys.insert("redirects");
 	keys.insert("errorFile");
+	keys.insert("session");
 	return keys;
 }
 
@@ -272,7 +274,7 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		_builder->setServerDefaultErrorFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
-	if (Node *n = serverNode->getMapNode("cgi")) {
+	if (Node *n = serverNode->getMapNode("interpreterPath")) {
 		const std::vector< std::string > &cgiKeys = n->getKeys();
 		for (std::vector< std::string >::const_iterator cgi_it =
 				 cgiKeys.begin();
@@ -287,6 +289,8 @@ void ConfigParser::parseServer(const Node *serverNode) {
 											  cgiValueNode->getValue());
 		}
 	}
+	if (Node *n = serverNode->getMapNode("session"))
+		_builder->setServerDefaultSession(n->getValue() == "true");
 
 	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
 		_builder->setMaxRequestBodySize(

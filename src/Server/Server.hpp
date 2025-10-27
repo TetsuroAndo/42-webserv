@@ -36,4 +36,6 @@ private:
 	void handleClientRead(int clientFd);
 	void handleClientWrite(int clientFd);
 	void closeConnection(int clientFd);
+
+	std::string getSessionId(const PipelineContext *ctx) const;
 };

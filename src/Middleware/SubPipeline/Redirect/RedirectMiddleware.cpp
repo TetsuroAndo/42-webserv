@@ -1,4 +1,5 @@
 #include "RedirectMiddleware.hpp"
+#include <iostream>
 
 RedirectMiddleware::RedirectMiddleware(const Config &config)
 	: _config(config) {}
@@ -12,8 +13,9 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 
 	if (!redirect.fromPath.empty()) {
 		// Redirect found
-		HttpResponse res(ctx.conf);
-		res.setStatusCode(redirect.code);
+		ctx.res.setStatusCode(redirect.code);
+		ctx.res.setHeader("Content-Type", "text/html");
+		ctx.res.setHeader("Content-Length", "0");
 
 		std::string newLocation = redirect.toUrl;
 		// Append remaining path if it's a prefix match
@@ -36,8 +38,8 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 				}
 			}
 		}
-		res.setHeader("Location", newLocation);
-		ctx.res = res;
+		ctx.res.setHeader("Location", newLocation);
+		ctx.res.setBody("");
 		// Stop further processing
 		return;
 	}

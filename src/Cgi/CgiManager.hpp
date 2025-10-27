@@ -9,7 +9,7 @@
 #include <vector>
 
 class Config;
-class PipelineContext;
+struct PipelineContext;
 class HttpResponse;
 class CgiWorker;
 
@@ -39,6 +39,11 @@ public:
 	 * @brief タイムアウトしたWorkerをクリーンアップする
 	 */
 	void cleanupTimedOutWorkers();
+
+	/**
+	 * @brief 終了した全てのCGIプロセスを非ブロッキングで回収する（ゾンビ防止）
+	 */
+	void cleanupFinishedWorkers();
 
 	/**
 	 * @brief 指定したクライアント向けのCGI処理が完了したか確認する
@@ -81,6 +86,9 @@ private:
 	std::map< int, CgiWorker * > _pipeFdToWorker;
 	// ClientFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _clientFdToWorker;
+	// PIDからWorkerを引くためのマップ
+	std::map< pid_t, CgiWorker * > _pidToWorker;
+
 	// FdEventChangesを貯めるキュー
 	std::queue< FdEventChange > _queue;
 

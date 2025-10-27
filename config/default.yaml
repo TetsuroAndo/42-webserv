@@ -51,6 +51,7 @@ servers:
             uploadStore: ./tmp/default_uploads
             indexFile: index.html
             autoindex: true
+            session: true
             allowedMethods:
               - GET
               - HEAD

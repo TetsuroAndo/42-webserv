@@ -3,6 +3,7 @@
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "ConfigParser.hpp"
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 
 void ConfigBuilder::initDefaults() {
@@ -27,6 +28,7 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
+	defaultLoc.session = true;
 	_locations["/"] = defaultLoc;
 
 	_accessLogs.push_back(AccessLog());
@@ -112,7 +114,22 @@ void ConfigBuilder::setLocations(
 }
 
 void ConfigBuilder::setLocation(const Location &location) {
-	_locations[location.path] = location;
+	Location newLocation = location;
+	const Location &defaultLocation = _locations[_defaultLocationKey];
+
+	if (newLocation.root.empty()) {
+		newLocation.root = defaultLocation.root;
+	}
+	if (newLocation.allowedMethods.empty()) {
+		newLocation.allowedMethods = defaultLocation.allowedMethods;
+	}
+	if (newLocation.indexFile.empty()) {
+		newLocation.indexFile = defaultLocation.indexFile;
+	}
+	if (newLocation.errorFile.empty()) {
+		newLocation.errorFile = defaultLocation.errorFile;
+	}
+	_locations[newLocation.path] = newLocation;
 }
 
 void ConfigBuilder::setServerDefaultRoot(const std::string &root) {
@@ -184,4 +201,8 @@ void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
 void ConfigBuilder::setServerDefaultAllowedMethods(
 	const std::set< std::string > &methods) {
 	_locations[_defaultLocationKey].allowedMethods = methods;
+}
+
+void ConfigBuilder::setServerDefaultSession(bool enable) {
+	_locations[_defaultLocationKey].session = enable;
 }
