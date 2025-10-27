@@ -340,7 +340,6 @@ void Server::handleClientRead(const int clientFd) {
 	}
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		std::string sessionId = ctx->session ? ctx->session->getId() : "";
 		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
 										client->getPort(), getSessionId(ctx));
 		const std::string responseStr = ResponseBuilder::build(ctx->res);
