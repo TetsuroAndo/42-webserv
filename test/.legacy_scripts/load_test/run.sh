@@ -37,7 +37,7 @@ fi
 echo -e "Server PID: ${WEBSERV_PID}, Port: ${PORT}\n"
 
 PY="python3"
-LOAD="test/load_test/load.py"
+LOAD="test/.legacy_scripts/load_test/load.py"
 
 echo -e "${BLUE}Scenario 1: GET simple CGI (5k req, c=50)${NC}"
 $PY "$LOAD" --url "http://${ADDR}/cgi-bin/simple.py" --concurrency 50 --requests 5000 || true
