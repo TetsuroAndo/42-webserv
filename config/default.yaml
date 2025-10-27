@@ -47,8 +47,8 @@ servers:
         # Default location, allows most things, autoindex on
         - location:
             path: /
-            root: ./tmp/www
-            uploadStore: ./tmp/default_uploads
+            root: ./www
+            uploadStore: ./uploads
             indexFile: index.html
             autoindex: true
             session: true
@@ -61,8 +61,8 @@ servers:
         # Location for testing uploads and deletes specifically
         - location:
             path: /upload
-            root: ./tmp/uploads
-            uploadStore: ./tmp/uploads
+            root: ./uploads
+            uploadStore: ./uploads
             allowedMethods:
               - POST
               - DELETE
@@ -70,14 +70,14 @@ servers:
         # Location for testing 405 Method Not Allowed
         - location:
             path: /get_only
-            root: /tmp/www
+            root: /www
             allowedMethods:
               - GET
 
         # Location for testing 403 on a directory with autoindex off
         - location:
             path: /no_autoindex
-            root: /tmp/www/no_autoindex_dir
+            root: /www/no_autoindex_dir
             autoindex: false
             allowedMethods:
               - GET
@@ -85,6 +85,6 @@ servers:
         # Location for testing 403 on a file with no permissions
         - location:
             path: /forbidden
-            root: /tmp/no_perms_default
+            root: /no_perms_default
             allowedMethods:
               - GET

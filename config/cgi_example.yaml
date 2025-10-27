@@ -25,7 +25,7 @@ servers:
         # CGI-bin directory for .php and .py scripts
         - location:
             path: /cgi-bin
-            root: ./cgi-bin
+            root: ./www/cgi-bin
             allowedMethods:
               - GET
               - POST
@@ -36,7 +36,7 @@ servers:
         # Alternative location for Python CGI scripts only
         - location:
             path: /python
-            root: ./cgi-bin/python
+            root: ./www/cgi-bin/python
             allowedMethods:
               - GET
               - POST
