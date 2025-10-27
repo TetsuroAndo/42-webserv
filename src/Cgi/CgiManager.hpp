@@ -67,16 +67,50 @@ public:
 	void abortClient(int clientFd);
 
 	/**
-	 * @brief queueから情報を一個取り出す
-	 * @return queueの一番先頭の要素
+	 * @brief _addから情報を一個取り出す
+	 * @return _addの一番先頭の要素
 	 */
-	FdEventChange popChange();
+	FdEventChange popAddChange();
 
 	/**
-	 * @brief 残っているFdEventChangesの数を返す
-	 * @return 残っているFdEventChangesの数
+	 * @brief _deleteから情報を一個取り出す
+	 * @return _deleteの一番先頭の要素
 	 */
-	size_t eventSize() const;
+	FdEventChange popRemoveChange();
+
+	/**
+	 * @brief _notifyから情報を一個取り出す
+	 * @return _notifyの一番先頭の要素
+	 */
+	FdEventChange popNotifyChange();
+
+	/**
+	 * @brief 残っているaddのFdEventChangesの数を返す
+	 * @return 残っているaddのFdEventChangesの数
+	 */
+	size_t sizeAddEvent() const;
+	/**
+	 * @brief 残っているdeleteのFdEventChangesの数を返す
+	 * @return 残っているdeleteのFdEventChangesの数
+	 */
+	size_t sizeRemoveEvent() const;
+	/**
+	 * @brief 残っているnotifyのFdEventChangesの数を返す
+	 * @return 残っているnotifyのFdEventChangesの数
+	 */
+	size_t sizeNotifyEvent() const;
+
+	/**
+	 * @brief 完了通知（クライアントFD）を一件取り出す
+	 * @return 完了したクライアントFD
+	 */
+	int popCompletedClientFd();
+
+	/**
+	 * @brief 残っている完了通知の数を返す
+	 * @return 残っている完了通知の数
+	 */
+	size_t sizeCompletedClientFd() const;
 
 private:
 	const time_t _timeoutSeconds;
@@ -90,7 +124,12 @@ private:
 	std::map< pid_t, CgiWorker * > _pidToWorker;
 
 	// FdEventChangesを貯めるキュー
-	std::queue< FdEventChange > _queue;
+	std::queue< FdEventChange > _add;
+	std::queue< FdEventChange > _remove;
+	std::queue< FdEventChange > _notify;
+
+	// 完了・エラー・タイムアウトしたCGIに紐づくクライアントFD通知キュー
+	std::queue< int > _completedClients;
 
 	void _removeWorker(CgiWorker *worker);
 

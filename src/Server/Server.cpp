@@ -37,30 +37,30 @@ Server::~Server() {
 }
 
 void Server::applyCgiChanges() {
-	while (_cgiManager.eventSize()) {
-		const FdEventChange event = _cgiManager.popChange();
+	FdEventChange event;
+	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent() ||
+		   _cgiManager.sizeNotifyEvent()) {
 		try {
-			switch (event.changeType) {
-			case (FdChangeType_ADD):
+			while (_cgiManager.sizeAddEvent()) {
+				event = _cgiManager.popAddChange();
 				_socketsManager.registerSocket(
 					event.fd, static_cast< uint32_t >(event.eventType));
-				break;
-			case (FdChangeType_REMOVE):
+			}
+			while (_cgiManager.sizeRemoveEvent()) {
+				event = _cgiManager.popRemoveChange();
 				_socketsManager.unregisterSocket(event.fd);
-				break;
-			case (FdChangeType_NOTIFY):
+			}
+			while (_cgiManager.sizeNotifyEvent()) {
+				event = _cgiManager.popNotifyChange();
 				_socketsManager.modifySocket(
 					event.fd, static_cast< uint32_t >(event.eventType));
-				break;
 			}
 		} catch (const std::runtime_error &e) {
 			LOG(ERROR) << "applyCgiChanges: socket operation failed"
-					   << attr("fd", event.fd) << attr("type", event.changeType)
-					   << attr("what", e.what());
+					   << attr("fd", event.fd) << attr("what", e.what());
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "applyCgiChanges: unexpected exception"
-					   << attr("fd", event.fd) << attr("type", event.changeType)
-					   << attr("what", e.what());
+					   << attr("fd", event.fd) << attr("what", e.what());
 		}
 	}
 }
@@ -148,6 +148,8 @@ void Server::run() {
 
 		// wait()から戻ったら、まず終了したCGIプロセスを回収する
 		_cgiManager.cleanupFinishedWorkers();
+		// タイムアウトのチェックも行う（イベント駆動で完了通知を積む）
+		_cgiManager.cleanupTimedOutWorkers();
 
 		const epoll_event *events = _socketsManager.getEvents();
 
@@ -210,38 +212,25 @@ void Server::run() {
 		// このラウンドでCgiManagerから出た変更・通知を反映
 		applyCgiChanges();
 
-		// 完了したCGIがあれば即レスポンス組立て・送信準備
-		{
-			std::vector< int > clientFds;
-			clientFds.reserve(_clients.size());
-			for (std::map< int, Client * >::iterator it = _clients.begin();
-				 it != _clients.end(); ++it) {
-				clientFds.push_back(it->first);
-			}
-			for (size_t i = 0; i < clientFds.size(); ++i) {
-				const int cfd = clientFds[i];
-				if (_clients.count(cfd) == 0)
-					continue;
-				HttpResponse cgiRes(_config);
-				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
-					std::string sessionId =
-						_clients[cfd]->getContext()->session
-							? _clients[cfd]->getContext()->session->getId()
-							: "";
-					AccessLogger::getInstance().log(
-						&_clients[cfd]->getContext()->req, &cgiRes,
-						_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-						getSessionId(_clients[cfd]->getContext()));
-					const std::string responseStr =
-						ResponseBuilder::build(cgiRes);
-					if (!responseStr.empty()) {
-						_clients[cfd]->getSocket()->setSendBuffer(
-							_clients[cfd]->getSocket()->getSendBuffer() +
-							responseStr);
-					}
-					if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
-						_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
-					}
+		// 完了通知が来たクライアントのみレスポンス組立て・送信準備
+		while (_cgiManager.sizeCompletedClientFd()) {
+			const int cfd = _cgiManager.popCompletedClientFd();
+			if (_clients.count(cfd) == 0)
+				continue;
+			HttpResponse cgiRes(_config);
+			if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
+				AccessLogger::getInstance().log(
+					&_clients[cfd]->getContext()->req, &cgiRes,
+					_clients[cfd]->getIp(), _clients[cfd]->getPort(),
+					getSessionId(_clients[cfd]->getContext()));
+				const std::string responseStr = ResponseBuilder::build(cgiRes);
+				if (!responseStr.empty()) {
+					_clients[cfd]->getSocket()->setSendBuffer(
+						_clients[cfd]->getSocket()->getSendBuffer() +
+						responseStr);
+				}
+				if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
+					_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
 				}
 			}
 		}
