@@ -6,7 +6,6 @@ import time
 import socket
 import yaml
 import tempfile
-import shutil
 from contextlib import closing
 from pathlib import Path
 import psutil
@@ -233,6 +232,110 @@ def managed_server(request):
                     print(f"STDERR:\n{stderr[:500]}")  # 最初の500文字だけ表示
 
         # 一時設定ファイルを削除
+        if temp_config_path and os.path.exists(temp_config_path):
+            try:
+                os.unlink(temp_config_path)
+            except Exception:
+                pass
+
+@pytest.fixture(scope="session")
+def webserv_server():
+    """
+    テストセッション全体で共有するwebservサーバーを起動してベースURLを提供する。
+
+    例:
+        def test_something(webserv_server):
+            response = requests.get(f"{webserv_server}/health")
+            assert response.status_code == 200
+    """
+    proc = None
+    temp_config_path = None
+
+    # 既定のテスト用設定ファイルを使用
+    preferred_configs = [
+        CONFIGS_DIR / "valid" / "test.yaml",
+        CONFIGS_DIR / "valid" / "config_basic_get.yaml",
+        CONFIGS_DIR / "valid" / "config.yaml",
+    ]
+    for candidate in preferred_configs:
+        if candidate.exists():
+            config_path = candidate
+            break
+    else:
+        pytest.exit("No suitable config file found for session server.", 1)
+
+    try:
+        # 利用するポートを動的に確保
+        original_port = parse_config_port(config_path)
+        test_port = original_port if original_port else find_free_port()
+
+        # ポートを上書きした一時設定を生成
+        temp_config_path = create_temp_config_with_port(config_path, test_port)
+
+        # サーバー起動
+        cmd = [str(WEBSERV_BIN), temp_config_path]
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+                preexec_fn=os.setsid,
+            )
+        except Exception as e:
+            pytest.exit(f"Failed to start session server process: {e}", 1)
+
+        # 起動待機: 指定ポートでリッスンするまで待つ
+        max_wait = 8
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                pytest.exit(
+                    "Session server exited unexpectedly (code: {})\nSTDERR:\n{}".format(
+                        proc.returncode, (stderr or "")[:1000]
+                    ),
+                    1,
+                )
+            try:
+                with socket.create_connection((DEFAULT_HOST, test_port), timeout=0.1):
+                    break
+            except (ConnectionRefusedError, socket.timeout):
+                time.sleep(0.1)
+        else:
+            stdout, stderr = proc.communicate()
+            proc.kill()
+            pytest.exit(
+                f"Session server failed to start and listen on port {test_port} within {max_wait}s.\n"
+                f"STDERR:\n{(stderr or '')[:1000]}",
+                1,
+            )
+
+        base_url = f"http://{DEFAULT_HOST}:{test_port}"
+        yield base_url
+
+    finally:
+        # 終了処理
+        if proc:
+            try:
+                try:
+                    parent = psutil.Process(proc.pid)
+                    for child in parent.children(recursive=True):
+                        child.kill()
+                    parent.kill()
+                except psutil.NoSuchProcess:
+                    pass
+            except (OSError, ProcessLookupError):
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except (OSError, ProcessLookupError):
+                    pass
+            try:
+                proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+
         if temp_config_path and os.path.exists(temp_config_path):
             try:
                 os.unlink(temp_config_path)
