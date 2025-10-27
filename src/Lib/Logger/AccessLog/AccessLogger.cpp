@@ -48,13 +48,22 @@ void AccessLogger::setSinkFile(const std::string &filename,
 							   const LogFormat eFormat,
 							   const size_t maxFileSize,
 							   const size_t maxBackupFiles) {
-	LogForm *form;
-	if (eFormat == JSON) {
-		form = new JsonForm();
-	} else {
-		form = new ElfForm();
+	LogForm *form = NULL;
+	FileSink *sink = NULL;
+	try {
+		if (eFormat == JSON) {
+			form = new JsonForm();
+		} else {
+			form = new ElfForm();
+		}
+		sink =
+			new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles);
+		addSink(sink);
+	} catch (...) {
+		delete sink;
+		delete form;
+		throw;
 	}
-	addSink(new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void AccessLogger::setSinkFile(const std::string &logDir,
@@ -62,23 +71,40 @@ void AccessLogger::setSinkFile(const std::string &logDir,
 							   const LogFormat eFormat,
 							   const size_t maxFileSize,
 							   const size_t maxBackupFiles) {
-	LogForm *form;
-	if (eFormat == JSON) {
-		form = new JsonForm();
-	} else {
-		form = new ElfForm();
+	LogForm *form = NULL;
+	FileSink *sink = NULL;
+	try {
+		if (eFormat == JSON) {
+			form = new JsonForm();
+		} else {
+			form = new ElfForm();
+		}
+		sink =
+			new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles);
+		addSink(sink);
+	} catch (...) {
+		delete sink;
+		delete form;
+		throw;
 	}
-	addSink(new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void AccessLogger::setSinkConsole(const LogFormat eFormat) {
-	LogForm *form;
-	if (eFormat == JSON) {
-		form = new JsonForm();
-	} else {
-		form = new ElfForm();
+	LogForm *form = NULL;
+	ConsoleSink *sink = NULL;
+	try {
+		if (eFormat == JSON) {
+			form = new JsonForm();
+		} else {
+			form = new ElfForm();
+		}
+		sink = new ConsoleSink(form);
+		addSink(sink);
+	} catch (...) {
+		delete sink;
+		delete form;
+		throw;
 	}
-	addSink(new ConsoleSink(form));
 }
 
 void AccessLogger::log(const AccessLogContext &ctx) {

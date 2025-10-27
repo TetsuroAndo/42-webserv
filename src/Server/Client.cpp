@@ -1,10 +1,10 @@
 #include "Client.hpp"
-#include "HttpConnection.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
+#include "HttpConnection.hpp"
 #include "Server.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
@@ -28,14 +28,26 @@ std::string ipToString(uint32_t ip_addr) {
 
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 			   CgiManager &cgiManager, const Config &config, Server *server)
-	: _fd(fd), _listenPort(listenPort), _httpConnection(NULL), _server(server) {
+	: _fd(fd), _listenPort(listenPort), _socket(NULL), _context(NULL),
+	  _httpConnection(NULL), _server(server) {
+	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 
-	_socket = new Socket(config, fd, addr);
-	_context = new PipelineContext(config, *this, cgiManager);
-	_httpConnection = new HttpConnection(this, _context, this);
+	try {
+		_socket = new Socket(config, fd, addr);
+		_context = new PipelineContext(config, *this, cgiManager);
+		_httpConnection = new HttpConnection(this, _context, this->_server);
+	} catch (...) {
+		delete _socket;
+		delete _context;
+		delete _httpConnection;
+		_socket = NULL;
+		_context = NULL;
+		_httpConnection = NULL;
+		throw;
+	}
 }
 
 Client::~Client() {
@@ -59,19 +71,15 @@ void Client::updateTimeout() {
 	_server->getTimeoutManager().add(this, timeoutSec);
 }
 
-void Client::handleReadEvent() {
-	_httpConnection->handleReadEvent();
-}
+void Client::handleReadEvent() { _httpConnection->handleReadEvent(); }
 
-void Client::handleWriteEvent() {
-	_httpConnection->handleWriteEvent();
-}
+void Client::handleWriteEvent() { _httpConnection->handleWriteEvent(); }
 
 int Client::getFd() const { return _fd; }
 Socket *Client::getSocket() const { return _socket; }
 PipelineContext *Client::getContext() const { return _context; }
-HttpConnection* Client::getHttpConnection() const { return _httpConnection; }
-Server* Client::getServer() const { return _server; }
+HttpConnection *Client::getHttpConnection() const { return _httpConnection; }
+Server *Client::getServer() const { return _server; }
 
 // HttpConnectionEventHandlerの実装
 void Client::onConnectionClose(int fd) {

@@ -13,7 +13,7 @@ servers:
         # / (GET happy path and 405 test)
         - location:
             path: /
-            root: www/http_test_root
+            root: tmp/with_args_test_root
             indexFile: index.html
             autoindex: false
             allowedMethods:
@@ -38,7 +38,7 @@ servers:
         # /autoindex_on (For directory listing test)
         - location:
             path: /autoindex_on
-            root: www/http_test_root
+            root: tmp/with_args_test_root
             autoindex: true
             allowedMethods:
               - GET
@@ -46,7 +46,7 @@ servers:
         # /no_autoindex (For directory 403 test)
         - location:
             path: /no_autoindex
-            root: www/http_test_root/no_autoindex_dir
+            root: tmp/with_args_test_root/no_autoindex_dir
             autoindex: false
             allowedMethods:
               - GET

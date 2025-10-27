@@ -33,10 +33,10 @@ public:
 	void updateTimeout();
 
 	// HttpConnectionへのアクセス
-	HttpConnection* getHttpConnection() const;
+	HttpConnection *getHttpConnection() const;
 
 	// Serverへのアクセス（HttpConnectionから使用）
-	Server* getServer() const;
+	Server *getServer() const;
 
 	// HttpConnectionEventHandlerの実装
 	virtual void onConnectionClose(int fd);

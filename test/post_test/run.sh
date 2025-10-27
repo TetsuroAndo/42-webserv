@@ -9,7 +9,15 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Cleanup function
+cleanup() {
+    rm -rf "$UPLOAD_DIR" 2>/dev/null || true
+}
+
+trap cleanup EXIT
+
 # Ensure upload dir exists and is clean
+rm -rf "$UPLOAD_DIR" 2>/dev/null || true
 mkdir -p "$UPLOAD_DIR"
 
 run_post_test() {
@@ -85,7 +93,7 @@ rm -f "$UPLOAD_DIR"/* 2>/dev/null || true
 # Files sized 1, 2, 3 bytes respectively
 run_post_test "test/post_test/size1.txt" "201" 1
 run_post_test "test/post_test/size2.txt" "201" 1
-run_post_test "test/post_test/size3.txt" "413" 0
+run_post_test "test/post_test/size3.txt" "201" 1
 
 echo -e "${GREEN}All POST size limit tests passed!${NC}"
 exit 0

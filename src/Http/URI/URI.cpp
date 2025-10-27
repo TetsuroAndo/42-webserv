@@ -6,7 +6,7 @@
 
 unsigned char URI::_parseHexByte(const std::string &str,
 								 const std::size_t pos) {
-	if (pos + 2 >= str.length()) {
+	if (pos >= str.length() || pos + 2 >= str.length()) {
 		throw std::invalid_argument("URIError: malformed URI sequence");
 	}
 

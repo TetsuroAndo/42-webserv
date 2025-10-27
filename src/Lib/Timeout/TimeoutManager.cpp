@@ -1,11 +1,11 @@
 #include "TimeoutManager.hpp"
 #include "ITimeoutable.hpp"
+#include <algorithm>
 #include <ctime>
 #include <limits>
+#include <list>
 #include <map>
 #include <vector>
-#include <list>
-#include <algorithm>
 
 TimeoutManager::TimeoutManager() {}
 
@@ -21,7 +21,7 @@ void TimeoutManager::add(ITimeoutable *obj, time_t timeoutSec) {
 
 	// 同じタイムアウト時刻のオブジェクトをリストで管理
 	if (_timeoutMap.find(expiryTime) == _timeoutMap.end()) {
-		_timeoutMap[expiryTime] = std::list<ITimeoutable*>();
+		_timeoutMap[expiryTime] = std::list< ITimeoutable * >();
 	}
 	_timeoutMap[expiryTime].push_back(obj);
 	_reverseMap[obj] = expiryTime;
@@ -38,7 +38,8 @@ void TimeoutManager::remove(ITimeoutable *obj) {
 
 		TimeoutMap::iterator itTime = _timeoutMap.find(expiryTime);
 		if (itTime != _timeoutMap.end()) {
-			std::list<ITimeoutable*>::iterator listIt = itTime->second.begin();
+			std::list< ITimeoutable * >::iterator listIt =
+				itTime->second.begin();
 			while (listIt != itTime->second.end()) {
 				if (*listIt == obj) {
 					listIt = itTime->second.erase(listIt);
@@ -64,7 +65,8 @@ void TimeoutManager::checkAndHandleTimeouts() {
 	while (it != _timeoutMap.end()) {
 		if (it->first <= now) {
 			// 同じタイムアウト時刻のすべてのオブジェクトを処理
-			for (std::list<ITimeoutable*>::iterator listIt = it->second.begin();
+			for (std::list< ITimeoutable * >::iterator listIt =
+					 it->second.begin();
 				 listIt != it->second.end(); ++listIt) {
 				expiredObjects.push_back(*listIt);
 				_reverseMap.erase(*listIt);

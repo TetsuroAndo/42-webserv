@@ -234,15 +234,16 @@ void MyYAML::parseYaml(std::string buf) {
 		} else {
 			newNodeType = NODE_MAP;
 		}
-		Node *newNode = new Node(newNodeType, key, value);
-		// 1個目の要素で一階層目のTypeを決定
-		if (nodeChain.empty()) {
-			rootNode = new Node(newNodeType, "root", "");
-			nodeChain.push(rootNode);
-		}
+		Node *newNode = NULL;
 		try {
+			newNode = new Node(newNodeType, key, value);
+			if (nodeChain.empty()) {
+				rootNode = new Node(newNodeType, "root", "");
+				nodeChain.push(rootNode);
+			}
 			nodeChain.top()->push(newNode);
 		} catch (const std::exception &e) {
+			delete newNode;
 			delete rootNode;
 			throwInvalidFormat(idx, e.what());
 		}

@@ -46,7 +46,7 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("indexFile");
 	keys.insert("errorFile");
 	keys.insert("uploadStore");
-	keys.insert("cgi");
+	keys.insert("interpreterPath");
 	keys.insert("session");
 	return keys;
 }
@@ -276,13 +276,19 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		_builder->setServerDefaultErrorFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
-	if (Node *n = serverNode->getMapNode("cgi")) {
+	if (Node *n = serverNode->getMapNode("interpreterPath")) {
 		const std::vector< std::string > &cgiKeys = n->getKeys();
 		for (std::vector< std::string >::const_iterator cgi_it =
 				 cgiKeys.begin();
 			 cgi_it != cgiKeys.end(); ++cgi_it) {
-			_builder->setServerDefaultCgiConf(
-				*cgi_it, n->getMapNode(*cgi_it)->getValue());
+			Node *cgiValueNode = n->getMapNode(*cgi_it);
+			if (!cgiValueNode) {
+				throw std::runtime_error(
+					"Config error: invalid structure in cgi block for key '" +
+					*cgi_it + "'");
+			}
+			_builder->setServerDefaultCgiConf(*cgi_it,
+											  cgiValueNode->getValue());
 		}
 	}
 	if (Node *n = serverNode->getMapNode("session"))

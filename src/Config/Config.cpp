@@ -90,7 +90,11 @@ const Redirect &Config::getRedirect(const std::string &path) const {
 		}
 	}
 	if (!bestMatchKey.empty()) {
-		return _redirects.at(bestMatchKey);
+		std::map< std::string, Redirect >::const_iterator it =
+			_redirects.find(bestMatchKey);
+		if (it != _redirects.end()) {
+			return it->second;
+		}
 	}
 	// Return a default constructed Redirect indicating no match
 	static const Redirect noMatchRedirect = {"", "", 0};

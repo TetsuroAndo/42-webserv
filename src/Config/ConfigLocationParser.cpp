@@ -50,14 +50,21 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		if (indexNode)
 			loc.indexFile = indexNode->getValue();
 		Node *autoindexNode = l_node->getMapNode("autoindex");
-		if (autoindexNode)
-			loc.autoindex = (autoindexNode->getValue() == "true");
+		if (autoindexNode) {
+			std::string value = autoindexNode->getValue();
+			loc.autoindex =
+				(value == "true" || value == "on" || value == "yes");
+		}
+
+		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;
 
 		Node *sessionNode = l_node->getMapNode("session");
 		if (sessionNode)
 			loc.session = (sessionNode->getValue() == "true");
 
 		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
+			loc.allowedMethods.clear();
+
 			const std::vector< Node * > &methods = allowMethodsNode->getSeq();
 			for (std::vector< Node * >::const_iterator m_it = methods.begin();
 				 m_it != methods.end(); ++m_it) {
@@ -70,26 +77,16 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				loc.allowedMethods.insert(method);
 			}
 		}
-		Node *cgiConfigNode = l_node->getMapNode("interpreterPath");
-		if (cgiConfigNode) {
-			std::vector< std::string > keys = cgiConfigNode->getKeys();
-			std::vector< std::string >::iterator keysIt = keys.begin();
-			for (; keysIt != keys.end(); ++keysIt) {
-				std::string interpreterPath =
-					cgiConfigNode->getMapNode(*keysIt)->getValue();
-
-				// インタプリタの実行権限チェック
-				if (access(interpreterPath.c_str(), X_OK) != 0) {
-					std::string errorMsg = "Config error: CGI interpreter '";
-					errorMsg += interpreterPath;
-					errorMsg += "' (for extension '";
-					errorMsg += *keysIt;
-					errorMsg += "') is not found or not executable: ";
-					errorMsg += strerror(errno);
-					throw std::runtime_error(errorMsg);
+		Node *interpreterNode = l_node->getMapNode("interpreterPath");
+		if (interpreterNode) {
+			const std::vector< std::string > &keys = interpreterNode->getKeys();
+			for (std::vector< std::string >::const_iterator it = keys.begin();
+				 it != keys.end(); ++it) {
+				const std::string &ext = *it;
+				Node *pathNode = interpreterNode->getMapNode(ext);
+				if (pathNode) {
+					loc.cgiConf[ext] = pathNode->getValue();
 				}
-
-				loc.cgiConf[*keysIt] = interpreterPath;
 			}
 		}
 		_builder->setLocation(loc);

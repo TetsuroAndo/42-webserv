@@ -1,8 +1,8 @@
 #pragma once
 
 #include <ctime>
-#include <map>
 #include <list>
+#include <map>
 
 class ITimeoutable;
 
@@ -12,31 +12,32 @@ class ITimeoutable;
  */
 class TimeoutStats {
 public:
-    TimeoutStats() : _totalTimeouts(0), _activeConnections(0), _maxActiveConnections(0) {}
+	TimeoutStats()
+		: _totalTimeouts(0), _activeConnections(0), _maxActiveConnections(0) {}
 
-    void incrementTimeouts() { ++_totalTimeouts; }
-    void incrementActiveConnections() {
-        ++_activeConnections;
-        if (_activeConnections > _maxActiveConnections) {
-            _maxActiveConnections = _activeConnections;
-        }
-    }
-    void decrementActiveConnections() { --_activeConnections; }
+	void incrementTimeouts() { ++_totalTimeouts; }
+	void incrementActiveConnections() {
+		++_activeConnections;
+		if (_activeConnections > _maxActiveConnections) {
+			_maxActiveConnections = _activeConnections;
+		}
+	}
+	void decrementActiveConnections() { --_activeConnections; }
 
-    size_t getTotalTimeouts() const { return _totalTimeouts; }
-    size_t getActiveConnections() const { return _activeConnections; }
-    size_t getMaxActiveConnections() const { return _maxActiveConnections; }
+	size_t getTotalTimeouts() const { return _totalTimeouts; }
+	size_t getActiveConnections() const { return _activeConnections; }
+	size_t getMaxActiveConnections() const { return _maxActiveConnections; }
 
-    void reset() {
-        _totalTimeouts = 0;
-        _activeConnections = 0;
-        _maxActiveConnections = 0;
-    }
+	void reset() {
+		_totalTimeouts = 0;
+		_activeConnections = 0;
+		_maxActiveConnections = 0;
+	}
 
 private:
-    size_t _totalTimeouts;
-    size_t _activeConnections;
-    size_t _maxActiveConnections;
+	size_t _totalTimeouts;
+	size_t _activeConnections;
+	size_t _maxActiveConnections;
 };
 
 class TimeoutManager {
@@ -78,14 +79,14 @@ public:
 	/**
 	 * @brief 統計情報を取得します。
 	 */
-	const TimeoutStats& getStats() const { return _stats; }
+	const TimeoutStats &getStats() const { return _stats; }
 
 private:
 	TimeoutManager(const TimeoutManager &);
 	TimeoutManager &operator=(const TimeoutManager &);
 
 	// タイムアウト時刻をキーとしてオブジェクトリストを管理するマップ
-	typedef std::map< time_t, std::list<ITimeoutable*> > TimeoutMap;
+	typedef std::map< time_t, std::list< ITimeoutable * > > TimeoutMap;
 	// オブジェクトからタイムアウト時刻を逆引きするためのマップ (削除を高速化)
 	typedef std::map< ITimeoutable *, time_t > ReverseTimeoutMap;
 
