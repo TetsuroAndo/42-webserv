@@ -14,7 +14,7 @@ OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
 CONF			:= $(CONF_DIR)/default.yaml
 LOG_DIR			:= $(ROOT_DIR)/logs
-TEST_DIR		:= $(ROOT_DIR)/pytest
+TEST_DIR		:= $(ROOT_DIR)/test
 
 SRC 	:= $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
@@ -76,7 +76,7 @@ pyinit:
 	fi
 
 test:
-	. venv/bin/activate && pytest --asyncio-mode=auto
+	. venv/bin/activate && cd $(TEST_DIR) && pytest
 
 # ============= STATIC ANALYSIS =============
 
@@ -165,4 +165,4 @@ help:
 	@echo "  view		View source code"
 	@echo "  help		Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug setuphooks tidy check nm nmbin printsrc printobj fill view help
+.PHONY: all clean fclean re run clog c f r debug setuphooks pyinit test tidy check nm nmbin printsrc printobj fill view help
