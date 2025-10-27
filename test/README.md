@@ -1,209 +1,83 @@
-# WebServ テストスイート
+# Webserv テスト (test/)
 
-このディレクトリには、WebServプロジェクトの包括的なテストスイートが含まれています。
+このディレクトリには、WebservのE2E（エンドツーエンド）テストと堅牢性テストを含む、pytestベースのテストスイートが格納されています。
 
-## 概要
+---
 
-元々の`test.bk`ディレクトリにあったBashベースのテストを、モダンで再利用可能なpytestベースのテストに移行しました。
+## 🧪 目的
 
-## ディレクトリ構造
+このテストスイートの目的は、42-Webservプロジェクトの必須要件およびボーナス要件を包括的に検証することです。  
+サーバーの起動から、HTTPメソッドの処理、ルーティング、CGIの実行、堅牢性まで、機能別に分類されています。
 
-```
-test/
-├── confs/              # テスト用設定ファイル
-│   ├── valid/          # 正常系の設定ファイル
-│   └── invalid/        # 異常系の設定ファイル（バリデーションテスト用）
-├── test_www/            # テスト用Webリソース
-│   ├── static/          # 静的ファイル
-│   ├── cgi-bin/         # CGIスクリプト
-│   └── uploads/         # アップロードテスト用ディレクトリ
-├── test_suite/          # テストコード
-│   ├── test_00_validation.py  # 設定ファイルのバリデーションテスト
-│   ├── test_01_static_file.py # 静的ファイルサービングのテスト
-│   └── test_02_cgi.py         # CGI機能のテスト
-├── conftest.py          # pytestの共通フィクスチャ
-├── pytest.ini           # pytestの設定
-└── requirements.txt     # Python依存関係
-```
+---
 
-## セットアップ
+## 🚀 実行方法
 
-### 1. 仮想環境の作成と依存関係のインストール
-
+### 依存ライブラリのインストール:
 ```bash
-# プロジェクトルートから
-make pyinit
+pip install -r requirements.txt
 ```
 
-### 2. サーバーのビルド
+### Webservバイナリのビルド:
+（テスト実行前に、プロジェクトルートで`make`が完了している必要があります）
 
+### 全テストの実行:
+プロジェクトルートから`pytest`を実行します。
 ```bash
-# プロジェクトルートから
-make
-```
-
-## テストの実行
-
-### すべてのテストを実行
-
-```bash
-# プロジェクトルートから
-make test
-```
-
-または、仮想環境をアクティベートしてから：
-
-```bash
-cd test
-. ../venv/bin/activate
 pytest
 ```
 
-### 特定のテストファイルを実行
+### 特定のテストのみ実行:
+特定のディレクトリやファイル、マーカー（`pytest.ini`で定義）を指定して実行できます。
 
+#### 例: CGIテストのみ実行
 ```bash
-pytest test_suite/test_01_static_file.py
+pytest test/test_suite/test_30_cgi/
 ```
 
-### 特定のテスト関数を実行
-
+#### 例: GETメソッドのテストのみ実行
 ```bash
-pytest test_suite/test_01_static_file.py::TestStaticFile::test_basic_static_get
+pytest test/test_suite/test_10_methods/test_get.py
 ```
 
-### マーカーでフィルタリング
+---
 
-```bash
-# コアテストのみ実行
-pytest -m core
+## 📂 ディレクトリ構造とテスト概要
 
-# HTTPテストのみ実行
-pytest -m http
+テストは機能の単位でサブディレクトリに分割されています。
 
-# CGIテストのみ実行
-pytest -m cgi
-```
+### `test_00_startup/`
+- **サーバーの起動と設定ファイルの検証**
+  - `test_invalid_config.py`: 不正な構文や無効なディレクティブを持つ設定ファイルでサーバーが正しく起動に失敗すること（エラー終了）を検証します。
+  - `test_valid_startup.py`: 正常な設定ファイルでサーバーが起動すること、引数なしでデフォルト設定を読み込むこと、複数のポートでリッスンできることなどを検証します。
 
-## テストの種類
+### `test_10_methods/`
+- **必須HTTPメソッドの基本動作検証**
+  - `test_get.py`: GETメソッドによる静的ファイルの取得（200 OK）、存在しないファイル（404 Not Found）、アクセス権のないファイル（403 Forbidden）を検証します。
+  - `test_post.py`: POSTメソッドによるファイルアップロード（201 Created）、リクエストボディが設定（`maxRequestBodySize`）を超過した場合（413 Payload Too Large）などを検証します。
+  - `test_delete.py`: DELETEメソッドによるアップロードファイルの削除（204 No Content）、存在しないファイルの削除（404 Not Found）を検証します。
 
-### 1. バリデーションテスト (`test_00_validation.py`)
+### `test_20_routing/`
+- **設定ファイルに基づくルーティングとディレクティブの検証**
+  - `test_core_directives.py`: `root`ディレクティブに基づき正しいファイルパスが解決されること、`indexFile`がディレクトリリクエスト時に正しく提供されること、`autoindex`が有効・無効の場合のディレクトリリスティングを検証します。
+  - `test_method_limits.py`: `allowedMethods`ディレクティブで許可されていないメソッドがリクエストされた場合に（405 Method Not Allowed）を返すことを検証します。
+  - `test_redirects.py`: `redirect`ディレクティブに基づくHTTPリダイレクト（301, 302など）が正しく動作することを検証します。
+  - `test_error_pages.py`: 404や500などのエラー発生時に、設定されたカスタムエラーページが提供されること、またはデフォルトのエラーページが提供されることを検証します。
 
-無効な設定ファイルでサーバーが適切にエラーを返すかをテストします。
+### `test_30_cgi/`
+- **CGI（Common Gateway Interface）の包括的検証**
+  - `test_cgi_exec.py`: GET（クエリ文字列）およびPOST（標準入力）の両方でCGIスクリプトが正しく実行されることを検証します。スクリプト自体がエラーを返した場合（500 Internal Server Error）の処理も検証します。
+  - `test_cgi_env.py`: `QUERY_STRING`, `REQUEST_METHOD`, `PATH_INFO`などのCGI仕様に基づく環境変数が正しく設定されていることを検証します。
+  - `test_cgi_data.py`: サーバーがChunkedリクエストを正しくデコード（Un-chunk）してCGIに渡すこと、およびCGIからのEOF（Content-Lengthなし）出力を正しく処理できることを検証します。
 
-**実行例:**
-```bash
-pytest test_suite/test_00_validation.py
-```
+### `test_40_robustness/`
+- **サーバーの堅牢性、ノンブロッキング動作、耐障害性の検証**
+  - `test_nonblocking.py`: サーバーがノンブロッキングで動作していることを検証します（例：時間のかかるCGI処理中に、別のクライアントからの高速なGETリクエストがブロックされないこと）。
+  - `test_connections.py`: クライアントが通信途中で接続を切断した場合や、アイドル状態がタイムアウトした場合に、サーバーがクラッシュせず適切にリソースを解放することを検証します。
+  - `test_bad_request.py`: 不正なHTTPリクエスト（例：HTTPバージョンがない、ヘッダが壊れている）を受信した場合に、サーバーがクラッシュせず（400 Bad Request）を返すことを検証します。
+  - `test_stress.py`: 短時間に多数の同時接続を行う負荷テストを実行し、サーバーが安定して動作し続けることを確認します。
 
-### 2. 静的ファイルテスト (`test_01_static_file.py`)
-
-基本的なHTTP GETリクエストと静的ファイルのサービスをテストします。
-
-**テスト項目:**
-- 基本的な静的ファイルのGET
-- 存在しないファイルへの404レスポンス
-- インデックスファイルのサービス
-- オートインデックス機能（ON/OFF）
-
-### 3. CGIテスト (`test_02_cgi.py`)
-
-CGIスクリプトの実行をテストします。
-
-**テスト項目:**
-- シンプルなCGI GETリクエスト
-- CGIへのPOSTリクエスト
-- クエリ文字列の処理
-- 存在しないCGIスクリプトへの404レスポンス
-
-## テストフィクスチャ
-
-### `managed_server` フィクスチャ
-
-各テストで自動的にWebServを起動・停止します。
-
-**使用例:**
-```python
-@pytest.mark.config("valid/config_basic_get.yaml")
-def test_something(managed_server):
-    url = f"{managed_server['base_url']}/path"
-    response = requests.get(url)
-    assert response.status_code == 200
-```
-
-**動作:**
-1. 指定された設定ファイルを読み込み
-2. サーバーを起動
-3. 起動完了まで待機（最大5秒）
-4. テスト実行
-5. テスト終了後にサーバーを停止
-
-### `build_server` フィクスチャ
-
-テストセッション開始時に自動的にサーバーをビルドします。
-
-## 設定ファイルの配置
-
-### 正常系設定ファイル
-
-`test/confs/valid/` に配置します。
-
-**例:**
-- `config_basic_get.yaml` - 基本的なGETテスト用
-- `config_index_file.yaml` - インデックスファイルテスト用
-- `cgi.yaml` - CGIテスト用
-
-### 異常系設定ファイル
-
-`test/confs/invalid/` に配置します。
-
-**例:**
-- `test_invalid_key_server.yaml` - 無効なキーを含むサーバーブロック
-- `test_invalid_key_location.yaml` - 無効なキーを含むロケーションブロック
-
-## 既存テストからの移行
-
-`test.bk/` ディレクトリのBashスクリプトから移行したテスト：
-
-| 元のディレクトリ | 新しいテストファイル |
-|-----------------|---------------------|
-| `validation_test/` | `test_00_validation.py` |
-| `static_file_test/` | `test_01_static_file.py` |
-| `cgi_test/` | `test_02_cgi.py` |
-| `post_test/` | *(今後実装)* |
-| `redirect_test/` | *(今後実装)* |
-| `session_test/` | *(今後実装)* |
-
-## トラブルシューティング
-
-### ポートが使用中エラー
-
-複数のテストを同時に実行するとポート競合が発生する可能性があります。テストは順次実行してください。
-
-### サーバーが起動しない
-
-1. サーバーがビルドされているか確認：`ls -l webserv`
-2. 設定ファイルのパスが正しいか確認
-3. ログファイルを確認：`logs/error.log`
-
-### CGIテストが失敗する
-
-1. CGIスクリプトが実行可能か確認：`chmod +x test/test_www/cgi-bin/*.py`
-2. Pythonのパスが正しいか確認（設定ファイルの`interpreterPath`）
-3. CGIスクリプトに適切なshebangがあるか確認
-
-## 今後の拡張
-
-以下のテストの実装が予定されています：
-
-- [ ] POST/ファイルアップロードテスト
-- [ ] リダイレクトテスト
-- [ ] セッション管理テスト
-- [ ] ログローテーションテスト
-- [ ] 負荷テスト（stress/）
-- [ ] プロトコル堅牢性テスト（protocol/）
-
-## 参考資料
-
-- [pytest ドキュメント](https://docs.pytest.org/)
-- [requests ドキュメント](https://requests.readthedocs.io/)
-- [PyYAML ドキュメント](https://pyyaml.org/)
+### `test_90_bonus/`
+- **ボーナス要件の検証**
+  - `test_session.py`: クッキーを使ったセッション管理機能（もし実装した場合）が正しく動作することを検証します。
+test_cgi_data.py: サーバーがChunkedリクエストを正しくデコード（Un-chunk）してCGIに渡すこと、およびCGIからのEOF（Content-Lengthなし）出力を正しく処理できることを検証します。
