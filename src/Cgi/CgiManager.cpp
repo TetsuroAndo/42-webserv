@@ -1,5 +1,3 @@
-// src/Cgi/CgiManager.cpp
-
 #include "CgiManager.hpp"
 #include "../Config/Config.hpp"
 #include "../Handler/HandlerUtil.hpp"
@@ -67,6 +65,8 @@ CgiManager::~CgiManager() {
 }
 
 void CgiManager::createWorker(PipelineContext &ctx) {
+	// catch ブロックで delete できるように try の外で宣言
+	CgiWorker *worker = NULL;
 	try {
 		if (_workers.size() >= _maxWorkers) {
 			LOG(WARNING) << "CGI worker limit reached"
@@ -124,7 +124,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				   << attr("interpreter", interpreterPath)
 				   << attr("script", scriptPath);
 
-		CgiWorker *worker = new CgiWorker(ctx, scriptPath, interpreterPath);
+		worker = new CgiWorker(ctx, scriptPath, interpreterPath);
 		worker->execute(); // pipe, fork, execveの実行
 
 		_workers.push_back(worker);
@@ -162,6 +162,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				  << attr("writeFd", worker->getWriteFd());
 
 	} catch (const std::exception &e) {
+		// new または execute で失敗した場合に備えて delete (NULLでも問題なし)
+		delete worker;
 		LOG(ERROR) << "Failed to create CGI worker: " << e.what();
 		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 										HttpStatus::INTERNAL_SERVER_ERROR);

@@ -5,7 +5,7 @@ servers:
             interface: 0.0.0.0
             port: 8080
 
-      maxRequestBodySize: 2
+      maxRequestBodySize: 1KB
       timeoutSec: 60
       maxEvents: 1024
 

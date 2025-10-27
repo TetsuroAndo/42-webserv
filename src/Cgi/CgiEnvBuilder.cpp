@@ -39,8 +39,17 @@ std::string queryString(const HttpRequest &req) {
 
 std::string fileName(const std::string &scriptPath) {
 	std::string trimmed = scriptPath;
-	trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r"));
-	trimmed.erase(trimmed.find_last_not_of(" \t\n\r") + 1);
+	const size_t start = trimmed.find_first_not_of(" \t\n\r");
+	if (start != std::string::npos) {
+		trimmed.erase(0, start);
+	} else {
+		trimmed.clear();
+		return "/";
+	}
+	const size_t end = trimmed.find_last_not_of(" \t\n\r");
+	if (end != std::string::npos) {
+		trimmed.erase(end + 1);
+	}
 
 	std::size_t pos = trimmed.find('?');
 	if (pos != std::string::npos)
@@ -52,6 +61,11 @@ std::string fileName(const std::string &scriptPath) {
 	return "/" + name;
 }
 
+/**
+ * @brief PATH_INFOを抽出する
+ * @param fullPath リクエストのフルパス
+ * @return PATH_INFO部分の文字列
+ */
 std::string extractPathInfo(std::string fullPath) {
 	try {
 		const std::size_t dotPos = fullPath.find('.');
@@ -74,14 +88,14 @@ std::string formatHeaderKeyForCgi(std::string key) {
 } // namespace
 
 /**
- * @brief PipelineContextからCGI環境変数のリストを生成する
- * RFC 3875
- * 参考: https://4judgement.github.io/rfc-translater/html/rfc3875.html
- *
- * @param ctx リクエストのコンテキスト
- * @param requestedPath リクエストのパス
- * @return "KEY=VALUE"形式のvector
- */
+ * @brief PipelineContextからCGI環境変数のリストを生成する
+ * RFC 3875
+ * 参考: https://4judgement.github.io/rfc-translater/html/rfc3875.html
+ *
+ * @param ctx リクエストのコンテキスト
+ * @param requestedPath リクエストのパス
+ * @return "KEY=VALUE"形式のvector
+ */
 std::vector< std::string >
 CgiEnvBuilder::build(const PipelineContext &ctx,
 					 const std::string &requestedPath) {
@@ -91,38 +105,43 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	const std::vector< std::string > Authorization =
 		StringOps::split(req.getHeader("Authorization"), " ");
 	std::string remoteUser = "";
+	std::string authType = "";
+	if (!Authorization.empty()) {
+		authType = Authorization[0];
+	}
 	if (1 < Authorization.size()) {
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
 	const Location loc = c.getLocation(req.getPath());
 
+	if (c.getListens().empty()) {
+		LOG(ERROR) << "CgiEnvBuilder: No listen configuration found";
+		return std::vector< std::string >();
+	}
+
+	const Listen &listen = c.getListens()[0];
+
 	std::map< std::string, std::string > env;
-	env["AUTH_TYPE"] = StringOps::split(req.getHeader("Authorization"), " ")[0];
+	env["AUTH_TYPE"] = authType;
 	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
-	env["PATH_INFO"] =
-		extractPathInfo(ctx.req.getPath()); // cgiのパス以降のパス
+	// PATH_INFO を取得
+	const std::string pathInfo = extractPathInfo(req.getPath());
+	env["PATH_INFO"] = pathInfo;
+	// PATH_TRANSLATED は PATH_INFO をファイルシステムパスに解決したもの
 	env["PATH_TRANSLATED"] =
-		env["PATH_INFO"].empty()
-			? ""
-			: HandlerUtil::resolvePath(env["PATH_INFO"],
-									   c);		// PATH_INFOを取得するURI
+		pathInfo.empty() ? "" : HandlerUtil::resolvePath(pathInfo, c);
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
-	env["REMOTE_HOST"] = ""; // 空文字で登録
-	if (ctx.session)
-		env["REMOTE_IDENT"] = ctx.session->getId();
+	env["REMOTE_HOST"] = "";
+	env["REMOTE_IDENT"] = ctx.session ? ctx.session->getId() : "";
 	env["REMOTE_USER"] = remoteUser;
 	env["REQUEST_METHOD"] = req.getMethod();
-	env["SCRIPT_NAME"] = fileName(requestedPath); // まっさらなCGIのファイル名
-	env["SERVER_NAME"] =
-		c.getListens()[0]
-			.interface; // Locationsで指定されるIPアドレス(0番目で固定)
-	env["SERVER_PORT"] = StringOps::toString(
-		c.getListens()[0]
-			.port); // Locationsのうち、scriptPathが属す場所のポート(0番目で固定)
+	env["SCRIPT_NAME"] = fileName(requestedPath);
+	env["SERVER_NAME"] = listen.interface;
+	env["SERVER_PORT"] = StringOps::toString(listen.port);
 	env["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
 	env["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
 	env["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
@@ -137,7 +156,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	// 毎回は見なくていいデバッグだけど、まだ消さないで〜
 	// std::cout << "Env map created: \n";
 	// for (std::map< std::string, std::string >::const_iterator it =
-	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " <<
+	// env.begin(); 	 it != env.end(); ++it) { 	std::cout << "  " <<
 	// it->first <<
 	// "=" << it->second << "\n";
 	// }

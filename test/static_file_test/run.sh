@@ -1,11 +1,39 @@
 #!/bin/bash
 
 WEBSERV_BIN="./webserv"
+TEST_ROOT="./www/http_test_root"
+FORBIDDEN_DIR="./www/forbidden_dir"
 
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# Setup function
+setup_test_env() {
+    echo "Setting up test environment..."
+    mkdir -p "$TEST_ROOT"
+    mkdir -p "$TEST_ROOT/no_autoindex_dir"
+    mkdir -p "$TEST_ROOT/autoindex_test_dir"
+    mkdir -p "$FORBIDDEN_DIR"
+    
+    # Create test files
+    echo "Hello from webserv test!" > "$TEST_ROOT/hello.txt"
+    echo "<html><body><h1>Welcome!</h1></body></html>" > "$TEST_ROOT/index.html"
+    
+    # Create forbidden directory with no permissions
+    chmod 000 "$FORBIDDEN_DIR"
+}
+
+# Cleanup function
+cleanup() {
+    echo "Cleaning up test environment..."
+    # Restore permissions before deletion
+    chmod 755 "$FORBIDDEN_DIR" 2>/dev/null || true
+    rm -rf "$TEST_ROOT" "$FORBIDDEN_DIR" 2>/dev/null || true
+}
+
+trap cleanup EXIT
 
 # Function to run a test case
 run_test() {
@@ -59,13 +87,16 @@ run_test() {
     return 0
 }
 
+# Setup test environment
+setup_test_env
+
 # --- Test Cases ---
 
 # 1. Serving a basic static file
 run_test "test/static_file_test/config_basic_get.yaml" "Basic Static File" "/hello.txt" "200 OK" "Hello from webserv test!" || exit 1
 
 # 2. Directory listing (autoindex on)
-run_test "test/static_file_test/config_autoindex_on.yaml" "Autoindex On" "/" "200 OK" "Index of /" || exit 1
+run_test "test/static_file_test/config_autoindex_on.yaml" "Autoindex On" "/no_autoindex_dir/" "200 OK" "Index of /no_autoindex_dir/" || exit 1
 
 # 3. Default file (indexFile)
 run_test "test/static_file_test/config_index_file.yaml" "Index File" "/" "200 OK" "Welcome!" || exit 1

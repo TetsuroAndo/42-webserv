@@ -2,6 +2,10 @@ NAME = log_rotation_test_app
 
 SRCS = main.cpp \
        ../../src/Config/Config.cpp \
+       ../../src/Config/ConfigBuilder.cpp \
+       ../../src/Config/ConfigParser.cpp \
+       ../../src/Config/ConfigLocationParser.cpp \
+       ../../src/Config/ConfigLogParser.cpp \
        ../../src/Lib/MyYAML/MyYAML.cpp \
        ../../src/Lib/MyYAML/Node.cpp \
        ../../src/Lib/StringOps/StringOps.cpp \

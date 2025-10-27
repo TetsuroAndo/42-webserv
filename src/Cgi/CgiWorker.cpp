@@ -66,6 +66,10 @@ void CgiWorker::execute() {
 		try {
 			const std::vector< std::string > envpStrs =
 				CgiEnvBuilder::build(_ctx, _scriptPath);
+			if (envpStrs.empty()) {
+				LOG(ERROR) << "CGI environment build failed: empty environment";
+				_exit(EXIT_FAILURE);
+			}
 			_childProcess(_scriptPath, _interpreterPath, envpStrs);
 		} catch (const std::exception &e) {
 			const std::string msg =
@@ -203,11 +207,13 @@ void CgiWorker::_childProcess(
 	close(_pipeIn[0]);
 	close(_pipeOut[1]);
 
-	const std::string scriptDir =
-		scriptPath.substr(0, scriptPath.find_last_of('/'));
-	if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
-		perror("chdir failed");
-		exit(EXIT_FAILURE);
+	const size_t lastSlashPos = scriptPath.find_last_of('/');
+	if (lastSlashPos != std::string::npos) {
+		const std::string scriptDir = scriptPath.substr(0, lastSlashPos);
+		if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
+			perror("chdir failed");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	std::vector< char * > envp;
