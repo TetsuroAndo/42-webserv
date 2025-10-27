@@ -20,9 +20,9 @@ PORT=8080
 ADDRESS="127.0.0.1:$PORT"
 
 # Directories and files for testing
-ROOT_DIR="/tmp/www"
+ROOT_DIR="./tmp/www"
 NO_AUTOINDEX_DIR="$ROOT_DIR/no_autoindex_dir"
-UPLOAD_DIR="/tmp/uploads"
+UPLOAD_DIR="./tmp/uploads"
 NO_PERMS_DIR="/tmp/no_perms_default"
 
 GET_FILE="$ROOT_DIR/index.html"
@@ -34,6 +34,12 @@ UPLOAD_DST_FILE="$UPLOAD_DIR/uploaded_file.bin"
 
 function setup_test_env() {
     echo -e "${BLUE}Setting up comprehensive test environment...${NC}"
+    # Clean up any leftover files from previous runs
+    if [ -f "$FORBIDDEN_FILE" ]; then
+        chmod 644 "$FORBIDDEN_FILE" 2>/dev/null || true
+    fi
+    rm -rf "$ROOT_DIR" "$UPLOAD_DIR" "$NO_PERMS_DIR" "$UPLOAD_SRC_FILE" 2>/dev/null || true
+    
     mkdir -p "$ROOT_DIR"
     mkdir -p "$NO_AUTOINDEX_DIR"
     mkdir -p "$UPLOAD_DIR"
@@ -50,7 +56,10 @@ function setup_test_env() {
 
 function cleanup() {
     echo -e "\n${BLUE}Cleaning up...${NC}"
-    chmod 755 "$FORBIDDEN_FILE" || true
+    # Restore permissions so rm can delete it
+    if [ -f "$FORBIDDEN_FILE" ]; then
+        chmod 644 "$FORBIDDEN_FILE" 2>/dev/null || true
+    fi
     if [ ! -z "$WEBSERV_PID" ]; then
         if kill -0 $WEBSERV_PID 2>/dev/null; then
             kill $WEBSERV_PID
@@ -102,7 +111,7 @@ echo -e "${GREEN}[GET 403] OK${NC}"
 
 # Test: GET Directory with autoindex on
 RESPONSE_BODY=$(curl -s "http://$ADDRESS/")
-if ! echo "$RESPONSE_BODY" | grep -q "index.html"; then echo -e "${RED}[GET autoindex] FAIL${NC}"; exit 1; fi
+if ! echo "$RESPONSE_BODY" | grep -q "Default index.html"; then echo -e "${RED}[GET autoindex] FAIL${NC}"; exit 1; fi
 echo -e "${GREEN}[GET autoindex] OK${NC}"
 
 # Test: GET Directory with autoindex off
@@ -116,8 +125,10 @@ echo -e "${GREEN}[GET no autoindex] OK${NC}"
 echo -e "\n${BLUE}--- Testing POST... ---${NC}"
 
 # Test: POST 201 Created (Upload)
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload/ignored_filename")
-if [[ "$HTTP_STATUS" -ne 201 || ! -f "$UPLOAD_DST_FILE" ]]; then echo -e "${RED}[POST 201] FAIL${NC}"; exit 1; fi
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary "@$UPLOAD_SRC_FILE" "http://$ADDRESS/upload")
+FILE_COUNT_AFTER=$(find "$UPLOAD_DIR" -type f 2>/dev/null | wc -l)
+if [[ "$HTTP_STATUS" -ne 201 ]]; then echo -e "${RED}[POST 201] FAIL: Status=$HTTP_STATUS${NC}"; exit 1; fi
+if [[ $FILE_COUNT_AFTER -eq 0 ]]; then echo -e "${RED}[POST 201] FAIL: No file created${NC}"; exit 1; fi
 echo -e "${GREEN}[POST 201] OK${NC}"
 
 # Test: POST 405 Method Not Allowed
@@ -131,8 +142,20 @@ echo -e "${GREEN}[POST 405] OK${NC}"
 echo -e "\n${BLUE}--- Testing DELETE... ---${NC}"
 
 # Test: DELETE 204 No Content
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://$ADDRESS/upload/uploaded_file.bin")
-if [[ "$HTTP_STATUS" -ne 204 || -f "$UPLOAD_DST_FILE" ]]; then echo -e "${RED}[DELETE 204] FAIL${NC}"; exit 1; fi
+UPLOADED_FILE=$(ls -1 "$UPLOAD_DIR" 2>/dev/null | head -n 1)
+if [[ -z "$UPLOADED_FILE" ]]; then
+    echo -e "${RED}[DELETE 204] FAIL: No file to delete${NC}"
+    exit 1
+fi
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://$ADDRESS/upload/$UPLOADED_FILE")
+if [[ "$HTTP_STATUS" -ne 204 ]]; then
+    echo -e "${RED}[DELETE 204] FAIL: Expected 204, got $HTTP_STATUS${NC}"
+    exit 1
+fi
+if [[ -f "$UPLOAD_DIR/$UPLOADED_FILE" ]]; then
+    echo -e "${RED}[DELETE 204] FAIL: File still exists${NC}"
+    exit 1
+fi
 echo -e "${GREEN}[DELETE 204] OK${NC}"
 
 # Test: DELETE 404 Not Found

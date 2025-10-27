@@ -166,6 +166,10 @@ void Server::run() {
 				}
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
+					std::string sessionId =
+						_clients[fd]->getContext()->session
+							? _clients[fd]->getContext()->session->getId()
+							: "";
 					AccessLogger::getInstance().log(
 						&_clients[fd]->getContext()->req, &cgiRes,
 						_clients[fd]->getIp(), _clients[fd]->getPort(),
@@ -208,6 +212,10 @@ void Server::run() {
 					continue;
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
+					std::string sessionId =
+						_clients[cfd]->getContext()->session
+							? _clients[cfd]->getContext()->session->getId()
+							: "";
 					AccessLogger::getInstance().log(
 						&_clients[cfd]->getContext()->req, &cgiRes,
 						_clients[cfd]->getIp(), _clients[cfd]->getPort(),
@@ -307,6 +315,7 @@ void Server::handleClientRead(const int clientFd) {
 	}
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
+		std::string sessionId = ctx->session ? ctx->session->getId() : "";
 		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
 										client->getPort(), getSessionId(ctx));
 		const std::string responseStr = ResponseBuilder::build(ctx->res);
