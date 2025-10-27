@@ -14,9 +14,9 @@ void ConfigBuilder::initDefaults() {
 	_errorLogs.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
-	_timeoutSec = 60;
 	_maxEvents = 1024;
-	// (追加) デフォルトタイムアウト
+
+	_timeoutSec = 60;
 	_requestHeaderTimeoutSec = 20;
 	_requestBodyTimeoutSec = 30;
 

@@ -204,12 +204,12 @@ void Server::run() {
 					}
 				} else {
 					if (eventTypes & EPOLLIN) {
-							_clients[fd]->handleReadEvent();
-						}
-						if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
-							_clients[fd]->handleWriteEvent();
-						}
+						_clients[fd]->handleReadEvent();
 					}
+					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
+						_clients[fd]->handleWriteEvent();
+					}
+				}
 			}
 		}
 
