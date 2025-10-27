@@ -23,21 +23,6 @@ createEnvpArray(const std::map< std::string, std::string > &_env) {
 	return envpStrs;
 }
 
-std::string fullURI(const std::string &version, const std::string &ip,
-					const std::string &port, const std::string &scriptPath) {
-	std::string result;
-	const std::string modifiedVersion =
-		StringOps::toLower(StringOps::trim(version, "0123456789. /"));
-
-	result += modifiedVersion + "://";
-	result += ip + ":" + port;
-	if (!scriptPath.empty() && scriptPath[0] != '/') {
-		result += "/";
-	}
-	result += scriptPath;
-	return result;
-}
-
 std::string queryString(const HttpRequest &req) {
 	const std::map< std::string, std::string > map = req.getQueries();
 	std::string result;
@@ -76,6 +61,11 @@ std::string fileName(const std::string &scriptPath) {
 	return "/" + name;
 }
 
+/**
+ * @brief PATH_INFOを抽出する
+ * @param fullPath リクエストのフルパス
+ * @return PATH_INFO部分の文字列
+ */
 std::string extractPathInfo(std::string fullPath) {
 	try {
 		const std::size_t dotPos = fullPath.find('.');
@@ -137,10 +127,12 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
 	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
-	env["PATH_INFO"] = requestedPath;
+	// PATH_INFO を取得
+	const std::string pathInfo = extractPathInfo(req.getPath());
+	env["PATH_INFO"] = pathInfo;
+	// PATH_TRANSLATED は PATH_INFO をファイルシステムパスに解決したもの
 	env["PATH_TRANSLATED"] =
-		::fullURI(c.getAppInfo().httpProtocolVersion, listen.interface,
-				  StringOps::toString(listen.port), ctx.req.getPath());
+		pathInfo.empty() ? "" : HandlerUtil::resolvePath(pathInfo, c);
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	env["REMOTE_HOST"] = "";
