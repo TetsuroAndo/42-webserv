@@ -31,9 +31,16 @@ SessionManager &SessionManager::getInstance() {
 
 Session *SessionManager::createSession() {
 	const std::string sessionId = generateSessionId();
-	Session *newSession = new Session(sessionId);
-	_sessions[sessionId] = newSession;
-	return newSession;
+	Session *newSession = NULL;
+	try {
+		newSession = new Session(sessionId);
+		_sessions[sessionId] = newSession;
+		return newSession;
+	} catch (const std::exception &e) {
+		delete newSession;
+		LOG(ERROR) << "Failed to create Session: " << e.what();
+		throw;
+	}
 }
 
 Session *SessionManager::getSession(const std::string &sessionId) {

@@ -44,39 +44,51 @@ void Logger::setSinkFile(const std::string &filename, const LogFormat eFormat,
 						 const LogLevel level, const LogFilterMode mode,
 						 const size_t maxFileSize,
 						 const size_t maxBackupFiles) {
-	LogForm *form;
-	if (eFormat == JSON) {
-		form = new JsonForm();
-	} else {
-		form = new ElfForm();
+	LogForm *form = (eFormat == JSON) ? static_cast< LogForm * >(new JsonForm())
+									  : static_cast< LogForm * >(new ElfForm());
+	FileSink *sink = NULL;
+	try {
+		sink =
+			new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles);
+		addSink(level, mode, sink);
+	} catch (...) {
+		delete sink;
+		delete form;
+		throw;
 	}
-	addSink(level, mode,
-			new FileSink(_logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkFile(const std::string &logDir, const std::string &filename,
 						 const LogFormat eFormat, const LogLevel level,
 						 const LogFilterMode mode, const size_t maxFileSize,
 						 const size_t maxBackupFiles) {
-	LogForm *form;
-	if (eFormat == JSON) {
-		form = new JsonForm();
-	} else {
-		form = new ElfForm();
+	LogForm *form = (eFormat == JSON) ? static_cast< LogForm * >(new JsonForm())
+									  : static_cast< LogForm * >(new ElfForm());
+	FileSink *sink = NULL;
+	try {
+		sink =
+			new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles);
+		addSink(level, mode, sink);
+	} catch (...) {
+		delete sink;
+		delete form;
+		throw;
 	}
-	addSink(level, mode,
-			new FileSink(logDir, filename, form, maxFileSize, maxBackupFiles));
 }
 
 void Logger::setSinkConsole(const LogFormat eFormat, const LogLevel level,
 							const LogFilterMode mode) {
-	LogForm *form;
-	if (eFormat == JSON) {
-		form = new JsonForm();
-	} else {
-		form = new ElfForm();
+	LogForm *form = (eFormat == JSON) ? static_cast< LogForm * >(new JsonForm())
+									  : static_cast< LogForm * >(new ElfForm());
+	ConsoleSink *sink = NULL;
+	try {
+		sink = new ConsoleSink(form);
+		addSink(level, mode, sink);
+	} catch (...) {
+		delete sink;
+		delete form;
+		throw;
 	}
-	addSink(level, mode, new ConsoleSink(form));
 }
 
 void Logger::addSink(LogLevel level, LogFilterMode mode, LogSink *sink) {

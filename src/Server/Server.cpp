@@ -53,9 +53,13 @@ void Server::applyCgiChanges() {
 					event.fd, static_cast< uint32_t >(event.eventType));
 				break;
 			}
+		} catch (const std::runtime_error &e) {
+			LOG(ERROR) << "applyCgiChanges: socket operation failed"
+					   << attr("fd", event.fd) << attr("type", event.changeType)
+					   << attr("what", e.what());
 		} catch (const std::exception &e) {
-			LOG(ERROR) << "applyCgiChanges failed" << attr("fd", event.fd)
-					   << attr("type", event.changeType)
+			LOG(ERROR) << "applyCgiChanges: unexpected exception"
+					   << attr("fd", event.fd) << attr("type", event.changeType)
 					   << attr("what", e.what());
 		}
 	}
@@ -116,11 +120,19 @@ void Server::setupListenSockets() {
 			throw std::runtime_error("listen() failed");
 		}
 
-		Socket *sock = new Socket(_config, listenFd, addr);
-		_listenSockets[listenFd] = sock;
-		_socketsManager.registerSocket(listenFd, EPOLLIN);
-		LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
-				  << attr("fd", listenFd);
+		Socket *sock = NULL;
+		try {
+			sock = new Socket(_config, listenFd, addr);
+			_listenSockets[listenFd] = sock;
+			_socketsManager.registerSocket(listenFd, EPOLLIN);
+			LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
+					  << attr("fd", listenFd);
+		} catch (const std::exception &e) {
+			close(listenFd);
+			delete sock;
+			LOG(FATAL) << "Failed to create listen socket: " << e.what();
+			throw;
+		}
 	}
 }
 
@@ -267,8 +279,21 @@ void Server::handleNewConnection(const int listenFd) {
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
 			  << attr("client_port", clientPort) << attr("fd", clientFd);
 
+	std::map< int, Socket * >::const_iterator it =
+		_listenSockets.find(listenFd);
+	if (it == _listenSockets.end()) {
+		LOG(ERROR) << "Listen socket not found" << attr("fd", listenFd);
+		close(clientFd);
+		return;
+	}
+
 	try {
-		const Socket *listenSocket = _listenSockets.at(listenFd);
+		const Socket *listenSocket = it->second;
+		if (listenSocket == NULL) {
+			LOG(ERROR) << "Listen socket is NULL" << attr("fd", listenFd);
+			close(clientFd);
+			return;
+		}
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
 		Client *client =
 			new Client(clientFd, clientAddr, listenPort, _cgiManager, _config);
@@ -315,7 +340,6 @@ void Server::handleClientRead(const int clientFd) {
 	}
 
 	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		std::string sessionId = ctx->session ? ctx->session->getId() : "";
 		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
 										client->getPort(), getSessionId(ctx));
 		const std::string responseStr = ResponseBuilder::build(ctx->res);
@@ -367,11 +391,7 @@ void Server::handleClientWrite(const int clientFd) {
 
 void Server::closeConnection(const int clientFd) {
 	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する
-	try {
-		_cgiManager.abortClient(clientFd);
-	} catch (...) {
-		// best-effort: ここでの失敗は致命的ではない
-	}
+	_cgiManager.abortClient(clientFd);
 	_socketsManager.unregisterSocket(clientFd);
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {

@@ -275,13 +275,18 @@ void ConfigParser::parseServer(const Node *serverNode) {
 	if (Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("interpreterPath")) {
-		const std::vector< std::string > &keys = n->getKeys();
-		for (std::vector< std::string >::const_iterator it = keys.begin();
-			 it != keys.end(); ++it) {
-			Node *pathNode = n->getMapNode(*it);
-			if (pathNode) {
-				_builder->setServerDefaultCgiConf(*it, pathNode->getValue());
+		const std::vector< std::string > &cgiKeys = n->getKeys();
+		for (std::vector< std::string >::const_iterator cgi_it =
+				 cgiKeys.begin();
+			 cgi_it != cgiKeys.end(); ++cgi_it) {
+			Node *cgiValueNode = n->getMapNode(*cgi_it);
+			if (!cgiValueNode) {
+				throw std::runtime_error(
+					"Config error: invalid structure in cgi block for key '" +
+					*cgi_it + "'");
 			}
+			_builder->setServerDefaultCgiConf(*cgi_it,
+											  cgiValueNode->getValue());
 		}
 	}
 	if (Node *n = serverNode->getMapNode("session"))
