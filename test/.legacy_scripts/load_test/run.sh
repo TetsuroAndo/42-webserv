@@ -6,10 +6,10 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$ROOT_DIR"
 
-CONFIG_PATH="${1:-test/load_test/config.yaml}"
+CONFIG_PATH="${1:-$ROOT_DIR/test/confs/valid/cgi.yaml}"
 PORT=8082
 ADDR="127.0.0.1:${PORT}"
 WEBSERV_EXEC="${ROOT_DIR}/webserv"
