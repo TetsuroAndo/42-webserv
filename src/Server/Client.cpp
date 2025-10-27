@@ -3,6 +3,7 @@
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
 #include "HttpConnection.hpp"
 #include "Server.hpp"
@@ -13,26 +14,12 @@
 #include <sstream>
 #include <unistd.h>
 
-namespace {
-// clang-format off
-std::string ipToString(uint32_t ip_addr) {
-	std::stringstream ss;
-	ss << ((ip_addr >> 24) & 0xFF) << "."
-	   << ((ip_addr >> 16) & 0xFF) << "."
-	   << ((ip_addr >> 8) & 0xFF) << "."
-	   << (ip_addr & 0xFF);
-	return ss.str();
-}
-// clang-format on
-} // namespace
-
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 			   CgiManager &cgiManager, const Config &config, Server *server)
 	: _fd(fd), _listenPort(listenPort), _socket(NULL), _context(NULL),
 	  _httpConnection(NULL), _server(server) {
-	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
-	_ip = ipToString(ip_addr);
+	_ip = StringOps::ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 
 	try {

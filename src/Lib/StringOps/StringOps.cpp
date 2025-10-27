@@ -329,4 +329,15 @@ unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
 	return static_cast< unsigned int >(sizeByteStrToSizeT(sizeStr));
 }
 
+// clang-format off
+std::string ipToString(uint32_t ip_addr) {
+	std::stringstream ss;
+	ss << ((ip_addr >> 24) & 0xFF) << "."
+	   << ((ip_addr >> 16) & 0xFF) << "."
+	   << ((ip_addr >> 8) & 0xFF) << "."
+	   << (ip_addr & 0xFF);
+	return ss.str();
+}
+// clang-format on
+
 } // namespace StringOps
