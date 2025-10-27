@@ -14,6 +14,7 @@ OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
 CONF			:= $(CONF_DIR)/default.yaml
 LOG_DIR			:= $(ROOT_DIR)/logs
+TEST_DIR		:= $(ROOT_DIR)/pytest
 
 SRC 	:= $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
@@ -60,6 +61,22 @@ $(LOG_DIR):
 setuphooks:
 	@git config --local core.hooksPath .githooks
 	@chmod -R 744 .githooks/
+
+# =========== PYTEST ENVIRONMENT ============
+
+# Create a virtual environment and install dependencies
+pyinit:
+	python3 -m venv $(ROOT_DIR)/venv
+	@. $(ROOT_DIR)/venv/bin/activate && \
+	if command -v uv &> /dev/null; then \
+		uv pip install -r $(TEST_DIR)/requirements.txt; \
+	else \
+		pip install --upgrade pip uv && \
+		uv pip install -r $(TEST_DIR)/requirements.txt; \
+	fi
+
+test:
+	. venv/bin/activate && pytest --asyncio-mode=auto
 
 # ============= STATIC ANALYSIS =============
 
