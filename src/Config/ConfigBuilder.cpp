@@ -28,6 +28,7 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
+	defaultLoc.session = true;
 	_locations["/"] = defaultLoc;
 
 	_accessLogs.push_back(AccessLog());
@@ -200,4 +201,8 @@ void ConfigBuilder::setServerDefaultAllowedMethods(const std::string &methods) {
 void ConfigBuilder::setServerDefaultAllowedMethods(
 	const std::set< std::string > &methods) {
 	_locations[_defaultLocationKey].allowedMethods = methods;
+}
+
+void ConfigBuilder::setServerDefaultSession(bool enable) {
+	_locations[_defaultLocationKey].session = enable;
 }

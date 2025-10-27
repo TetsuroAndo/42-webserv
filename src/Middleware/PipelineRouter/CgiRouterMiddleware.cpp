@@ -12,18 +12,23 @@ CgiRouterMiddleware::~CgiRouterMiddleware() { delete _cgiHandler; }
  */
 bool CgiRouterMiddleware::isCgiRequest(PipelineContext &ctx,
 									   const Location &loc) const {
-	const std::string &path = ctx.req.getPath();
-
 	if (loc.cgiConf.empty()) {
 		return false;
 	}
 
-	const size_t dotPos = path.rfind('.');
-	if (dotPos == std::string::npos) {
+	std::string scriptVirtual;
+	std::string pathInfo;
+	if (!HandlerUtil::extractCgiScript(ctx.req.getPath(), loc, scriptVirtual,
+									   pathInfo)) {
 		return false;
 	}
 
-	const std::string ext = path.substr(dotPos);
+	// scriptVirtual の拡張子でCGI対象か判定
+	const size_t dotPos = scriptVirtual.rfind('.');
+	if (dotPos == std::string::npos) {
+		return false;
+	}
+	const std::string ext = scriptVirtual.substr(dotPos);
 	return loc.cgiConf.count(ext) > 0;
 }
 
@@ -71,8 +76,6 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 			HandlerUtil::generateSimpleBody(method, ctx.res,
 											HttpStatus::INTERNAL_SERVER_ERROR);
 		}
-		return;
-
 	} else {
 		proc->next(ctx);
 	}

@@ -4,8 +4,11 @@
 #include "Config.hpp"
 #include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
+#include <cerrno>
+#include <cstring>
 #include <set>
 #include <stdexcept>
+#include <unistd.h>
 #include <vector>
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
@@ -54,6 +57,10 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		}
 
 		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;
+
+		Node *sessionNode = l_node->getMapNode("session");
+		if (sessionNode)
+			loc.session = (sessionNode->getValue() == "true");
 
 		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
 			loc.allowedMethods.clear();

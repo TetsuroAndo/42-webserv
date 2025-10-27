@@ -12,6 +12,12 @@ public:
 	~CgiResponseParser();
 
 	/**
+	 * @brief CGIレスポンスにヘッダが含まれていたかを判定する
+	 * @return ヘッダが見つかった場合はtrue
+	 */
+	bool headersFound() const;
+
+	/**
 	 * @brief CGIからの生レスポンス文字列を解析する
 	 * @param rawResponse CGIスクリプトの標準出力から読み取った全データ
 	 */
@@ -29,6 +35,7 @@ private:
 		_statusMessage; // CGIから渡されるStatusMessage現在は使用しない予定
 	std::map< std::string, std::string > _headers;
 	std::string _body;
+	bool _headersParsed;
 
 	void _parseHeaders(const std::string &headerBlock);
 

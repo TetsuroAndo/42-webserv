@@ -9,6 +9,7 @@
 #include "../Middleware/Core/PipelineContext.hpp"
 #include "CgiWorker.hpp"
 #include <algorithm>
+#include <cstring>
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/wait.h>
@@ -39,14 +40,19 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 		}
 	}
 	_clientFdToWorker.erase(worker->getClientFd());
+	if (worker->getPid() > 0) {
+		_pidToWorker.erase(worker->getPid());
+	}
 
 	delete worker;
 }
 
-CgiManager::CgiManager(const Config &config)
-	: _timeoutSeconds(config.getTimeoutSec()),
+CgiManager::CgiManager(const Config &c)
+	: _timeoutSeconds(c.getTimeoutSec()),
 	  _maxWorkers(std::max< size_t >(
-		  16, std::min< size_t >(config.getMaxEvents(), 256))) {}
+		  c.getPerformance().cgiMinWorkers,
+		  std::min< size_t >(c.getMaxEvents(),
+							 c.getPerformance().cgiMaxWorkers))) {}
 
 CgiManager::~CgiManager() {
 	std::vector< CgiWorker * >::iterator it = _workers.begin();
@@ -71,13 +77,36 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
-		const std::string scriptPath =
-			HandlerUtil::resolvePath(ctx.req.getPath(), ctx.conf);
-		std::string interpreterPath;
-		const size_t dotPos = scriptPath.rfind('.');
 
-		if (dotPos != std::string::npos) {
-			const std::string ext = scriptPath.substr(dotPos);
+		// リクエストからスクリプト仮想パスとPATH_INFOを切り出す
+		std::string scriptVirtual;
+		std::string pathInfo;
+		if (!HandlerUtil::extractCgiScript(ctx.req.getPath(), loc,
+										   scriptVirtual, pathInfo)) {
+			LOG(WARNING) << "Failed to extract CGI script from request"
+						 << attr("path", ctx.req.getPath());
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
+											HttpStatus::NOT_FOUND);
+			return;
+		}
+
+		// スクリプトの実ファイル（絶対パス）を解決（PATH_INFOは含めない）
+		const std::string scriptPath =
+			HandlerUtil::resolvePath(scriptVirtual, ctx.conf);
+
+		if (scriptPath.empty()) {
+			LOG(WARNING) << "CGI script not found"
+						 << attr("scriptVirtual", scriptVirtual);
+			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
+											HttpStatus::NOT_FOUND);
+			return;
+		}
+
+		// インタプリタの解決（拡張子は scriptVirtual から）
+		std::string interpreterPath;
+		const size_t dotPosVirtual = scriptVirtual.rfind('.');
+		if (dotPosVirtual != std::string::npos) {
+			const std::string ext = scriptVirtual.substr(dotPosVirtual);
 			if (loc.cgiConf.count(ext)) {
 				interpreterPath = loc.cgiConf.at(ext);
 			}
@@ -106,6 +135,9 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			_pipeFdToWorker[worker->getWriteFd()] = worker;
 		}
 		_clientFdToWorker[worker->getClientFd()] = worker;
+		if (worker->getPid() > 0) {
+			_pidToWorker[worker->getPid()] = worker;
+		}
 
 		// サーバーに監視対象のFDを追加
 		// CGIスクリプトからの出力を監視
@@ -214,9 +246,11 @@ void CgiManager::cleanupTimedOutWorkers() {
 					 << attr("clientFd", worker->getClientFd())
 					 << attr("pid", worker->getPid());
 
-		if (worker->getPid() > 0) {
-			kill(worker->getPid(), SIGKILL);
-			waitpid(worker->getPid(), NULL, 0);
+		pid_t pid = worker->getPid();
+		if (pid > 0) {
+			kill(pid, SIGKILL);
+			waitpid(pid, NULL, WNOHANG);
+			_pidToWorker.erase(pid);
 		}
 		worker->setTimeout();
 
@@ -237,6 +271,69 @@ void CgiManager::cleanupTimedOutWorkers() {
 				_pipeFdToWorker.erase(keys[i]);
 			}
 		}
+	}
+}
+
+void CgiManager::cleanupFinishedWorkers() {
+	int status;
+	pid_t pid;
+
+	// waitpid(-1, ...) は「任意の子プロセス」を待つ。
+	// WNOHANG は「ブロッキングしない」オプション。
+	// 終了した子プロセスがいなくなるまでループで呼び出す。
+	while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+
+		// 回収したPIDに対応する CgiWorker を探す
+		CgiWorker *worker = NULL;
+		std::map< pid_t, CgiWorker * >::iterator pit = _pidToWorker.find(pid);
+		if (pit != _pidToWorker.end()) {
+			worker = pit->second;
+		}
+
+		if (worker) {
+			// 管理下のワーカーが終了した
+			LOG(DEBUG) << "CGI process reaped by cleanupFinishedWorkers"
+					   << attr("pid", pid) << attr("status", status);
+
+			_pidToWorker.erase(pid);
+
+			// ワーカーがまだ終了状態 (COMPLETE, ERROR, TIMEOUT)
+			// になっていなければ (例:
+			// パイプEOFより先にプロセスがクラッシュした)
+			// 強制的に終了処理を行う。
+			if (!worker->isFinished()) {
+				LOG(WARNING)
+					<< "CGI process exited unexpectedly (reaped by manager)"
+					<< attr("pid", pid);
+
+				// パイプFDをepollから削除するようキューに入れる
+				if (worker->getReadFd() >= 0) {
+					FdEventChange ev;
+					ev.fd = worker->getReadFd();
+					ev.changeType = FdChangeType_REMOVE;
+					_queue.push(ev);
+				}
+				if (worker->getWriteFd() >= 0) {
+					FdEventChange ev;
+					ev.fd = worker->getWriteFd();
+					ev.changeType = FdChangeType_REMOVE;
+					_queue.push(ev);
+				}
+				worker->setError();
+			}
+		} else {
+			// _pidToWorker リストにないPID = おそらく handleRead の
+			// EOF処理などで既に isCgiComplete() -> _removeWorker()
+			// が完了したプロセス。
+			LOG(DEBUG) << "Reaped zombie process (PID not in active workers "
+					   << "list, likely already handled): " << pid;
+		}
+	}
+
+	// ECHILD は「待つべき子プロセスがいない」という正常値
+	if (pid < 0 && errno != ECHILD) {
+		LOG(ERROR) << "waitpid() failed in CgiManager::cleanupFinishedWorkers: "
+				   << strerror(errno);
 	}
 }
 
@@ -302,9 +399,11 @@ void CgiManager::abortClient(const int clientFd) {
 		}
 	}
 	// プロセスを確実に終了
-	if (worker->getPid() > 0) {
-		kill(worker->getPid(), SIGKILL);
-		waitpid(worker->getPid(), NULL, 0);
+	pid_t pid = worker->getPid();
+	if (pid > 0) {
+		kill(pid, SIGKILL);
+		waitpid(pid, NULL, WNOHANG);
+		_pidToWorker.erase(pid);
 	}
 	_removeWorker(worker);
 }
