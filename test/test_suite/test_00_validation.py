@@ -3,8 +3,6 @@
 """
 import pytest
 import subprocess
-import yaml
-import os
 from pathlib import Path
 
 
