@@ -1,9 +1,6 @@
-// src/Cgi/CgiManager.cpp
-
 #include "CgiManager.hpp"
 #include "../Config/Config.hpp"
 #include "../Handler/HandlerUtil.hpp"
-#include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
@@ -11,11 +8,9 @@
 #include "CgiWorker.hpp"
 #include <algorithm>
 #include <cstring>
-#include <errno.h>
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 #include <vector>
 
@@ -70,6 +65,8 @@ CgiManager::~CgiManager() {
 }
 
 void CgiManager::createWorker(PipelineContext &ctx) {
+	// catch ブロックで delete できるように try の外で宣言
+	CgiWorker *worker = NULL;
 	try {
 		if (_workers.size() >= _maxWorkers) {
 			LOG(WARNING) << "CGI worker limit reached"
@@ -127,55 +124,48 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				   << attr("interpreter", interpreterPath)
 				   << attr("script", scriptPath);
 
-		CgiWorker *worker = NULL;
-		try {
-			worker = new CgiWorker(ctx, scriptPath, interpreterPath);
-			worker->execute(); // pipe, fork, execveの実行
+		worker = new CgiWorker(ctx, scriptPath, interpreterPath);
+		worker->execute(); // pipe, fork, execveの実行
 
-			_workers.push_back(worker);
-			if (worker->getReadFd() >= 0) {
-				_pipeFdToWorker[worker->getReadFd()] = worker;
-			}
-			if (worker->getWriteFd() >= 0) {
-				_pipeFdToWorker[worker->getWriteFd()] = worker;
-			}
-			_clientFdToWorker[worker->getClientFd()] = worker;
-			if (worker->getPid() > 0) {
-				_pidToWorker[worker->getPid()] = worker;
-			}
-
-			// サーバーに監視対象のFDを追加
-			// CGIスクリプトからの出力を監視
-			if (worker->getReadFd() >= 0) {
-				FdEventChange ev;
-				ev.fd = worker->getReadFd();
-				ev.eventType = EPOLLIN;
-				ev.changeType = FdChangeType_ADD;
-				_queue.push(ev);
-			}
-			// CGIスクリプトへのリクエストボディの書き込みを監視（fdが有効な場合）
-			if (worker->getWriteFd() >= 0) {
-				FdEventChange ev;
-				ev.fd = worker->getWriteFd();
-				ev.eventType = EPOLLOUT;
-				ev.changeType = FdChangeType_ADD;
-				_queue.push(ev);
-			}
-
-			LOG(INFO) << "CGI worker created"
-					  << attr("clientFd", worker->getClientFd())
-					  << attr("pid", worker->getPid())
-					  << attr("readFd", worker->getReadFd())
-					  << attr("writeFd", worker->getWriteFd());
-		} catch (const std::exception &e) {
-			if (worker) {
-				delete worker;
-			}
-			LOG(ERROR) << "Failed to create or execute CgiWorker: " << e.what();
-			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-											HttpStatus::INTERNAL_SERVER_ERROR);
+		_workers.push_back(worker);
+		if (worker->getReadFd() >= 0) {
+			_pipeFdToWorker[worker->getReadFd()] = worker;
 		}
+		if (worker->getWriteFd() >= 0) {
+			_pipeFdToWorker[worker->getWriteFd()] = worker;
+		}
+		_clientFdToWorker[worker->getClientFd()] = worker;
+		if (worker->getPid() > 0) {
+			_pidToWorker[worker->getPid()] = worker;
+		}
+
+		// サーバーに監視対象のFDを追加
+		// CGIスクリプトからの出力を監視
+		if (worker->getReadFd() >= 0) {
+			FdEventChange ev;
+			ev.fd = worker->getReadFd();
+			ev.eventType = EPOLLIN;
+			ev.changeType = FdChangeType_ADD;
+			_queue.push(ev);
+		}
+		// CGIスクリプトへのリクエストボディの書き込みを監視（fdが有効な場合）
+		if (worker->getWriteFd() >= 0) {
+			FdEventChange ev;
+			ev.fd = worker->getWriteFd();
+			ev.eventType = EPOLLOUT;
+			ev.changeType = FdChangeType_ADD;
+			_queue.push(ev);
+		}
+
+		LOG(INFO) << "CGI worker created"
+				  << attr("clientFd", worker->getClientFd())
+				  << attr("pid", worker->getPid())
+				  << attr("readFd", worker->getReadFd())
+				  << attr("writeFd", worker->getWriteFd());
+
 	} catch (const std::exception &e) {
+		// new または execute で失敗した場合に備えて delete (NULLでも問題なし)
+		delete worker;
 		LOG(ERROR) << "Failed to create CGI worker: " << e.what();
 		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
@@ -314,9 +304,9 @@ void CgiManager::cleanupFinishedWorkers() {
 			// パイプEOFより先にプロセスがクラッシュした)
 			// 強制的に終了処理を行う。
 			if (!worker->isFinished()) {
-				LOG(WARNING) << "CGI process exited unexpectedly "
-								"(reaped by manager)"
-							 << attr("pid", pid);
+				LOG(WARNING)
+					<< "CGI process exited unexpectedly (reaped by manager)"
+					<< attr("pid", pid);
 
 				// パイプFDをepollから削除するようキューに入れる
 				if (worker->getReadFd() >= 0) {
@@ -344,8 +334,7 @@ void CgiManager::cleanupFinishedWorkers() {
 
 	// ECHILD は「待つべき子プロセスがいない」という正常値
 	if (pid < 0 && errno != ECHILD) {
-		LOG(ERROR) << "waitpid() failed in "
-					  "CgiManager::cleanupFinishedWorkers: "
+		LOG(ERROR) << "waitpid() failed in CgiManager::cleanupFinishedWorkers: "
 				   << strerror(errno);
 	}
 }
