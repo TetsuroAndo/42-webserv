@@ -108,10 +108,15 @@ void HttpConnection::parseRequest() {
 		_context.isCgi = false;
 		return;
 	}
+
+	// パーサー/ミドルウェアがエラーを検出した場合に応答を生成する
+	if (_context.parser.isComplete() || _context.parser.getErrorCode() != 0) {
+		generateResponse();
+	}
 }
 
 void HttpConnection::generateResponse() {
-	if (!_context.parser.isComplete() || _context.parser.getErrorCode() == 0) {
+	if (!_context.parser.isComplete() && _context.parser.getErrorCode() == 0) {
 		return;
 	}
 	std::string sid = (_context.session ? _context.session->getId() : "");
