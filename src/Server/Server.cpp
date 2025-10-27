@@ -57,11 +57,11 @@ void Server::applyCgiChanges() {
 			}
 		} catch (const std::runtime_error &e) {
 			LOG(ERROR) << "applyCgiChanges: socket operation failed"
-					   << attr("fd", event.fd) << attr("type", event.changeType)
+					   << attr("fd", event.fd) << attr("type", event.eventType)
 					   << attr("what", e.what());
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "applyCgiChanges: unexpected exception"
-					   << attr("fd", event.fd) << attr("type", event.changeType)
+					   << attr("fd", event.fd) << attr("type", event.eventType)
 					   << attr("what", e.what());
 		}
 	}
