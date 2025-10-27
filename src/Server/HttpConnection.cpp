@@ -80,9 +80,9 @@ void HttpConnection::handleWriteEvent() {
 
 time_t HttpConnection::calculateTimeout() const {
 	RequestParser::ParseState state = getParserState();
-	const Config &conf = _context.conf
+	const Config &conf = _context.conf;
 
-						 switch (state) {
+	switch (state) {
 	case RequestParser::STATE_REQUEST_LINE:
 	case RequestParser::STATE_HEADERS:
 		return conf.getRequestHeaderTimeoutSec();
