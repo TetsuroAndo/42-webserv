@@ -12,3 +12,4 @@ servers:
             autoindex: false
             allowedMethods:
               - GET
+              - HEAD

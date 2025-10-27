@@ -20,14 +20,22 @@ std::string ipToString(uint32_t ip_addr) {
 
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 			   CgiManager &cgiManager, const Config &config)
-	: _fd(fd), _listenPort(listenPort) {
+	: _fd(fd), _listenPort(listenPort), _socket(NULL), _context(NULL) {
 	std::stringstream ipStream;
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 
-	_socket = new Socket(config, fd, addr);
-	_context = new PipelineContext(config, *this, cgiManager);
+	try {
+		_socket = new Socket(config, fd, addr);
+		_context = new PipelineContext(config, *this, cgiManager);
+	} catch (...) {
+		delete _socket;
+		delete _context;
+		_socket = NULL;
+		_context = NULL;
+		throw;
+	}
 }
 
 Client::~Client() {

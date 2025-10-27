@@ -5,6 +5,7 @@
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/Path/Path.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Lib/Time/TimeCache.hpp"
 #include "../Lib/Token/Token.hpp"
@@ -48,26 +49,29 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 
 	// ファイルパスが不正
 	if (req.getPath() != loc.path) {
-		LOG(INFO) << "Requested path does not match actual path";
+		LOG(INFO) << "Requested path does not match location path"
+				  << attr("request_path", req.getPath())
+				  << attr("location_path", loc.path);
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::NOT_FOUND);
 		return res;
 	}
 
-	const std::string uploadStore = loc.uploadStore;
-
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
-		LOG(ERROR) << "Upload store is empty";
+		LOG(ERROR) << "PostHandler: Upload store is empty";
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
+
+	const std::string uploadStore = Path::getAbsolutePath(loc.uploadStore);
 	struct stat s;
 	// upload storeが存在しない
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
-		LOG(ERROR) << "PostHandler : Upload Store \"" << uploadStore
-				   << "\" is not exist.";
+		LOG(ERROR) << "PostHandler: Upload Store \"" << uploadStore
+				   << "\" is not exist or not a directory. errno: "
+				   << strerror(errno);
 		std::cout << uploadStore.c_str() << std::endl;
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
@@ -77,7 +81,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 		MimeType::getExtension(req.getHeader("Content-Type"));
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
-		LOG(INFO) << "PostHandler : This Content-Type is Not Supported";
+		LOG(INFO) << "PostHandler: This Content-Type is Not Supported";
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
@@ -92,7 +96,8 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
-		LOG(ERROR) << "PostHandler : Can't create file";
+		LOG(ERROR) << "PostHandler: Can't create file \"" << target
+				   << "\". errno: " << strerror(errno);
 		HandlerUtil::generateSimpleBody(req.getMethod(), res,
 										HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
