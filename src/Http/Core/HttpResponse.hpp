@@ -58,7 +58,6 @@ public:
 private:
 	std::string _serverName;
 	int _statusCode;
-	std::string _statusMessage;
 	std::string _version;
 	std::map< std::string, std::vector< std::string > > _headers;
 	std::string _body;

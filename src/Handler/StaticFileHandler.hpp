@@ -7,8 +7,7 @@ public:
 	StaticFileHandler();
 	~StaticFileHandler();
 
-	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
-						const Config &config);
+	HttpResponse handle(PipelineContext &ctx);
 
 private:
 	void generateDirectoryListing(HttpResponse &res, const HttpRequest &req,

@@ -10,5 +10,3 @@
 
 // CGI INFO
 #define CGI_VERSION "CGI/1.1"
-
-// Socket Max

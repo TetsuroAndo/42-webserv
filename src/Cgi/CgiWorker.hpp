@@ -48,6 +48,9 @@ public:
 	/// @brief 状態をタイムアウトに設定する
 	void setTimeout();
 
+	/// @brief 状態をエラーに設定する
+	void setError();
+
 	/// @brief 最終活動時刻を取得する
 	time_t getLastActivityTime() const;
 
@@ -64,6 +67,7 @@ public:
 	void createHttpResponse(HttpResponse &res);
 
 private:
+	PipelineContext &_ctx;
 	CgiState _state;
 	int _clientFd;
 	pid_t _pid;
@@ -71,17 +75,18 @@ private:
 	int _pipeOut[2];
 	std::string _requestBody;
 	size_t _bytesSent;
-	std::string _responseBuffer;
 	std::string _scriptPath;
 	std::string _interpreterPath;
 	time_t _lastActivityTime;
+	std::string _responseBuffer;
+	std::vector< char > _readBuffer;
 
 	CgiResponseParser _responseParser;
 
 	void _childProcess(const std::string &scriptPath,
 					   const std::string &interpreterPath,
-					   const std::vector< std::string > &envp_strs);
-	void _closePipe(int &fd);
+					   const std::vector< std::string > &envpStrs) const;
+	static void _closePipe(int &fd);
 	void _updateLastActivityTime();
 
 	CgiWorker(const CgiWorker &);

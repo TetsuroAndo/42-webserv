@@ -4,8 +4,11 @@
 #include "Config.hpp"
 #include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
+#include <cerrno>
+#include <cstring>
 #include <set>
 #include <stdexcept>
+#include <unistd.h>
 #include <vector>
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
@@ -50,6 +53,10 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		if (autoindexNode)
 			loc.autoindex = (autoindexNode->getValue() == "true");
 
+		Node *sessionNode = l_node->getMapNode("session");
+		if (sessionNode)
+			loc.session = (sessionNode->getValue() == "true");
+
 		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
 			const std::vector< Node * > &methods = allowMethodsNode->getSeq();
 			for (std::vector< Node * >::const_iterator m_it = methods.begin();
@@ -61,6 +68,28 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 						"Config error: invalid HTTP method '" + method + "'");
 				}
 				loc.allowedMethods.insert(method);
+			}
+		}
+		Node *cgiConfigNode = l_node->getMapNode("interpreterPath");
+		if (cgiConfigNode) {
+			std::vector< std::string > keys = cgiConfigNode->getKeys();
+			std::vector< std::string >::iterator keysIt = keys.begin();
+			for (; keysIt != keys.end(); ++keysIt) {
+				std::string interpreterPath =
+					cgiConfigNode->getMapNode(*keysIt)->getValue();
+
+				// インタプリタの実行権限チェック
+				if (access(interpreterPath.c_str(), X_OK) != 0) {
+					std::string errorMsg = "Config error: CGI interpreter '";
+					errorMsg += interpreterPath;
+					errorMsg += "' (for extension '";
+					errorMsg += *keysIt;
+					errorMsg += "') is not found or not executable: ";
+					errorMsg += strerror(errno);
+					throw std::runtime_error(errorMsg);
+				}
+
+				loc.cgiConf[*keysIt] = interpreterPath;
 			}
 		}
 		_builder->setLocation(loc);

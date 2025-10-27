@@ -51,6 +51,7 @@ servers:
             uploadStore: ./tmp/default_uploads
             indexFile: index.html
             autoindex: true
+            session: true
             allowedMethods:
               - GET
               - HEAD
@@ -60,7 +61,7 @@ servers:
         # Location for testing uploads and deletes specifically
         - location:
             path: /upload
-            root: /tmp/uploads
+            root: ./tmp/uploads
             uploadStore: ./tmp/uploads
             allowedMethods:
               - POST

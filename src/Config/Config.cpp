@@ -1,14 +1,29 @@
 #include "Config.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "Info/App.hpp"
+#include "PerformanceConfig.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
+// clang-format off
+
 AppInfo::AppInfo()
-	: softwareName(SOFTWARE_NAME), softwareVersion(VERSION),
-	  httpServerName(SERVER_NAME), httpProtocolVersion(HTTP_VERSION),
+	: softwareName(SOFTWARE_NAME),
+	  softwareVersion(VERSION),
+	  httpServerName(SERVER_NAME),
+	  httpProtocolVersion(HTTP_VERSION),
 	  cgiVersion(CGI_VERSION) {}
+
+unsigned int Performance::ioBuffersSize = IO_BUFFER_SIZE;
+unsigned int Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
+Performance::Performance()
+	: responseReserveSize(RESPONSE_RESERVE_SIZE),
+	  pollTimeoutMs(POLL_TIMEOUT_MS),
+	  cgiMinWorkers(CGI_MIN_WORKERS),
+	  cgiMaxWorkers(CGI_MAX_WORKERS) {}
+
+// clang-format on
 
 Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Redirect > &redirects,
@@ -46,6 +61,8 @@ Config &Config::operator=(const Config &other) {
 Config::~Config() {}
 
 const AppInfo &Config::getAppInfo() const { return _appInfo; }
+
+const Performance &Config::getPerformance() const { return _performance; }
 
 const std::vector< Listen > &Config::getListens() const { return _listens; }
 

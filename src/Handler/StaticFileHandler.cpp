@@ -114,9 +114,11 @@ void StaticFileHandler::generateDirectoryListing(
 	}
 }
 
-HttpResponse StaticFileHandler::handle(const HttpRequest &req,
-									   HttpResponse &res,
-									   const Config &config) {
+HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
+	const HttpRequest &req = ctx.req;
+	HttpResponse &res = ctx.res;
+	const Config &config = ctx.conf;
+
 	LOG(INFO) << "StaticFileHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 

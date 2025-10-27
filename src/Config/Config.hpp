@@ -22,6 +22,18 @@ struct AppInfo {
 	AppInfo();
 };
 
+struct Performance {
+	static unsigned int ioBuffersSize;
+	unsigned int responseReserveSize;
+	unsigned int pollTimeoutMs;
+
+	static unsigned int cgiIoBufferSize;
+	unsigned int cgiMinWorkers;
+	unsigned int cgiMaxWorkers;
+
+	Performance();
+};
+
 struct Listen {
 	std::string interface;
 	int port;
@@ -42,8 +54,9 @@ struct Location {
 	std::string errorFile;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
+	bool session;
 
-	Location() : autoindex(false) {}
+	Location() : autoindex(false), session(false) {}
 };
 
 struct AccessLog {
@@ -81,6 +94,7 @@ struct ErrorLog {
 class Config {
 private:
 	AppInfo _appInfo;
+	Performance _performance;
 	std::vector< Listen > _listens;
 	std::map< std::string, Redirect > _redirects;
 	std::map< std::string, Location > _locations;
@@ -103,6 +117,7 @@ public:
 	~Config();
 
 	const AppInfo &getAppInfo() const;
+	const Performance &getPerformance() const;
 	const std::vector< Listen > &getListens() const;
 	const std::map< std::string, Redirect > &getRedirects() const;
 	const Redirect &getRedirect(const std::string &path) const;

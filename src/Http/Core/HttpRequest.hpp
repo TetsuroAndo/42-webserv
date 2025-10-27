@@ -52,12 +52,10 @@ public:
 	void appendBody(const std::string &data);
 	void appendBody(const char *data, size_t len);
 
-	// 内部状態をリセット
-	void clear();
+	void clear(const Config &c);
 
 private:
-	size_t maxBodySize;
-
+	size_t _maxBodySize;
 	std::string _method;
 	std::string _path;
 	std::string _version;

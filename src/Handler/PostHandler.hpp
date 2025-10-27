@@ -7,8 +7,7 @@ public:
 	PostHandler();
 	~PostHandler();
 
-	HttpResponse handle(const HttpRequest &req, HttpResponse &res,
-						const Config &config);
+	HttpResponse handle(PipelineContext &ctx);
 
 private:
 };
