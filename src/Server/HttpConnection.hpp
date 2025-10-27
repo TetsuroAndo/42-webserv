@@ -2,13 +2,13 @@
 
 #include "../Config/Config.hpp"
 #include "../Http/Parser/RequestParser.hpp"
-#include "../Middleware/Core/PipelineContext.hpp"
+#include "../Middleware/Core/PipelineContext.hpp" // &で持つため完全な定義が必要
 #include "../Socket/Socket.hpp"
 #include "HttpConnectionEventHandler.hpp"
 #include <string>
 
-class Client; // 前方宣言
-class Server; // 前方宣言
+class Client; // _clientはポインタのため前方宣言のまま
+class Server;
 
 /**
  * @class HttpConnection
@@ -17,8 +17,9 @@ class Server; // 前方宣言
  */
 class HttpConnection {
 public:
-	HttpConnection(Client *client, PipelineContext *context,
-				   HttpConnectionEventHandler *eventHandler);
+	// コンストラクタのシグネチャを変更 (ポインタから参照へ)
+	HttpConnection(Client *client, PipelineContext &context,
+				   HttpConnectionEventHandler &eventHandler);
 	~HttpConnection();
 
 	// HTTP接続の処理
@@ -34,8 +35,8 @@ public:
 
 private:
 	Client *_client;
-	PipelineContext *_context;
-	HttpConnectionEventHandler *_eventHandler;
+	PipelineContext &_context;
+	HttpConnectionEventHandler &_eventHandler;
 
 	// HTTPリクエストの処理
 	void parseRequest();
