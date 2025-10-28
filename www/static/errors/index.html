@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Error Pages</title>
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    :root{--bg:#f8fafc;--fg:#0f172a;--muted:#475569;--card:#ffffff;--border:#e5e7eb}
+    @media (prefers-color-scheme: dark){:root{--bg:#0b1220;--fg:#e5e7eb;--muted:#9aa4b2;--card:#0f172a;--border:#1f2937}}
+    body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    .wrap{max-width:720px;margin:40px auto;padding:0 20px}
+    .title{font-size:28px;font-weight:800;margin:0 0 8px}
+    .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:16px}
+    a{display:block;padding:10px 12px;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--fg);background:var(--card)}
+  </style>
+  <link rel="icon" href="/images/favicon.png" />
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">エラーページ一覧</h1>
+    <div class="list">
+      <a href="/static/errors/400.html">400 Bad Request</a>
+      <a href="/static/errors/403.html">403 Forbidden</a>
+      <a href="/static/errors/404.html">404 Not Found</a>
+      <a href="/static/errors/405.html">405 Method Not Allowed</a>
+      <a href="/static/errors/500.html">500 Internal Server Error</a>
+      <a href="/static/errors/502.html">502 Bad Gateway</a>
+      <a href="/static/errors/503.html">503 Service Unavailable</a>
+    </div>
+  </div>
+  </body>
+</html>

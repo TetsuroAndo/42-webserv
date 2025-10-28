@@ -55,8 +55,9 @@ servers:
         - location:
             path: /
             root: ./www
-            uploadStore: ./uploads
+            uploadStore: ./www/uploads
             indexFile: index.html
+            errorFile: ./www/error.html
             autoindex: false
             session: true
             allowedMethods:

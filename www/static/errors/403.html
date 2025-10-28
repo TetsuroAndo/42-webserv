@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>403 Forbidden</title>
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    :root{--bg:#f8fafc;--fg:#0f172a;--muted:#475569;--card:#ffffff;--border:#e5e7eb}
+    @media (prefers-color-scheme: dark){:root{--bg:#0b1220;--fg:#e5e7eb;--muted:#9aa4b2;--card:#0f172a;--border:#1f2937}}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:32px}
+    .card{width:100%;max-width:720px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px}
+    .code{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:12px;background:#fee2e2;color:#991b1b;font-weight:800;font-size:20px;margin-bottom:12px}
+    .title{font-size:28px;font-weight:800;margin:0 0 8px}
+    .msg{margin:0 0 16px;color:var(--muted)}
+    .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    a.btn{display:inline-block;padding:10px 16px;border-radius:10px;border:1px solid var(--border);text-decoration:none;color:var(--fg);background:transparent}
+    a.btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+    .hint{margin-top:16px;font-size:13px;color:var(--muted)}
+    .footer{margin-top:24px;font-size:12px;color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card" role="main" aria-labelledby="title">
+      <div class="code" aria-hidden="true">403</div>
+      <h1 id="title" class="title">アクセスが拒否されました</h1>
+      <p class="msg">このページへアクセスする権限がありません。</p>
+      <div class="actions">
+        <a class="btn primary" href="/">トップへ戻る</a>
+        <a class="btn" href="/login.html">ログイン</a>
+      </div>
+      <p class="hint">この画面は <span class="mono">/static/errors/403.html</span> にあります。</p>
+      <div class="footer">© Webserv</div>
+    </main>
+  </div>
+</body>
+</html>

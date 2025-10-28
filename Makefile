@@ -62,6 +62,9 @@ setuphooks:
 	@git config --local core.hooksPath .githooks
 	@chmod -R 744 .githooks/
 
+play-netpractice: $(NAME) submodule
+	./$(NAME) $(CONF_DIR)/netpractice.yaml
+
 # =========== PYTEST ENVIRONMENT ============
 
 # Create a virtual environment and install dependencies
@@ -141,6 +144,9 @@ fill:
 view:
 	@./tools/rawCodeViewer.sh
 
+submodule:
+	git submodule update --init --recursive
+
 help:
 	@echo "Usage: make [target]"
 	@echo ""
@@ -168,4 +174,4 @@ help:
 	@echo "  view		View source code"
 	@echo "  help		Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug setuphooks pyinit test tidy check nm nmbin printsrc printobj fill view help
+.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test tidy check nm nmbin printsrc printobj fill view submodule help
