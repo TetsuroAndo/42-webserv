@@ -28,6 +28,7 @@ void HttpConnection::handleReadEvent() {
 	if (bytesRead > 0) {
 		_context.recvBuffer.append(buffer.data(), bytesRead);
 		parseRequest();
+		_client->updateTimeout(); // データ受信時にタイムアウトをリセット
 	} else if (bytesRead == 0) {
 		LOG(INFO) << "Client disconnected gracefully"
 				  << attr("fd", _client->getFd());
@@ -65,8 +66,8 @@ void HttpConnection::handleWriteEvent() {
 				_eventHandler.onConnectionClose(_client->getFd());
 			} else {
 				_eventHandler.onSocketModify(_client->getFd(), EPOLLIN);
+				_eventHandler.onRequestProcessed(); // reset()の前に呼ぶ
 				ctx.reset(_client->getServer().getConfig());
-				_eventHandler.onRequestProcessed();
 			}
 		}
 	} else {
