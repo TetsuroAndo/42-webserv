@@ -19,10 +19,7 @@ void TimeoutManager::add(ITimeoutable *obj, time_t timeoutSec) {
 
 	time_t expiryTime = std::time(NULL) + timeoutSec;
 
-	// 同じタイムアウト時刻のオブジェクトをリストで管理
-	if (_timeoutMap.find(expiryTime) == _timeoutMap.end()) {
-		_timeoutMap[expiryTime] = std::list< ITimeoutable * >();
-	}
+	// operator[]はキーが存在しない場合、自動でデフォルト値（空のリスト）を生成する
 	_timeoutMap[expiryTime].push_back(obj);
 	_reverseMap[obj] = expiryTime;
 	_stats.incrementActiveConnections();
