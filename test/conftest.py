@@ -83,7 +83,7 @@ def create_temp_config_with_port(original_config, new_port):
 
     # ポート番号を置換（テキストベース）
     # port: 8080 のようなパターンを検索して置換
-    pattern = r'(\s+port:\s+)\d+'
+    pattern = r'(port:\s+)\d+'
     def replace_func(match):
         return match.group(1) + str(new_port)
     replaced_content = re.sub(pattern, replace_func, content)
