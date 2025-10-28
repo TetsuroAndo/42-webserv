@@ -57,5 +57,5 @@ try:
 	with open(storage.USERS_DB, 'a') as f:
 		f.write(f"{username}:{hashed_password}\n")
 	print(json.dumps({"ok": True}, ensure_ascii=False))
-except Exception as e:
+except Exception:
 	print(json.dumps({"ok": False, "error": "write_failed"}, ensure_ascii=False))

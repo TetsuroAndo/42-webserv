@@ -66,5 +66,5 @@ try:
 	with open(session_file_path, 'w') as f:
 		f.write(username)
 	print(json.dumps({"ok": True, "username": username}, ensure_ascii=False))
-except Exception as e:
+except Exception:
 	print(json.dumps({"ok": False, "error": "session_write_failed"}, ensure_ascii=False))

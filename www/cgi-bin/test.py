@@ -2,7 +2,6 @@
 # Simple Python CGI script for testing
 
 import os
-import sys
 from datetime import datetime
 
 # CGI Response Headers

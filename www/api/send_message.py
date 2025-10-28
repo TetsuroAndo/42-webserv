@@ -1,7 +1,13 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os, sys, cgi, cgitb, json, datetime, fcntl
+import os
+import sys
+import cgi
+import cgitb
+import json
+import datetime
+import fcntl
 
 # add parent dir and cgi-bin dir to import storage/auth
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
