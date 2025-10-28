@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os, html
+import os
+import html
 import storage
 
 # セッションIDから認証済みユーザー名を取得する

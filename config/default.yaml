@@ -77,6 +77,19 @@ servers:
               - GET
               - POST
 
+        # Nested API under /cgi-bin should also be treated as CGI
+        - location:
+            path: /api
+            root: ./www/api/
+            autoindex: false
+            session: true
+            interpreterPath:
+              .php: /usr/bin/php-cgi
+              .py: /usr/bin/python3
+            allowedMethods:
+              - GET
+              - POST
+
         # Location for testing uploads and deletes specifically
         - location:
             path: /upload

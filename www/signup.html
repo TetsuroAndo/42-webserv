@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>サインアップ - Webserv Chat</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="color-scheme" content="light dark" />
+	<link rel="icon" href="/images/favicon.png" type="image/png">
+
+	<link rel="stylesheet" href="/css/style.css">
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+	  tailwind.config = {
+	    darkMode: 'media',
+	    theme: {
+	      extend: { colors: { brand: { DEFAULT: '#1877f2', dark: '#166fe5' } } }
+	    }
+	  };
+	</script>
+	<noscript><style>.js-only{display:none}</style></noscript>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+	<header class="border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 backdrop-blur sticky top-0 z-10">
+		<div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+			<a href="/" class="font-extrabold text-xl text-brand dark:text-blue-400">Webserv Chat</a>
+			<nav class="flex items-center gap-2 text-sm">
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/chat.html">チャット</a>
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/login.html">ログイン</a>
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/api/logout.py">ログアウト</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="max-w-md mx-auto px-4 py-8">
+		<h1 class="text-2xl font-bold mb-4">アカウント作成</h1>
+		<form id="signup-form" class="space-y-4" method="POST" action="/api/signup.py">
+			<div>
+				<label class="block text-sm mb-1">ユーザー名</label>
+				<input id="username" name="username" type="text" class="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2" autocomplete="username" />
+			</div>
+			<div>
+				<label class="block text-sm mb-1">パスワード</label>
+				<input id="password" name="password" type="password" class="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2" autocomplete="new-password" />
+			</div>
+			<button type="submit" class="w-full rounded-md bg-brand hover:bg-brand-dark text-white px-4 py-2 font-semibold">作成</button>
+		</form>
+		<p id="error" class="mt-3 text-sm text-red-600"></p>
+		<p class="mt-4 text-sm">すでにアカウントをお持ちの方は <a class="text-brand underline" href="/login.html">ログイン</a></p>
+	</main>
+
+	<footer class="mt-16 border-t border-gray-200 dark:border-gray-800 py-6 text-center text-sm text-gray-500">
+		<div class="max-w-5xl mx-auto px-4">
+			© <span id="year"></span> Webserv Chat
+		</div>
+	</footer>
+
+	<script>
+	(function(){
+		const form = document.getElementById('signup-form');
+		const err = document.getElementById('error');
+		form.addEventListener('submit', async function(e){
+			e.preventDefault();
+			err.textContent = '';
+			const username = document.getElementById('username').value.trim();
+			const password = document.getElementById('password').value;
+			if(!username || !password){ err.textContent = 'ユーザー名とパスワードを入力してください。'; return; }
+			try{
+				const body = new URLSearchParams();
+				body.set('username', username);
+				body.set('password', password);
+				const res = await fetch('/api/signup.py', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body.toString() });
+				const data = await res.json();
+				if(data && data.ok){ window.location.href = '/login.html'; }
+				else{
+					const m = (data && data.error) || 'アカウント作成に失敗しました。';
+					err.textContent = m;
+				}
+			}catch(err0){ err.textContent = '通信エラーが発生しました。'; }
+		});
+	})();
+	  document.addEventListener('DOMContentLoaded', function() {
+		var y = document.getElementById('year');
+		if (y) y.textContent = new Date().getFullYear();
+	  });
+	</script>
+</body>
+</html>

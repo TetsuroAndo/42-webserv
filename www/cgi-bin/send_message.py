@@ -1,8 +1,13 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import cgi, cgitb, os, html, datetime, re, fcntl
-import auth, storage
+import cgi
+import cgitb
+import os
+import datetime
+import fcntl
+import auth
+import storage
 
 cgitb.enable()
 
@@ -38,10 +43,10 @@ if method == "POST":
                 f.write(f"{ts}:{username}:{message}\n")
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
-        except Exception as e:
+        except Exception:
             # エラーがあってもとりあえずチャット画面に戻す
             # 本来はエラーメッセージをchat.pyに渡すべき
             pass
 
-# 処理が終わったら必ずチャット画面にリダイレクト
-auth.redirect("chat.py")
+# 処理が終わったらチャット画面にリダイレクト（後方互換）
+auth.redirect("/chat.html")

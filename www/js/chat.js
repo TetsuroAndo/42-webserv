@@ -36,7 +36,7 @@
     if (isFetching) return;
     isFetching = true;
     try {
-      const res = await fetch('/cgi-bin/messages.py?limit=100', { cache: 'no-store' });
+      const res = await fetch('/api/messages.py?limit=100', { cache: 'no-store' });
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json();
       render(data.messages || []);
@@ -50,12 +50,14 @@
   async function sendMessage(text) {
     const body = new URLSearchParams();
     body.set('message', text);
-    const res = await fetch('/cgi-bin/send_message.py', {
+    const res = await fetch('/api/send_message.py', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
     });
     if (!res.ok) throw new Error('send failed');
+    const data = await res.json();
+    if (!data.ok) throw new Error('send failed');
   }
 
   form.addEventListener('submit', async (e) => {

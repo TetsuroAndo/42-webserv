@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import cgitb
+import json
+import html
+
+# add parent dir and cgi-bin dir to import storage/auth
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cgi-bin'))
+import storage
+
+cgitb.enable()
+
+print("Content-Type: application/json; charset=utf-8\n\n")
+
+limit = 50
+qs = os.environ.get('QUERY_STRING') or ''
+for part in qs.split('&'):
+	if part.startswith('limit='):
+		try:
+			limit = max(1, min(200, int(part.split('=', 1)[1])))
+		except Exception:
+			limit = 50
+		break
+
+messages = []
+try:
+	with open(storage.MESSAGES_LOG, 'r') as f:
+		lines = f.readlines()
+		for line in lines[-limit:]:
+			line = line.rstrip('\n')
+			parts = line.split(':', 2)
+			if len(parts) != 3:
+				continue
+			ts, user, msg = parts
+			messages.append({
+				"ts": ts,
+				"user": html.escape(user),
+				"msg": html.escape(msg),
+			})
+except FileNotFoundError:
+	messages = []
+except Exception:
+	messages = []
+
+print(json.dumps({"messages": messages}, ensure_ascii=False))

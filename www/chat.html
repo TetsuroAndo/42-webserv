@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>チャット - Webserv Chat</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="color-scheme" content="light dark" />
+	<link rel="icon" href="/images/favicon.png" type="image/png">
+
+	<!-- 既存CSS（上書き用） -->
+	<link rel="stylesheet" href="/css/style.css">
+
+	<!-- Tailwind CSS (CDN) -->
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+	  tailwind.config = {
+	    darkMode: 'media',
+	    theme: {
+	      extend: { colors: { brand: { DEFAULT: '#1877f2', dark: '#166fe5' } } }
+	    }
+	  };
+	</script>
+
+	<!-- Alpine.js -->
+	<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+	<noscript><style>.js-only{display:none}</style></noscript>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+	<header class="border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 backdrop-blur sticky top-0 z-10">
+		<div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+			<a href="/" class="font-extrabold text-xl text-brand dark:text-blue-400">Webserv Chat</a>
+			<nav class="flex items-center gap-2 text-sm">
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/chat.html">チャット</a>
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/login.html">ログイン</a>
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/signup.html">サインアップ</a>
+				<a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/api/logout.py">ログアウト</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="max-w-5xl mx-auto px-4 py-8">
+		<h1 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-4">チャットルーム</h1>
+		<div id="chat-window" class="chat-window rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-3 h-[60vh] overflow-y-auto"></div>
+
+		<form id="chat-form" class="mt-3 flex gap-2" method="POST" action="/api/send_message.py">
+			<input id="message-input" name="message" type="text" class="flex-grow rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2" placeholder="メッセージを入力..." autocomplete="off" />
+			<button type="submit" class="rounded-md bg-brand hover:bg-brand-dark text-white px-4 py-2 font-semibold">送信</button>
+		</form>
+	</main>
+
+	<footer class="mt-16 border-t border-gray-200 dark:border-gray-800 py-6 text-center text-sm text-gray-500">
+		<div class="max-w-5xl mx-auto px-4">
+			© <span id="year"></span> Webserv Chat
+		</div>
+	</footer>
+
+	<script src="/js/chat.js"></script>
+	<script>
+	  document.addEventListener('DOMContentLoaded', function() {
+		var y = document.getElementById('year');
+		if (y) y.textContent = new Date().getFullYear();
+	  });
+	</script>
+</body>
+</html>

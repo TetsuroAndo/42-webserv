@@ -33,10 +33,10 @@
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="/" class="font-extrabold text-xl text-brand dark:text-blue-400">Webserv Chat</a>
             <nav class="flex items-center gap-2 text-sm">
-                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/cgi-bin/chat.py">チャットに入る</a>
-                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/cgi-bin/login.py">ログイン</a>
-                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/cgi-bin/signup.py">サインアップ</a>
-                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/cgi-bin/logout.py">ログアウト</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/chat.html">チャットに入る</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/login.html">ログイン</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/signup.html">サインアップ</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/api/logout.py">ログアウト</a>
             </nav>
         </div>
     </header>
@@ -47,8 +47,8 @@
                 <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">シンプルで高速、CGIで動くモダンなチャット</h1>
                 <p class="mt-3 text-gray-600 dark:text-gray-300">セッション管理とCGIだけで完結。サーバはC++実装、クライアントは軽量JSでさくっと。</p>
                 <div class="mt-6 flex gap-3">
-                    <a href="/cgi-bin/chat.py" class="inline-flex items-center px-4 py-2 rounded-md bg-brand text-white font-semibold shadow hover:bg-brand-dark transition">チャットを開く</a>
-                    <a href="/cgi-bin/signup.py" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition">新規登録</a>
+                    <a href="/chat.html" class="inline-flex items-center px-4 py-2 rounded-md bg-brand text-white font-semibold shadow hover:bg-brand-dark transition">チャットを開く</a>
+                    <a href="/signup.html" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition">新規登録</a>
                 </div>
             </div>
             <div class="hidden md:block">
@@ -83,7 +83,7 @@
                     </template>
                 </div>
                 <div class="p-3 flex justify-end">
-                    <a href="/cgi-bin/chat.py" class="text-sm px-3 py-1.5 rounded-md bg-brand text-white font-semibold hover:bg-brand-dark">チャットに参加する</a>
+                    <a href="/chat.html" class="text-sm px-3 py-1.5 rounded-md bg-brand text-white font-semibold hover:bg-brand-dark">チャットに参加する</a>
                 </div>
             </div>
         </section>
@@ -124,7 +124,7 @@
             if (this.loading) return;
             this.loading = true;
             try {
-              const res = await fetch('/cgi-bin/messages.py?limit=20', { cache: 'no-store' });
+              const res = await fetch('/api/messages.py?limit=20', { cache: 'no-store' });
               if (!res.ok) throw new Error('fetch failed');
               const data = await res.json();
               this.messages = Array.isArray(data.messages) ? data.messages : [];
