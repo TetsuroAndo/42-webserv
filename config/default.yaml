@@ -22,28 +22,33 @@ servers:
             format: ELF
             maxSize: 100KB
             maxBackup: 5
+        - access_log:
+            sink : console
+            format : ELF
 
       error_logs:
         - error_log:
             sink: file
-            filename: error.log
+            filename: debug.log
             logDir: ./logs
-            format: JSON
-            level: info
+            format: ELF
+            level: debug
             mode: GREATER_OR_EQUAL
             maxSize: 1MB
             maxBackup: 3
         - error_log:
             sink: file
-            filename: debug.log
+            filename: error.log
+            logDir: ./logs
             format: ELF
-            level: debug
-            mode: exact
-            maxSize: 1MB
-            maxBackup: 3
+            level: warning
         - error_log:
             sink : console
             level : debug
+
+      interpreterPath:
+        .php: /usr/bin/php-cgi
+        .py: /usr/bin/python3
 
       locations:
         # Default location, allows most things, autoindex on
@@ -52,7 +57,7 @@ servers:
             root: ./www
             uploadStore: ./uploads
             indexFile: index.html
-            autoindex: true
+            autoindex: false
             session: true
             allowedMethods:
               - GET
@@ -60,10 +65,22 @@ servers:
               - POST
               - DELETE
 
+        - location:
+            path: /cgi-bin
+            root: ./www/cgi-bin/
+            autoindex: false
+            session: true
+            interpreterPath:
+              .php: /usr/bin/php-cgi
+              .py: /usr/bin/python3
+            allowedMethods:
+              - GET
+              - POST
+
         # Location for testing uploads and deletes specifically
         - location:
             path: /upload
-            root: ./uploads
+            root: ./www/uploads
             uploadStore: ./uploads
             allowedMethods:
               - POST
@@ -72,14 +89,14 @@ servers:
         # Location for testing 405 Method Not Allowed
         - location:
             path: /get_only
-            root: /www
+            root: ./www/
             allowedMethods:
               - GET
 
         # Location for testing 403 on a directory with autoindex off
         - location:
             path: /no_autoindex
-            root: /www/no_autoindex_dir
+            root: ./www/no_autoindex_dir
             autoindex: false
             allowedMethods:
               - GET
@@ -87,6 +104,6 @@ servers:
         # Location for testing 403 on a file with no permissions
         - location:
             path: /forbidden
-            root: /no_perms_default
+            root: ./www/no_perms_default
             allowedMethods:
               - GET
