@@ -198,7 +198,7 @@ class TestKeepAlive:
             # 各クライアントでリクエストを送信
             for idx, client in enumerate(clients):
                 request = b"GET / HTTP/1.1\r\n"
-                request += f"Host: 127.0.0.1:8080\r\n".encode()
+                request += "Host: 127.0.0.1:8080\r\n".encode()
                 request += b"Connection: keep-alive\r\n"
                 request += b"\r\n"
 
@@ -210,7 +210,7 @@ class TestKeepAlive:
             # 各クライアントで2回目のリクエストを送信
             for idx, client in enumerate(clients):
                 request = b"GET / HTTP/1.1\r\n"
-                request += f"Host: 127.0.0.1:8080\r\n".encode()
+                request += "Host: 127.0.0.1:8080\r\n".encode()
                 request += b"Connection: keep-alive\r\n"
                 request += b"\r\n"
 
