@@ -7,11 +7,11 @@
 #include <cstring>
 #include <sys/epoll.h>
 #include <unistd.h>
-#include <vector>
 
 HttpConnection::HttpConnection(Client *client, PipelineContext &context,
 							   HttpConnectionEventHandler &eventHandler)
-	: _client(client), _context(context), _eventHandler(eventHandler) {}
+	: _client(client), _context(context), _eventHandler(eventHandler),
+	  _readBuffer(context.conf.getPerformance().ioBuffersSize) {}
 
 HttpConnection::~HttpConnection() {}
 
@@ -21,12 +21,11 @@ void HttpConnection::processRequest() {
 }
 
 void HttpConnection::handleReadEvent() {
-	std::vector< char > buffer(_context.conf.getPerformance().ioBuffersSize);
 	const ssize_t bytesRead =
-		recv(_client->getFd(), buffer.data(), buffer.size(), 0);
+		recv(_client->getFd(), _readBuffer.data(), _readBuffer.size(), 0);
 
 	if (bytesRead > 0) {
-		_context.recvBuffer.append(buffer.data(), bytesRead);
+		_context.recvBuffer.append(_readBuffer.data(), bytesRead);
 		parseRequest();
 		_client->updateTimeout(); // データ受信時にタイムアウトをリセット
 	} else if (bytesRead == 0) {
