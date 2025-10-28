@@ -27,13 +27,18 @@ class TestTimeout:
             time.sleep(3)
 
             # 接続が閉じられているか確認
-            # recvまたはsendでエラーが出ることを期待
+            # sendallはバッファに書き込むだけなので、recv()を使ってFINを検出
             try:
-                sock.sendall(b"test")
-                # 接続が開いていた場合はfail
+                sock.send(b"test")
+                # recv()を使って FIN を検出
+                data = sock.recv(1)
+                # 0バイトまたは例外が発生すれば接続が閉じられている
+                if not data or len(data) == 0:
+                    # 接続が閉じられていることが確認できた（FIN を受信した）
+                    return
                 sock.close()
                 pytest.fail("Connection was not closed after timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError):
+            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
                 # 接続が閉じられていることが確認できた
                 pass
         finally:
@@ -64,12 +69,19 @@ class TestTimeout:
             time.sleep(3)
 
             # 接続が閉じられているか確認
+            # sendallはバッファに書き込むだけなので、recv()を使ってFINを検出
             try:
-                sock.sendall(b"test")
+                sock.send(b"test")
+                # recv()を使って FIN を検出
+                data = sock.recv(1)
+                # 0バイトまたは例外が発生すれば接続が閉じられている
+                if not data or len(data) == 0:
+                    # 接続が閉じられていることが確認できた（FIN を受信した）
+                    return
                 sock.close()
                 pytest.fail("Connection was not closed after timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError):
-                # 接続が閉じられている
+            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
+                # 接続が閉じられていることが確認できた
                 pass
         finally:
             sock.close()
@@ -102,20 +114,19 @@ class TestTimeout:
             time.sleep(4)
 
             # 接続が閉じられているか確認
+            # sendallはバッファに書き込むだけなので、recv()を使ってFINを検出
             try:
                 # 新しいリクエストを送信してみる
                 sock.sendall(request)
-                # 接続が生きていれば、レスポンスが返ってくるはず
-                # ただし、タイムアウト後のため接続が閉じられている
-                try:
-                    sock.recv(4096)
-                    sock.close()
-                    pytest.fail("Connection was not closed after idle timeout")
-                except (BrokenPipeError, ConnectionResetError, socket.timeout):
-                    # 接続が閉じられている
-                    pass
-            except (BrokenPipeError, ConnectionResetError, OSError):
-                # 接続が閉じられている
+                # recv()を使ってFINを検出
+                data = sock.recv(4096)
+                if not data or len(data) == 0:
+                    # 接続が閉じられていることが確認できた（FIN を受信した）
+                    return
+                sock.close()
+                pytest.fail("Connection was not closed after idle timeout")
+            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
+                # 接続が閉じられていることが確認できた
                 pass
         finally:
             sock.close()
