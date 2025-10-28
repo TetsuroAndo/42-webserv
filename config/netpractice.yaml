@@ -22,4 +22,3 @@ servers:
               - GET
               - POST
               - HEAD
-              - DELETE

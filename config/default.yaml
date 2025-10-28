@@ -69,9 +69,10 @@ servers:
         - location:
             path: /cgi-bin
             root: ./www/cgi-bin/
-            autoindex: false
+            autoindex: true
             session: true
             interpreterPath:
+              .cgi: /usr/bin/perl
               .php: /usr/bin/php-cgi
               .py: /usr/bin/python3
             allowedMethods:
