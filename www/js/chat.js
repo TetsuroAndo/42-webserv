@@ -34,7 +34,7 @@
         : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-sm';
       const nameHtml = isMine ? '' : `<div class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">${escapeHtml(m.user)}</div>`;
       const fileHtml = (m.file && m.file.url)
-        ? `<div class="mt-1 text-sm"><a class="underline text-blue-600 dark:text-blue-400 break-all" href="${m.file.url}" target="_blank" rel="noopener">${escapeHtml(m.file.name || 'attachment')}</a> <span class="text-xs text-gray-500">(${m.file.size || 0}B)</span></div>`
+        ? renderAttachment(m.file)
         : '';
       parts.push(
         `<div class="chat-row flex ${alignClass} my-1">` +
@@ -65,6 +65,27 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function renderAttachment(file) {
+    const name = escapeHtml(file.name || 'attachment');
+    const url = String(file.url || '');
+    const size = file.size || 0;
+    const mime = String(file.mime || '');
+    const looksImage = /^image\//.test(mime) || /\.(png|jpe?g|gif|webp|svg)$/i.test(String(file.name || ''));
+
+    if (looksImage && url) {
+      return (
+        `<div class="mt-2">` +
+          `<a href="${url}" target="_blank" rel="noopener">` +
+            `<img src="${url}" alt="${name}" class="max-w-[240px] max-h-[240px] rounded-md border border-gray-200 dark:border-gray-800" />` +
+          `</a>` +
+          `<div class="text-xs text-gray-500 mt-1">${name} (${size}B)</div>` +
+        `</div>`
+      );
+    }
+
+    return `<div class="mt-1 text-sm"><a class="underline text-blue-600 dark:text-blue-400 break-all" href="${url}" target="_blank" rel="noopener">${name}</a> <span class="text-xs text-gray-500">(${size}B)</span></div>`;
   }
 
   async function fetchMessages() {
