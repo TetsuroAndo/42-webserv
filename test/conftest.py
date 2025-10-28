@@ -6,6 +6,7 @@ import time
 import socket
 import yaml
 import tempfile
+import re
 from contextlib import closing
 from pathlib import Path
 import psutil
@@ -76,18 +77,27 @@ def parse_config_port(config_path):
 
 def create_temp_config_with_port(original_config, new_port):
     """元の設定ファイルを読み込み、ポートを置換した一時ファイルを作成"""
+    # 元のファイルをテキストとして読み込む
     with open(original_config, 'r') as f:
-        config = yaml.safe_load(f)
+        content = f.read()
 
-    # ポートを更新
-    config['servers'][0]['server']['listens'][0]['listen']['port'] = new_port
+    # ポート番号を置換（テキストベース）
+    # port: 8080 のようなパターンを検索して置換
+    pattern = r'(\s+port:\s+)\d+'
+    def replace_func(match):
+        return match.group(1) + str(new_port)
+    replaced_content = re.sub(pattern, replace_func, content)
+
+    # デバッグ用：最初の3行を表示
+    first_3_lines = '\n'.join(replaced_content.split('\n')[:3])
+    print(f"DEBUG: First 3 lines of temp config:\n{first_3_lines}")
 
     # 一時ファイルを作成
     temp_fd, temp_path = tempfile.mkstemp(suffix='.yaml', prefix='test_config_')
 
     try:
         with os.fdopen(temp_fd, 'w') as f:
-            yaml.dump(config, f)
+            f.write(replaced_content)
         return temp_path
     except Exception:
         os.close(temp_fd)

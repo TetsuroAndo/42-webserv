@@ -206,6 +206,7 @@ void Server::run() {
 					if (eventTypes & EPOLLIN) {
 						_clients[fd]->handleReadEvent();
 					}
+					// タイムアウトでクライアントが削除された可能性があるため再度チェック
 					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
 						_clients[fd]->handleWriteEvent();
 					}
@@ -308,20 +309,23 @@ void Server::closeConnection(const int clientFd) {
 	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する
 	_cgiManager.abortClient(clientFd);
 	_socketsManager.unregisterSocket(clientFd);
+
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"
 				  << attr("client_ip", it->second->getIp())
 				  << attr("fd", clientFd);
 		_timeoutManager.remove(it->second);
+		// ソケットを先に閉じて、相手に通知する
+		close(clientFd);
 		delete it->second;
 		_clients.erase(it);
 	} else {
 		LOG(ERROR)
 			<< "Attempted to close a non-existent client connection for fd: "
 			<< clientFd;
+		close(clientFd);
 	}
-	close(clientFd);
 }
 
 std::string Server::getSessionId(const PipelineContext *ctx) const {
