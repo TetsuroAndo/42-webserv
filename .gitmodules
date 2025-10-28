@@ -1,0 +1,3 @@
+[submodule "www/net_practice"]
+	path = www/net_practice
+	url = git@github.com:TetsuroAndo/42-net_practice.git
