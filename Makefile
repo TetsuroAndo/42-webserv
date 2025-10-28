@@ -14,6 +14,7 @@ OBJ_DIR			:= $(ROOT_DIR)/obj
 CONF_DIR		:= $(ROOT_DIR)/config
 CONF			:= $(CONF_DIR)/default.yaml
 LOG_DIR			:= $(ROOT_DIR)/logs
+TEST_DIR		:= $(ROOT_DIR)/test
 
 SRC 	:= $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
@@ -60,6 +61,22 @@ $(LOG_DIR):
 setuphooks:
 	@git config --local core.hooksPath .githooks
 	@chmod -R 744 .githooks/
+
+# =========== PYTEST ENVIRONMENT ============
+
+# Create a virtual environment and install dependencies
+pyinit:
+	python3 -m venv $(ROOT_DIR)/venv
+	@. $(ROOT_DIR)/venv/bin/activate && \
+	if command -v uv &> /dev/null; then \
+		uv pip install -r $(TEST_DIR)/requirements.txt; \
+	else \
+		pip install --upgrade pip uv && \
+		uv pip install -r $(TEST_DIR)/requirements.txt; \
+	fi
+
+test:
+	. venv/bin/activate && cd $(TEST_DIR) && pytest
 
 # ============= STATIC ANALYSIS =============
 
@@ -138,6 +155,9 @@ help:
 	@echo "  f			Alias for 'fclean' and 'clog'"
 	@echo "  r			Alias for 're' (fclean + all) and 'clog'"
 	@echo "  debug		Build with debug flags"
+	@echo "  setuphooks	Set up git hooks"
+	@echo "  pyinit		Initialize Python virtual environment for tests"
+	@echo "  test		Run Python tests using pytest"
 	@echo "  tidy		Run static analysis using clang-tidy"
 	@echo "  check		Run static analysis using cppcheck"
 	@echo "  nm			List undefined symbols in object files"
@@ -148,4 +168,4 @@ help:
 	@echo "  view		View source code"
 	@echo "  help		Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug setuphooks tidy check nm nmbin printsrc printobj fill view help
+.PHONY: all clean fclean re run clog c f r debug setuphooks pyinit test tidy check nm nmbin printsrc printobj fill view help

@@ -1,0 +1,7 @@
+pytest         # テストフレームワーク
+pytest-cov     # カバレッジ測定
+requests       # 同期HTTPクライアント
+pyyaml         # test_data/ や configs/ のYAML/confファイル読み込み用
+asyncio        # 非同期テスト用 (Python標準ライブラリ)
+httpx          # 非同期HTTPクライアント (asyncioと組み合わせて使用)
+psutil         # プロセス管理を容易にするため
