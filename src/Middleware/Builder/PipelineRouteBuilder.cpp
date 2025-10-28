@@ -68,7 +68,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 	}
 
 	mainProc->addMiddleware(new RequestParserMiddleware());
-	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
 	mainProc->addMiddleware(new RedirectMiddleware(conf));
+	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
 }
