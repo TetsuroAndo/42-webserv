@@ -312,7 +312,7 @@ class TestTimeout:
             # 注意: サーバーはヘッダータイムアウトを継続して使用するため、
             # ボディーも素早く送信する必要がある
             sock.sendall(b"A" * 100)
-            time.sleep(0.3)  # ヘッダータイムアウト1秒内
+            time.sleep(2)
             sock.sendall(b"B" * 100)
 
             # レスポンスを受信（タイムアウトしない）
@@ -409,7 +409,7 @@ class TestTimeout:
         finally:
             sock.close()
 
-    @pytest.mark.config("valid/config_timeout_long.yaml")
+    @pytest.mark.config("valid/config_timeout.yaml")
     def test_large_content_length_slow_transfer(self, managed_server):
         """
         大きなContent-Lengthでゆっくり転送する場合、タイムアウトしないことを確認
@@ -419,7 +419,7 @@ class TestTimeout:
         """
         host, port = "127.0.0.1", 8080
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(60)
+        sock.settimeout(10)
         sock.connect((host, port))
 
         try:
