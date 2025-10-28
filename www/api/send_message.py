@@ -44,11 +44,13 @@ if len(message) > 500:
 message = message.replace('\r', ' ').replace('\n', ' ')
 
 try:
-	ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-	with open(storage.MESSAGES_LOG, 'a') as f:
-		fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-		f.write(f"{ts}:{username}:{message}\n")
-		fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-	print(json.dumps({"ok": True}, ensure_ascii=False))
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    record = {"ts": ts, "user": username, "msg": message}
+    line = json.dumps(record, ensure_ascii=False)
+    with open(storage.MESSAGES_LOG, 'a') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        f.write(line + "\n")
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    print(json.dumps({"ok": True}, ensure_ascii=False))
 except Exception:
-	print(json.dumps({"ok": False, "error": "write_failed"}, ensure_ascii=False))
+    print(json.dumps({"ok": False, "error": "write_failed"}, ensure_ascii=False))

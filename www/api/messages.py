@@ -28,22 +28,32 @@ for part in qs.split('&'):
 
 messages = []
 try:
-	with open(storage.MESSAGES_LOG, 'r') as f:
-		lines = f.readlines()
-		for line in lines[-limit:]:
-			line = line.rstrip('\n')
-			parts = line.split(':', 2)
-			if len(parts) != 3:
-				continue
-			ts, user, msg = parts
-			messages.append({
-				"ts": ts,
-				"user": html.escape(user),
-				"msg": html.escape(msg),
-			})
+    with open(storage.MESSAGES_LOG, 'r') as f:
+        lines = f.readlines()
+        for line in lines[-limit:]:
+            line = line.rstrip('\n')
+            if not line:
+                continue
+            # 新フォーマット(JSONL)優先
+            try:
+                obj = json.loads(line)
+                ts = str(obj.get('ts', ''))
+                user = str(obj.get('user', ''))
+                msg = str(obj.get('msg', ''))
+            except Exception:
+                # 旧フォーマット(ts:user:msg) 互換
+                parts = line.split(':', 2)
+                if len(parts) != 3:
+                    continue
+                ts, user, msg = parts
+            messages.append({
+                "ts": html.escape(ts),
+                "user": html.escape(user),
+                "msg": html.escape(msg),
+            })
 except FileNotFoundError:
-	messages = []
+    messages = []
 except Exception:
-	messages = []
+    messages = []
 
 print(json.dumps({"messages": messages}, ensure_ascii=False))
