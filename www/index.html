@@ -53,8 +53,34 @@
             </div>
             <div class="hidden md:block">
                 <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow p-4">
-                    <div class="h-56 overflow-hidden rounded-md border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-gray-400">
-                        <span>Preview</span>
+                    <div class="h-56 overflow-hidden rounded-md border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3 flex flex-col" x-data="chatDemo()" x-init="start()">
+                        <div class="flex-1 overflow-hidden">
+                            <div class="space-y-2" x-ref="list">
+                                <template x-for="(m, i) in demoMessages" :key="i">
+                                    <div class="flex" :class="m.me ? 'justify-end' : 'justify-start'">
+                                        <div class="max-w-[75%]">
+                                            <template x-if="!m.me">
+                                                <div class="text-[11px] text-gray-500 dark:text-gray-400 mb-0.5" x-text="m.user"></div>
+                                            </template>
+                                            <div class="px-3 py-2 rounded-2xl shadow-sm"
+                                                 :class="m.me ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm border border-gray-200 dark:border-gray-700'">
+                                                <div class="text-sm leading-relaxed" x-text="m.text"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="mt-2 h-6 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+                            <div class="flex items-center gap-1" x-show="typing" x-transition>
+                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.2s]"></div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"></div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0.2s]"></div>
+                                <span class="ml-2">入力中...</span>
+                            </div>
+                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -142,6 +168,44 @@
               .replace(/\"/g, '&quot;')
               .replace(/'/g, '&#39;');
           }
+        }
+      }
+
+      function chatDemo() {
+        return {
+          demoMessages: [],
+          typing: false,
+          _timer: null,
+          _script: [
+            { user: 'Alice', text: 'こんにちは！' },
+            { user: 'Bob', text: 'やあ、調子どう？' },
+            { user: 'Alice', text: 'C++サーバでCGIチャット作ったよ。' },
+            { user: 'Bob', text: 'すごい！セッションも動く？' },
+            { user: 'Alice', text: 'もちろん。今夜デプロイ予定〜' },
+          ],
+          start() {
+            // 定期的に台詞を流す
+            let i = 0;
+            const playOne = () => {
+              if (i >= this._script.length) { i = 0; this.demoMessages = []; }
+              const s = this._script[i++];
+              this.typing = true;
+              setTimeout(() => {
+                this.typing = false;
+                const me = Math.random() < 0.45; // ときどき自分風
+                this.demoMessages.push({ user: s.user, text: s.text, me });
+                this.$nextTick(() => {
+                  const list = this.$refs.list;
+                  if (list && list.parentElement) {
+                    list.parentElement.scrollTop = list.parentElement.scrollHeight;
+                  }
+                });
+              }, 600 + Math.random() * 600);
+            };
+            playOne();
+            this._timer = setInterval(playOne, 1600);
+          },
+          stop() { if (this._timer) clearInterval(this._timer); }
         }
       }
 

@@ -40,16 +40,27 @@ try:
                 ts = str(obj.get('ts', ''))
                 user = str(obj.get('user', ''))
                 msg = str(obj.get('msg', ''))
+                file_obj = obj.get('file') or None
+                file_out = None
+                if isinstance(file_obj, dict):
+                    file_out = {
+                        "name": html.escape(str(file_obj.get('name', ''))),
+                        "url": html.escape(str(file_obj.get('url', ''))),
+                        "size": int(file_obj.get('size', 0)) if str(file_obj.get('size', '')).isdigit() else 0,
+                        "mime": html.escape(str(file_obj.get('mime', ''))),
+                    }
             except Exception:
                 # 旧フォーマット(ts:user:msg) 互換
                 parts = line.split(':', 2)
                 if len(parts) != 3:
                     continue
                 ts, user, msg = parts
+                file_out = None
             messages.append({
                 "ts": html.escape(ts),
                 "user": html.escape(user),
                 "msg": html.escape(msg),
+                "file": file_out,
             })
 except FileNotFoundError:
     messages = []

@@ -2,6 +2,8 @@
   const chatWindow = document.getElementById('chat-window');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
+  const fileInput = document.getElementById('file-input');
+  const uploadBtn = document.getElementById('upload-btn');
   let currentUser = null;
 
   let isFetching = false;
@@ -31,12 +33,16 @@
         ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
         : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-sm';
       const nameHtml = isMine ? '' : `<div class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">${escapeHtml(m.user)}</div>`;
+      const fileHtml = (m.file && m.file.url)
+        ? `<div class="mt-1 text-sm"><a class="underline text-blue-600 dark:text-blue-400 break-all" href="${m.file.url}" target="_blank" rel="noopener">${escapeHtml(m.file.name || 'attachment')}</a> <span class="text-xs text-gray-500">(${m.file.size || 0}B)</span></div>`
+        : '';
       parts.push(
         `<div class="chat-row flex ${alignClass} my-1">` +
           `<div class="max-w-[80%]">` +
             `${nameHtml}` +
             `<div class="chat-bubble ${bubbleClass} px-3 py-2 shadow-sm">` +
-              `<div class="text-sm leading-relaxed break-words">${escapeHtml(m.msg)}</div>` +
+              `<div class="text-sm leading-relaxed break-words">${escapeHtml(m.msg || '')}</div>` +
+              `${fileHtml}` +
               `<div class="text-[10px] opacity-70 text-right mt-1 select-none">${ts}</div>` +
             `</div>` +
           `</div>` +
@@ -100,9 +106,42 @@
     if (!data.ok) throw new Error('send failed');
   }
 
+  async function uploadFile(file, caption) {
+    const fd = new FormData();
+    if (caption) fd.set('message', caption);
+    fd.set('file', file);
+    const res = await fetch('/api/upload.py', { method: 'POST', body: fd });
+    let payload = null;
+    try { payload = await res.json(); } catch (e) {
+      // JSONでない場合、テキストを拾っておく
+      try {
+        const txt = await res.text();
+        throw new Error(`upload failed: non-json response ${res.status} ${String(txt).slice(0,200)}`);
+      } catch (_) {
+        throw new Error(`upload failed: HTTP ${res.status}`);
+      }
+    }
+    if (!res.ok || !payload || payload.ok === false) {
+      const msg = (payload && payload.error) ? String(payload.error) : `HTTP ${res.status}`;
+      throw new Error(`upload failed: ${msg}`);
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const file = fileInput && fileInput.files && fileInput.files[0];
     const text = (input.value || '').trim();
+    if (file) {
+      input.value = '';
+      if (fileInput) fileInput.value = '';
+      try {
+        await uploadFile(file, text);
+        await fetchMessages();
+      } catch (e) {
+        // noop
+      }
+      return;
+    }
     if (!text) return;
     input.value = '';
     try {
@@ -112,6 +151,28 @@
       // noop
     }
   });
+
+  if (uploadBtn && fileInput) {
+    // クリックでファイル選択を開く
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // 選択後に自動アップロード
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      const caption = (input.value || '').trim();
+      try {
+        await uploadFile(file, caption);
+        input.value = '';
+        fileInput.value = '';
+        await fetchMessages();
+      } catch (e) {
+        alert(`アップロードに失敗しました: ${e && e.message ? e.message : ''}`);
+      }
+    });
+  }
 
   // 初回ロード + ポーリング
   fetchWhoAmI().then(fetchMessages);
