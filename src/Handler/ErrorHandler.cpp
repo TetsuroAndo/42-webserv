@@ -3,7 +3,6 @@
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "HandlerUtil.hpp"
 #include <fstream>
 #include <sys/stat.h>
 
