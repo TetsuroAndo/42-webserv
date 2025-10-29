@@ -7,7 +7,8 @@ class Config;
 struct Location;
 
 namespace HandlerUtil {
-std::string resolvePath(const std::string &requestPath, const Config &config);
+std::string resolvePath(const std::string &requestPath, const Config &config,
+						bool skipExistenceCheck = false);
 
 /**
  * @brief リクエストパスからCGIスクリプトの仮想パスとPATH_INFOを抽出する

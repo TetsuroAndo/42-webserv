@@ -40,7 +40,8 @@ void generateSimpleBody(const std::string &method, HttpResponse &res,
 	}
 }
 
-std::string resolvePath(const std::string &requestPath, const Config &config) {
+std::string resolvePath(const std::string &requestPath, const Config &config,
+						bool skipExistenceCheck) {
 	std::string bestMatchPath;
 	std::string root;
 
@@ -72,6 +73,40 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	}
 	resolvedPath += remainingPath;
 
+	// 存在チェックをスキップする場合の処理
+	if (skipExistenceCheck) {
+		// パスを正規化する（存在チェックなし）
+		resolvedPath = Path::normalize(resolvedPath);
+		LOG(DEBUG) << "Resolved path: " << resolvedPath;
+
+		// セキュリティチェックのために絶対パスを取得する
+		std::string rootAbsolute = Path::getAbsolutePath(root);
+		std::string fileAbsolute = Path::getAbsolutePath(resolvedPath);
+
+		// fileAbsoluteが空の場合（ファイルが存在しない場合）、rootAbsoluteから構築する
+		if (!rootAbsolute.empty()) {
+			if (fileAbsolute.empty()) {
+				// 存在しないファイルのために絶対パスをマニュアルで構築する
+				fileAbsolute = rootAbsolute;
+				if (!fileAbsolute.empty() && fileAbsolute[fileAbsolute.length() - 1] != '/') {
+					fileAbsolute += "/";
+				}
+				fileAbsolute += remainingPath;
+				fileAbsolute = Path::normalize(fileAbsolute);
+				resolvedPath = fileAbsolute;
+			}
+
+			// セキュリティチェック：ファイルパスがroot以下にあることを確認する
+			if (fileAbsolute.rfind(rootAbsolute, 0) != 0) {
+				LOG(WARNING) << "Directory traversal attempt detected. Resolved path: "
+							 << fileAbsolute << ", Real root: " << rootAbsolute;
+				return "";
+			}
+		}
+		return resolvedPath;
+	}
+
+	// 通常の存在チェックありの処理
 	std::string originalResolvedPath = resolvedPath;
 	resolvedPath = Path::getAbsolutePath(resolvedPath);
 	if (resolvedPath.empty()) {

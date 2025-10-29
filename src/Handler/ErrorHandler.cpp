@@ -1,9 +1,7 @@
 #include "ErrorHandler.hpp"
 #include "HandlerUtil.hpp"
-#include "StaticFileHandler.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "../Lib/Path/Path.hpp"
 #include <fstream>
 #include <sys/stat.h>
 
@@ -53,72 +51,14 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 
 	const std::string &errorUri = config.getErrorPage(statusCode);
 	if (!errorUri.empty()) {
-		// エラーページパスを位置照合で解決する（resolvePathと同様だが存在チェックなし）
-		std::string bestMatchPath;
-		std::string root;
-
-		const std::map< std::string, Location > &locations = config.getLocations();
-		for (std::map< std::string, Location >::const_iterator it =
-				 locations.begin();
-			 it != locations.end(); ++it) {
-			if (errorUri.rfind(it->first, 0) == 0) {
-				if (it->first.length() > bestMatchPath.length()) {
-					bestMatchPath = it->first;
-					root = it->second.root;
-				}
-			}
-		}
-
-		if (!bestMatchPath.empty() && !root.empty()) {
-			// ファイルパスを構築する： root + remainingPath
-			std::string resolvedPath = root;
-			std::string remainingPath = errorUri.substr(bestMatchPath.length());
-
-			if (!resolvedPath.empty() &&
-				resolvedPath[resolvedPath.length() - 1] != '/') {
-				resolvedPath += "/";
-			}
-			if (!remainingPath.empty() && remainingPath[0] == '/') {
-				remainingPath = remainingPath.substr(1);
-			}
-			resolvedPath += remainingPath;
-
-			// パスを正規化する（存在チェックなし）
-			resolvedPath = Path::normalize(resolvedPath);
-
-			// セキュリティチェックのために絶対パスを取得する
-			std::string rootAbsolute = Path::getAbsolutePath(root);
-			std::string fileAbsolute = Path::getAbsolutePath(resolvedPath);
-
-			// fileAbsoluteが空の場合（ファイルが存在しない場合）、rootAbsoluteから構築する
-			bool isSecure = true;
-			if (!rootAbsolute.empty()) {
-				if (fileAbsolute.empty()) {
-					// 存在しないファイルのために絶対パスを手動で構築する
-					fileAbsolute = rootAbsolute;
-					if (!fileAbsolute.empty() && fileAbsolute[fileAbsolute.length() - 1] != '/') {
-						fileAbsolute += "/";
-					}
-					fileAbsolute += remainingPath;
-					fileAbsolute = Path::normalize(fileAbsolute);
-					resolvedPath = fileAbsolute;
-				}
-
-				// セキュリティチェック：ファイルパスがroot以下にあることを確認する
-				if (fileAbsolute.rfind(rootAbsolute, 0) != 0) {
-					LOG(WARNING) << "ErrorHandler: Directory traversal attempt detected"
-								 << attr("file", fileAbsolute) << attr("root", rootAbsolute);
-					isSecure = false;
-				}
-			}
-
-			if (isSecure) {
-				std::string errorContent;
-				if (readErrorFile(resolvedPath, errorContent)) {
-					res.setBody(errorContent);
-					res.setHeader("Content-Type", "text/html");
-					return res;
-				}
+		// エラーページパスを位置照合で解決する（存在チェックなし）
+		std::string resolvedPath = HandlerUtil::resolvePath(errorUri, config, true);
+		if (!resolvedPath.empty()) {
+			std::string errorContent;
+			if (readErrorFile(resolvedPath, errorContent)) {
+				res.setBody(errorContent);
+				res.setHeader("Content-Type", "text/html");
+				return res;
 			}
 			LOG(WARNING) << "ErrorHandler: Failed to serve custom error page"
 						 << attr("uri", errorUri) << attr("path", resolvedPath);
