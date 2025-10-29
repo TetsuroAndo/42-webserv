@@ -1,8 +1,8 @@
 #include "StaticFileHandler.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
-#include "../Lib/Logger/Log.hpp"
 #include "../Http/Resolver/RequestResolver.hpp"
+#include "../Lib/Logger/Log.hpp"
 #include <algorithm>
 #include <cstring>
 #include <dirent.h>

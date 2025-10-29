@@ -1,8 +1,8 @@
 #include "CgiManager.hpp"
 #include "../Config/Config.hpp"
-#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
 #include "CgiWorker.hpp"
@@ -80,7 +80,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		std::string scriptVirtual;
 		std::string pathInfo;
 		if (!RequestResolver::extractCgiScript(ctx.req.getPath(), loc,
-										   scriptVirtual, pathInfo)) {
+											   scriptVirtual, pathInfo)) {
 			LOG(WARNING) << "Failed to extract CGI script from request"
 						 << attr("path", ctx.req.getPath());
 			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);

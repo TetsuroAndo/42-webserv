@@ -1,8 +1,8 @@
 #include "CgiHandler.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "HandlerUtil.hpp"
 #include <cstring>
 #include <fstream>
 #include <iostream>

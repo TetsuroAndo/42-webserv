@@ -2,9 +2,9 @@
 #include "../Config/Config.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/Path/Path.hpp"
-#include "../Http/Resolver/RequestResolver.hpp"
 #include <cstdio>
 #include <cstring>
 #include <linux/limits.h>
