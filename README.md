@@ -1,11 +1,48 @@
-# Webserv
+# Webserv/42
 
 ## Overview
+はい、承知いたしました。
+前の概要に加えて、課題のバージョン情報、必須要件、そしてこのプロジェクトで具体的に実装した機能（ボーナス含む）を追記しましょう。
+
+---
+
+## 概要 (Summary)
+
+**Webserv**は、42 Webserv（version: **23.1**）の一環として、C++98スタンダードのみで実装されたHTTP/1.0サーバーです。Boostを含む外部ライブラリの使用はしておりません。
+
+このサーバーの最大の特徴は、`epoll` (または `kqueue`, `poll`) を用いた**I/O多重化**によるノンブロッキングなリクエスト処理です。これにより、単一のスレッド（またはプロセス）で多数のクライアント接続を効率的に処理できます。
+
+Nginxの設定ファイルにインスパイアされた 独自のコンフィグファイル（この実装ではYAML）を読み込むことで、複数のポートでのリッスンや、詳細なルーティング設定が可能です。
+
+### 課題の主な必須要件 (Mandatory Requirements)
+
+* **C++98** のみで実装。
+* `GET`, `POST`, `DELETE` メソッドの実装。
+* ノンブロッキングI/O (`poll`, `select`, `epoll`, `kqueue` のいずれかを使用)。
+* 静的サイトの配信。
+* CGI（PHP, Pythonなど）の実行。
+* ファイルのアップロードと削除。
+* 詳細な設定ファイル（ポート、ルート、リダイレクト、メソッド制限、CGI設定など）。
+
+### このWebservでの実装機能
+
+* **I/O多重化**: Linuxでは `epoll`を使用する `SocketsManager` を実装。
+* **設定ファイル**: YAMLパーサー (`src/Lib/MyYAML`) を自作し、`config/*.yaml` ファイルを読み込みます。
+* **アーキテクチャ**: リクエスト処理に**ミドルウェアパターン**を採用 (`src/Middleware`)。リクエスト解析、ルーティング、セッション管理、ハンドラー呼び出しをパイプライン化しています。
+* **HTTPパーサー**: リクエストライン、ヘッダー、ボディ（`Content-Length` 及び `chunked` 転送エンコーディング）に対応したパーサーを実装 (`src/Http/Parser`)。
+* **CGIハンドリング**: `php-cgi` や `python3` とノンブロッキングなパイプ通信 (`pipe`) を行い、動的コンテンツを生成します (`src/Cgi`)。
+* **ロギング**: 高機能なロガー (`src/Lib/Logger`) を実装。
+    * アクセスログ / エラーログ
+    * 出力先: ファイル または コンソール
+    * フォーマット: JSON または W3C-ELF (Nginxライクな形式)
+    * ファイルサイズに基づくログローテーション
+* **ボーナス機能**: クッキーベースの**セッション管理** (`src/Session`) を実装。
+
 
 ## Required
 
 - **Compiler**: C++98準拠のコンパイラ（g++, clang++）
-- **OS**: Ubuntu22.04, macOS
+- **Support OS**: Ubuntu22.04
 - **Make**: GNU Make 4.3以上
 
 ## Install
@@ -42,17 +79,17 @@ webserv/
 ├── LICENSE
 ├── config/         # 設定ファイル
 ├── docs/           # ドキュメント
-├── gci-bin/        # GCIビルドスクリプト
-├── inc/            # ヘッダーファイル
+├── logs/           # ログファイルの保存先
 ├── src/            # ソースファイル
 │   ├── main.cpp    # エントリーポイント
 │   ├── Cgi/        # CGI処理
 │   ├── Config/     # 設定ファイル処理
 │   ├── Handlers/   # リクエストハンドラー
+│   ├── Middleware/ # ミドルウェア
 │   ├── Http/       # HTTPプロトコル処理
-│   ├── Lib/        # ライブラリ
-│   ├── Logger/     # ロガー
+│   ├── Lib/        # 自作ライブラリ
 │   ├── Server/     # サーバーコア機能
+│   ├── Socket/     # ソケット・ノンブロッキングIO機能
 │   └── Session/    # セッション管理
 ├── test/           # テストスイート
 ├── tools/          # ツール
@@ -106,7 +143,7 @@ make help
 - C++98 standard
 - Function name: camelCase (e.g: `processRequest`)
 - Class name: PascalCase (e.g: `HttpRequest`)
-- Private variable: underscore prefix (e.g: `_socket_fd`)
+- Private variable: underscore prefix (e.g: `_socketFd`)
 
 ## Performance
 
