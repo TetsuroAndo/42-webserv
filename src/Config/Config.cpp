@@ -32,17 +32,17 @@ Config::Config(const std::vector< Listen > &listens,
 			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
 			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
 			   unsigned int requestBodyTimeoutSec,
-			   const std::map<int, std::string> &errorPages)
-	: _listens(listens), _locations(locations),
-	  _accessLogs(accessLogs), _errorLogs(errorLogs), _errorPages(errorPages),
+			   const std::map< int, std::string > &errorPages)
+	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
+	  _errorLogs(errorLogs), _errorPages(errorPages),
 	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
 	  _maxEvents(maxEvents), _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
 	  _requestBodyTimeoutSec(requestBodyTimeoutSec) {}
 
 Config::Config(const Config &other)
-	: _listens(other._listens),
-	  _locations(other._locations), _accessLogs(other._accessLogs),
-	  _errorLogs(other._errorLogs), _errorPages(other._errorPages),
+	: _listens(other._listens), _locations(other._locations),
+	  _accessLogs(other._accessLogs), _errorLogs(other._errorLogs),
+	  _errorPages(other._errorPages),
 	  _maxRequestBodySize(other._maxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
@@ -72,10 +72,12 @@ const Performance &Config::getPerformance() const { return _performance; }
 
 const std::vector< Listen > &Config::getListens() const { return _listens; }
 
-const std::map<int, std::string> &Config::getErrorPages() const { return _errorPages; }
+const std::map< int, std::string > &Config::getErrorPages() const {
+	return _errorPages;
+}
 
 const std::string &Config::getErrorPage(int code) const {
-	std::map<int, std::string>::const_iterator it = _errorPages.find(code);
+	std::map< int, std::string >::const_iterator it = _errorPages.find(code);
 	if (it != _errorPages.end()) {
 		return it->second;
 	}
@@ -151,9 +153,9 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
 
-
 	os << "  error_pages:\n";
-	for (std::map<int, std::string>::const_iterator it = config._errorPages.begin();
+	for (std::map< int, std::string >::const_iterator it =
+			 config._errorPages.begin();
 		 it != config._errorPages.end(); ++it) {
 		os << "    " << it->first << ": " << it->second << "\n";
 	}

@@ -1,7 +1,7 @@
 #include "ErrorHandler.hpp"
-#include "HandlerUtil.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "HandlerUtil.hpp"
 #include <fstream>
 #include <sys/stat.h>
 
@@ -52,7 +52,8 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 	const std::string &errorUri = config.getErrorPage(statusCode);
 	if (!errorUri.empty()) {
 		// エラーページパスを位置照合で解決する（存在チェックなし）
-		std::string resolvedPath = HandlerUtil::resolvePath(errorUri, config, true);
+		std::string resolvedPath =
+			HandlerUtil::resolvePath(errorUri, config, true);
 		if (!resolvedPath.empty()) {
 			std::string errorContent;
 			if (readErrorFile(resolvedPath, errorContent)) {
@@ -63,8 +64,9 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 			LOG(WARNING) << "ErrorHandler: Failed to serve custom error page"
 						 << attr("uri", errorUri) << attr("path", resolvedPath);
 		} else {
-			LOG(WARNING) << "ErrorHandler: No matching location for error page URI"
-						 << attr("uri", errorUri);
+			LOG(WARNING)
+				<< "ErrorHandler: No matching location for error page URI"
+				<< attr("uri", errorUri);
 		}
 	}
 

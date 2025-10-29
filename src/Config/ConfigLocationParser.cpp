@@ -62,13 +62,16 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			std::string urlStr;
 
 			if (!(iss >> codeStr) || !(iss >> urlStr)) {
-				throw std::runtime_error("Config error: invalid 'return' directive in location " + loc.path);
+				throw std::runtime_error(
+					"Config error: invalid 'return' directive in location " +
+					loc.path);
 			}
 			loc.redirectCode = StringOps::stringToInt(codeStr);
 			loc.redirectUrl = urlStr;
 
 			if (loc.redirectCode < 300 || loc.redirectCode > 308) {
-				throw std::runtime_error("Config error: invalid redirect code in 'return' directive");
+				throw std::runtime_error("Config error: invalid redirect code "
+										 "in 'return' directive");
 			}
 		}
 

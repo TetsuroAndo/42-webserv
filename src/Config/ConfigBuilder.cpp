@@ -77,9 +77,9 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _locations, _accessLogs, _errorLogs,
-			  _maxRequestBodySize, _timeoutSec, _maxEvents,
-			  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
-			  _errorPages);
+				  _maxRequestBodySize, _timeoutSec, _maxEvents,
+				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
+				  _errorPages);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {

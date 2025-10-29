@@ -12,7 +12,7 @@ private:
 	std::map< std::string, Location > _locations;
 	std::vector< AccessLog > _accessLogs;
 	std::vector< ErrorLog > _errorLogs;
-	std::map<int, std::string> _errorPages;
+	std::map< int, std::string > _errorPages;
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;

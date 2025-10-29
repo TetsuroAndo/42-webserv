@@ -53,7 +53,9 @@ struct Location {
 	int redirectCode;
 	std::string redirectUrl;
 
-	Location() : autoindex(false), session(false), hasRedirect(false), redirectCode(0) {}
+	Location()
+		: autoindex(false), session(false), hasRedirect(false),
+		  redirectCode(0) {}
 };
 
 struct AccessLog {
@@ -96,7 +98,7 @@ private:
 	std::map< std::string, Location > _locations;
 	std::vector< AccessLog > _accessLogs;
 	std::vector< ErrorLog > _errorLogs;
-	std::map<int, std::string> _errorPages; // map: <statusCode, URI>
+	std::map< int, std::string > _errorPages; // map: <statusCode, URI>
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
@@ -111,7 +113,7 @@ public:
 		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
 		   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
 		   unsigned int requestBodyTimeoutSec,
-		   const std::map<int, std::string> &errorPages);
+		   const std::map< int, std::string > &errorPages);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
@@ -125,7 +127,7 @@ public:
 	const std::vector< ErrorLog > &getErrorLogs() const;
 
 	// error_pages
-	const std::map<int, std::string> &getErrorPages() const;
+	const std::map< int, std::string > &getErrorPages() const;
 	const std::string &getErrorPage(int code) const;
 
 	unsigned int getMaxRequestBodySize() const;
