@@ -2,6 +2,7 @@
 #include "../Http/Builder/DefaultPageBuilder.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include <fstream>
 #include <sys/stat.h>
 
@@ -53,7 +54,7 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 	if (!errorUri.empty()) {
 		// エラーページパスを位置照合で解決する（存在チェックなし）
 		std::string resolvedPath =
-			HandlerUtil::resolvePath(errorUri, config, true);
+			RequestResolver::resolvePath(errorUri, config, true);
 		if (!resolvedPath.empty()) {
 			std::string errorContent;
 			if (readErrorFile(resolvedPath, errorContent)) {

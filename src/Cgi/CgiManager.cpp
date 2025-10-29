@@ -1,6 +1,6 @@
 #include "CgiManager.hpp"
 #include "../Config/Config.hpp"
-#include "../Handler/HandlerUtil.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
@@ -79,7 +79,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		// リクエストからスクリプト仮想パスとPATH_INFOを切り出す
 		std::string scriptVirtual;
 		std::string pathInfo;
-		if (!HandlerUtil::extractCgiScript(ctx.req.getPath(), loc,
+		if (!RequestResolver::extractCgiScript(ctx.req.getPath(), loc,
 										   scriptVirtual, pathInfo)) {
 			LOG(WARNING) << "Failed to extract CGI script from request"
 						 << attr("path", ctx.req.getPath());
@@ -89,7 +89,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 
 		// スクリプトの実ファイル（絶対パス）を解決（PATH_INFOは含めない）
 		const std::string scriptPath =
-			HandlerUtil::resolvePath(scriptVirtual, ctx.conf);
+			RequestResolver::resolvePath(scriptVirtual, ctx.conf);
 
 		if (scriptPath.empty()) {
 			LOG(WARNING) << "CGI script not found"

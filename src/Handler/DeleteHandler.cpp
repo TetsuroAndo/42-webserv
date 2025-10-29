@@ -3,7 +3,8 @@
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "HandlerUtil.hpp"
+#include "../Lib/Path/Path.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include <cstdio>
 #include <cstring>
 #include <linux/limits.h>
@@ -29,7 +30,7 @@ FileDeleteStatus tryDeleteFile(const std::string &filePath) {
 		return DELETE_IS_DIRECTORY;
 	}
 
-	const std::string dirPath = HandlerUtil::getDirName(filePath);
+	const std::string dirPath = Path::getDirName(filePath);
 	if (access(dirPath.c_str(), W_OK | X_OK) != 0) {
 		return DELETE_PERMISSION_DENIED;
 	}
@@ -54,7 +55,7 @@ HttpResponse DeleteHandler::handle(PipelineContext &ctx) {
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
 	const std::string filePath =
-		HandlerUtil::resolvePath(req.getPath(), config);
+		RequestResolver::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
 		LOG(WARNING) << "No matching location for DELETE request"
 					 << attr("uri", req.getPath());

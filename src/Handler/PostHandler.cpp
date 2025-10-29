@@ -1,6 +1,7 @@
 #include "PostHandler.hpp"
-
 #include "../Config/Config.hpp"
+#include "../Http/Builder/DefaultPageBuilder.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Http/Core/HttpResponse.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
@@ -9,8 +10,6 @@
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Lib/Time/TimeCache.hpp"
 #include "../Lib/Token/Token.hpp"
-#include "HandlerUtil.hpp"
-
 #include <cstring>
 #include <iostream>
 #include <sys/stat.h>
@@ -44,7 +43,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
 	const std::string filePath =
-		HandlerUtil::resolvePath(req.getPath(), config);
+		RequestResolver::resolvePath(req.getPath(), config);
 	const Location &loc = config.getLocation(req.getPath());
 
 	// ファイルパスが不正
@@ -101,8 +100,9 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	// Bodyの中身を書き込む
 	file << req.getBody();
 	file.close();
-	HandlerUtil::generateSimpleBody(req.getMethod(), res, HttpStatus::CREATED,
-									"Created : " + target_filename);
+	DefaultPageBuilder::generateSimpleBody(req.getMethod(), res,
+										   HttpStatus::CREATED,
+										   "Created : " + target_filename);
 	LOG(INFO) << "PostHandler : File \"" << target
 			  << "\" created successfully.";
 	return res;

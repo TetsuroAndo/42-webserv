@@ -1,8 +1,16 @@
 #include "DefaultPageBuilder.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
+#include "../Core/HttpStatus.hpp"
 
 void DefaultPageBuilder::generateSimpleBody(const std::string &method,
 											HttpResponse &res, const int code,
-											const std::string &description) {
+											const std::string &description,
+											const bool skipIfAlreadySet) {
+
+	if (skipIfAlreadySet && res.getBody().empty() == false) {
+		return;
+	}
+
 	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string body;

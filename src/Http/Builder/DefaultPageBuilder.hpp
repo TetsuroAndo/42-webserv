@@ -6,6 +6,7 @@
 class DefaultPageBuilder {
 public:
 	static void generateSimpleBody(const std::string &method, HttpResponse &res,
-								   const int code,
-								   const std::string &description);
+							   const int code,
+							   const std::string &description = "",
+							   const bool skipIfAlreadySet = false);
 };

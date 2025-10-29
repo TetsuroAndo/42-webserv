@@ -2,7 +2,7 @@
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "HandlerUtil.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include <algorithm>
 #include <cstring>
 #include <dirent.h>
@@ -125,7 +125,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	LOG(INFO) << "StaticFileHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
-	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
+	std::string filePath = RequestResolver::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
 		LOG(WARNING) << "No matching location found for URI"
 					 << attr("uri", req.getPath());
