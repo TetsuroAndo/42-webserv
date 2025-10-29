@@ -1,7 +1,8 @@
-#include "DefaultErrorResponseBuilder.hpp"
+#include "DefaultPageBuilder.hpp"
 
-void DefaultErrorResponseBuilder::generateSimpleBody(const std::string &method, HttpResponse &res,
-						const int code, const std::string &description) {
+void DefaultPageBuilder::generateSimpleBody(const std::string &method,
+											HttpResponse &res, const int code,
+											const std::string &description) {
 	res.setStatusCode(code);
 	const std::string &reason = HttpStatus::getReason(code);
 	std::string body;

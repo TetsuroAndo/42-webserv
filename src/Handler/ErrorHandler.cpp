@@ -1,7 +1,7 @@
 #include "ErrorHandler.hpp"
+#include "../Http/Builder/DefaultPageBuilder.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "HandlerUtil.hpp"
 #include <fstream>
 #include <sys/stat.h>
 
@@ -70,6 +70,7 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 		}
 	}
 
-	HandlerUtil::generateSimpleBody(ctx.req.getMethod(), res, statusCode);
+	DefaultPageBuilder::generateSimpleBody(ctx.req.getMethod(), res,
+										   statusCode);
 	return res;
 }

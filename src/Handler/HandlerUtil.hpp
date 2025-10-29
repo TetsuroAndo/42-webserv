@@ -26,8 +26,5 @@ std::string resolvePath(const std::string &requestPath, const Config &config,
 bool extractCgiScript(const std::string &requestPath, const Location &loc,
 					  std::string &scriptVirtual, std::string &pathInfo);
 
-void generateSimpleBody(const std::string &method, HttpResponse &res, int code,
-						const std::string &description = "");
-
 std::string getDirName(const std::string &path);
 } // namespace HandlerUtil
