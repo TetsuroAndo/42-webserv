@@ -159,7 +159,7 @@ help:
 	@echo "  clog             Clean log files"
 	@echo "  c                Alias for 'clean' and 'clog'"
 	@echo "  f                Alias for 'fclean' and 'clog'"
-	@echo "  r                JAlias for 're' (fclean + all) and 'clog'"
+	@echo "  r                Alias for 're' (fclean + all) and 'clog'"
 	@echo "  debug            Build with debug flags"
 	@echo "  setuphooks       Set up git hooks"
 	@echo "  play-netpractice Build and run with netpractice config"
