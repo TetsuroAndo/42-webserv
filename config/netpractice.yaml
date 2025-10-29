@@ -5,30 +5,20 @@ servers:
             interface: 0.0.0.0
             port: 8080
 
-      timeoutSec: 30
-      requestHeaderTimeoutSec: 10
-      requestBodyTimeoutSec: 10
-
-      error_logs:
-        - error_log:
-            sink: console
-            level: info
-        - error_log:
-            sink: file
-            filename: test.log
-            logDir: ./logs
-            level: debug
-
       access_logs:
         - access_log:
             sink: console
-            format: ELF
+      error_logs:
+        - error_log:
+            sink: console
+            level: debug
 
       locations:
         - location:
             path: /
-            root: ./www/static
+            root: ./www/net_practice
             indexFile: index.html
             allowedMethods:
               - GET
               - POST
+              - HEAD

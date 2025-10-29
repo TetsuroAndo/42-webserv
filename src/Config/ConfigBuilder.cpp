@@ -24,9 +24,10 @@ void ConfigBuilder::initDefaults() {
 
 	Location defaultLoc;
 	defaultLoc.path = _defaultLocationKey;
-	defaultLoc.root = "/tmp/www";
-	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.root = "./www";
+	defaultLoc.uploadStore = "./www/uploads";
 	defaultLoc.indexFile = "index.html";
+	defaultLoc.errorFile = "./www/error.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");

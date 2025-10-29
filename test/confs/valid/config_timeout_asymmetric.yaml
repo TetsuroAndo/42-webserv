@@ -27,7 +27,7 @@ servers:
       locations:
         - location:
             path: /
-            root: ./www
+            root: ./www/static
             indexFile: index.html
             allowedMethods:
               - GET
