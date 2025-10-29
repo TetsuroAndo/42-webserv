@@ -6,7 +6,7 @@ location/root
 - [ ] root とURL結合の挙動確認
 
 index/autoindex
-- [ ] indexFile があれば優先
+- [ ] index があれば優先
 - [ ] autoindex on: 一覧HTML
 - [ ] autoindex off: 403
 

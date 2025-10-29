@@ -29,7 +29,7 @@ servers:
         root: /tmp/www
         errorFile: /tmp/www/error.html
         uploadStore: /tmp/uploads
-        indexFile: index.html
+        index: index.html
         autoindex: true
         allowedMethods:
           - GET
@@ -41,7 +41,7 @@ servers:
         root: /tmp/uploads
         errorFile: /tmp/www/error.html
         uploadStore: /tmp/uploads
-        indexFile: index.html
+        index: index.html
         autoindex: true
         allowedMethods:
           - GET

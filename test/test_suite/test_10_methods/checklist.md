@@ -5,7 +5,7 @@ GET
 - [ ] 200 html: Content-Type/本文一致
 - [ ] 404 not found
 - [ ] 403 読み取り不可
-- [ ] indexFile 適用
+- [ ] index 適用
 - [ ] autoindex on/off
 - [ ] ディレクトリ末尾スラなし→301 スラ付へ
 - [ ] HEAD: ボディなしでヘッダ一致
