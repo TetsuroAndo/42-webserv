@@ -52,16 +52,14 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 		LOG(INFO) << "Requested path does not match location path"
 				  << attr("request_path", req.getPath())
 				  << attr("location_path", loc.path);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::NOT_FOUND);
+		res.setStatusCode(HttpStatus::NOT_FOUND);
 		return res;
 	}
 
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
 		LOG(ERROR) << "PostHandler: Upload store is empty";
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 
@@ -73,8 +71,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 				   << "\" is not exist or not a directory. errno: "
 				   << strerror(errno);
 		std::cout << uploadStore.c_str() << std::endl;
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 	const std::string expansion =
@@ -82,8 +79,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
 		LOG(INFO) << "PostHandler: This Content-Type is Not Supported";
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 	std::string target_filename =
@@ -98,8 +94,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	if (!file) {
 		LOG(ERROR) << "PostHandler: Can't create file \"" << target
 				   << "\". errno: " << strerror(errno);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
 

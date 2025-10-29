@@ -46,10 +46,9 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 		if (method != "GET" && method != "POST") {
 			LOG(WARNING) << "CgiRouterMiddleware: Method not allowed for CGI."
 						 << attr("method", method);
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::METHOD_NOT_ALLOWED,
-											"Method Not Allowed for CGI");
+			ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
 			ctx.res.setHeader("Allow", "GET, POST");
+			proc->next(ctx);
 			return;
 		}
 
@@ -57,16 +56,16 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 			LOG(WARNING)
 				<< "CgiRouterMiddleware: Method not allowed by location config."
 				<< attr("method", method);
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::METHOD_NOT_ALLOWED);
+			ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
+			proc->next(ctx);
 			return;
 		}
 
 		// CgiHandlerに処理を委譲（CGIプロセス起動）
 		if (_cgiHandler == NULL) {
 			LOG(ERROR) << "CgiHandler is NULL";
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			proc->next(ctx);
 			return;
 		}
 		try {
@@ -75,12 +74,14 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 			if (ctx.res.getStatusCode() < 400) {
 				// Server::handleClientReadが即時レスポンスを返さないようフラグを立てる
 				ctx.isCgi = true;
+			} else {
+				// CGI実行失敗時、エラーハンドラーに委譲
+				proc->next(ctx);
 			}
-			// 起動失敗時は、ctx.resに設定されたエラーがそのままレスポンスされる
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "CgiHandler failed with exception: " << e.what();
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			proc->next(ctx);
 		}
 	} else {
 		proc->next(ctx);

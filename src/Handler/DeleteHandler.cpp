@@ -58,8 +58,7 @@ HttpResponse DeleteHandler::handle(PipelineContext &ctx) {
 	if (filePath.empty()) {
 		LOG(WARNING) << "No matching location for DELETE request"
 					 << attr("uri", req.getPath());
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::NOT_FOUND);
+		res.setStatusCode(HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -72,26 +71,22 @@ HttpResponse DeleteHandler::handle(PipelineContext &ctx) {
 		break;
 	case DELETE_NOT_FOUND:
 		LOG(WARNING) << "File not found for deletion" << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::NOT_FOUND);
+		res.setStatusCode(HttpStatus::NOT_FOUND);
 		break;
 	case DELETE_IS_DIRECTORY:
 		LOG(WARNING) << "Attempted to delete a directory"
 					 << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::FORBIDDEN);
+		res.setStatusCode(HttpStatus::FORBIDDEN);
 		break;
 	case DELETE_PERMISSION_DENIED:
 		LOG(ERROR) << "Permission denied while deleting file"
 				   << attr("path", filePath) << attr("error", strerror(errno));
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::FORBIDDEN);
+		res.setStatusCode(HttpStatus::FORBIDDEN);
 		break;
 	case DELETE_UNKNOWN_ERROR:
 		LOG(ERROR) << "Unknown error occurred while deleting file"
 				   << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		break;
 	}
 

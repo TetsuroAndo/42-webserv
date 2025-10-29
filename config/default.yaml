@@ -52,6 +52,7 @@ servers:
 
       error_pages:
         404: /errors/404.html
+        403: /errors/403.html
         500: /errors/500.html
 
       locations:

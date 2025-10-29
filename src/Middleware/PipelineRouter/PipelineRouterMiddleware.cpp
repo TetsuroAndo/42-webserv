@@ -44,11 +44,11 @@ void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 
 	if (nextProcessor != 0) {
 		nextProcessor->handle(ctx);
+		if (ctx.res.getStatusCode() >= 400) {
+			proc->next(ctx);
+		}
 	} else {
-		// No matching location found - set 404 and continue
 		ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
-		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-										HttpStatus::NOT_FOUND);
 		proc->next(ctx);
 	}
 }
