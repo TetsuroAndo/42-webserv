@@ -69,7 +69,7 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			loc.redirectCode = StringOps::stringToInt(codeStr);
 			loc.redirectUrl = urlStr;
 
-			if (loc.redirectCode < 300 || loc.redirectCode > 308) {
+			if (loc.redirectCode < 300 || loc.redirectCode >= 400) {
 				throw std::runtime_error("Config error: invalid redirect code "
 										 "in 'return' directive");
 			}
