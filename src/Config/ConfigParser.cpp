@@ -186,11 +186,13 @@ void ConfigParser::parseErrorPages(Node *node) {
 		 it != keys.end(); ++it) {
 		int code = StringOps::stringToInt(*it);
 		if (code < 400 || code > 599) {
-			throw std::runtime_error("Config error: invalid error_page code '" + *it + "'");
+			throw std::runtime_error("Config error: invalid error_page code '" +
+									 *it + "'");
 		}
 		Node *uriNode = node->getMapNode(*it);
 		if (!uriNode) {
-			throw std::runtime_error("Config error: missing URI for error_page code '" + *it + "'");
+			throw std::runtime_error(
+				"Config error: missing URI for error_page code '" + *it + "'");
 		}
 		_builder->setErrorPage(code, uriNode->getValue());
 	}

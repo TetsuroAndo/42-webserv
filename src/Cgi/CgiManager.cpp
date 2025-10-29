@@ -71,9 +71,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		if (_workers.size() >= _maxWorkers) {
 			LOG(WARNING) << "CGI worker limit reached"
 						 << attr("limit", _maxWorkers);
-			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-											HttpStatus::SERVICE_UNAVAILABLE,
-											"CGI capacity reached");
+			ctx.res.setStatusCode(HttpStatus::SERVICE_UNAVAILABLE);
 			return;
 		}
 		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
@@ -85,8 +83,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 										   scriptVirtual, pathInfo)) {
 			LOG(WARNING) << "Failed to extract CGI script from request"
 						 << attr("path", ctx.req.getPath());
-			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-											HttpStatus::NOT_FOUND);
+			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 			return;
 		}
 
@@ -97,8 +94,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		if (scriptPath.empty()) {
 			LOG(WARNING) << "CGI script not found"
 						 << attr("scriptVirtual", scriptVirtual);
-			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-											HttpStatus::NOT_FOUND);
+			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 			return;
 		}
 
@@ -115,8 +111,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		if (interpreterPath.empty()) {
 			LOG(WARNING) << "No CGI interpreter found for the request path: "
 						 << scriptPath;
-			HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-											HttpStatus::NOT_FOUND);
+			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 			return;
 		}
 
@@ -165,8 +160,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		// new または execute で失敗した場合に備えて delete (NULLでも問題なし)
 		delete worker;
 		LOG(ERROR) << "Failed to create CGI worker: " << e.what();
-		HandlerUtil::generateSimpleBody(ctx.req.getMethod(), ctx.res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 }
 

@@ -88,7 +88,8 @@ std::string resolvePath(const std::string &requestPath, const Config &config,
 			if (fileAbsolute.empty()) {
 				// 存在しないファイルのために絶対パスをマニュアルで構築する
 				fileAbsolute = rootAbsolute;
-				if (!fileAbsolute.empty() && fileAbsolute[fileAbsolute.length() - 1] != '/') {
+				if (!fileAbsolute.empty() &&
+					fileAbsolute[fileAbsolute.length() - 1] != '/') {
 					fileAbsolute += "/";
 				}
 				fileAbsolute += remainingPath;
@@ -98,8 +99,9 @@ std::string resolvePath(const std::string &requestPath, const Config &config,
 
 			// セキュリティチェック：ファイルパスがroot以下にあることを確認する
 			if (fileAbsolute.rfind(rootAbsolute, 0) != 0) {
-				LOG(WARNING) << "Directory traversal attempt detected. Resolved path: "
-							 << fileAbsolute << ", Real root: " << rootAbsolute;
+				LOG(WARNING)
+					<< "Directory traversal attempt detected. Resolved path: "
+					<< fileAbsolute << ", Real root: " << rootAbsolute;
 				return "";
 			}
 		}
