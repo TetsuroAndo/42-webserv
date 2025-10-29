@@ -122,3 +122,19 @@ servers:
             root: ./www/no_perms_default
             allowedMethods:
               - GET
+
+      redirects:
+        - redirect:
+            from: /cgi-bin/auth.py
+            to: /login.html
+            code: 301
+
+        - redirect:
+            from: /cgi-bin/send_message.py
+            to: /chat.html
+            code: 301
+
+        - redirect:
+            from: /cgi-bin/strange.py
+            to: /error.html
+            code: 301

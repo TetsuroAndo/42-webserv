@@ -38,6 +38,13 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 				}
 			}
 		}
+		// Convert relative path to absolute URL if needed
+		if (newLocation.length() > 0 && newLocation[0] == '/') {
+			std::string host = req.getHeader("host");
+			if (!host.empty()) {
+				newLocation = "http://" + host + newLocation;
+			}
+		}
 		ctx.res.setHeader("Location", newLocation);
 		ctx.res.setBody("");
 		// Stop further processing
