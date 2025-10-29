@@ -10,6 +10,13 @@
 
 class RequestParser {
 public:
+	enum ParseState {
+		STATE_REQUEST_LINE,
+		STATE_HEADERS,
+		STATE_BODY,
+		STATE_COMPLETE
+	};
+
 	RequestParser();
 	~RequestParser();
 
@@ -37,14 +44,9 @@ public:
 	 */
 	ParseResult parse(HttpRequest &request, std::string &buffer);
 
-private:
-	enum ParseState {
-		STATE_REQUEST_LINE,
-		STATE_HEADERS,
-		STATE_BODY,
-		STATE_COMPLETE
-	};
+	ParseState getState() const;
 
+private:
 	int _errorCode;
 	ParseState _state;
 

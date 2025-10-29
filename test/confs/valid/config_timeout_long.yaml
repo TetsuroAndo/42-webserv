@@ -1,0 +1,34 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      timeoutSec: 30
+      requestHeaderTimeoutSec: 10
+      requestBodyTimeoutSec: 10
+
+      error_logs:
+        - error_log:
+            sink: console
+            level: info
+        - error_log:
+            sink: file
+            filename: test.log
+            logDir: ./logs
+            level: debug
+
+      access_logs:
+        - access_log:
+            sink: console
+            format: ELF
+
+      locations:
+        - location:
+            path: /
+            root: ./www/static
+            indexFile: index.html
+            allowedMethods:
+              - GET
+              - POST

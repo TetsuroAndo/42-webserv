@@ -36,6 +36,12 @@ Server::~Server() {
 	}
 }
 
+TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
+SocketsManager &Server::getSocketsManager() { return _socketsManager; }
+MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
+CgiManager &Server::getCgiManager() { return _cgiManager; }
+const Config &Server::getConfig() const { return _config; }
+
 void Server::applyCgiChanges() {
 	FdEventChange event;
 	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent() ||
@@ -140,7 +146,9 @@ void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
 	time_t lastCleanTime = time(NULL);
 	while (true) {
-		const int nEvents = _socketsManager.wait(-1);
+		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
+		const int nEvents = _socketsManager.wait(timeoutMs);
+		_timeoutManager.checkAndHandleTimeouts();
 		if (nEvents < 0) {
 			LOG(FATAL) << "epoll_wait() failed: " << strerror(errno);
 			throw std::runtime_error("epoll_wait() failed");
@@ -180,30 +188,27 @@ void Server::run() {
 				}
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
-					std::string sessionId =
-						_clients[fd]->getContext()->session
-							? _clients[fd]->getContext()->session->getId()
-							: "";
 					AccessLogger::getInstance().log(
-						&_clients[fd]->getContext()->req, &cgiRes,
+						&_clients[fd]->getContext().req, &cgiRes,
 						_clients[fd]->getIp(), _clients[fd]->getPort(),
-						getSessionId(_clients[fd]->getContext()));
+						getSessionId(&_clients[fd]->getContext()));
 					const std::string responseStr =
 						ResponseBuilder::build(cgiRes);
 					if (!responseStr.empty()) {
-						_clients[fd]->getSocket()->setSendBuffer(
-							_clients[fd]->getSocket()->getSendBuffer() +
+						_clients[fd]->getSocket().setSendBuffer(
+							_clients[fd]->getSocket().getSendBuffer() +
 							responseStr);
 					}
-					if (!_clients[fd]->getSocket()->getSendBuffer().empty()) {
+					if (!_clients[fd]->getSocket().getSendBuffer().empty()) {
 						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
 					}
 				} else {
 					if (eventTypes & EPOLLIN) {
-						handleClientRead(fd);
+						_clients[fd]->handleReadEvent();
 					}
-					if (eventTypes & EPOLLOUT) {
-						handleClientWrite(fd);
+					// タイムアウトでクライアントが削除された可能性があるため再度チェック
+					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
+						_clients[fd]->handleWriteEvent();
 					}
 				}
 			}
@@ -220,16 +225,16 @@ void Server::run() {
 			HttpResponse cgiRes(_config);
 			if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
 				AccessLogger::getInstance().log(
-					&_clients[cfd]->getContext()->req, &cgiRes,
+					&_clients[cfd]->getContext().req, &cgiRes,
 					_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-					getSessionId(_clients[cfd]->getContext()));
+					getSessionId(&_clients[cfd]->getContext()));
 				const std::string responseStr = ResponseBuilder::build(cgiRes);
 				if (!responseStr.empty()) {
-					_clients[cfd]->getSocket()->setSendBuffer(
-						_clients[cfd]->getSocket()->getSendBuffer() +
+					_clients[cfd]->getSocket().setSendBuffer(
+						_clients[cfd]->getSocket().getSendBuffer() +
 						responseStr);
 				}
-				if (!_clients[cfd]->getSocket()->getSendBuffer().empty()) {
+				if (!_clients[cfd]->getSocket().getSendBuffer().empty()) {
 					_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
 				}
 			}
@@ -284,10 +289,11 @@ void Server::handleNewConnection(const int listenFd) {
 			return;
 		}
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
-		Client *client =
-			new Client(clientFd, clientAddr, listenPort, _cgiManager, _config);
+		Client *client = new Client(clientFd, clientAddr, listenPort, *this);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
+		// 最初はヘッダ受信待ちのタイムアウトを設定
+		client->updateTimeout();
 	} catch (const std::bad_alloc &e) {
 		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
 				   << attr("fd", clientFd);
@@ -299,102 +305,27 @@ void Server::handleNewConnection(const int listenFd) {
 	}
 }
 
-void Server::handleClientRead(const int clientFd) {
-	Client *client = _clients[clientFd];
-	PipelineContext *ctx = client->getContext();
-	char buffer[4096];
-
-	const ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
-
-	if (bytesRead > 0) {
-		ctx->recvBuffer.append(buffer, bytesRead);
-	} else if (bytesRead == 0) {
-		closeConnection(clientFd);
-		return;
-	} else {
-		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG(ERROR) << "recv() failed" << attr("fd", clientFd)
-					   << attr("error", strerror(errno));
-			closeConnection(clientFd);
-		}
-		return;
-	}
-	_mainProcessor.handle(*ctx);
-
-	// CGIが起動されたばかりかチェック
-	if (ctx->isCgi) {
-		applyCgiChanges();
-		ctx->isCgi = false;
-		return;
-	}
-
-	if (ctx->parser.isComplete() || ctx->parser.getErrorCode() != 0) {
-		AccessLogger::getInstance().log(&ctx->req, &ctx->res, client->getIp(),
-										client->getPort(), getSessionId(ctx));
-		const std::string responseStr = ResponseBuilder::build(ctx->res);
-		if (!responseStr.empty()) {
-			client->getSocket()->setSendBuffer(
-				client->getSocket()->getSendBuffer() + responseStr);
-		}
-		if (!client->getSocket()->getSendBuffer().empty()) {
-			_socketsManager.modifySocket(clientFd, EPOLLIN | EPOLLOUT);
-		}
-	}
-}
-
-void Server::handleClientWrite(const int clientFd) {
-	const Client *client = _clients[clientFd];
-	Socket *sock = client->getSocket();
-	const std::string &sendBuffer = sock->getSendBuffer();
-
-	if (sendBuffer.empty()) {
-		_socketsManager.modifySocket(clientFd, EPOLLIN);
-		return;
-	}
-
-	const ssize_t bytesSent =
-		send(clientFd, sendBuffer.c_str(), sendBuffer.size(), 0);
-
-	if (bytesSent > 0) {
-		sock->eraseSendBuffer(0, bytesSent);
-		if (sock->getSendBuffer().empty()) {
-			PipelineContext *ctx = client->getContext();
-			// Connectionヘッダを見て接続を閉じるか判断
-			if (ctx->res.getHeader("Connection") == "close") {
-				closeConnection(clientFd);
-			} else {
-				// Keep-Alive:
-				// 接続を維持し、次のリクエストのために読み込み監視のみに戻す
-				_socketsManager.modifySocket(clientFd, EPOLLIN);
-				ctx->reset(_config);
-			}
-		}
-	} else {
-		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG(ERROR) << "send() failed" << attr("fd", clientFd)
-					   << attr("error", strerror(errno));
-			closeConnection(clientFd);
-		}
-	}
-}
-
 void Server::closeConnection(const int clientFd) {
 	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する
 	_cgiManager.abortClient(clientFd);
 	_socketsManager.unregisterSocket(clientFd);
+
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"
 				  << attr("client_ip", it->second->getIp())
 				  << attr("fd", clientFd);
+		_timeoutManager.remove(it->second);
+		// ソケットを先に閉じて、相手に通知する
+		close(clientFd);
 		delete it->second;
 		_clients.erase(it);
 	} else {
 		LOG(ERROR)
 			<< "Attempted to close a non-existent client connection for fd: "
 			<< clientFd;
+		close(clientFd);
 	}
-	close(clientFd);
 }
 
 std::string Server::getSessionId(const PipelineContext *ctx) const {

@@ -14,15 +14,20 @@ void ConfigBuilder::initDefaults() {
 	_errorLogs.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
-	_timeoutSec = 60;
 	_maxEvents = 1024;
+
+	_timeoutSec = 60;
+	_requestHeaderTimeoutSec = 20;
+	_requestBodyTimeoutSec = 30;
+
 	_defaultLocationKey = "/";
 
 	Location defaultLoc;
 	defaultLoc.path = _defaultLocationKey;
-	defaultLoc.root = "/tmp/www";
-	defaultLoc.uploadStore = "/tmp/uploads";
+	defaultLoc.root = "./www";
+	defaultLoc.uploadStore = "./www/uploads";
 	defaultLoc.indexFile = "index.html";
+	defaultLoc.errorFile = "./www/error.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");
@@ -73,7 +78,8 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents);
+				  _maxRequestBodySize, _timeoutSec, _maxEvents,
+				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
@@ -205,4 +211,12 @@ void ConfigBuilder::setServerDefaultAllowedMethods(
 
 void ConfigBuilder::setServerDefaultSession(bool enable) {
 	_locations[_defaultLocationKey].session = enable;
+}
+
+void ConfigBuilder::setRequestHeaderTimeoutSec(const unsigned int sec) {
+	_requestHeaderTimeoutSec = sec;
+}
+
+void ConfigBuilder::setRequestBodyTimeoutSec(const unsigned int sec) {
+	_requestBodyTimeoutSec = sec;
 }

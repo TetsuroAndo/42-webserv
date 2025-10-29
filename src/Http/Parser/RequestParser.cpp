@@ -11,6 +11,8 @@ RequestParser::~RequestParser() {}
 void RequestParser::reset() {
 	_state = STATE_REQUEST_LINE;
 	_errorCode = 0;
+	// 追加: ボディパーサもリセット
+	_bodyParser.reset();
 }
 
 int RequestParser::getErrorCode() const { return _errorCode; }
@@ -97,3 +99,5 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 	}
 	return PARSE_INCOMPLETE;
 }
+
+RequestParser::ParseState RequestParser::getState() const { return _state; }

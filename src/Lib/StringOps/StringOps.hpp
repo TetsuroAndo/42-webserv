@@ -1,6 +1,7 @@
 #pragma once
 
-#include <sstream> // for toString
+#include <sstream>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -32,6 +33,8 @@ bool decStrToSize(const std::string &str, size_t &result);
 
 size_t sizeByteStrToSizeT(const std::string &sizeStr);
 unsigned int sizeByteStrToUInt(const std::string &sizeStr);
+
+std::string ipToString(uint32_t ip_addr);
 
 template < typename T > std::string toString(const T &value) {
 	std::ostringstream oss;

@@ -103,6 +103,8 @@ private:
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
+	unsigned int _requestHeaderTimeoutSec;
+	unsigned int _requestBodyTimeoutSec;
 
 public:
 	Config(const std::vector< Listen > &listens,
@@ -111,7 +113,8 @@ public:
 		   const std::vector< AccessLog > &accessLogs,
 		   const std::vector< ErrorLog > &errorLogs,
 		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
-		   unsigned int maxEvents);
+		   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
+		   unsigned int requestBodyTimeoutSec);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
@@ -129,6 +132,8 @@ public:
 	unsigned int getMaxRequestBodySize() const;
 	unsigned int getTimeoutSec() const;
 	unsigned int getMaxEvents() const;
+	unsigned int getRequestHeaderTimeoutSec() const;
+	unsigned int getRequestBodyTimeoutSec() const;
 
 	friend std::ostream &operator<<(std::ostream &os, const Config &config);
 };

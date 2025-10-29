@@ -5,11 +5,11 @@
 #include "../../Http/Core/HttpRequest.hpp"
 #include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Parser/RequestParser.hpp"
-#include "../../Server/Client.hpp"
 #include "../../Session/Session.hpp"
 #include "../../Socket/FdEventChanges.hpp"
 
 class CgiManager;
+class Client;
 
 /**
  * @brief ミドルウェア間で引き回す情報をまとめた構造体

@@ -62,6 +62,9 @@ setuphooks:
 	@git config --local core.hooksPath .githooks
 	@chmod -R 744 .githooks/
 
+play-netpractice: $(NAME) submodule
+	./$(NAME) $(CONF_DIR)/netpractice.yaml
+
 # =========== PYTEST ENVIRONMENT ============
 
 # Create a virtual environment and install dependencies
@@ -141,31 +144,36 @@ fill:
 view:
 	@./tools/rawCodeViewer.sh
 
+submodule:
+	git submodule update --init --recursive
+
 help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all		Build all targets"
-	@echo "  run		Run the program"
-	@echo "  clean		Clean object files"
-	@echo "  fclean		Fully clean (clean + remove executable)"
-	@echo "  re			Rebuild (fclean + all)"
-	@echo "  clog		Clean log files"
-	@echo "  c			Alias for 'clean' and 'clog'"
-	@echo "  f			Alias for 'fclean' and 'clog'"
-	@echo "  r			Alias for 're' (fclean + all) and 'clog'"
-	@echo "  debug		Build with debug flags"
-	@echo "  setuphooks	Set up git hooks"
-	@echo "  pyinit		Initialize Python virtual environment for tests"
-	@echo "  test		Run Python tests using pytest"
-	@echo "  tidy		Run static analysis using clang-tidy"
-	@echo "  check		Run static analysis using cppcheck"
-	@echo "  nm			List undefined symbols in object files"
-	@echo "  nmbin		List undefined symbols in the executable"
-	@echo "  printsrc	Print source files"
-	@echo "  printobj	Print object files"
-	@echo "  fill		Fill empty directories"
-	@echo "  view		View source code"
-	@echo "  help		Print this help message"
+	@echo "  all              Build all targets"
+	@echo "  run              Run the program"
+	@echo "  clean            Clean object files"
+	@echo "  fclean           Fully clean (clean + remove executable)"
+	@echo "  re               Rebuild (fclean + all)"
+	@echo "  clog             Clean log files"
+	@echo "  c                Alias for 'clean' and 'clog'"
+	@echo "  f                Alias for 'fclean' and 'clog'"
+	@echo "  r                Alias for 're' (fclean + all) and 'clog'"
+	@echo "  debug            Build with debug flags"
+	@echo "  setuphooks       Set up git hooks"
+	@echo "  play-netpractice Build and run with netpractice config"
+	@echo "  pyinit           Initialize Python virtual environment for tests"
+	@echo "  test             Run Python tests using pytest"
+	@echo "  tidy             Run static analysis using clang-tidy"
+	@echo "  check            Run static analysis using cppcheck"
+	@echo "  nm               List undefined symbols in object files"
+	@echo "  nmbin            List undefined symbols in the executable"
+	@echo "  printsrc         Print source files"
+	@echo "  printobj         Print object files"
+	@echo "  fill             Fill empty directories"
+	@echo "  view             View source code"
+	@echo "  submodule        Update and initialize git submodules"
+	@echo "  help             Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug setuphooks pyinit test tidy check nm nmbin printsrc printobj fill view help
+.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test tidy check nm nmbin printsrc printobj fill view submodule help

@@ -1,1 +1,218 @@
-<html><body>Test</body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Webserv Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="CGIとセッションで動くシンプルなチャットアプリ" />
+    <link rel="icon" href="/images/favicon.png" type="image/png">
+
+    <!-- 既存CSS（上書き用） -->
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'media',
+        theme: {
+          extend: { colors: { brand: { DEFAULT: '#1877f2', dark: '#166fe5' } } }
+        }
+      };
+    </script>
+
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <noscript><style>.js-only{display:none}</style></noscript>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+    <header class="border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 backdrop-blur sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="font-extrabold text-xl text-brand dark:text-blue-400">Webserv Chat</a>
+            <nav class="flex items-center gap-2 text-sm">
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/chat.html">チャットに入る</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/login.html">ログイン</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/signup.html">サインアップ</a>
+                <a class="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" href="/api/logout.py">ログアウト</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        <section class="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">シンプルで高速、CGIで動くモダンなチャット</h1>
+                <p class="mt-3 text-gray-600 dark:text-gray-300">セッション管理とCGIだけで完結。サーバはC++実装、クライアントは軽量JSでさくっと。</p>
+                <div class="mt-6 flex gap-3">
+                    <a href="/chat.html" class="inline-flex items-center px-4 py-2 rounded-md bg-brand text-white font-semibold shadow hover:bg-brand-dark transition">チャットを開く</a>
+                    <a href="/signup.html" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition">新規登録</a>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow p-4">
+                    <div class="h-56 overflow-hidden rounded-md border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3 flex flex-col" x-data="chatDemo()" x-init="start()">
+                        <div class="flex-1 overflow-hidden">
+                            <div class="space-y-2" x-ref="list">
+                                <template x-for="(m, i) in demoMessages" :key="i">
+                                    <div class="flex" :class="m.me ? 'justify-end' : 'justify-start'">
+                                        <div class="max-w-[75%]">
+                                            <template x-if="!m.me">
+                                                <div class="text-[11px] text-gray-500 dark:text-gray-400 mb-0.5" x-text="m.user"></div>
+                                            </template>
+                                            <div class="px-3 py-2 rounded-2xl shadow-sm"
+                                                 :class="m.me ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm border border-gray-200 dark:border-gray-700'">
+                                                <div class="text-sm leading-relaxed" x-text="m.text"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="mt-2 h-6 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+                            <div class="flex items-center gap-1" x-show="typing" x-transition>
+                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.2s]"></div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"></div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0.2s]"></div>
+                                <span class="ml-2">入力中...</span>
+                            </div>
+                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-12" x-data="chatPreview()" x-init="init()">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-xl font-bold">最新メッセージ</h2>
+                <button class="js-only text-sm px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800" @click="refresh()" :disabled="loading">
+                    <span x-show="!loading">手動更新</span>
+                    <span x-show="loading">更新中...</span>
+                </button>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow">
+                <div class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                    <template x-if="messages.length === 0">
+                        <div class="p-4 text-gray-500">まだメッセージはありません。</div>
+                    </template>
+                    <template x-for="m in messages" :key="m.ts + '-' + m.user">
+                        <div class="p-4">
+                            <div class="text-xs text-gray-500" x-text="'[' + m.ts + ']' "></div>
+                            <div class="mt-0.5"><span class="font-semibold text-brand" x-text="escape(m.user) + ':'"></span>
+                                <span class="ml-2" x-text="escape(m.msg)"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="p-3 flex justify-end">
+                    <a href="/chat.html" class="text-sm px-3 py-1.5 rounded-md bg-brand text-white font-semibold hover:bg-brand-dark">チャットに参加する</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-12 grid md:grid-cols-3 gap-6">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-5">
+                <h3 class="font-bold">軽量</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">バニラJS + Alpineで最小限の依存に。</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-5">
+                <h3 class="font-bold">安全</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">XSS対策として表示時にエスケープ。</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-5">
+                <h3 class="font-bold">シンプル</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">CGIエンドポイントにそのままPOST/GET。</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-16 border-t border-gray-200 dark:border-gray-800 py-6 text-center text-sm text-gray-500">
+        <div class="max-w-5xl mx-auto px-4">
+            © <span id="year"></span> Webserv Chat
+        </div>
+    </footer>
+
+    <script>
+      function chatPreview() {
+        return {
+          messages: [],
+          loading: false,
+          timerId: null,
+          async init() {
+            this.refresh();
+            this.timerId = setInterval(() => this.refresh(), 5000);
+          },
+          async refresh() {
+            if (this.loading) return;
+            this.loading = true;
+            try {
+              const res = await fetch('/api/messages.py?limit=20', { cache: 'no-store' });
+              if (!res.ok) throw new Error('fetch failed');
+              const data = await res.json();
+              this.messages = Array.isArray(data.messages) ? data.messages : [];
+            } catch (e) {
+              // silent
+            } finally {
+              this.loading = false;
+            }
+          },
+          escape(text) {
+            return String(text)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/\"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+          }
+        }
+      }
+
+      function chatDemo() {
+        return {
+          demoMessages: [],
+          typing: false,
+          _timer: null,
+          _script: [
+            { user: 'Alice', text: 'こんにちは！' },
+            { user: 'Bob', text: 'やあ、調子どう？' },
+            { user: 'Alice', text: 'C++サーバでCGIチャット作ったよ。' },
+            { user: 'Bob', text: 'すごい！セッションも動く？' },
+            { user: 'Alice', text: 'もちろん。今夜デプロイ予定〜' },
+          ],
+          start() {
+            // 定期的に台詞を流す
+            let i = 0;
+            const playOne = () => {
+              if (i >= this._script.length) { i = 0; this.demoMessages = []; }
+              const s = this._script[i++];
+              this.typing = true;
+              setTimeout(() => {
+                this.typing = false;
+                const me = Math.random() < 0.45; // ときどき自分風
+                this.demoMessages.push({ user: s.user, text: s.text, me });
+                this.$nextTick(() => {
+                  const list = this.$refs.list;
+                  if (list && list.parentElement) {
+                    list.parentElement.scrollTop = list.parentElement.scrollHeight;
+                  }
+                });
+              }, 600 + Math.random() * 600);
+            };
+            playOne();
+            this._timer = setInterval(playOne, 1600);
+          },
+          stop() { if (this._timer) clearInterval(this._timer); }
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        var y = document.getElementById('year');
+        if (y) y.textContent = new Date().getFullYear();
+      });
+    </script>
+</body>
+</html>
