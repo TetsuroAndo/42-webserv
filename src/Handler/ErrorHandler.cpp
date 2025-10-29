@@ -1,0 +1,61 @@
+#include "ErrorHandler.hpp"
+#include "HandlerUtil.hpp"
+#include "StaticFileHandler.hpp"
+#include "../Http/Core/HttpStatus.hpp"
+#include "../Lib/Logger/Log.hpp"
+#include <fstream>
+#include <sys/stat.h>
+
+ErrorHandler::ErrorHandler() {}
+ErrorHandler::~ErrorHandler() {}
+
+namespace {
+bool readErrorFile(const std::string &filePath, std::string &outContent) {
+	std::ifstream file(filePath.c_str(), std::ios::in | std::ios::binary);
+	if (!file) {
+		LOG(ERROR) << "ErrorHandler: Failed to open error file"
+				   << attr("path", filePath);
+		return false;
+	}
+
+	struct stat fileStat;
+	if (stat(filePath.c_str(), &fileStat) != 0) {
+		LOG(ERROR) << "ErrorHandler: Failed to stat error file"
+				   << attr("path", filePath);
+		return false;
+	}
+
+	const std::streampos fileSize = fileStat.st_size;
+	outContent.resize(fileSize);
+	file.read(&outContent[0], fileSize);
+	if (!file) {
+		LOG(ERROR) << "ErrorHandler: Failed to read error file"
+				   << attr("path", filePath);
+		return false;
+	}
+	file.close();
+	return true;
+}
+} // namespace
+
+HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
+	const Config &config = ctx.conf;
+	HttpResponse &res = ctx.res;
+	const int statusCode = res.getStatusCode();
+
+	const std::string &errorUri = config.getErrorPage(statusCode);
+	if (!errorUri.empty()) {
+		std::string filePath = HandlerUtil::resolvePath(errorUri, config);
+		std::string errorContent;
+		if (!filePath.empty() && readErrorFile(filePath, errorContent)) {
+			res.setBody(errorContent);
+			res.setHeader("Content-Type", "text/html");
+			return res;
+		}
+		LOG(WARNING) << "ErrorHandler: Failed to serve custom error page"
+					 << attr("uri", errorUri) << attr("path", filePath);
+	}
+
+	HandlerUtil::generateSimpleBody(ctx.req.getMethod(), res, statusCode);
+	return res;
+}

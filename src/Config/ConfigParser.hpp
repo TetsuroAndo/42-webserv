@@ -13,7 +13,6 @@ private:
 public:
 	static const std::set< std::string > VALID_SERVER_KEYS;
 	static const std::set< std::string > VALID_LISTEN_KEYS;
-	static const std::set< std::string > VALID_REDIRECT_KEYS;
 	static const std::set< std::string > VALID_LOCATION_KEYS;
 	static const std::set< std::string > VALID_ACCESS_LOG_KEYS;
 	static const std::set< std::string > VALID_ERROR_LOG_KEYS;
@@ -31,5 +30,5 @@ public:
 
 	void parseServer(const Node *serverNode);
 	void parseListens(const Node *node);
-	void parseRedirects(Node *node);
+	void parseErrorPages(Node *node);
 };

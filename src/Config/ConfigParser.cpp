@@ -31,10 +31,10 @@ void ConfigParser::validateKeys(const Node *node,
 static std::set< std::string > createValidServerKeys() {
 	std::set< std::string > keys;
 	keys.insert("listens");
-	keys.insert("redirects");
 	keys.insert("locations");
 	keys.insert("access_logs");
 	keys.insert("error_logs");
+	keys.insert("error_pages");
 	keys.insert("maxRequestBodySize");
 	keys.insert("timeoutSec");
 	keys.insert("requestHeaderTimeoutSec");
@@ -44,7 +44,6 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
 	keys.insert("indexFile");
-	keys.insert("errorFile");
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
 	keys.insert("session");
@@ -58,14 +57,6 @@ static std::set< std::string > createValidListenKeys() {
 	return keys;
 }
 
-static std::set< std::string > createValidRedirectKeys() {
-	std::set< std::string > keys;
-	keys.insert("from");
-	keys.insert("to");
-	keys.insert("code");
-	return keys;
-}
-
 static std::set< std::string > createValidLocationKeys() {
 	std::set< std::string > keys;
 	keys.insert("path");
@@ -75,8 +66,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("indexFile");
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
-	keys.insert("redirects");
-	keys.insert("errorFile");
+	keys.insert("return");
 	keys.insert("session");
 	return keys;
 }
@@ -132,8 +122,6 @@ const std::set< std::string > ConfigParser::VALID_SERVER_KEYS =
 	createValidServerKeys();
 const std::set< std::string > ConfigParser::VALID_LISTEN_KEYS =
 	createValidListenKeys();
-const std::set< std::string > ConfigParser::VALID_REDIRECT_KEYS =
-	createValidRedirectKeys();
 const std::set< std::string > ConfigParser::VALID_LOCATION_KEYS =
 	createValidLocationKeys();
 const std::set< std::string > ConfigParser::VALID_ACCESS_LOG_KEYS =
@@ -189,41 +177,22 @@ void ConfigParser::parseListens(const Node *node) {
 	_builder->setListens(listens);
 }
 
-void ConfigParser::parseRedirects(Node *node) {
+void ConfigParser::parseErrorPages(Node *node) {
 	if (!node)
-		throw std::runtime_error("Config error: missing 'redirects' node");
-	const std::vector< Node * > &redirects = node->getSeq();
-	for (std::vector< Node * >::const_iterator it = redirects.begin();
-		 it != redirects.end(); ++it) {
-		Node *r_node = *it;
-		if (r_node->getKey() != "redirect") {
-			continue;
+		return;
+
+	const std::vector< std::string > &keys = node->getKeys();
+	for (std::vector< std::string >::const_iterator it = keys.begin();
+		 it != keys.end(); ++it) {
+		int code = StringOps::stringToInt(*it);
+		if (code < 400 || code > 599) {
+			throw std::runtime_error("Config error: invalid error_page code '" + *it + "'");
 		}
-
-		const char *validKeysArr[] = {"from", "to", "code"};
-		std::set< std::string > validKeys(validKeysArr, validKeysArr + 3);
-		validateKeys(r_node, validKeys, "redirect block");
-
-		Redirect r;
-		Node *fromNode = r_node->getMapNode("from");
-		if (!fromNode)
-			throw std::runtime_error(
-				"Config error: missing 'from' key in redirect item");
-		r.fromPath = fromNode->getValue();
-
-		Node *toNode = r_node->getMapNode("to");
-		if (!toNode)
-			throw std::runtime_error(
-				"Config error: missing 'to' key in redirect item");
-		r.toUrl = toNode->getValue();
-
-		Node *codeNode = r_node->getMapNode("code");
-		if (!codeNode)
-			throw std::runtime_error(
-				"Config error: missing 'code' key in redirect item");
-		r.code = StringOps::stringToInt(codeNode->getValue());
-
-		_builder->setRedirect(r, r.fromPath);
+		Node *uriNode = node->getMapNode(*it);
+		if (!uriNode) {
+			throw std::runtime_error("Config error: missing URI for error_page code '" + *it + "'");
+		}
+		_builder->setErrorPage(code, uriNode->getValue());
 	}
 }
 
@@ -232,8 +201,9 @@ void ConfigParser::parseServer(const Node *serverNode) {
 							   "server block");
 
 	parseListens(serverNode->getMapNode("listens"));
-	if (Node *redirectsNode = serverNode->getMapNode("redirects")) {
-		parseRedirects(redirectsNode);
+
+	if (Node *errorPagesNode = serverNode->getMapNode("error_pages")) {
+		parseErrorPages(errorPagesNode);
 	}
 
 	ConfigLocationParser locationParser(_builder);
@@ -272,8 +242,6 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		_builder->setServerDefaultAutoindex(n->getValue() == "true");
 	if (Node *n = serverNode->getMapNode("indexFile"))
 		_builder->setServerDefaultIndexFile(n->getValue());
-	if (Node *n = serverNode->getMapNode("errorFile"))
-		_builder->setServerDefaultErrorFile(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("interpreterPath")) {

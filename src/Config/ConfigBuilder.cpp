@@ -8,10 +8,10 @@
 
 void ConfigBuilder::initDefaults() {
 	_listens.clear();
-	_redirects.clear();
 	_locations.clear();
 	_accessLogs.clear();
 	_errorLogs.clear();
+	_errorPages.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
 	_maxEvents = 1024;
@@ -27,7 +27,6 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.root = "./www";
 	defaultLoc.uploadStore = "./www/uploads";
 	defaultLoc.indexFile = "index.html";
-	defaultLoc.errorFile = "./www/error.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");
@@ -77,9 +76,10 @@ ConfigBuilder::ConfigBuilder(const std::string &configFile) {
 ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
-	return Config(_listens, _redirects, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents,
-				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec);
+	return Config(_listens, _locations, _accessLogs, _errorLogs,
+			  _maxRequestBodySize, _timeoutSec, _maxEvents,
+			  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
+			  _errorPages);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
@@ -104,14 +104,8 @@ void ConfigBuilder::setErrorLogs(const std::vector< ErrorLog > &errorLogs) {
 	_errorLogs = errorLogs;
 }
 
-void ConfigBuilder::setRedirects(
-	const std::map< std::string, Redirect > &redirects) {
-	_redirects = redirects;
-}
-
-void ConfigBuilder::setRedirect(const Redirect &redirect,
-								const std::string &redirectKey) {
-	_redirects[redirectKey] = redirect;
+void ConfigBuilder::setErrorPage(int code, const std::string &uri) {
+	_errorPages[code] = uri;
 }
 
 void ConfigBuilder::setLocations(
@@ -132,9 +126,6 @@ void ConfigBuilder::setLocation(const Location &location) {
 	if (newLocation.indexFile.empty()) {
 		newLocation.indexFile = defaultLocation.indexFile;
 	}
-	if (newLocation.errorFile.empty()) {
-		newLocation.errorFile = defaultLocation.errorFile;
-	}
 	_locations[newLocation.path] = newLocation;
 }
 
@@ -148,10 +139,6 @@ void ConfigBuilder::setServerDefaultAutoindex(bool autoindex) {
 
 void ConfigBuilder::setServerDefaultIndexFile(const std::string &indexFile) {
 	_locations[_defaultLocationKey].indexFile = indexFile;
-}
-
-void ConfigBuilder::setServerDefaultErrorFile(const std::string &errorFile) {
-	_locations[_defaultLocationKey].errorFile = errorFile;
 }
 
 void ConfigBuilder::setServerDefaultUploadStore(
