@@ -8,7 +8,7 @@ servers:
       locations:
         - location:
             path: /
-            root: ./www/http_test_root
+            root: ./test/test_www/static
             index: index.html
             allowedMethods:
               - GET
