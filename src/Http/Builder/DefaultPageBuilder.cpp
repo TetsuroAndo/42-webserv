@@ -29,7 +29,6 @@ void DefaultPageBuilder::generateSimpleBody(const std::string &method,
 		body += "</p>";
 	}
 	body += "</body></html>";
-	res.setBody(body);
 	res.setHeader("Content-Type", "text/html");
 	if (method == "HEAD") {
 		res.setBody("");
