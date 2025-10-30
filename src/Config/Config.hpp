@@ -44,7 +44,8 @@ struct Location {
 	std::string root;
 	std::set< std::string > allowedMethods;
 	bool autoindex;
-	std::string indexFile;
+	std::string index;
+	std::string errorFile;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
 	bool session;

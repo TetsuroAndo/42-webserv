@@ -9,7 +9,7 @@ servers:
         - location:
             path: /
             root: ./www
-            indexFile: index.html
+            index: index.html
             allowedMethods:
               - GET
               - POST

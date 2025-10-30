@@ -98,7 +98,7 @@ run_test "test/confs/valid/config_basic_get.yaml" "Basic Static File" "/hello.tx
 # 2. Directory listing (autoindex on)
 run_test "test/confs/valid/config_autoindex_on.yaml" "Autoindex On" "/no_autoindex_dir/" "200 OK" "Index of /no_autoindex_dir/" || exit 1
 
-# 3. Default file (indexFile)
+# 3. Default file (index)
 run_test "test/confs/valid/config_index_file.yaml" "Index File" "/" "200 OK" "Welcome!" || exit 1
 
 # 4. Directory listing (autoindex off) - should be 403 Forbidden

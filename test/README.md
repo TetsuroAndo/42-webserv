@@ -63,7 +63,7 @@ pytest test/test_suite/test_10_methods/test_get.py
 
 ### `test_20_routing/`
 - **設定ファイルに基づくルーティングとディレクティブの検証**
-  - `test_core_directives.py`: `root`ディレクティブに基づき正しいファイルパスが解決されること、`indexFile`がディレクトリリクエスト時に正しく提供されること、`autoindex`が有効・無効の場合のディレクトリリスティングを検証します。
+  - `test_core_directives.py`: `root`ディレクティブに基づき正しいファイルパスが解決されること、`index`がディレクトリリクエスト時に正しく提供されること、`autoindex`が有効・無効の場合のディレクトリリスティングを検証します。
   - `test_method_limits.py`: `allowedMethods`ディレクティブで許可されていないメソッドがリクエストされた場合に（405 Method Not Allowed）を返すことを検証します。
   - `test_redirects.py`: `redirect`ディレクティブに基づくHTTPリダイレクト（301, 302など）が正しく動作することを検証します。
   - `test_error_pages.py`: 404や500などのエラー発生時に、設定されたカスタムエラーページが提供されること、またはデフォルトのエラーページが提供されることを検証します。

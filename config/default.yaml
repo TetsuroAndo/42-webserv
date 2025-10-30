@@ -60,7 +60,7 @@ servers:
             path: /
             root: ./www
             uploadStore: ./www/uploads
-            indexFile: index.html
+            index: index.html
             autoindex: false
             session: true
             allowedMethods:

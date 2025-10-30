@@ -175,7 +175,8 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "\n";
 		os << "      autoindex: " << (it->second.autoindex ? "on" : "off")
 		   << "\n";
-		os << "      indexFile: " << it->second.indexFile << "\n";
+		os << "      index: " << it->second.index << "\n";
+		os << "      errorFile: " << it->second.errorFile << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      cgiConf:\n";
 		for (std::map< std::string, std::string >::const_iterator cit =

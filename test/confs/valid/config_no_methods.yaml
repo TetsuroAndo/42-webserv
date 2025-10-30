@@ -9,6 +9,6 @@ servers:
         - location:
             path: /
             root: ./www/http_test_root
-            indexFile: index.html
+            index: index.html
             autoindex: on
             uploadStore: ./tmp/default_uploads

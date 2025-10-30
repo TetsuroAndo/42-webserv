@@ -14,7 +14,7 @@ servers:
         - location:
             path: /
             root: tmp/with_args_test_root
-            indexFile: index.html
+            index: index.html
             autoindex: false
             allowedMethods:
               - GET

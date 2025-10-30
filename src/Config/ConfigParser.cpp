@@ -45,7 +45,8 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
-	keys.insert("indexFile");
+	keys.insert("index");
+	keys.insert("errorFile");
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
 	keys.insert("session");
@@ -65,7 +66,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
-	keys.insert("indexFile");
+	keys.insert("index");
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
 	keys.insert("return");
@@ -244,8 +245,8 @@ void ConfigParser::parseServer(const Node *serverNode) {
 	}
 	if (Node *n = serverNode->getMapNode("autoindex"))
 		_builder->setServerDefaultAutoindex(n->getValue() == "true");
-	if (Node *n = serverNode->getMapNode("indexFile"))
-		_builder->setServerDefaultIndexFile(n->getValue());
+	if (Node *n = serverNode->getMapNode("index"))
+		_builder->setServerDefaultindex(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("interpreterPath")) {

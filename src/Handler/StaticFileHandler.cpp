@@ -143,7 +143,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 
 	if (S_ISDIR(pathStat.st_mode)) {
 		const Location &loc = config.getLocation(req.getPath());
-		std::string indexPath = filePath + "/" + loc.indexFile;
+		std::string indexPath = filePath + "/" + loc.index;
 		struct stat indexStat;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode)) {

@@ -26,7 +26,8 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.path = _defaultLocationKey;
 	defaultLoc.root = "./www";
 	defaultLoc.uploadStore = "./www/uploads";
-	defaultLoc.indexFile = "index.html";
+	defaultLoc.index = "index.html";
+	defaultLoc.errorFile = "./www/error.html";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");
@@ -123,8 +124,8 @@ void ConfigBuilder::setLocation(const Location &location) {
 	if (newLocation.allowedMethods.empty()) {
 		newLocation.allowedMethods = defaultLocation.allowedMethods;
 	}
-	if (newLocation.indexFile.empty()) {
-		newLocation.indexFile = defaultLocation.indexFile;
+	if (newLocation.index.empty()) {
+		newLocation.index = defaultLocation.index;
 	}
 	_locations[newLocation.path] = newLocation;
 }
@@ -137,8 +138,8 @@ void ConfigBuilder::setServerDefaultAutoindex(bool autoindex) {
 	_locations[_defaultLocationKey].autoindex = autoindex;
 }
 
-void ConfigBuilder::setServerDefaultIndexFile(const std::string &indexFile) {
-	_locations[_defaultLocationKey].indexFile = indexFile;
+void ConfigBuilder::setServerDefaultindex(const std::string &index) {
+	_locations[_defaultLocationKey].index = index;
 }
 
 void ConfigBuilder::setServerDefaultUploadStore(
