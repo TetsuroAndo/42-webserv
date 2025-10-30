@@ -2,7 +2,7 @@
 #include <string>
 
 namespace Path {
-// @brief realpathのC++ラッパー。パスが存在しない場合は空文字を返す。
+/// @brief realpathのC++ラッパー。パスが存在しない場合は空文字を返す。
 std::string getAbsolutePath(const std::string &path);
 
 /// @brief 文字列操作ベースのパス正規化。パスの存在チェックは不要。
