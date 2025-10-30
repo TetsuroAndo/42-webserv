@@ -56,7 +56,7 @@ servers:
             path: /
             root: ./www
             uploadStore: ./www/uploads
-            indexFile: index.html
+            index: index.html
             errorFile: ./www/error.html
             autoindex: false
             session: true

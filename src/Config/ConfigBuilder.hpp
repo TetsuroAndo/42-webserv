@@ -46,7 +46,7 @@ public:
 	// サーバーブロック直下の設定（デフォルトロケーション）
 	void setServerDefaultRoot(const std::string &root);
 	void setServerDefaultAutoindex(bool autoindex);
-	void setServerDefaultIndexFile(const std::string &indexFile);
+	void setServerDefaultindex(const std::string &index);
 	void setServerDefaultErrorFile(const std::string &errorFile);
 	void setServerDefaultUploadStore(const std::string &uploadStore);
 	void setServerDefaultCgiConf(const std::string &extension,

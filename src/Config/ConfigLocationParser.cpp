@@ -46,9 +46,9 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *uploadStoreNode = l_node->getMapNode("uploadStore");
 		if (uploadStoreNode)
 			loc.uploadStore = uploadStoreNode->getValue();
-		Node *indexNode = l_node->getMapNode("indexFile");
+		Node *indexNode = l_node->getMapNode("index");
 		if (indexNode)
-			loc.indexFile = indexNode->getValue();
+			loc.index = indexNode->getValue();
 		Node *autoindexNode = l_node->getMapNode("autoindex");
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();

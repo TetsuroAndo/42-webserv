@@ -7,7 +7,7 @@ import requests
 
 class TestCoreDirectives:
     @pytest.mark.config("valid/config_index_file.yaml")
-    def test_indexfile_applied(self, managed_server):
+    def test_index_applied(self, managed_server):
         r = requests.get(f"{managed_server['base_url']}/")
         assert r.status_code == 200
         assert "Welcome!" in r.text

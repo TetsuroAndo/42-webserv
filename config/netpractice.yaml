@@ -17,7 +17,7 @@ servers:
         - location:
             path: /
             root: ./www/net_practice
-            indexFile: index.html
+            index: index.html
             allowedMethods:
               - GET
               - POST

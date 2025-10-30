@@ -19,7 +19,7 @@ servers:
         - location:
             path: /
             root: /tmp/www
-            indexFile: index.html
+            index: index.html
             autoindex: true
             allowedMethods:
               - GET

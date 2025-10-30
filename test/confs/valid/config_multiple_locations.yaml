@@ -9,7 +9,7 @@ servers:
         - location:
             path: /
             root: ./www/http_test_root
-            indexFile: hello.txt
+            index: hello.txt
             allowedMethods:
               - GET
 
