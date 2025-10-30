@@ -54,7 +54,7 @@ bool HttpStatus::isValidStatusCode(const int in, int left, int right) {
 		std::swap(left, right);
 	}
 	// 範囲チェック
-	if (in < left || in >= right)
+	if ((left <= in || in < right) == false)
 		return false;
 
 	bool flag = false;

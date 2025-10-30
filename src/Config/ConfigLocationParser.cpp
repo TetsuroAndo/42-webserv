@@ -1,9 +1,11 @@
 #include "ConfigLocationParser.hpp"
+#include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
 #include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
+
 #include <cerrno>
 #include <cstring>
 #include <set>
@@ -69,8 +71,8 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			loc.redirectCode = StringOps::stringToInt(codeStr);
 			loc.redirectUrl = urlStr;
 
-			// TODO: ここのバリデーションを改善する
-			if (loc.redirectCode < 300 || loc.redirectCode >= 400) {
+			if (HttpStatus::isValidStatusCode(loc.redirectCode, 300, 400) ==
+				false) {
 				throw std::runtime_error("Config error: invalid redirect code "
 										 "in 'return' directive");
 			}

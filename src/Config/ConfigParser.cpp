@@ -1,10 +1,12 @@
 #include "ConfigParser.hpp"
+#include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
 #include "ConfigBuilder.hpp"
 #include "ConfigLocationParser.hpp"
 #include "ConfigLogParser.hpp"
+
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -185,8 +187,7 @@ void ConfigParser::parseErrorPages(Node *node) {
 	for (std::vector< std::string >::const_iterator it = keys.begin();
 		 it != keys.end(); ++it) {
 		int code = StringOps::stringToInt(*it);
-		// TODO: ここを細かくする
-		if (code < 400 || code > 599) {
+		if (HttpStatus::isValidStatusCode(code, 400, 600) == false) {
 			throw std::runtime_error("Config error: invalid error_page code '" +
 									 *it + "'");
 		}
