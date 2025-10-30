@@ -1,6 +1,6 @@
 #include "CgiRouterMiddleware.hpp"
-#include "../../Handler/HandlerUtil.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "../../Http/Resolver/RequestResolver.hpp"
 #include "../../Lib/Logger/Log.hpp"
 
 CgiRouterMiddleware::CgiRouterMiddleware() { _cgiHandler = new CgiHandler(); }
@@ -18,8 +18,8 @@ bool CgiRouterMiddleware::isCgiRequest(PipelineContext &ctx,
 
 	std::string scriptVirtual;
 	std::string pathInfo;
-	if (!HandlerUtil::extractCgiScript(ctx.req.getPath(), loc, scriptVirtual,
-									   pathInfo)) {
+	if (!RequestResolver::extractCgiScript(ctx.req.getPath(), loc,
+										   scriptVirtual, pathInfo)) {
 		return false;
 	}
 

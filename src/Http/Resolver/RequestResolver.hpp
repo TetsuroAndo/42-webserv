@@ -6,7 +6,19 @@ class HttpResponse;
 class Config;
 struct Location;
 
-namespace HandlerUtil {
+namespace RequestResolver {
+
+/**
+ * @brief リクエストパスからファイルパスを解決する
+ *
+ * 例: requestPath: /index.html, config.root: /var/www/html
+ *   -> 解決されたファイルパス: /var/www/html/index.html
+ *
+ * @param requestPath リクエストされたURIのパス部分（?より前）
+ * @param config 設定
+ * @param skipExistenceCheck 存在チェックをスキップするかどうか
+ * @return 解決されたファイルパス
+ */
 std::string resolvePath(const std::string &requestPath, const Config &config,
 						bool skipExistenceCheck = false);
 
@@ -26,8 +38,4 @@ std::string resolvePath(const std::string &requestPath, const Config &config,
 bool extractCgiScript(const std::string &requestPath, const Location &loc,
 					  std::string &scriptVirtual, std::string &pathInfo);
 
-void generateSimpleBody(const std::string &method, HttpResponse &res, int code,
-						const std::string &description = "");
-
-std::string getDirName(const std::string &path);
-} // namespace HandlerUtil
+} // namespace RequestResolver

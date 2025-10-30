@@ -1,5 +1,4 @@
 #include "PipelineRouterMiddleware.hpp"
-#include "../../Handler/HandlerUtil.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 
 #include <algorithm>
