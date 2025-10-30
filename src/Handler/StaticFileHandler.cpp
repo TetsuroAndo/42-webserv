@@ -3,6 +3,8 @@
 #include "../Http/Mime/MimeType.hpp"
 #include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
+
 #include <algorithm>
 #include <cstring>
 #include <dirent.h>
@@ -142,6 +144,11 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
+		if (*req.getPath().rbegin() != '/') {
+			res.setStatusCode(301);
+			res.setHeader("Location", req.getPath() + "/");
+			return res;
+		}
 		const Location &loc = config.getLocation(req.getPath());
 		std::string indexPath = filePath + "/" + loc.index;
 		struct stat indexStat;
