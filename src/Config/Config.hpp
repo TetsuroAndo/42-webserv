@@ -39,12 +39,6 @@ struct Listen {
 	int port;
 };
 
-struct Redirect {
-	std::string fromPath;
-	std::string toUrl;
-	int code;
-};
-
 struct Location {
 	std::string path;
 	std::string root;
@@ -56,7 +50,13 @@ struct Location {
 	std::map< std::string, std::string > cgiConf;
 	bool session;
 
-	Location() : autoindex(false), session(false) {}
+	bool hasRedirect;
+	int redirectCode;
+	std::string redirectUrl;
+
+	Location()
+		: autoindex(false), session(false), hasRedirect(false),
+		  redirectCode(0) {}
 };
 
 struct AccessLog {
@@ -96,10 +96,10 @@ private:
 	AppInfo _appInfo;
 	Performance _performance;
 	std::vector< Listen > _listens;
-	std::map< std::string, Redirect > _redirects;
 	std::map< std::string, Location > _locations;
 	std::vector< AccessLog > _accessLogs;
 	std::vector< ErrorLog > _errorLogs;
+	std::map< int, std::string > _errorPages; // map: <statusCode, URI>
 	unsigned int _maxRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
@@ -108,13 +108,13 @@ private:
 
 public:
 	Config(const std::vector< Listen > &listens,
-		   const std::map< std::string, Redirect > &redirects,
 		   const std::map< std::string, Location > &locations,
 		   const std::vector< AccessLog > &accessLogs,
 		   const std::vector< ErrorLog > &errorLogs,
 		   unsigned int maxRequestBodySize, unsigned int timeoutSec,
 		   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
-		   unsigned int requestBodyTimeoutSec);
+		   unsigned int requestBodyTimeoutSec,
+		   const std::map< int, std::string > &errorPages);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
 	~Config();
@@ -122,12 +122,14 @@ public:
 	const AppInfo &getAppInfo() const;
 	const Performance &getPerformance() const;
 	const std::vector< Listen > &getListens() const;
-	const std::map< std::string, Redirect > &getRedirects() const;
-	const Redirect &getRedirect(const std::string &path) const;
 	const std::map< std::string, Location > &getLocations() const;
 	const Location &getLocation(const std::string &path) const;
 	const std::vector< AccessLog > &getAccessLogs() const;
 	const std::vector< ErrorLog > &getErrorLogs() const;
+
+	// error_pages
+	const std::map< int, std::string > &getErrorPages() const;
+	const std::string &getErrorPage(int code) const;
 
 	unsigned int getMaxRequestBodySize() const;
 	unsigned int getTimeoutSec() const;

@@ -26,23 +26,23 @@ Performance::Performance()
 // clang-format on
 
 Config::Config(const std::vector< Listen > &listens,
-			   const std::map< std::string, Redirect > &redirects,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
 			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
 			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
-			   unsigned int requestBodyTimeoutSec)
-	: _listens(listens), _redirects(redirects), _locations(locations),
-	  _accessLogs(accessLogs), _errorLogs(errorLogs),
+			   unsigned int requestBodyTimeoutSec,
+			   const std::map< int, std::string > &errorPages)
+	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
+	  _errorLogs(errorLogs), _errorPages(errorPages),
 	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
 	  _maxEvents(maxEvents), _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
 	  _requestBodyTimeoutSec(requestBodyTimeoutSec) {}
 
 Config::Config(const Config &other)
-	: _listens(other._listens), _redirects(other._redirects),
-	  _locations(other._locations), _accessLogs(other._accessLogs),
-	  _errorLogs(other._errorLogs),
+	: _listens(other._listens), _locations(other._locations),
+	  _accessLogs(other._accessLogs), _errorLogs(other._errorLogs),
+	  _errorPages(other._errorPages),
 	  _maxRequestBodySize(other._maxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
@@ -51,10 +51,10 @@ Config::Config(const Config &other)
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
 		_listens = other._listens;
-		_redirects = other._redirects;
 		_locations = other._locations;
 		_accessLogs = other._accessLogs;
 		_errorLogs = other._errorLogs;
+		_errorPages = other._errorPages;
 		_maxRequestBodySize = other._maxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
@@ -72,33 +72,17 @@ const Performance &Config::getPerformance() const { return _performance; }
 
 const std::vector< Listen > &Config::getListens() const { return _listens; }
 
-const std::map< std::string, Redirect > &Config::getRedirects() const {
-	return _redirects;
+const std::map< int, std::string > &Config::getErrorPages() const {
+	return _errorPages;
 }
 
-const Redirect &Config::getRedirect(const std::string &path) const {
-	std::string bestMatchKey = "";
-
-	for (std::map< std::string, Redirect >::const_iterator it =
-			 _redirects.begin();
-		 it != _redirects.end(); ++it) {
-		const std::string &redirectPath = it->first;
-		if (path.rfind(redirectPath, 0) == 0) {
-			if (redirectPath.length() > bestMatchKey.length()) {
-				bestMatchKey = redirectPath;
-			}
-		}
+const std::string &Config::getErrorPage(int code) const {
+	std::map< int, std::string >::const_iterator it = _errorPages.find(code);
+	if (it != _errorPages.end()) {
+		return it->second;
 	}
-	if (!bestMatchKey.empty()) {
-		std::map< std::string, Redirect >::const_iterator it =
-			_redirects.find(bestMatchKey);
-		if (it != _redirects.end()) {
-			return it->second;
-		}
-	}
-	// Return a default constructed Redirect indicating no match
-	static const Redirect noMatchRedirect = {"", "", 0};
-	return noMatchRedirect;
+	static const std::string empty;
+	return empty;
 }
 
 const std::map< std::string, Location > &Config::getLocations() const {
@@ -169,13 +153,11 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "    - " << it->interface << ":" << it->port << "\n";
 	}
 
-	os << "  redirects:\n";
-	for (std::map< std::string, Redirect >::const_iterator it =
-			 config._redirects.begin();
-		 it != config._redirects.end(); ++it) {
-		os << "    - from: " << it->second.fromPath
-		   << ", to: " << it->second.toUrl << ", code: " << it->second.code
-		   << "\n";
+	os << "  error_pages:\n";
+	for (std::map< int, std::string >::const_iterator it =
+			 config._errorPages.begin();
+		 it != config._errorPages.end(); ++it) {
+		os << "    " << it->first << ": " << it->second << "\n";
 	}
 
 	os << "  locations:\n";

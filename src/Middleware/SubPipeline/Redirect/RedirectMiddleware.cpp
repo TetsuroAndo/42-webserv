@@ -9,19 +9,14 @@ RedirectMiddleware::~RedirectMiddleware() {}
 void RedirectMiddleware::handle(PipelineContext &ctx,
 								MiddlewareProcessor *proc) {
 	const HttpRequest &req = ctx.req;
-	const Redirect &redirect = _config.getRedirect(req.getPath());
+	const Location &loc = _config.getLocation(req.getPath());
 
-	if (!redirect.fromPath.empty()) {
-		// Redirect found
-		ctx.res.setStatusCode(redirect.code);
+	if (loc.hasRedirect) {
+		ctx.res.setStatusCode(loc.redirectCode);
 		ctx.res.setHeader("Content-Type", "text/html");
 		ctx.res.setHeader("Content-Length", "0");
 
-		std::string newLocation = redirect.toUrl;
-		// Append remaining path if it's a prefix match
-		if (req.getPath().length() > redirect.fromPath.length()) {
-			newLocation += req.getPath().substr(redirect.fromPath.length());
-		}
+		std::string newLocation = loc.redirectUrl;
 		// Append query string
 		const std::map< std::string, std::string > &queries = req.getQueries();
 		if (!queries.empty()) {
@@ -36,6 +31,13 @@ void RedirectMiddleware::handle(PipelineContext &ctx,
 				if (next_it != queries.end()) {
 					newLocation += "&";
 				}
+			}
+		}
+		// Convert relative path to absolute URL if needed
+		if (!newLocation.empty() && newLocation[0] == '/') {
+			std::string host = req.getHeader("host");
+			if (!host.empty()) {
+				newLocation = "http://" + host + newLocation;
 			}
 		}
 		ctx.res.setHeader("Location", newLocation);

@@ -1,13 +1,11 @@
 #include "CgiEnvBuilder.hpp"
 
-#include "../Handler/HandlerUtil.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Base64/Base64.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Server/Client.hpp"
 #include <algorithm>
-#include <cctype>
-#include <iostream>
 #include <map>
 
 namespace {
@@ -132,7 +130,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["PATH_INFO"] = pathInfo;
 	// PATH_TRANSLATED は PATH_INFO をファイルシステムパスに解決したもの
 	env["PATH_TRANSLATED"] =
-		pathInfo.empty() ? "" : HandlerUtil::resolvePath(pathInfo, c);
+		pathInfo.empty() ? "" : RequestResolver::resolvePath(pathInfo, c);
 	env["QUERY_STRING"] = queryString(ctx.req); // リクエストの?以降をここに
 	env["REMOTE_ADDR"] = ctx.ownerClient.getIp();
 	env["REMOTE_HOST"] = "";

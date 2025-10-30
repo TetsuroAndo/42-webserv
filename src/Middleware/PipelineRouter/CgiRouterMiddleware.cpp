@@ -1,6 +1,6 @@
 #include "CgiRouterMiddleware.hpp"
-#include "../../Handler/HandlerUtil.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "../../Http/Resolver/RequestResolver.hpp"
 #include "../../Lib/Logger/Log.hpp"
 
 CgiRouterMiddleware::CgiRouterMiddleware() { _cgiHandler = new CgiHandler(); }
@@ -18,8 +18,8 @@ bool CgiRouterMiddleware::isCgiRequest(PipelineContext &ctx,
 
 	std::string scriptVirtual;
 	std::string pathInfo;
-	if (!HandlerUtil::extractCgiScript(ctx.req.getPath(), loc, scriptVirtual,
-									   pathInfo)) {
+	if (!RequestResolver::extractCgiScript(ctx.req.getPath(), loc,
+										   scriptVirtual, pathInfo)) {
 		return false;
 	}
 
@@ -46,9 +46,7 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 		if (method != "GET" && method != "POST") {
 			LOG(WARNING) << "CgiRouterMiddleware: Method not allowed for CGI."
 						 << attr("method", method);
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::METHOD_NOT_ALLOWED,
-											"Method Not Allowed for CGI");
+			ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
 			ctx.res.setHeader("Allow", "GET, POST");
 			return;
 		}
@@ -57,16 +55,14 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 			LOG(WARNING)
 				<< "CgiRouterMiddleware: Method not allowed by location config."
 				<< attr("method", method);
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::METHOD_NOT_ALLOWED);
+			ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
 			return;
 		}
 
 		// CgiHandlerに処理を委譲（CGIプロセス起動）
 		if (_cgiHandler == NULL) {
 			LOG(ERROR) << "CgiHandler is NULL";
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 			return;
 		}
 		try {
@@ -75,12 +71,14 @@ void CgiRouterMiddleware::handle(PipelineContext &ctx,
 			if (ctx.res.getStatusCode() < 400) {
 				// Server::handleClientReadが即時レスポンスを返さないようフラグを立てる
 				ctx.isCgi = true;
+			} else {
+				// CGI実行失敗時はサブパイプラインを終了し、上位に戻す
+				return;
 			}
-			// 起動失敗時は、ctx.resに設定されたエラーがそのままレスポンスされる
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "CgiHandler failed with exception: " << e.what();
-			HandlerUtil::generateSimpleBody(method, ctx.res,
-											HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			return;
 		}
 	} else {
 		proc->next(ctx);

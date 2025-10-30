@@ -1,9 +1,11 @@
 #include "ConfigLocationParser.hpp"
+#include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "Config.hpp"
 #include "ConfigBuilder.hpp"
 #include "ConfigParser.hpp"
+
 #include <cerrno>
 #include <cstring>
 #include <set>
@@ -40,9 +42,6 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *rootNode = l_node->getMapNode("root");
 		if (rootNode)
 			loc.root = rootNode->getValue();
-		Node *errorFileNode = l_node->getMapNode("errorFile");
-		if (errorFileNode)
-			loc.errorFile = errorFileNode->getValue();
 		Node *uploadStoreNode = l_node->getMapNode("uploadStore");
 		if (uploadStoreNode)
 			loc.uploadStore = uploadStoreNode->getValue();
@@ -54,6 +53,29 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			std::string value = autoindexNode->getValue();
 			loc.autoindex =
 				(value == "true" || value == "on" || value == "yes");
+		}
+
+		Node *returnNode = l_node->getMapNode("return");
+		if (returnNode) {
+			loc.hasRedirect = true;
+			std::string returnValue = returnNode->getValue();
+			std::istringstream iss(returnValue);
+			std::string codeStr;
+			std::string urlStr;
+
+			if (!(iss >> codeStr) || !(iss >> urlStr)) {
+				throw std::runtime_error(
+					"Config error: invalid 'return' directive in location " +
+					loc.path);
+			}
+			loc.redirectCode = StringOps::stringToInt(codeStr);
+			loc.redirectUrl = urlStr;
+
+			if (HttpStatus::isValidStatusCode(loc.redirectCode, 300, 400) ==
+				false) {
+				throw std::runtime_error("Config error: invalid redirect code "
+										 "in 'return' directive");
+			}
 		}
 
 		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;

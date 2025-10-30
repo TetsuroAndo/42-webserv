@@ -1,5 +1,4 @@
 #include "ConnectionHeaderMiddleware.hpp"
-#include "../../../Handler/HandlerUtil.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
 #include "../../../Lib/Logger/Log.hpp"
 #include <sstream>

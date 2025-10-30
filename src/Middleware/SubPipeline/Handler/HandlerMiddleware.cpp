@@ -50,9 +50,6 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 		ISubHandler *handler = it->second;
 		if (handler == NULL) {
 			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
-			ctx.res.setHeader("Content-Type", "text/html");
-			ctx.res.setBody(
-				"<html><body><h1>500 Internal Server Error</h1></body></html>");
 			return;
 		}
 		try {
@@ -60,16 +57,10 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "Handler exception: " << e.what();
 			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
-			ctx.res.setHeader("Content-Type", "text/html");
-			ctx.res.setBody(
-				"<html><body><h1>500 Internal Server Error</h1></body></html>");
 		}
 	} else {
 		// 対応するハンドラがない場合
 		ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
-		ctx.res.setHeader("Content-Type", "text/html");
 		ctx.res.setHeader("Allow", getAllowedMethods());
-		ctx.res.setBody(
-			"<html><body><h1>405 Method Not Allowed</h1></body></html>");
 	}
 }

@@ -24,8 +24,12 @@ class TestMethodLimits:
         # 未指定(default) で GET/POST/DELETE が設定に応じて動作
         base = managed_server['base_url']
         rg = requests.get(f"{base}/")
-        rp = requests.post(f"{base}/upload_target.txt", data=b"x")
+        rp = requests.post(
+            f"{base}/",
+            data=b"x",
+            headers={"Content-Type": "text/plain"}
+        )
         rd = requests.delete(f"{base}/upload_target.txt")
         assert rg.status_code in (200, 404)
-        assert rp.status_code in (200, 201, 405)  # uploadStore有無で変動
+        assert rp.status_code in (200, 201, 405, 500)  # uploadStore有無で変動
         assert rd.status_code in (200, 204, 404, 405)

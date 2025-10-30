@@ -1,46 +1,17 @@
-#include "HandlerUtil.hpp"
-
-#include "../Config/Config.hpp"
-#include "../Http/Core/HttpResponse.hpp"
-#include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Logger/ErrorLog/Logger.hpp"
-#include "../Lib/Path/Path.hpp"
-#include "../Lib/StringOps/StringOps.hpp"
+#include "RequestResolver.hpp"
+#include "../../Config/Config.hpp"
+#include "../../Http/Core/HttpResponse.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
+#include "../../Lib/Logger/ErrorLog/Logger.hpp"
+#include "../../Lib/Path/Path.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
 #include <cerrno>
 #include <cstring>
 
-namespace HandlerUtil {
+namespace RequestResolver {
 
-void generateSimpleBody(const std::string &method, HttpResponse &res,
-						const int code, const std::string &description) {
-	res.setStatusCode(code);
-	const std::string &reason = HttpStatus::getReason(code);
-	std::string body;
-	body += "<html><head><title>";
-	body += StringOps::toString(code);
-	body += " ";
-	body += reason;
-	body += "</title></head><body><h1>";
-	body += StringOps::toString(code);
-	body += " ";
-	body += reason;
-	body += "</h1>";
-	if (description.empty() == false) {
-		body += "<p>";
-		body += description;
-		body += "</p>";
-	}
-	body += "</body></html>";
-	res.setBody(body);
-	res.setHeader("Content-Type", "text/html");
-	if (method == "HEAD") {
-		res.setBody("");
-	} else {
-		res.setBody(body);
-	}
-}
-
-std::string resolvePath(const std::string &requestPath, const Config &config) {
+std::string resolvePath(const std::string &requestPath, const Config &config,
+						bool skipExistenceCheck) {
 	std::string bestMatchPath;
 	std::string root;
 
@@ -72,6 +43,42 @@ std::string resolvePath(const std::string &requestPath, const Config &config) {
 	}
 	resolvedPath += remainingPath;
 
+	// 存在チェックをスキップする場合の処理
+	if (skipExistenceCheck) {
+		// パスを正規化する（存在チェックなし）
+		resolvedPath = Path::normalize(resolvedPath);
+		LOG(DEBUG) << "Resolved path: " << resolvedPath;
+
+		// セキュリティチェックのために絶対パスを取得する
+		std::string rootAbsolute = Path::getAbsolutePath(root);
+		std::string fileAbsolute = Path::getAbsolutePath(resolvedPath);
+
+		// fileAbsoluteが空の場合（ファイルが存在しない場合）、rootAbsoluteから構築する
+		if (!rootAbsolute.empty()) {
+			if (fileAbsolute.empty()) {
+				// 存在しないファイルのために絶対パスをマニュアルで構築する
+				fileAbsolute = rootAbsolute;
+				if (!fileAbsolute.empty() &&
+					fileAbsolute[fileAbsolute.length() - 1] != '/') {
+					fileAbsolute += "/";
+				}
+				fileAbsolute += remainingPath;
+				fileAbsolute = Path::normalize(fileAbsolute);
+				resolvedPath = fileAbsolute;
+			}
+
+			// セキュリティチェック：ファイルパスがroot以下にあることを確認する
+			if (fileAbsolute.rfind(rootAbsolute, 0) != 0) {
+				LOG(WARNING)
+					<< "Directory traversal attempt detected. Resolved path: "
+					<< fileAbsolute << ", Real root: " << rootAbsolute;
+				return "";
+			}
+		}
+		return resolvedPath;
+	}
+
+	// 通常の存在チェックありの処理
 	std::string originalResolvedPath = resolvedPath;
 	resolvedPath = Path::getAbsolutePath(resolvedPath);
 	if (resolvedPath.empty()) {
@@ -148,14 +155,4 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 	return true;
 }
 
-std::string getDirName(const std::string &path) {
-	if (path.empty())
-		return "";
-	std::string::size_type pos = path.find_last_of('/');
-	if (pos == std::string::npos)
-		return ".";
-	if (pos == 0)
-		return "/";
-	return path.substr(0, pos);
-}
-} // namespace HandlerUtil
+} // namespace RequestResolver

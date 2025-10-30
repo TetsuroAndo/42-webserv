@@ -5,12 +5,6 @@ servers:
             interface: 0.0.0.0
             port: 8080
 
-      redirects:
-        - redirect:
-            from: /temp-old
-            to: /temp-new
-            code: 302
-
       locations:
         - location:
             path: /
@@ -19,3 +13,6 @@ servers:
             autoindex: true
             allowedMethods:
               - GET
+        - location:
+            path: /temp-old
+            return: 302 /temp-new

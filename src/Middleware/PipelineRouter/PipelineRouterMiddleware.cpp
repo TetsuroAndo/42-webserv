@@ -1,4 +1,5 @@
 #include "PipelineRouterMiddleware.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -42,7 +43,11 @@ void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 
 	if (nextProcessor != 0) {
 		nextProcessor->handle(ctx);
+		if (ctx.res.getStatusCode() >= 400) {
+			proc->next(ctx);
+		}
 	} else {
+		ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 		proc->next(ctx);
 	}
 }

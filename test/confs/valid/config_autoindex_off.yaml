@@ -7,8 +7,8 @@ servers:
 
       locations:
         - location:
-            path: /no_autoindex_dir/
-            root: ./www/http_test_root/no_autoindex_dir
+            path: /
+            root: ./test/test_www
             autoindex: false
             allowedMethods:
               - GET

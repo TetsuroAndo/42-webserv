@@ -50,14 +50,17 @@ servers:
         .php: /usr/bin/php-cgi
         .py: /usr/bin/python3
 
+      error_pages:
+        404: /errors/404.html
+        403: /errors/403.html
+        500: /errors/500.html
+
       locations:
-        # Default location, allows most things, autoindex on
         - location:
             path: /
             root: ./www
             uploadStore: ./www/uploads
             index: index.html
-            errorFile: ./www/error.html
             autoindex: false
             session: true
             allowedMethods:
@@ -79,14 +82,12 @@ servers:
               - GET
               - POST
 
-        # Nested API under /cgi-bin should also be treated as CGI
         - location:
             path: /api
             root: ./www/api/
             autoindex: false
             session: true
             interpreterPath:
-              .php: /usr/bin/php-cgi
               .py: /usr/bin/python3
             allowedMethods:
               - GET
@@ -101,10 +102,21 @@ servers:
               - POST
               - DELETE
 
-        # Location for testing 405 Method Not Allowed
         - location:
-            path: /get_only
-            root: ./www/
+            path: /cgi-bin/auth.py
+            return: 301 /login.html
+
+        - location:
+            path: /cgi-bin/send_message.py
+            return: 301 /chat.html
+
+        - location:
+            path: /cgi-bin/strange.py
+            return: 301 /error.html
+
+        - location:
+            path: /errors
+            root: ./www/static/errors
             allowedMethods:
               - GET
 
@@ -120,5 +132,12 @@ servers:
         - location:
             path: /forbidden
             root: ./www/no_perms_default
+            allowedMethods:
+              - GET
+
+        # Location for testing 405 Method Not Allowed
+        - location:
+            path: /get_only
+            root: ./www/
             allowedMethods:
               - GET

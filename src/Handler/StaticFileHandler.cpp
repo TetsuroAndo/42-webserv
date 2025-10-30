@@ -1,8 +1,8 @@
 #include "StaticFileHandler.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Http/Mime/MimeType.hpp"
+#include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "HandlerUtil.hpp"
 #include <algorithm>
 #include <cstring>
 #include <dirent.h>
@@ -75,8 +75,7 @@ void StaticFileHandler::generateDirectoryListing(
 		LOG(ERROR) << "Failed to open directory for listing"
 				   << attr("path", directoryPath)
 				   << attr("error", strerror(errno));
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return;
 	}
 
@@ -126,12 +125,11 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	LOG(INFO) << "StaticFileHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
-	std::string filePath = HandlerUtil::resolvePath(req.getPath(), config);
+	std::string filePath = RequestResolver::resolvePath(req.getPath(), config);
 	if (filePath.empty()) {
 		LOG(WARNING) << "No matching location found for URI"
 					 << attr("uri", req.getPath());
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::NOT_FOUND);
+		res.setStatusCode(HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -139,8 +137,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	if (stat(filePath.c_str(), &pathStat) != 0) {
 		LOG(WARNING) << "File or directory not found" << attr("path", filePath)
 					 << attr("error", strerror(errno));
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::NOT_FOUND);
+		res.setStatusCode(HttpStatus::NOT_FOUND);
 		return res;
 	}
 
@@ -167,8 +164,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 			} else {
 				LOG(WARNING) << "Directory listing is disabled for"
 							 << attr("path", filePath);
-				HandlerUtil::generateSimpleBody(req.getMethod(), res,
-												HttpStatus::FORBIDDEN);
+				res.setStatusCode(HttpStatus::FORBIDDEN);
 			}
 			return res;
 		}
@@ -193,19 +189,16 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 			LOG(DEBUG) << "Successfully served file" << attr("path", filePath);
 			break;
 		case FILE_READ_ERROR_PERMISSION:
-			HandlerUtil::generateSimpleBody(req.getMethod(), res,
-											HttpStatus::FORBIDDEN);
+			res.setStatusCode(HttpStatus::FORBIDDEN);
 			break;
 		case FILE_READ_ERROR:
-			HandlerUtil::generateSimpleBody(req.getMethod(), res,
-											HttpStatus::INTERNAL_SERVER_ERROR);
+			res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 			break;
 		}
 	} else {
 		LOG(WARNING) << "Requested path is not a regular file or directory"
 					 << attr("path", filePath);
-		HandlerUtil::generateSimpleBody(req.getMethod(), res,
-										HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 	return res;
 }
