@@ -185,6 +185,7 @@ void ConfigParser::parseErrorPages(Node *node) {
 	for (std::vector< std::string >::const_iterator it = keys.begin();
 		 it != keys.end(); ++it) {
 		int code = StringOps::stringToInt(*it);
+		// TODO: ここを細かくする
 		if (code < 400 || code > 599) {
 			throw std::runtime_error("Config error: invalid error_page code '" +
 									 *it + "'");

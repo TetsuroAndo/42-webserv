@@ -47,3 +47,24 @@ std::string HttpStatus::getReason(const int code) {
 	}
 	return unknown;
 }
+
+bool HttpStatus::isValidStatusCode(const int in, int left, int right) {
+	// right leftを揃える
+	if (right < left) {
+		std::swap(left, right);
+	}
+	// 範囲チェック
+	if (in < left || in >= right)
+		return false;
+
+	bool flag = false;
+	// 存在するステータスかを確認
+	for (size_t i = 0; i < sizeof(statusEntries) / sizeof(StatusEntry); ++i) {
+		if (statusEntries[i].code == in) {
+
+			flag = true;
+			break;
+		}
+	}
+	return flag;
+}

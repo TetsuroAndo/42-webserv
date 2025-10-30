@@ -45,4 +45,14 @@ enum {
  * 見つからない場合は "Internal Server Error" のフレーズを返します。
  */
 std::string getReason(int code);
+
+/**
+ * @brief ステータスinがlow <= in < highかを調べる
+ * @param int 判定するint
+ * @param int 範囲の端
+ * @param int 範囲の端
+ * @return bool 結果
+ */
+bool isValidStatusCode(int in, int left, int right);
+
 } // namespace HttpStatus
