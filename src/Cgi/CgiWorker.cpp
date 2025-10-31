@@ -2,6 +2,7 @@
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
+#include "../Lib/Write/Write.hpp"
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include <algorithm>
@@ -34,10 +35,9 @@ inline void emitCgiErrorFd(int fd, int statusCode, const std::string &detail) {
 	const std::string body = std::string("CGI Error: ") +
 							 (detail.empty() ? "CGI Error" : detail) + "\r\n";
 
-	// best-effort: write 全呼び出しでエラー時も続行
-	(void)write(fd, statusLine.c_str(), statusLine.length());
-	(void)write(fd, typeLine.c_str(), typeLine.length());
-	(void)write(fd, body.c_str(), body.length());
+	Write::xwrite(fd, statusLine.c_str(), statusLine.length());
+	Write::xwrite(fd, typeLine.c_str(), typeLine.length());
+	Write::xwrite(fd, body.c_str(), body.length());
 }
 
 inline void emitCgiError(int statusCode, const std::string &detail) {
@@ -85,8 +85,8 @@ CgiWorker::~CgiWorker() {
 				<< "CgiWorker destroyed, sending SIGKILL to running child"
 				<< attr("pid", _pid);
 			kill(_pid, SIGKILL);
-			// ここで waitpid(..., 0) を呼んで待つ必要はない。
-			// OS (init) がそのうち回収する (ゾンビになるが許容する)
+			// ここで waitpid(..., 0) を呼んで待つ必要はない
+			// プロセスの回収はCgiManagerの責務
 		}
 		// result > 0 (既に終了) または result == -1 (ECHILD)
 		// の場合は何もしなくて良い
