@@ -1,13 +1,13 @@
 #include "CgiWorker.hpp"
 #include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include <algorithm>
 #include <cstring>
 #include <errno.h>
 #include <fcntl.h>
-#include <iostream>
 #include <signal.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -26,15 +26,22 @@ namespace {
  * @param statusCode HTTPステータスコード
  * @param detail エラーの詳細
  */
-void emitCgiError(int statusCode, const std::string &detail) {
-	std::cout << "Status: " << statusCode << ' '
-			  << HttpStatus::getReason(statusCode) << "\r\n";
-	std::cout << "Content-Type: text/plain\r\n\r\n";
-	if (!detail.empty()) {
-		std::cout << "CGI Error: " << detail << "\r\n";
-	} else {
-		std::cout << "CGI Error\r\n";
-	}
+inline void emitCgiErrorFd(int fd, int statusCode, const std::string &detail) {
+	const std::string statusLine =
+		"Status: " + StringOps::toString(statusCode) + " " +
+		HttpStatus::getReason(statusCode) + "\r\n";
+	const std::string typeLine = "Content-Type: text/plain\r\n\r\n";
+	const std::string body = std::string("CGI Error: ") +
+							 (detail.empty() ? "CGI Error" : detail) + "\r\n";
+
+	// best-effort: write 全呼び出しでエラー時も続行
+	(void)write(fd, statusLine.c_str(), statusLine.length());
+	(void)write(fd, typeLine.c_str(), typeLine.length());
+	(void)write(fd, body.c_str(), body.length());
+}
+
+inline void emitCgiError(int statusCode, const std::string &detail) {
+	emitCgiErrorFd(STDOUT_FILENO, statusCode, detail);
 }
 
 inline void emit500(const std::string &detail) {
@@ -240,10 +247,11 @@ void CgiWorker::_childProcess(
 	if (dup2(_pipeIn[0], STDIN_FILENO) < 0 ||
 		dup2(_pipeOut[1], STDOUT_FILENO) < 0 ||
 		dup2(_pipeOut[1], STDERR_FILENO) < 0) {
-		// dup2 に失敗：stderrの行き先が不定のため通知不能。即終了。
-		emit500(std::string("dup2 failed (") + strerror(errno) + ")");
-		perror("dup2 failed");
-		exit(EXIT_FAILURE);
+		// dup2 に失敗：STDOUT/ERR
+		// 未接続の可能性があるため、パイプ書き端へ直接通知
+		emitCgiErrorFd(_pipeOut[1], HttpStatus::INTERNAL_SERVER_ERROR,
+					   std::string("dup2 failed (") + strerror(errno) + ")");
+		_exit(EXIT_FAILURE);
 	}
 
 	close(_pipeIn[0]);
@@ -254,15 +262,15 @@ void CgiWorker::_childProcess(
 	if (stat(interpreterPath.c_str(), &s) != 0) {
 		emit500(std::string("Interpreter not found or inaccessible (") +
 				strerror(errno) + ")");
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 	if (!S_ISREG(s.st_mode)) {
 		emit500("Interpreter is not a regular file");
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
-	if ((s.st_mode & 0111) == 0) {
+	if ((s.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0) {
 		emit500("Interpreter is not executable");
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 
 	const size_t lastSlashPos = scriptPath.find_last_of('/');
@@ -270,11 +278,11 @@ void CgiWorker::_childProcess(
 		const std::string scriptDir = scriptPath.substr(0, lastSlashPos);
 		if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
 			emit500(std::string("chdir failed (") + strerror(errno) + ")");
-			exit(EXIT_FAILURE);
+			_exit(EXIT_FAILURE);
 		}
 	}
 
-	// scriptPath の検証（存在・種類・アクセス権）
+	// scriptPath の検証（存在・種類）。読み取り権限事前チェックは行わない
 	struct stat ss;
 	if (stat(scriptPath.c_str(), &ss) != 0) {
 		int e = errno;
@@ -285,21 +293,11 @@ void CgiWorker::_childProcess(
 		} else {
 			emit500(std::string("stat(script) failed (") + strerror(e) + ")");
 		}
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 	if (!S_ISREG(ss.st_mode)) {
 		emit403("Script is not a regular file");
-		exit(EXIT_FAILURE);
-	}
-	if (access(scriptPath.c_str(), R_OK) != 0) {
-		int e = errno;
-		if (e == EACCES) {
-			emit403("Script is not readable");
-		} else {
-			emit500(std::string("access(script,R_OK) failed (") + strerror(e) +
-					")");
-		}
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 
 	std::vector< char * > envp;
@@ -314,7 +312,7 @@ void CgiWorker::_childProcess(
 	execve(interpreterPath.c_str(), argv, envp.data());
 	// execve が失敗した場合も CGI 形式で親へ通知
 	emit500(std::string("execve failed (") + strerror(errno) + ")");
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 void CgiWorker::_closePipe(int &fd) {
