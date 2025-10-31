@@ -144,7 +144,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	if (S_ISDIR(pathStat.st_mode)) {
 		std::string requestPath = req.getPath();
 		if (requestPath.empty() || requestPath[requestPath.size() - 1] != '/') {
-			res.setStatusCode(301);
+			res.setStatusCode(HttpStatus::MOVED_PERMANENTLY);
 			res.setHeader("Location", requestPath + "/");
 			return res;
 		}
