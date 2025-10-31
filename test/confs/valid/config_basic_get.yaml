@@ -12,3 +12,9 @@ servers:
             allowedMethods:
               - GET
               - HEAD
+
+        - location:
+            path: /not_allow_get
+            root: ./test/test_www/static
+            allowedMethods:
+                - HEAD
