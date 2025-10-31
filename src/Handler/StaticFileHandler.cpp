@@ -142,9 +142,10 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
-		if (*req.getPath().rbegin() != '/') {
+		std::string requestPath = req.getPath();
+		if (requestPath.empty() || requestPath[requestPath.size() - 1] != '/') {
 			res.setStatusCode(301);
-			res.setHeader("Location", req.getPath() + "/");
+			res.setHeader("Location", requestPath + "/");
 			return res;
 		}
 		const Location &loc = config.getLocation(req.getPath());
