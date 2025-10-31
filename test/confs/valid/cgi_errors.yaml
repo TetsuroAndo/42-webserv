@@ -1,0 +1,55 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8090 # テスト用に新しいポート
+      maxRequestBodySize: 1024 # 最小限
+      error_pages:
+        500: /500.html # カスタムエラーページ（今回は使われないはず）
+
+      locations:
+        # --- ベースライン: 正常に動作するCGI ---
+        - location:
+            path: /cgi-bin/
+            root: ./test/test_www/cgi-bin/
+            allowedMethods:
+              - GET
+              - POST
+            interpreterPath:
+              .py: /usr/bin/python3 # 存在する有効なインタープリタ
+
+        # --- シナリオ1: 存在しないインタープリタ ---
+        - location:
+            path: /cgi-no-interp/
+            root: ./test/test_www/cgi-bin/
+            allowedMethods:
+              - GET
+            interpreterPath:
+              .py: /non/existent/path/to/python # 存在しないパス
+
+        # --- シナリオ2: 実行権限のないインタープリタ ---
+        - location:
+            path: /cgi-bad-interp/
+            root: ./test/test_www/cgi-bin/
+            allowedMethods:
+              - GET
+            interpreterPath:
+              # hello.txt は存在するが実行権限のないファイル
+              .py: ./test/test_www/static/hello.txt
+
+        # --- シナリオ3 & 4: 動的テスト用 (インタープリタのコピーを使用) ---
+        - location:
+            path: /cgi-dyn-interp/
+            root: ./test/test_www/cgi-bin/
+            allowedMethods:
+              - GET
+            interpreterPath:
+              # テスト中に権限を変更するため、コピーを使用
+              .py: ./test/test_www/cgi-bin/my_python_copy
+
+        # --- シナリオ5: スクリプトがディレクトリ ---
+        # (設定は /cgi-bin/ を使うが、リクエスト先を操作する)
+
+        # --- シナリオ6: スクリプトの親ディレクトリに権限がない ---
+        # (設定は /cgi-bin/ を使うが、ファイルシステムを操作する)
