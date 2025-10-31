@@ -1,15 +1,55 @@
 #include "CgiWorker.hpp"
+#include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include <algorithm>
 #include <cstring>
+#include <errno.h>
 #include <fcntl.h>
+#include <iostream>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+
+namespace {
+
+/**
+ * @brief CGIエラーをemitする関数
+ * パイプFDへ直接CGIエラーを書き出す。
+ * ステータスコードと理由フレーズを出力し、エラーの詳細を出力する。
+ * エラーの詳細が空の場合は "CGI Error" と出力する。
+ *
+ * @param statusCode HTTPステータスコード
+ * @param detail エラーの詳細
+ */
+void emitCgiError(int statusCode, const std::string &detail) {
+	std::cout << "Status: " << statusCode << ' '
+			  << HttpStatus::getReason(statusCode) << "\r\n";
+	std::cout << "Content-Type: text/plain\r\n\r\n";
+	if (!detail.empty()) {
+		std::cout << "CGI Error: " << detail << "\r\n";
+	} else {
+		std::cout << "CGI Error\r\n";
+	}
+}
+
+inline void emit500(const std::string &detail) {
+	emitCgiError(HttpStatus::INTERNAL_SERVER_ERROR, detail);
+}
+
+inline void emit403(const std::string &detail) {
+	emitCgiError(HttpStatus::FORBIDDEN, detail);
+}
+
+inline void emit404(const std::string &detail) {
+	emitCgiError(HttpStatus::NOT_FOUND, detail);
+}
+
+} // namespace
 
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath)
@@ -163,7 +203,7 @@ void CgiWorker::handleRead() {
 		_responseParser.parse(_responseBuffer);
 		bool headersFound = _responseParser.headersFound();
 
-		// ★ 削除：waitpid() はメインループで一元管理される
+		// waitpid() はメインループで一元管理される
 		// 子プロセスのステータス回収は CgiManager::cleanupFinishedWorkers()
 		// で非ブロッキングに行う
 
@@ -200,6 +240,8 @@ void CgiWorker::_childProcess(
 	if (dup2(_pipeIn[0], STDIN_FILENO) < 0 ||
 		dup2(_pipeOut[1], STDOUT_FILENO) < 0 ||
 		dup2(_pipeOut[1], STDERR_FILENO) < 0) {
+		// dup2 に失敗：stderrの行き先が不定のため通知不能。即終了。
+		emit500(std::string("dup2 failed (") + strerror(errno) + ")");
 		perror("dup2 failed");
 		exit(EXIT_FAILURE);
 	}
@@ -207,13 +249,57 @@ void CgiWorker::_childProcess(
 	close(_pipeIn[0]);
 	close(_pipeOut[1]);
 
+	// interpreter の事前検証
+	struct stat s;
+	if (stat(interpreterPath.c_str(), &s) != 0) {
+		emit500(std::string("Interpreter not found or inaccessible (") +
+				strerror(errno) + ")");
+		exit(EXIT_FAILURE);
+	}
+	if (!S_ISREG(s.st_mode)) {
+		emit500("Interpreter is not a regular file");
+		exit(EXIT_FAILURE);
+	}
+	if ((s.st_mode & 0111) == 0) {
+		emit500("Interpreter is not executable");
+		exit(EXIT_FAILURE);
+	}
+
 	const size_t lastSlashPos = scriptPath.find_last_of('/');
 	if (lastSlashPos != std::string::npos) {
 		const std::string scriptDir = scriptPath.substr(0, lastSlashPos);
 		if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
-			perror("chdir failed");
+			emit500(std::string("chdir failed (") + strerror(errno) + ")");
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	// scriptPath の検証（存在・種類・アクセス権）
+	struct stat ss;
+	if (stat(scriptPath.c_str(), &ss) != 0) {
+		int e = errno;
+		if (e == ENOENT) {
+			emit404("Script not found");
+		} else if (e == EACCES) {
+			emit403("Script access denied");
+		} else {
+			emit500(std::string("stat(script) failed (") + strerror(e) + ")");
+		}
+		exit(EXIT_FAILURE);
+	}
+	if (!S_ISREG(ss.st_mode)) {
+		emit403("Script is not a regular file");
+		exit(EXIT_FAILURE);
+	}
+	if (access(scriptPath.c_str(), R_OK) != 0) {
+		int e = errno;
+		if (e == EACCES) {
+			emit403("Script is not readable");
+		} else {
+			emit500(std::string("access(script,R_OK) failed (") + strerror(e) +
+					")");
+		}
+		exit(EXIT_FAILURE);
 	}
 
 	std::vector< char * > envp;
@@ -226,7 +312,8 @@ void CgiWorker::_childProcess(
 						  const_cast< char * >(scriptPath.c_str()), NULL};
 
 	execve(interpreterPath.c_str(), argv, envp.data());
-	perror("execve failed");
+	// execve が失敗した場合も CGI 形式で親へ通知
+	emit500(std::string("execve failed (") + strerror(errno) + ")");
 	exit(EXIT_FAILURE);
 }
 
