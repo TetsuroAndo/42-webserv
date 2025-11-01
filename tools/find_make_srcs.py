@@ -15,9 +15,9 @@ def generate_makefile(directory, extensions):
     print("SRC := \\")
     for i, src in enumerate(src_files):
         if i == len(src_files) - 1:
-            print(f"    {src}")  # 最後の行にはバックスラッシュを付けない
+            print(f"	{src}")  # 最後の行にはバックスラッシュを付けない
         else:
-            print(f"    {src} \\")
+            print(f"	{src} \\")
 
 if __name__ == "__main__":
     # 使用例: カレントディレクトリ内の .cpp と .hpp ファイルを対象にする
