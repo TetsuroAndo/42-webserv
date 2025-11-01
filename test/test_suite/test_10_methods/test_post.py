@@ -55,6 +55,6 @@ def test_post_payload_too_large(managed_server):
 
 @pytest.mark.config("valid/config_basic_get.yaml")
 def test_post_method_not_allowed(managed_server):
-    url = f"{managed_server['base_url']}/hello.txt"
+    url = f"{managed_server['base_url']}/"
     resp = requests.post(url, data=b"x", headers={"Content-Type": "text/plain"})
     assert resp.status_code == 405
