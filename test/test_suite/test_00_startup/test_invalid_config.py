@@ -2,7 +2,6 @@
 設定ファイルのバリデーション（異常系）
 """
 import time
-import proc
 import pytest
 import subprocess
 from pathlib import Path

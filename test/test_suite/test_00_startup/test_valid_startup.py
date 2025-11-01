@@ -1,7 +1,6 @@
 """
 サーバーの正常起動テスト
 """
-import proc
 import pytest
 import subprocess
 import time
