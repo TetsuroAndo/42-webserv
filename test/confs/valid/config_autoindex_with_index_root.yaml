@@ -1,0 +1,16 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      locations:
+        - location:
+            path: /
+            root: ./test/test_www/static
+            index: index.html
+            autoindex: true
+            allowedMethods:
+              - GET
+              - HEAD
