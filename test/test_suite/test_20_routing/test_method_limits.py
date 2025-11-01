@@ -29,6 +29,9 @@ class TestMethodLimits:
             data=b"x",
             headers={"Content-Type": "text/plain"}
         )
+        # ./test/test_www/uploads の中身を消す
+
+
         rd = requests.delete(f"{base}/upload_target.txt")
         assert rg.status_code in (200, 404)
         assert rp.status_code in (200, 201, 405, 500)  # uploadStore有無で変動
