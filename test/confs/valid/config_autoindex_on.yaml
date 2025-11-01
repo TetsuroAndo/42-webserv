@@ -9,7 +9,7 @@ servers:
         - location:
             path: /
             root: ./test/test_www/
-            autoindex: on
+            autoindex: true
             allowedMethods:
               - GET
               - HEAD
