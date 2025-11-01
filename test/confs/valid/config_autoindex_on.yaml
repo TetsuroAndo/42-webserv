@@ -13,3 +13,11 @@ servers:
             allowedMethods:
               - GET
               - HEAD
+        - location:
+            path: /with_index
+            root: ./test/test_www/static
+            autoindex: true
+            index: index.html
+            allowedMethods:
+              - GET
+              - HEAD
