@@ -11,7 +11,7 @@ class TestValidStartup:
     """正常な起動、基本ケース"""
 
     @pytest.fixture
-    def webserv_bin(self, str=None):
+    def webserv_bin(self):
         """webservバイナリのパスを返す"""
         test_dir = Path(__file__).parent.parent.parent
         project_root = test_dir.parent
@@ -42,7 +42,7 @@ class TestValidStartup:
 
     def test_no_config_file(self, webserv_bin):
         proc = subprocess.Popen(
-            [webserv_bin, ""],
+            [webserv_bin],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
