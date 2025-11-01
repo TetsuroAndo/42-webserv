@@ -81,6 +81,12 @@ pyinit:
 test:
 	. venv/bin/activate && cd $(TEST_DIR) && pytest
 
+goInit:
+	(cd test/test_subject/ && go mod init test_subject && go get gopkg.in/yaml.v3)
+
+goTest:
+	(cd test/test_subject/ && go clean -testcache && go test ./... -v)
+
 # ============= STATIC ANALYSIS =============
 
 # clang-tidy rule
@@ -176,4 +182,4 @@ help:
 	@echo "  submodule        Update and initialize git submodules"
 	@echo "  help             Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test tidy check nm nmbin printsrc printobj fill view submodule help
+.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test goInit goTest tidy check nm nmbin printsrc printobj fill view submodule help
