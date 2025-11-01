@@ -48,6 +48,20 @@ class TestGET:
         assert response.status_code == 200
         assert "<html><body><h1>Welcome!</h1></body></html>" in response.text
 
+    @pytest.mark.config("valid/config_autoindex_with_index_root.yaml")
+    def test_autoindex_on_with_index_file_no_slush_root(self, managed_server):
+        url = f"{managed_server['base_url']}"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "<html><body><h1>Welcome!</h1></body></html>" in response.text
+
+    @pytest.mark.config("valid/config_autoindex_with_index_root.yaml")
+    def test_autoindex_on_with_index_file_root(self, managed_server):
+        url = f"{managed_server['base_url']}/"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "<html><head><title>Index of " in response.text
+
     @pytest.mark.config("valid/config_autoindex_off.yaml")
     def test_autoindex_off_forbidden(self, managed_server):
         url = f"{managed_server['base_url']}/"
