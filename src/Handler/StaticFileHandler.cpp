@@ -149,7 +149,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 		bool flag = true;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode) &&
-			requestPath[requestPath.size() - 1] != '/') {
+			(requestPath[requestPath.size() - 1] != '/' || !loc.autoindex)) {
 			LOG(DEBUG) << "Serving index file" << attr("path", indexPath);
 			filePath = indexPath;
 			pathStat = indexStat;

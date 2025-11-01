@@ -22,7 +22,7 @@ class TestGET:
 
     @pytest.mark.config("valid/config_index_file.yaml")
     def test_index_file(self, managed_server):
-        url = f"{managed_server['base_url']}/"
+        url = f"{managed_server['base_url']}"
         response = requests.get(url)
         assert response.status_code == 200
         assert "Welcome!" in response.text
