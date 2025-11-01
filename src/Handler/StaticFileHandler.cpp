@@ -143,20 +143,25 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 
 	if (S_ISDIR(pathStat.st_mode)) {
 		std::string requestPath = req.getPath();
-		if (requestPath.empty() || requestPath[requestPath.size() - 1] != '/') {
-			res.setStatusCode(HttpStatus::MOVED_PERMANENTLY);
-			res.setHeader("Location", requestPath + "/");
-			return res;
-		}
 		const Location &loc = config.getLocation(req.getPath());
 		std::string indexPath = filePath + "/" + loc.index;
 		struct stat indexStat;
+		bool flag = true;
 		if (stat(indexPath.c_str(), &indexStat) == 0 &&
-			S_ISREG(indexStat.st_mode)) {
+			S_ISREG(indexStat.st_mode) &&
+			requestPath[requestPath.size() - 1] != '/') {
 			LOG(DEBUG) << "Serving index file" << attr("path", indexPath);
 			filePath = indexPath;
 			pathStat = indexStat;
-		} else {
+			flag = false;
+		}
+		if (flag) {
+			if (requestPath.empty() ||
+				requestPath[requestPath.size() - 1] != '/') {
+				res.setStatusCode(HttpStatus::MOVED_PERMANENTLY);
+				res.setHeader("Location", requestPath + "/");
+				return res;
+			}
 			if (loc.autoindex) {
 				LOG(INFO) << "Generating directory listing for"
 						  << attr("path", filePath);
