@@ -51,6 +51,20 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *autoindexNode = l_node->getMapNode("autoindex");
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();
+			const std::string validString[] = {"true", "false", "on",
+											   "off",  "yes",	"no"};
+			bool flag = false;
+			for (unsigned long i = 0;
+				 i < sizeof(validString) / sizeof(validString[0]); ++i) {
+				if (validString[i] == value) {
+					flag = true;
+					break;
+				}
+			}
+			if (!flag) {
+				throw std::runtime_error("Config error: invalid value '" +
+										 value + "' in 'location' ");
+			}
 			loc.autoindex =
 				(value == "true" || value == "on" || value == "yes");
 		}
