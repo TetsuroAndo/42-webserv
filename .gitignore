@@ -20,6 +20,11 @@ compile_commands.json
 .cache/
 *.session
 
+# 42 tester files
+cgi_test
+ubuntu_tester
+YoupiBanane/
+
 # Created by https://www.toptal.com/developers/gitignore/api/c
 # Edit at https://www.toptal.com/developers/gitignore?templates=c
 
