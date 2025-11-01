@@ -21,8 +21,8 @@ servers:
         # Location for testing uploads and deletes specifically
         - location:
             path: /upload
-            root: ./test/post_test/uploads
-            uploadStore: ./test/post_test/uploads
+            root: ./test/test_www/
+            uploadStore: ./test/test_www/uploads
             allowedMethods:
               - POST
               - DELETE

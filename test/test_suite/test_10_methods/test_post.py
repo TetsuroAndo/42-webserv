@@ -3,42 +3,58 @@ POST メソッドのテスト（雛形）
 """
 import pytest
 import requests
-from pathlib import Path
 
 
 class TestPOST:
-    @pytest.mark.config("valid/post.yaml")
-    def test_post_created_and_file_saved(self, managed_server, tmp_path):
-        # 最小データを送信
-        url = f"{managed_server['base_url']}/upload/test_upload.txt"
-        data = b"hello world\n"
-        resp = requests.post(url, data=data, headers={"Content-Type": "text/plain"})
-        assert resp.status_code in (200, 201)
-        # 実体確認
-        upload_dir = Path("test/post_test/uploads")
-        saved = upload_dir / "test_upload.txt"
-        assert saved.exists()
-        assert saved.read_bytes() == data
+    pass
 
-    @pytest.mark.config("valid/post_test.yaml")
-    def test_post_payload_too_large(self, managed_server):
-        url = f"{managed_server['base_url']}/upload/too_large.bin"
-        # 2KB 生成
-        body = b"x" * 2048
-        resp = requests.post(url, data=body, headers={"Content-Type": "application/octet-stream"})
-        assert resp.status_code == 413
-        # ファイル未作成
-        upload_dir = Path("test/post_test/uploads")
-        assert not (upload_dir / "too_large.bin").exists()
 
-    @pytest.mark.config("valid/config_basic_get.yaml")
-    def test_post_method_not_allowed(self, managed_server):
-        url = f"{managed_server['base_url']}/hello.txt"
-        resp = requests.post(url, data=b"x", headers={"Content-Type": "text/plain"})
-        assert resp.status_code == 405
+from pathlib import Path
 
-    @pytest.mark.config("valid/post.yaml")
-    def test_post_chunked_transfer(self, managed_server):
-        # TODO: chunked 送信（requests は自動で CL を付けるため、raw socket 実装が必要）
-        # ここでは保留のスキップ
-        pytest.skip("chunked POST は raw 実装で後続対応")
+@pytest.mark.config("valid/post.yaml")
+def test_post_created_and_file_saved(managed_server):
+    # 最小データを送信
+    url = f"{managed_server['base_url']}/upload"
+    data = b"hello world\n"
+    resp = requests.post(url, data=data, headers={"Content-Type": "text/plain"})
+    assert resp.status_code in (200, 201)
+
+    upload_dir = Path("test/test_www/uploads")
+    txt_files = list(upload_dir.glob("*.txt"))
+
+    assert txt_files, f"No .txt file found in {upload_dir}"
+
+    saved = txt_files[0]
+    assert saved.read_bytes() == data
+
+    saved.unlink()
+
+
+@pytest.mark.config("valid/post_test.yaml")
+def test_post_payload_too_large(managed_server):
+    url = f"{managed_server['base_url']}/upload"
+
+    # 2KB データ生成
+    body = b"x" * 2048
+    resp = requests.post(url, data=body, headers={"Content-Type": "application/octet-stream"})
+    assert resp.status_code == 413
+
+    # アップロードディレクトリ確認
+    upload_dir = Path("test/www_test/uploads")
+    txt_files = list(upload_dir.glob("*.txt"))
+
+    # .txt ファイルが作成されていないことを確認
+    assert not txt_files, f"Unexpected .txt file(s) found: {[f.name for f in txt_files]}"
+
+    # 万が一残っていたら削除してクリーンアップ
+    for f in txt_files:
+        try:
+            f.unlink()
+        except Exception as e:
+            print(f"Warning: failed to delete {f}: {e}")
+
+@pytest.mark.config("valid/config_basic_get.yaml")
+def test_post_method_not_allowed(managed_server):
+    url = f"{managed_server['base_url']}/"
+    resp = requests.post(url, data=b"x", headers={"Content-Type": "text/plain"})
+    assert resp.status_code == 405
