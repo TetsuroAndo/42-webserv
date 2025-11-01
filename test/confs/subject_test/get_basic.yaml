@@ -16,6 +16,7 @@ servers:
       locations:
         - location:
             path: /
+            index: index.html
             root: ../../../test/test_www/static
             allowedMethods:
               - GET
