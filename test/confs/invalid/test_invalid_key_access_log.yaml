@@ -4,7 +4,7 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
-      error_logs:
-        - error_log:
+      access_logs:
+        - access_log:
             sink: console
-            invalid_key: true # Invalid key
+            invalid_key: true

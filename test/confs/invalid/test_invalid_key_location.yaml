@@ -9,4 +9,4 @@ servers:
         - location:
             path: /
             root: ./www/http_test_root
-            invalid_key: true # Invalid key
+            invalid_key: true
