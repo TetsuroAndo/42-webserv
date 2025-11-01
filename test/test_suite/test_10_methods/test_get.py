@@ -39,7 +39,7 @@ class TestGET:
         url = f"{managed_server['base_url']}/with_index/"
         response = requests.get(url)
         assert response.status_code == 200
-        assert "<title>Index of /</title>" in response.text
+        assert "<html><head><title>Index of " in response.text
 
     @pytest.mark.config("valid/config_autoindex_on.yaml")
     def test_autoindex_on_with_index_file_no_slush(self, managed_server):
