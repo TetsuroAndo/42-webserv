@@ -69,8 +69,8 @@ private:
 	bool _isDirectory;
 
 	HttpResponse()
-		: _serverName(""), _statusCode(200), _version("HTTP/1.1"),
-		  _headers(), _body(""), _isDirectory(false) {}
+		: _serverName(""), _statusCode(200), _version("HTTP/1.1"), _headers(),
+		  _body(""), _isDirectory(false) {}
 };
 
 #endif
