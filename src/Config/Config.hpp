@@ -46,7 +46,7 @@ struct Location {
 	bool autoindex;
 	int maxRequestBodySize;
 	std::string index;
-	std::string errorFile;
+	std::string directoryError;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
 	bool session;

@@ -46,7 +46,6 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
 	keys.insert("index");
-	keys.insert("errorFile");
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
 	keys.insert("session");
@@ -72,6 +71,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("return");
 	keys.insert("session");
 	keys.insert("maxRequestBodySize");
+	keys.insert("directoryError");
 	return keys;
 }
 

@@ -37,12 +37,16 @@ public:
 	const std::string &getBody() const;
 	void setBody(const std::string &body);
 
+	// directoryFlag
+	bool isDirectoryResponse() const;
+	void setIsDirectoryResponse(bool isDirectory);
+
 	void clear(const Config &c);
 
 	HttpResponse(const HttpResponse &other)
 		: _serverName(other._serverName), _statusCode(other._statusCode),
 		  _version(other._version), _headers(other._headers),
-		  _body(other._body) {}
+		  _body(other._body), _isDirectory(other._isDirectory) {}
 
 	HttpResponse &operator=(const HttpResponse &other) {
 		if (this != &other) {
@@ -51,6 +55,7 @@ public:
 			_version = other._version;
 			_headers = other._headers;
 			_body = other._body;
+			_isDirectory = other._isDirectory;
 		}
 		return *this;
 	}
@@ -61,6 +66,7 @@ private:
 	std::string _version;
 	std::map< std::string, std::vector< std::string > > _headers;
 	std::string _body;
+	bool _isDirectory;
 
 	HttpResponse();
 };
