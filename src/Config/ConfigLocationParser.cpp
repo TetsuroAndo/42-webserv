@@ -13,6 +13,13 @@
 #include <unistd.h>
 #include <vector>
 
+namespace {
+const char *const VALID_AUTOINDEX_VALUES[] = {"true", "false", "on",
+											  "off",  "yes",   "no"};
+const size_t VALID_AUTOINDEX_VALUES_SIZE =
+	sizeof(VALID_AUTOINDEX_VALUES) / sizeof(VALID_AUTOINDEX_VALUES[0]);
+} // namespace
+
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
 	: _builder(builder) {}
 ConfigLocationParser::~ConfigLocationParser() {}
@@ -54,12 +61,9 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *autoindexNode = l_node->getMapNode("autoindex");
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();
-			const std::string validString[] = {"true", "false", "on",
-											   "off",  "yes",	"no"};
 			bool flag = false;
-			for (unsigned long i = 0;
-				 i < sizeof(validString) / sizeof(validString[0]); ++i) {
-				if (validString[i] == value) {
+			for (size_t i = 0; i < VALID_AUTOINDEX_VALUES_SIZE; ++i) {
+				if (VALID_AUTOINDEX_VALUES[i] == value) {
 					flag = true;
 					break;
 				}
