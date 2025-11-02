@@ -131,6 +131,6 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			}
 		}
 		_builder->setLocation(loc);
-		_builder->setBiggestRequestBodySize(_biggestMaxBodySize);
 	}
+	_builder->setBiggestRequestBodySize(_biggestMaxBodySize);
 }
