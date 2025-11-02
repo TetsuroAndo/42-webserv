@@ -14,16 +14,21 @@ void RequestParserMiddleware::handle(PipelineContext &ctx,
 
 	if (result == PARSE_COMPLETE) {
 		const Location loc = ctx.conf.getLocation(ctx.req.getPath());
-		if (-1 < loc.maxRequestBodySize) {
-			std::size_t maxRequestBodySize = loc.maxRequestBodySize;
-			if (maxRequestBodySize < ctx.req.getBody().size()) {
-				ctx.res.setStatusCode(HttpStatus::PAYLOAD_TOO_LARGE);
-				if (proc) {
-					ErrorHandlerMiddleware errorHandler(ctx.conf);
-					errorHandler.handle(ctx, proc);
-				}
-				return;
+		// このリクエストに適用されるべき「有効な」リミットを決定する
+		std::size_t effectiveLimit;
+		if (loc.maxRequestBodySize == -1) {
+			effectiveLimit = ctx.conf.getMaxRequestBodySize();
+		} else {
+			effectiveLimit = static_cast< std::size_t >(loc.maxRequestBodySize);
+		}
+		// 有効なリミットとボディサイズを比較する
+		if (ctx.req.getBody().size() > effectiveLimit) {
+			ctx.res.setStatusCode(HttpStatus::PAYLOAD_TOO_LARGE);
+			if (proc) {
+				ErrorHandlerMiddleware errorHandler(ctx.conf);
+				errorHandler.handle(ctx, proc);
 			}
+			return;
 		}
 		if (proc) {
 			proc->next(ctx);

@@ -8,6 +8,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <unistd.h>
@@ -81,11 +82,17 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *maxRequestBodySizeNode = l_node->getMapNode("maxRequestBodySize");
 		if (maxRequestBodySizeNode) {
 			try {
-				int num =
-					StringOps::stringToInt(maxRequestBodySizeNode->getValue());
-				if (num < 0) {
-					throw std::runtime_error("");
+				size_t sizeValue = StringOps::sizeByteStrToSizeT(
+					maxRequestBodySizeNode->getValue());
+				// size_tからintへの変換（オーバーフローチェック）
+				if (sizeValue >
+					static_cast< size_t >(std::numeric_limits< int >::max())) {
+					throw std::runtime_error(
+						"Config error: maxRequestBodySize value is too large "
+						"in "
+						"'location/maxRequestBodySize' directive");
 				}
+				int num = static_cast< int >(sizeValue);
 				loc.maxRequestBodySize = num;
 				if (_biggestMaxBodySize < num) {
 					_biggestMaxBodySize = num;
