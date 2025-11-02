@@ -3,13 +3,14 @@
 
 HttpResponse::HttpResponse(const Config &conf)
 	: _serverName(conf.getAppInfo().httpServerName), _statusCode(200),
-	  _version(conf.getAppInfo().httpProtocolVersion) {}
+	  _version(conf.getAppInfo().httpProtocolVersion), _isDirectory(false) {}
 
 HttpResponse::~HttpResponse() {}
 
 void HttpResponse::clear(const Config &c) {
 	_statusCode = 200;
 	_version = c.getAppInfo().httpProtocolVersion;
+	_isDirectory = false;
 	_headers.clear();
 	_body.clear();
 }
@@ -75,3 +76,10 @@ void HttpResponse::appendHeader(const std::string &key,
 // Body
 const std::string &HttpResponse::getBody() const { return _body; }
 void HttpResponse::setBody(const std::string &body) { _body = body; }
+
+// is Directory Flag
+bool HttpResponse::isDirectoryResponse() const { return _isDirectory; }
+
+void HttpResponse::setIsDirectoryResponse(const bool isDirectory) {
+	_isDirectory = isDirectory;
+}
