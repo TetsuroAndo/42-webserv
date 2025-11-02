@@ -68,9 +68,7 @@ private:
 	std::string _body;
 	bool _isDirectory;
 
-	HttpResponse()
-		: _serverName(""), _statusCode(200), _version("HTTP/1.1"), _headers(),
-		  _body(""), _isDirectory(false) {}
+	HttpResponse();
 };
 
 #endif
