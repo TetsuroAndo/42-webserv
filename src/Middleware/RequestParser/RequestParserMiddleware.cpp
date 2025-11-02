@@ -12,7 +12,10 @@ void RequestParserMiddleware::handle(PipelineContext &ctx,
 	// これにより、ヘッダーパース中にバッファが大きくなりすぎても
 	// _bodyParserが（もし動作しても）誤ってエラーを出すのを防ぐ
 	if (ctx.parser.getState() == RequestParser::STATE_REQUEST_LINE) {
-		unsigned int biggestSize = ctx.conf.getBiggestMaxRequestBodySize();
+		unsigned int biggestSize = 0;
+		if (ctx.conf.hasBiggestMaxRequestBodySize()) {
+			biggestSize = ctx.conf.getBiggestMaxRequestBodySize();
+		}
 		unsigned int globalSize = ctx.conf.getMaxRequestBodySize();
 		ctx.req.setMaxBodySize(std::max(biggestSize, globalSize));
 	}
