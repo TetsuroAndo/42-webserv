@@ -6,7 +6,8 @@ class Node;
 class ConfigLocationParser {
 private:
 	ConfigBuilder *_builder;
-	int _biggestMaxBodySize;
+	bool _hasBiggestMaxBodySize;
+	unsigned int _biggestMaxBodySize;
 
 public:
 	ConfigLocationParser(ConfigBuilder *builder);

@@ -22,7 +22,7 @@ const size_t VALID_AUTOINDEX_VALUES_SIZE =
 } // namespace
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
-	: _builder(builder), _biggestMaxBodySize(-1) {}
+	: _builder(builder), _hasBiggestMaxBodySize(false), _biggestMaxBodySize(0) {}
 ConfigLocationParser::~ConfigLocationParser() {}
 
 void ConfigLocationParser::parseLocations(const Node *node) {
@@ -111,8 +111,10 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 					"in 'location/maxRequestBodySize' directive");
 			}
 			loc.maxRequestBodySize = static_cast< int >(sizeValue);
-			if (_biggestMaxBodySize < loc.maxRequestBodySize) {
-				_biggestMaxBodySize = loc.maxRequestBodySize;
+			if (!_hasBiggestMaxBodySize ||
+				_biggestMaxBodySize < static_cast< unsigned int >(loc.maxRequestBodySize)) {
+				_hasBiggestMaxBodySize = true;
+				_biggestMaxBodySize = static_cast< unsigned int >(loc.maxRequestBodySize);
 			}
 		}
 
@@ -151,5 +153,5 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		}
 		_builder->setLocation(loc);
 	}
-	_builder->setBiggestRequestBodySize(_biggestMaxBodySize);
+	_builder->setBiggestRequestBodySize(_hasBiggestMaxBodySize, _biggestMaxBodySize);
 }
