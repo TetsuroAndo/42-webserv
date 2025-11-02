@@ -48,6 +48,9 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *indexNode = l_node->getMapNode("index");
 		if (indexNode)
 			loc.index = indexNode->getValue();
+		Node *directoryErrorNode = l_node->getMapNode("directoryError");
+		if (directoryErrorNode)
+			loc.directoryError = directoryErrorNode->getValue();
 		Node *autoindexNode = l_node->getMapNode("autoindex");
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();
