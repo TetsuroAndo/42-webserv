@@ -1,7 +1,9 @@
 #include "Config.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "Info/App.hpp"
 #include "PerformanceConfig.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -178,6 +180,11 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "      index: " << it->second.index << "\n";
 		os << "      errorFile: " << it->second.errorFile << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
+		os << "      maxRequestBodySize: "
+		   << ((it->second.maxRequestBodySize == -1)
+				   ? "default"
+				   : StringOps::toString(it->second.maxRequestBodySize))
+		   << "\n";
 		os << "      cgiConf:\n";
 		for (std::map< std::string, std::string >::const_iterator cit =
 				 it->second.cgiConf.begin();

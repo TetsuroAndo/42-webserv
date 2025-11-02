@@ -71,6 +71,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("interpreterPath");
 	keys.insert("return");
 	keys.insert("session");
+	keys.insert("maxRequestBodySize");
 	return keys;
 }
 

@@ -78,6 +78,22 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			}
 		}
 
+		Node *maxRequestBodySizeNode = l_node->getMapNode("maxRequestBodySize");
+		if (maxRequestBodySizeNode) {
+			try {
+				int num =
+					StringOps::stringToInt(maxRequestBodySizeNode->getValue());
+				if (num < 0) {
+					throw std::runtime_error("");
+				}
+				loc.maxRequestBodySize = num;
+			} catch (...) {
+				throw std::runtime_error(
+					"Config error: invalid format in "
+					"'location/maxRequestBodySize' directive");
+			}
+		}
+
 		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;
 
 		Node *sessionNode = l_node->getMapNode("session");

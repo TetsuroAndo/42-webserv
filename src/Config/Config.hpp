@@ -44,6 +44,7 @@ struct Location {
 	std::string root;
 	std::set< std::string > allowedMethods;
 	bool autoindex;
+	int maxRequestBodySize;
 	std::string index;
 	std::string errorFile;
 	std::string uploadStore;
@@ -55,8 +56,8 @@ struct Location {
 	std::string redirectUrl;
 
 	Location()
-		: autoindex(false), session(false), hasRedirect(false),
-		  redirectCode(0) {}
+		: autoindex(false), maxRequestBodySize(-1), session(false),
+		  hasRedirect(false), redirectCode(0) {}
 };
 
 struct AccessLog {

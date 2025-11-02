@@ -1,5 +1,8 @@
 #include "RequestParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
+
+#include "../../Lib/Logger/Log.hpp"
 #include <sstream>
 
 void RequestParserMiddleware::handle(PipelineContext &ctx,
@@ -7,18 +10,27 @@ void RequestParserMiddleware::handle(PipelineContext &ctx,
 	const ParseResult result = ctx.parser.parse(ctx.req, ctx.recvBuffer);
 
 	if (result == PARSE_COMPLETE) {
+		const Location loc = ctx.conf.getLocation(ctx.req.getPath());
+		if (-1 < loc.maxRequestBodySize) {
+			std::size_t maxRequestBodySize = loc.maxRequestBodySize;
+			if (maxRequestBodySize < ctx.req.getBody().size()) {
+				ctx.res.setStatusCode(HttpStatus::PAYLOAD_TOO_LARGE);
+				if (proc) {
+					ErrorHandlerMiddleware errorHandler(ctx.conf);
+					errorHandler.handle(ctx, proc);
+				}
+				return;
+			}
+		}
 		if (proc) {
 			proc->next(ctx);
 		}
 	} else if (result == PARSE_ERROR) {
 		const int code = ctx.parser.getErrorCode();
 		ctx.res.setStatusCode(code);
-		ctx.res.setHeader("Content-Type", "text/html");
-		const std::string &reason = HttpStatus::getReason(code);
-		std::ostringstream oss;
-		oss << "<html><head><title>" << code << " " << reason
-			<< "</title></head>"
-			<< "<body><h1>" << code << " " << reason << "</h1></body></html>";
-		ctx.res.setBody(oss.str());
+		if (proc) {
+			ErrorHandlerMiddleware errorHandler(ctx.conf);
+			errorHandler.handle(ctx, proc);
+		}
 	}
 }
