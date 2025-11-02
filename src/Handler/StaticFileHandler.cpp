@@ -142,6 +142,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
+		res.setIsDirectoryResponse(true);
 		std::string requestPath = req.getPath();
 		const Location &loc = config.getLocation(req.getPath());
 		std::string indexPath = filePath + "/" + loc.index;
@@ -152,10 +153,13 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 			((requestPath[requestPath.size() - 1] != '/' ||
 			  requestPath.size() == 1) ||
 			 !loc.autoindex)) {
-			LOG(DEBUG) << "Serving index file" << attr("path", indexPath);
-			filePath = indexPath;
-			pathStat = indexStat;
-			flag = false;
+			std::cout << requestPath << " : ^ ^ : " << loc.path << std::endl;
+			if (requestPath == loc.path) {
+				LOG(DEBUG) << "Serving index file" << attr("path", indexPath);
+				filePath = indexPath;
+				pathStat = indexStat;
+				flag = false;
+			}
 		}
 		if (flag) {
 			if (requestPath.empty() ||
