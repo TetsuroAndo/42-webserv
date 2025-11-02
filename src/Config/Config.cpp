@@ -31,14 +31,17 @@ Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
-			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
-			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
+			   unsigned int maxRequestBodySize, int biggestMaxRequestBodySize,
+			   unsigned int timeoutSec, unsigned int maxEvents,
+			   unsigned int requestHeaderTimeoutSec,
 			   unsigned int requestBodyTimeoutSec,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
 	  _errorLogs(errorLogs), _errorPages(errorPages),
-	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
-	  _maxEvents(maxEvents), _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
+	  _maxRequestBodySize(maxRequestBodySize),
+	  _biggestMaxRequestBodySize(biggestMaxRequestBodySize),
+	  _timeoutSec(timeoutSec), _maxEvents(maxEvents),
+	  _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
 	  _requestBodyTimeoutSec(requestBodyTimeoutSec) {}
 
 Config::Config(const Config &other)
@@ -46,6 +49,7 @@ Config::Config(const Config &other)
 	  _accessLogs(other._accessLogs), _errorLogs(other._errorLogs),
 	  _errorPages(other._errorPages),
 	  _maxRequestBodySize(other._maxRequestBodySize),
+	  _biggestMaxRequestBodySize(other._biggestMaxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
 	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec) {}
@@ -62,6 +66,7 @@ Config &Config::operator=(const Config &other) {
 		_maxEvents = other._maxEvents;
 		_requestHeaderTimeoutSec = other._requestHeaderTimeoutSec;
 		_requestBodyTimeoutSec = other._requestBodyTimeoutSec;
+		_biggestMaxRequestBodySize = other._biggestMaxRequestBodySize;
 	}
 	return *this;
 }
@@ -126,6 +131,10 @@ const std::vector< ErrorLog > &Config::getErrorLogs() const {
 
 unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
+}
+
+int Config::getBiggestMaxRequestBodySize() const {
+	return _biggestMaxRequestBodySize;
 }
 
 unsigned int Config::getTimeoutSec() const { return _timeoutSec; }

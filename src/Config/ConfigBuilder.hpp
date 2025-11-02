@@ -14,6 +14,7 @@ private:
 	std::vector< ErrorLog > _errorLogs;
 	std::map< int, std::string > _errorPages;
 	unsigned int _maxRequestBodySize;
+	int _biggestRequestBodySize;
 	unsigned int _timeoutSec;
 	unsigned int _maxEvents;
 	std::string _defaultLocationKey;
@@ -32,6 +33,7 @@ public:
 
 	// グローバル設定
 	void setMaxRequestBodySize(unsigned int size);
+	void setBiggestRequestBodySize(int size);
 	void setTimeoutSec(unsigned int sec);
 	void setMaxEvents(unsigned int maxEvents);
 	void setListens(const std::vector< Listen > &lists);

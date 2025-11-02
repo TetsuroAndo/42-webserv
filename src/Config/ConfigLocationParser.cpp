@@ -14,7 +14,7 @@
 #include <vector>
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
-	: _builder(builder) {}
+	: _builder(builder), _biggestMaxBodySize(-1) {}
 ConfigLocationParser::~ConfigLocationParser() {}
 
 void ConfigLocationParser::parseLocations(const Node *node) {
@@ -87,6 +87,9 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 					throw std::runtime_error("");
 				}
 				loc.maxRequestBodySize = num;
+				if (_biggestMaxBodySize < num) {
+					_biggestMaxBodySize = num;
+				}
 			} catch (...) {
 				throw std::runtime_error(
 					"Config error: invalid format in "
@@ -128,5 +131,6 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			}
 		}
 		_builder->setLocation(loc);
+		_builder->setBiggestRequestBodySize(_biggestMaxBodySize);
 	}
 }

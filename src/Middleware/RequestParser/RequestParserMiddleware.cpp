@@ -7,6 +7,9 @@
 
 void RequestParserMiddleware::handle(PipelineContext &ctx,
 									 MiddlewareProcessor *proc) {
+	ctx.req.setMaxBodySize(
+		std::max(ctx.conf.getBiggestMaxRequestBodySize(),
+				 static_cast< int >(ctx.req.getMaxBodySize())));
 	const ParseResult result = ctx.parser.parse(ctx.req, ctx.recvBuffer);
 
 	if (result == PARSE_COMPLETE) {
