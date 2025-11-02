@@ -57,7 +57,7 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 			tmp = location.path + "/" + location.directoryError;
 			std::string tmpOut;
 			if (readErrorFile(RequestResolver::resolvePath(tmp, config, true),
-							  tmpOut))
+							  tmpOut) == false)
 				tmp = config.getErrorPage(statusCode);
 		}
 	}
