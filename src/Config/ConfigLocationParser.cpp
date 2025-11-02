@@ -102,26 +102,17 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 
 		Node *maxRequestBodySizeNode = l_node->getMapNode("maxRequestBodySize");
 		if (maxRequestBodySizeNode) {
-			try {
-				size_t sizeValue = StringOps::sizeByteStrToSizeT(
-					maxRequestBodySizeNode->getValue());
-				// size_tからintへの変換（オーバーフローチェック）
-				if (sizeValue >
-					static_cast< size_t >(std::numeric_limits< int >::max())) {
-					throw std::runtime_error(
-						"Config error: maxRequestBodySize value is too large "
-						"in "
-						"'location/maxRequestBodySize' directive");
-				}
-				int num = static_cast< int >(sizeValue);
-				loc.maxRequestBodySize = num;
-				if (_biggestMaxBodySize < num) {
-					_biggestMaxBodySize = num;
-				}
-			} catch (...) {
+			size_t sizeValue = StringOps::sizeByteStrToSizeT(
+				maxRequestBodySizeNode->getValue());
+			if (sizeValue >
+				static_cast< size_t >(std::numeric_limits< int >::max())) {
 				throw std::runtime_error(
-					"Config error: invalid format in "
-					"'location/maxRequestBodySize' directive");
+					"Config error: maxRequestBodySize value is too large "
+					"in 'location/maxRequestBodySize' directive");
+			}
+			loc.maxRequestBodySize = static_cast< int >(sizeValue);
+			if (_biggestMaxBodySize < loc.maxRequestBodySize) {
+				_biggestMaxBodySize = loc.maxRequestBodySize;
 			}
 		}
 
