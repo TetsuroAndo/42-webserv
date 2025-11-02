@@ -8,6 +8,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <unistd.h>
@@ -21,7 +22,7 @@ const size_t VALID_AUTOINDEX_VALUES_SIZE =
 } // namespace
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
-	: _builder(builder) {}
+	: _builder(builder), _hasBiggestMaxBodySize(false), _biggestMaxBodySize(0) {}
 ConfigLocationParser::~ConfigLocationParser() {}
 
 void ConfigLocationParser::parseLocations(const Node *node) {
@@ -99,6 +100,24 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			}
 		}
 
+		Node *maxRequestBodySizeNode = l_node->getMapNode("maxRequestBodySize");
+		if (maxRequestBodySizeNode) {
+			size_t sizeValue = StringOps::sizeByteStrToSizeT(
+				maxRequestBodySizeNode->getValue());
+			if (sizeValue >
+				static_cast< size_t >(std::numeric_limits< int >::max())) {
+				throw std::runtime_error(
+					"Config error: maxRequestBodySize value is too large "
+					"in 'location/maxRequestBodySize' directive");
+			}
+			loc.maxRequestBodySize = static_cast< int >(sizeValue);
+			if (!_hasBiggestMaxBodySize ||
+				_biggestMaxBodySize < static_cast< unsigned int >(loc.maxRequestBodySize)) {
+				_hasBiggestMaxBodySize = true;
+				_biggestMaxBodySize = static_cast< unsigned int >(loc.maxRequestBodySize);
+			}
+		}
+
 		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;
 
 		Node *sessionNode = l_node->getMapNode("session");
@@ -134,4 +153,5 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		}
 		_builder->setLocation(loc);
 	}
+	_builder->setBiggestRequestBodySize(_hasBiggestMaxBodySize, _biggestMaxBodySize);
 }
