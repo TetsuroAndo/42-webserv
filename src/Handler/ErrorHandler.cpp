@@ -53,7 +53,13 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 	std::string tmp;
 	if (res.isDirectoryResponse()) {
 		const Location location = config.getLocation(ctx.req.getPath());
-		tmp = location.path + "/" + location.directoryError;
+		if (location.directoryError.empty() == false) {
+			tmp = location.path + "/" + location.directoryError;
+			std::string tmpOut;
+			if (readErrorFile(RequestResolver::resolvePath(tmp, config, true),
+							  tmpOut))
+				tmp = config.getErrorPage(statusCode);
+		}
 	}
 	if (tmp.empty())
 		tmp = config.getErrorPage(statusCode);
