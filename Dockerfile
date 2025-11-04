@@ -27,7 +27,7 @@ RUN wget https://cmake.org/files/v4.0/cmake-4.0.3.tar.gz \
     && rm -f cmake-4.0.3.tar.gz
 
 # Build command:
-#   docker build --load -t webserv-devenv:latest .
+#   docker buildx build --load -t webserv-devenv:latest .
 #
 # Run command:
 #   docker run -it --rm -v $(pwd):/workspace -w /workspace webserv-devenv:latest bash

@@ -134,7 +134,7 @@ $(NAME):
 	@echo "[Docker Image]: $(DOCKER_IMAGE):$(DOCKER_TAG)"
 	@if ! docker image inspect $(DOCKER_IMAGE):$(DOCKER_TAG) >/dev/null 2>&1; then \
 		echo "Building Docker image..."; \
-		docker build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR); \
+		docker buildx build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR); \
 	fi
 	@echo "Building $(NAME) in Docker container..."
 	@docker run --rm -v $(ROOT_DIR):/workspace -w /workspace $(DOCKER_IMAGE):$(DOCKER_TAG) \
@@ -149,7 +149,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 docker-build:
 	@echo "Building Docker image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
-	@docker build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR)
+	@docker buildx build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR)
 
 docker-clean:
 	@echo "Removing Docker image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
