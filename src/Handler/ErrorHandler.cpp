@@ -50,10 +50,23 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 	HttpResponse &res = ctx.res;
 	const int statusCode = res.getStatusCode();
 
-	const std::string &errorUri = config.getErrorPage(statusCode);
+	std::string tmp;
+	if (res.isDirectoryResponse()) {
+		const Location location = config.getLocation(ctx.req.getPath());
+		if (location.directoryError.empty() == false) {
+			tmp = location.path + "/" + location.directoryError;
+			std::string tmpOut;
+			if (readErrorFile(RequestResolver::resolvePath(tmp, config, true),
+							  tmpOut) == false)
+				tmp = config.getErrorPage(statusCode);
+		}
+	}
+	if (tmp.empty())
+		tmp = config.getErrorPage(statusCode);
+	const std::string &errorUri = tmp;
 	if (!errorUri.empty()) {
 		// エラーページパスを位置照合で解決する（存在チェックなし）
-		std::string resolvedPath =
+		const std::string resolvedPath =
 			RequestResolver::resolvePath(errorUri, config, true);
 		if (!resolvedPath.empty()) {
 			std::string errorContent;

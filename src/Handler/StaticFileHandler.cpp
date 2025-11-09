@@ -142,6 +142,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	}
 
 	if (S_ISDIR(pathStat.st_mode)) {
+		res.setIsDirectoryResponse(true);
 		std::string requestPath = req.getPath();
 		const Location &loc = config.getLocation(req.getPath());
 		std::string indexPath = filePath + "/" + loc.index;

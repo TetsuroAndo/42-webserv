@@ -62,6 +62,7 @@ servers:
             uploadStore: ./www/uploads
             index: index.html
             autoindex: false
+            directoryError: directoryError.html
             session: true
             allowedMethods:
               - GET

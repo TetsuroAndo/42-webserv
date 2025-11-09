@@ -14,6 +14,8 @@ void ConfigBuilder::initDefaults() {
 	_errorPages.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
+	_hasBiggestRequestBodySize = false;
+	_biggestRequestBodySize = 0;
 	_maxEvents = 1024;
 
 	_timeoutSec = 60;
@@ -27,7 +29,7 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.root = "./www";
 	defaultLoc.uploadStore = "./www/uploads";
 	defaultLoc.index = "index.html";
-	defaultLoc.errorFile = "./www/error.html";
+	defaultLoc.directoryError = "";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");
@@ -78,13 +80,19 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents,
-				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
+				  _maxRequestBodySize, _hasBiggestRequestBodySize,
+				  _biggestRequestBodySize, _timeoutSec,
+				  _maxEvents, _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
 				  _errorPages);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
 	_maxRequestBodySize = size;
+}
+
+void ConfigBuilder::setBiggestRequestBodySize(bool hasValue, unsigned int size) {
+	_hasBiggestRequestBodySize = hasValue;
+	_biggestRequestBodySize = size;
 }
 
 void ConfigBuilder::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }

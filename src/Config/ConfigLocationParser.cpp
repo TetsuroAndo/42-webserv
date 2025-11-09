@@ -8,13 +8,21 @@
 
 #include <cerrno>
 #include <cstring>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <unistd.h>
 #include <vector>
 
+namespace {
+const char *const VALID_AUTOINDEX_VALUES[] = {"true", "false", "on",
+											  "off",  "yes",   "no"};
+const size_t VALID_AUTOINDEX_VALUES_SIZE =
+	sizeof(VALID_AUTOINDEX_VALUES) / sizeof(VALID_AUTOINDEX_VALUES[0]);
+} // namespace
+
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
-	: _builder(builder) {}
+	: _builder(builder), _hasBiggestMaxBodySize(false), _biggestMaxBodySize(0) {}
 ConfigLocationParser::~ConfigLocationParser() {}
 
 void ConfigLocationParser::parseLocations(const Node *node) {
@@ -48,9 +56,23 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *indexNode = l_node->getMapNode("index");
 		if (indexNode)
 			loc.index = indexNode->getValue();
+		Node *directoryErrorNode = l_node->getMapNode("directoryError");
+		if (directoryErrorNode)
+			loc.directoryError = directoryErrorNode->getValue();
 		Node *autoindexNode = l_node->getMapNode("autoindex");
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();
+			bool flag = false;
+			for (size_t i = 0; i < VALID_AUTOINDEX_VALUES_SIZE; ++i) {
+				if (VALID_AUTOINDEX_VALUES[i] == value) {
+					flag = true;
+					break;
+				}
+			}
+			if (!flag) {
+				throw std::runtime_error("Config error: invalid value '" +
+										 value + "' in 'location' ");
+			}
 			loc.autoindex =
 				(value == "true" || value == "on" || value == "yes");
 		}
@@ -75,6 +97,24 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				false) {
 				throw std::runtime_error("Config error: invalid redirect code "
 										 "in 'return' directive");
+			}
+		}
+
+		Node *maxRequestBodySizeNode = l_node->getMapNode("maxRequestBodySize");
+		if (maxRequestBodySizeNode) {
+			size_t sizeValue = StringOps::sizeByteStrToSizeT(
+				maxRequestBodySizeNode->getValue());
+			if (sizeValue >
+				static_cast< size_t >(std::numeric_limits< int >::max())) {
+				throw std::runtime_error(
+					"Config error: maxRequestBodySize value is too large "
+					"in 'location/maxRequestBodySize' directive");
+			}
+			loc.maxRequestBodySize = static_cast< int >(sizeValue);
+			if (!_hasBiggestMaxBodySize ||
+				_biggestMaxBodySize < static_cast< unsigned int >(loc.maxRequestBodySize)) {
+				_hasBiggestMaxBodySize = true;
+				_biggestMaxBodySize = static_cast< unsigned int >(loc.maxRequestBodySize);
 			}
 		}
 
@@ -113,4 +153,5 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		}
 		_builder->setLocation(loc);
 	}
+	_builder->setBiggestRequestBodySize(_hasBiggestMaxBodySize, _biggestMaxBodySize);
 }
