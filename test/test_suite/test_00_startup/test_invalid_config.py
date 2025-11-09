@@ -48,6 +48,10 @@ class TestInvalidConfig:
                 stderr=subprocess.PIPE,
                 text=True,
             )
+            assert proc.returncode != 0, (
+                f"終了コードが0です: {proc.returncode}\n"
+                f"stderr:\n{proc.stderr}"
+            )
             time.sleep(0.5)
 
             if proc.poll() is None:
