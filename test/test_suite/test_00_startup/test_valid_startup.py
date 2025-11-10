@@ -4,6 +4,7 @@
 import pytest
 import subprocess
 import time
+import requests
 from pathlib import Path
 
 
@@ -56,3 +57,38 @@ class TestValidStartup:
             else:
                 stdout, stderr = proc.communicate()
                 pytest.fail(f"有効な設定ファイル {yaml_file.name} が起動に失敗: {stderr}")
+
+    @pytest.mark.config("valid/multi_listen.yaml")
+    def test_multi_listen(self, webserv_bin):
+        proc = subprocess.Popen(
+            [webserv_bin],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        time.sleep(0.5)
+
+        try:
+            if proc.poll():
+                url = "http://0.0.0.0:8080/"
+                response = requests.get(url)
+                assert response.status_code == 200
+                assert "Welcome!" in response.text
+                assert "text/html" in response.headers.get("Content-Type", "")
+
+                url = "http://127.0.0.1:3000/"
+                response = requests.get(url)
+                assert response.status_code == 200
+                assert "Welcome!" in response.text
+                assert "text/html" in response.headers.get("Content-Type", "")
+
+                proc.terminate()
+                proc.wait()
+            else:
+                assert False, "起動に失敗"
+        except:
+            if proc.poll():
+                proc.terminate()
+                proc.wait()
+

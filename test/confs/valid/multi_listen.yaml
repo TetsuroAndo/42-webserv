@@ -4,9 +4,14 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
+        - listen:
+            interface: 127.0.0.1
+            port: 3000
 
-      error_logs:
-        - error_log:
-            sink: console
-            level: debug
-            disable: false
+      locations:
+        - location:
+            path: /
+            root: ./test/test_www/static
+            allowedMethods:
+              - HEAD
+              - GET
