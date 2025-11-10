@@ -65,7 +65,8 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 				return PARSE_ERROR;
 			}
 			_state = STATE_BODY;
-			return PARSE_HEADERS_COMPLETE;
+			stateChanged = true;
+			break;
 		}
 		case STATE_BODY: {
 
