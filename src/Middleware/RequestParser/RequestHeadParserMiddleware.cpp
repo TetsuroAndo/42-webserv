@@ -1,6 +1,7 @@
 #include "RequestHeadParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 #include "../../Lib/Logger/Log.hpp"
+#include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include <algorithm>
 
 void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
