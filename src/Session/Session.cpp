@@ -33,7 +33,7 @@ std::string Session::getOptionalData(const std::string &key,
 time_t Session::getLastAccess() const { return _lastAccessTime; }
 
 bool Session::hasData(const std::string &key) const {
-	return _data.count(key) > 0;
+	return _data.find(key) != _data.end();
 }
 
 void Session::setData(const std::string &key, const std::string &value) {

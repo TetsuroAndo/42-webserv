@@ -6,9 +6,14 @@
 
 class Token {
 public:
-	Token();
-	~Token();
+	static Token &getInstance();
 
-	static std::string genToken(size_t length = 32);
-	static std::string genToken(size_t length, const std::string &charset);
+	std::string genToken(size_t length = 32);
+	std::string genToken(size_t length, const std::string &charset);
+
+private:
+	Token();
+	Token(const Token &);
+	Token &operator=(const Token &);
+	~Token();
 };

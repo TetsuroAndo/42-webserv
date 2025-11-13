@@ -1,13 +1,19 @@
 #include "Token.hpp"
 
+#include "seed.hpp"
+
 #include <algorithm>
 #include <cstdlib>
-#include <ctime>
 #include <string>
 
-Token::Token() { std::srand(static_cast< unsigned int >(std::time(NULL))); }
+Token::Token() { std::srand(generateSeed()); }
 
 Token::~Token() {}
+
+Token &Token::getInstance() {
+	static Token instance;
+	return instance;
+}
 
 namespace {
 long uniformRand(long min, long max) {

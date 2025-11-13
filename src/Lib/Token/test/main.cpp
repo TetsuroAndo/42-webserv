@@ -1,4 +1,5 @@
 #include "../Token.hpp"
+#include "../seed.hpp"
 #include <cassert>
 #include <iostream>
 #include <set>
@@ -6,7 +7,10 @@
 #include <vector>
 
 int main() {
-	Token hasher;
+	unsigned int seed = generateSeed();
+	std::cout << "Seed: " << seed << std::endl;
+
+	Token &hasher = Token::getInstance();
 
 	// Test 1: Default length token
 	std::string token1 = hasher.genToken();

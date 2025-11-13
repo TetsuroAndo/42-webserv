@@ -19,8 +19,8 @@ SessionManager::~SessionManager() {
 std::string SessionManager::generateSessionId() const {
 	std::string sessionId;
 	do {
-		sessionId = _token.genToken(32);
-	} while (_sessions.count(sessionId) > 0);
+		sessionId = Token::getInstance().genToken(32);
+	} while (_sessions.find(sessionId) != _sessions.end());
 	return sessionId;
 }
 

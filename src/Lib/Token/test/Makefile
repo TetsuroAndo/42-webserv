@@ -1,6 +1,6 @@
 NAME = hash_test
 
-SRCS = main.cpp ../Token.cpp
+SRCS = main.cpp ../Token.cpp ../seed.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = g++
