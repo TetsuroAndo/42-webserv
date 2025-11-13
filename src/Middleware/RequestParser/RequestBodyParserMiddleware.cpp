@@ -1,7 +1,6 @@
 #include "RequestBodyParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 #include "../../Lib/Logger/Log.hpp"
-#include <algorithm>
 
 void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 										 MiddlewareProcessor *proc) {
