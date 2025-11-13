@@ -31,14 +31,16 @@ Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
-			   unsigned int maxRequestBodySize, int biggestMaxRequestBodySize,
-			   unsigned int timeoutSec, unsigned int maxEvents,
+			   unsigned int maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
+			   unsigned int biggestMaxRequestBodySize, unsigned int timeoutSec,
+			   unsigned int maxEvents,
 			   unsigned int requestHeaderTimeoutSec,
 			   unsigned int requestBodyTimeoutSec,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
 	  _errorLogs(errorLogs), _errorPages(errorPages),
 	  _maxRequestBodySize(maxRequestBodySize),
+	  _hasBiggestMaxRequestBodySize(hasBiggestMaxRequestBodySize),
 	  _biggestMaxRequestBodySize(biggestMaxRequestBodySize),
 	  _timeoutSec(timeoutSec), _maxEvents(maxEvents),
 	  _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
@@ -49,6 +51,7 @@ Config::Config(const Config &other)
 	  _accessLogs(other._accessLogs), _errorLogs(other._errorLogs),
 	  _errorPages(other._errorPages),
 	  _maxRequestBodySize(other._maxRequestBodySize),
+	  _hasBiggestMaxRequestBodySize(other._hasBiggestMaxRequestBodySize),
 	  _biggestMaxRequestBodySize(other._biggestMaxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
@@ -62,11 +65,12 @@ Config &Config::operator=(const Config &other) {
 		_errorLogs = other._errorLogs;
 		_errorPages = other._errorPages;
 		_maxRequestBodySize = other._maxRequestBodySize;
+		_hasBiggestMaxRequestBodySize = other._hasBiggestMaxRequestBodySize;
+		_biggestMaxRequestBodySize = other._biggestMaxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
 		_requestHeaderTimeoutSec = other._requestHeaderTimeoutSec;
 		_requestBodyTimeoutSec = other._requestBodyTimeoutSec;
-		_biggestMaxRequestBodySize = other._biggestMaxRequestBodySize;
 	}
 	return *this;
 }
@@ -133,7 +137,11 @@ unsigned int Config::getMaxRequestBodySize() const {
 	return _maxRequestBodySize;
 }
 
-int Config::getBiggestMaxRequestBodySize() const {
+bool Config::hasBiggestMaxRequestBodySize() const {
+	return _hasBiggestMaxRequestBodySize;
+}
+
+unsigned int Config::getBiggestMaxRequestBodySize() const {
 	return _biggestMaxRequestBodySize;
 }
 

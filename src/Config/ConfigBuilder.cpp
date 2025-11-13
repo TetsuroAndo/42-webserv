@@ -14,6 +14,8 @@ void ConfigBuilder::initDefaults() {
 	_errorPages.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
+	_hasBiggestRequestBodySize = false;
+	_biggestRequestBodySize = 0;
 	_maxEvents = 1024;
 
 	_timeoutSec = 60;
@@ -78,7 +80,8 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _biggestRequestBodySize, _timeoutSec,
+				  _maxRequestBodySize, _hasBiggestRequestBodySize,
+				  _biggestRequestBodySize, _timeoutSec,
 				  _maxEvents, _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
 				  _errorPages);
 }
@@ -87,7 +90,8 @@ void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
 	_maxRequestBodySize = size;
 }
 
-void ConfigBuilder::setBiggestRequestBodySize(int size) {
+void ConfigBuilder::setBiggestRequestBodySize(bool hasValue, unsigned int size) {
+	_hasBiggestRequestBodySize = hasValue;
 	_biggestRequestBodySize = size;
 }
 
