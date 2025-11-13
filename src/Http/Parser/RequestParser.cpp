@@ -11,7 +11,6 @@ RequestParser::~RequestParser() {}
 void RequestParser::reset() {
 	_state = STATE_REQUEST_LINE;
 	_errorCode = 0;
-	// 追加: ボディパーサもリセット
 	_bodyParser.reset();
 }
 
@@ -66,8 +65,7 @@ ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
 				return PARSE_ERROR;
 			}
 			_state = STATE_BODY;
-			stateChanged = true;
-			break;
+			return PARSE_HEADERS_COMPLETE;
 		}
 		case STATE_BODY: {
 
