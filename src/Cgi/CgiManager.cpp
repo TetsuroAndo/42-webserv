@@ -46,11 +46,10 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 }
 
 CgiManager::CgiManager(const Config &c)
-	: _timeoutSeconds(c.getTimeoutSec()),
-	  _maxWorkers(std::max< size_t >(
+	: _timeoutSeconds(static_cast< time_t >(c.getTimeoutSec())),
+	  _maxWorkers(std::max(
 		  c.getPerformance().cgiMinWorkers,
-		  std::min< size_t >(c.getMaxEvents(),
-							 c.getPerformance().cgiMaxWorkers))) {}
+		  std::min(c.getMaxEvents(), c.getPerformance().cgiMaxWorkers))) {}
 
 CgiManager::~CgiManager() {
 	std::vector< CgiWorker * >::iterator it = _workers.begin();
