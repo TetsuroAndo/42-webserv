@@ -11,6 +11,7 @@ RequestParser::~RequestParser() {}
 void RequestParser::reset() {
 	_state = STATE_REQUEST_LINE;
 	_errorCode = 0;
+	// 追加: ボディパーサもリセット
 	_bodyParser.reset();
 }
 
