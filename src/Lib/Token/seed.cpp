@@ -29,12 +29,6 @@ unsigned int generateSeed() {
 	seed ^= reinterpret_cast< size_t >(&seed);
 
 #if defined(__unix__) || defined(__APPLE__) || defined(__MACH__)
-	seed ^= static_cast< size_t >(getpid()) << 8; // Process ID
-	struct timeval tv; // gettimeofday()でマイクロ秒精度の時刻を取得
-	if (gettimeofday(&tv, NULL) == 0) {
-		seed ^= static_cast< size_t >(tv.tv_usec);
-		seed ^= static_cast< size_t >(tv.tv_sec) << 24;
-	}
 	// /dev/urandomからエントロピー取得を試行
 	int fd = open("/dev/urandom", O_RDONLY);
 	if (fd >= 0) {
