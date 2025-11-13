@@ -33,7 +33,8 @@ unsigned int generateSeed() {
 	int fd = open("/dev/urandom", O_RDONLY);
 	if (fd >= 0) {
 		unsigned int entropy = 0;
-		if (read(fd, &entropy, sizeof(entropy)) == sizeof(entropy)) {
+		ssize_t bytes_read = read(fd, &entropy, sizeof(entropy));
+		if (bytes_read == static_cast< ssize_t >(sizeof(entropy))) {
 			seed ^= static_cast< size_t >(entropy);
 		}
 		close(fd);
