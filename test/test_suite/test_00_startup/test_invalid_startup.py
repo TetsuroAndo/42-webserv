@@ -19,7 +19,7 @@ class TestInvalidStartup:
         project_root = test_dir.parent
         return str(project_root / "webserv")
 
-    def test_valid_config_first_becomes_unreadable_and_exits_zero(self, webserv_bin):
+    def test_config_no_permission(self, webserv_bin):
         """
         先頭の有効設定ファイルの読み取り権限を剥奪→起動→終了コード0を期待→権限復元
         """
