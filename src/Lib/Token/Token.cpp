@@ -57,7 +57,7 @@ ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
 			return total_read;
 		}
 		if (bytes_read == 0) {
-			// EOF (通常/dev/urandomでは発生しないが、念のため
+			// EOF (通常/dev/urandomでは発生しないが、念のため)
 			return total_read;
 		}
 		total_read += bytes_read;
