@@ -86,19 +86,18 @@ Config ConfigBuilder::build() const {
 				  _errorPages);
 }
 
-void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
+void ConfigBuilder::setMaxRequestBodySize(const size_t size) {
 	_maxRequestBodySize = size;
 }
 
-void ConfigBuilder::setBiggestRequestBodySize(bool hasValue,
-											  unsigned int size) {
+void ConfigBuilder::setBiggestRequestBodySize(bool hasValue, size_t size) {
 	_hasBiggestRequestBodySize = hasValue;
 	_biggestRequestBodySize = size;
 }
 
-void ConfigBuilder::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
+void ConfigBuilder::setTimeoutSec(const size_t sec) { _timeoutSec = sec; }
 
-void ConfigBuilder::setMaxEvents(const unsigned int maxEvents) {
+void ConfigBuilder::setMaxEvents(const size_t maxEvents) {
 	_maxEvents = maxEvents;
 }
 
@@ -210,10 +209,10 @@ void ConfigBuilder::setServerDefaultSession(bool enable) {
 	_locations[_defaultLocationKey].session = enable;
 }
 
-void ConfigBuilder::setRequestHeaderTimeoutSec(const unsigned int sec) {
+void ConfigBuilder::setRequestHeaderTimeoutSec(const size_t sec) {
 	_requestHeaderTimeoutSec = sec;
 }
 
-void ConfigBuilder::setRequestBodyTimeoutSec(const unsigned int sec) {
+void ConfigBuilder::setRequestBodyTimeoutSec(const size_t sec) {
 	_requestBodyTimeoutSec = sec;
 }

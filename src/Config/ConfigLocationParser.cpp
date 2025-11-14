@@ -105,19 +105,12 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		if (maxRequestBodySizeNode) {
 			size_t sizeValue = StringOps::sizeByteStrToSizeT(
 				maxRequestBodySizeNode->getValue());
-			if (sizeValue >
-				static_cast< size_t >(std::numeric_limits< int >::max())) {
-				throw std::runtime_error(
-					"Config error: maxRequestBodySize value is too large "
-					"in 'location/maxRequestBodySize' directive");
-			}
-			loc.maxRequestBodySize = static_cast< int >(sizeValue);
+			loc.hasMaxRequestBodySize = true;
+			loc.maxRequestBodySize = sizeValue;
 			if (!_hasBiggestMaxBodySize ||
-				_biggestMaxBodySize <
-					static_cast< unsigned int >(loc.maxRequestBodySize)) {
+				_biggestMaxBodySize < loc.maxRequestBodySize) {
 				_hasBiggestMaxBodySize = true;
-				_biggestMaxBodySize =
-					static_cast< unsigned int >(loc.maxRequestBodySize);
+				_biggestMaxBodySize = loc.maxRequestBodySize;
 			}
 		}
 

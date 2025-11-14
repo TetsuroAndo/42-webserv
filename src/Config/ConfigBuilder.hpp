@@ -13,14 +13,14 @@ private:
 	std::vector< AccessLog > _accessLogs;
 	std::vector< ErrorLog > _errorLogs;
 	std::map< int, std::string > _errorPages;
-	unsigned int _maxRequestBodySize;
+	size_t _maxRequestBodySize;
 	bool _hasBiggestRequestBodySize;
-	unsigned int _biggestRequestBodySize;
-	unsigned int _timeoutSec;
-	unsigned int _maxEvents;
+	size_t _biggestRequestBodySize;
+	size_t _timeoutSec;
+	size_t _maxEvents;
 	std::string _defaultLocationKey;
-	unsigned int _requestHeaderTimeoutSec;
-	unsigned int _requestBodyTimeoutSec;
+	size_t _requestHeaderTimeoutSec;
+	size_t _requestBodyTimeoutSec;
 
 	void initDefaults();
 	void setup(const std::string &configFile);
@@ -33,10 +33,10 @@ public:
 	Config build() const;
 
 	// グローバル設定
-	void setMaxRequestBodySize(unsigned int size);
-	void setBiggestRequestBodySize(bool hasValue, unsigned int size);
-	void setTimeoutSec(unsigned int sec);
-	void setMaxEvents(unsigned int maxEvents);
+	void setMaxRequestBodySize(size_t size);
+	void setBiggestRequestBodySize(bool hasValue, size_t size);
+	void setTimeoutSec(size_t sec);
+	void setMaxEvents(size_t maxEvents);
 	void setListens(const std::vector< Listen > &lists);
 	void setAccessLogs(const std::vector< AccessLog > &accessLogs);
 	void setErrorLogs(const std::vector< ErrorLog > &errorLogs);
@@ -58,6 +58,6 @@ public:
 	void setServerDefaultAllowedMethods(const std::string &methods);
 	void setServerDefaultAllowedMethods(const std::set< std::string > &methods);
 	void setServerDefaultSession(bool enable);
-	void setRequestHeaderTimeoutSec(unsigned int sec);
-	void setRequestBodyTimeoutSec(unsigned int sec);
+	void setRequestHeaderTimeoutSec(size_t sec);
+	void setRequestBodyTimeoutSec(size_t sec);
 };

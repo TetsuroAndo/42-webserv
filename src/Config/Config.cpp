@@ -17,8 +17,8 @@ AppInfo::AppInfo()
 	  httpProtocolVersion(HTTP_VERSION),
 	  cgiVersion(CGI_VERSION) {}
 
-unsigned int Performance::ioBuffersSize = IO_BUFFER_SIZE;
-unsigned int Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
+size_t Performance::ioBuffersSize = IO_BUFFER_SIZE;
+size_t Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
 Performance::Performance()
 	: responseReserveSize(RESPONSE_RESERVE_SIZE),
 	  pollTimeoutMs(POLL_TIMEOUT_MS),
@@ -31,11 +31,10 @@ Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
-			   unsigned int maxRequestBodySize,
-			   bool hasBiggestMaxRequestBodySize,
-			   unsigned int biggestMaxRequestBodySize, unsigned int timeoutSec,
-			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
-			   unsigned int requestBodyTimeoutSec,
+			   size_t maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
+			   size_t biggestMaxRequestBodySize, size_t timeoutSec,
+			   size_t maxEvents, size_t requestHeaderTimeoutSec,
+			   size_t requestBodyTimeoutSec,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
 	  _errorLogs(errorLogs), _errorPages(errorPages),
@@ -133,27 +132,25 @@ const std::vector< ErrorLog > &Config::getErrorLogs() const {
 	return _errorLogs;
 }
 
-unsigned int Config::getMaxRequestBodySize() const {
-	return _maxRequestBodySize;
-}
+size_t Config::getMaxRequestBodySize() const { return _maxRequestBodySize; }
 
 bool Config::hasBiggestMaxRequestBodySize() const {
 	return _hasBiggestMaxRequestBodySize;
 }
 
-unsigned int Config::getBiggestMaxRequestBodySize() const {
+size_t Config::getBiggestMaxRequestBodySize() const {
 	return _biggestMaxRequestBodySize;
 }
 
-unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
+size_t Config::getTimeoutSec() const { return _timeoutSec; }
 
-unsigned int Config::getMaxEvents() const { return _maxEvents; }
+size_t Config::getMaxEvents() const { return _maxEvents; }
 
-unsigned int Config::getRequestHeaderTimeoutSec() const {
+size_t Config::getRequestHeaderTimeoutSec() const {
 	return _requestHeaderTimeoutSec;
 }
 
-unsigned int Config::getRequestBodyTimeoutSec() const {
+size_t Config::getRequestBodyTimeoutSec() const {
 	return _requestBodyTimeoutSec;
 }
 
@@ -198,9 +195,9 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "      directoryError: " << it->second.directoryError << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      maxRequestBodySize: "
-		   << ((it->second.maxRequestBodySize == -1)
-				   ? "default"
-				   : StringOps::toString(it->second.maxRequestBodySize))
+		   << (it->second.hasMaxRequestBodySize
+				   ? StringOps::toString(it->second.maxRequestBodySize)
+				   : "default")
 		   << "\n";
 		os << "      cgiConf:\n";
 		for (std::map< std::string, std::string >::const_iterator cit =

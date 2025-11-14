@@ -23,13 +23,13 @@ struct AppInfo {
 };
 
 struct Performance {
-	static unsigned int ioBuffersSize;
-	unsigned int responseReserveSize;
-	unsigned int pollTimeoutMs;
+	static size_t ioBuffersSize;
+	size_t responseReserveSize;
+	size_t pollTimeoutMs;
 
-	static unsigned int cgiIoBufferSize;
-	unsigned int cgiMinWorkers;
-	unsigned int cgiMaxWorkers;
+	static size_t cgiIoBufferSize;
+	size_t cgiMinWorkers;
+	size_t cgiMaxWorkers;
 
 	Performance();
 };
@@ -44,7 +44,8 @@ struct Location {
 	std::string root;
 	std::set< std::string > allowedMethods;
 	bool autoindex;
-	int maxRequestBodySize;
+	bool hasMaxRequestBodySize;
+	size_t maxRequestBodySize;
 	std::string index;
 	std::string directoryError;
 	std::string uploadStore;
@@ -56,8 +57,8 @@ struct Location {
 	std::string redirectUrl;
 
 	Location()
-		: autoindex(false), maxRequestBodySize(-1), session(false),
-		  hasRedirect(false), redirectCode(0) {}
+		: autoindex(false), hasMaxRequestBodySize(false), maxRequestBodySize(0),
+		  session(false), hasRedirect(false), redirectCode(0) {}
 };
 
 struct AccessLog {
@@ -101,23 +102,22 @@ private:
 	std::vector< AccessLog > _accessLogs;
 	std::vector< ErrorLog > _errorLogs;
 	std::map< int, std::string > _errorPages; // map: <statusCode, URI>
-	unsigned int _maxRequestBodySize;
+	size_t _maxRequestBodySize;
 	bool _hasBiggestMaxRequestBodySize;
-	unsigned int _biggestMaxRequestBodySize;
-	unsigned int _timeoutSec;
-	unsigned int _maxEvents;
-	unsigned int _requestHeaderTimeoutSec;
-	unsigned int _requestBodyTimeoutSec;
+	size_t _biggestMaxRequestBodySize;
+	size_t _timeoutSec;
+	size_t _maxEvents;
+	size_t _requestHeaderTimeoutSec;
+	size_t _requestBodyTimeoutSec;
 
 public:
 	Config(const std::vector< Listen > &listens,
 		   const std::map< std::string, Location > &locations,
 		   const std::vector< AccessLog > &accessLogs,
-		   const std::vector< ErrorLog > &errorLogs,
-		   unsigned int maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
-		   unsigned int biggestMaxRequestBodySize, unsigned int timeoutSec,
-		   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
-		   unsigned int requestBodyTimeoutSec,
+		   const std::vector< ErrorLog > &errorLogs, size_t maxRequestBodySize,
+		   bool hasBiggestMaxRequestBodySize, size_t biggestMaxRequestBodySize,
+		   size_t timeoutSec, size_t maxEvents, size_t requestHeaderTimeoutSec,
+		   size_t requestBodyTimeoutSec,
 		   const std::map< int, std::string > &errorPages);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
@@ -135,13 +135,13 @@ public:
 	const std::map< int, std::string > &getErrorPages() const;
 	const std::string &getErrorPage(int code) const;
 
-	unsigned int getMaxRequestBodySize() const;
+	size_t getMaxRequestBodySize() const;
 	bool hasBiggestMaxRequestBodySize() const;
-	unsigned int getBiggestMaxRequestBodySize() const;
-	unsigned int getTimeoutSec() const;
-	unsigned int getMaxEvents() const;
-	unsigned int getRequestHeaderTimeoutSec() const;
-	unsigned int getRequestBodyTimeoutSec() const;
+	size_t getBiggestMaxRequestBodySize() const;
+	size_t getTimeoutSec() const;
+	size_t getMaxEvents() const;
+	size_t getRequestHeaderTimeoutSec() const;
+	size_t getRequestBodyTimeoutSec() const;
 
 	friend std::ostream &operator<<(std::ostream &os, const Config &config);
 };

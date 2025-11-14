@@ -7,7 +7,7 @@ class ConfigLocationParser {
 private:
 	ConfigBuilder *_builder;
 	bool _hasBiggestMaxBodySize;
-	unsigned int _biggestMaxBodySize;
+	size_t _biggestMaxBodySize;
 
 public:
 	ConfigLocationParser(ConfigBuilder *builder);

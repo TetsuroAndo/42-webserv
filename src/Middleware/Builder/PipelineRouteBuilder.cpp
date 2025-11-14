@@ -4,7 +4,8 @@
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
-#include "../RequestParser/RequestParserMiddleware.hpp"
+#include "../RequestParser/RequestBodyParserMiddleware.hpp"
+#include "../RequestParser/RequestHeadParserMiddleware.hpp"
 #include "../SubPipeline/ConnectionHeader/ConnectionHeaderMiddleware.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
@@ -29,10 +30,13 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 	for (std::map< std::string, Location >::const_iterator it =
 			 locations.begin();
 		 it != locations.end(); ++it) {
-
 		const Location &currentLocation = it->second;
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
+
+		if (currentLocation.allowedMethods.count("POST")) {
+			routeProcessor->addMiddleware(new RequestBodyParserMiddleware());
+		}
 
 		if (currentLocation.session == true &&
 			!currentLocation.allowedMethods.empty()) {
@@ -68,7 +72,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		routes[currentLocation.path] = routeProcessor;
 	}
 
-	mainProc->addMiddleware(new RequestParserMiddleware());
+	mainProc->addMiddleware(new RequestHeadParserMiddleware());
 	mainProc->addMiddleware(new RedirectMiddleware(conf));
 	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
