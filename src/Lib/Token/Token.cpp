@@ -73,13 +73,13 @@ size_t Token::_uniformRand(size_t min, size_t max) {
 		return min;
 	}
 
-	// 2のべき乗の場合は、単純にビットマスクで処理
+	// 2のべき乗の場合は、ビットマスクで処理
 	if ((range & (range - 1)) == 0) {
 		unsigned char byte = _getRandomByte();
 		return (static_cast< size_t >(byte) & (range - 1)) + min;
 	}
 
-	// 一般的な場合：rejection sampling
+	// rejection sampling で一様分布の乱数を生成
 	const size_t limit = (BYTE_RANGE / range) * range;
 	size_t result;
 	do {
@@ -89,6 +89,12 @@ size_t Token::_uniformRand(size_t min, size_t max) {
 	return (result % range) + min;
 }
 
+/**
+ * @brief トークンを生成する
+ * @param length トークンの長さ
+ * @param charset トークンの文字集合
+ * @return 生成されたトークン
+ */
 std::string Token::genToken(const size_t length, const std::string &charset) {
 	std::string token;
 	token.reserve(length);
