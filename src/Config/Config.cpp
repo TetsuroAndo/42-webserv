@@ -31,10 +31,10 @@ Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
-			   unsigned int maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
+			   unsigned int maxRequestBodySize,
+			   bool hasBiggestMaxRequestBodySize,
 			   unsigned int biggestMaxRequestBodySize, unsigned int timeoutSec,
-			   unsigned int maxEvents,
-			   unsigned int requestHeaderTimeoutSec,
+			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
 			   unsigned int requestBodyTimeoutSec,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
@@ -198,9 +198,9 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "      directoryError: " << it->second.directoryError << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      maxRequestBodySize: "
-		   << ((it->second.maxRequestBodySize == -1)
-				   ? "default"
-				   : StringOps::toString(it->second.maxRequestBodySize))
+		   << (it->second.hasMaxRequestBodySize
+				   ? StringOps::toString(it->second.maxRequestBodySize)
+				   : "default")
 		   << "\n";
 		os << "      cgiConf:\n";
 		for (std::map< std::string, std::string >::const_iterator cit =

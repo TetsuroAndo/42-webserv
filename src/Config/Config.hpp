@@ -44,7 +44,8 @@ struct Location {
 	std::string root;
 	std::set< std::string > allowedMethods;
 	bool autoindex;
-	int maxRequestBodySize;
+	bool hasMaxRequestBodySize;
+	unsigned int maxRequestBodySize;
 	std::string index;
 	std::string directoryError;
 	std::string uploadStore;
@@ -56,8 +57,8 @@ struct Location {
 	std::string redirectUrl;
 
 	Location()
-		: autoindex(false), maxRequestBodySize(-1), session(false),
-		  hasRedirect(false), redirectCode(0) {}
+		: autoindex(false), hasMaxRequestBodySize(false), maxRequestBodySize(0),
+		  session(false), hasRedirect(false), redirectCode(0) {}
 };
 
 struct AccessLog {
@@ -116,8 +117,7 @@ public:
 		   const std::vector< ErrorLog > &errorLogs,
 		   unsigned int maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
 		   unsigned int biggestMaxRequestBodySize, unsigned int timeoutSec,
-		   unsigned int maxEvents,
-		   unsigned int requestHeaderTimeoutSec,
+		   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
 		   unsigned int requestBodyTimeoutSec,
 		   const std::map< int, std::string > &errorPages);
 	Config(const Config &other);
