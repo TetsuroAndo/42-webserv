@@ -1,6 +1,7 @@
 #include "Token.hpp"
 
 #include <algorithm>
+#include <cerrno>
 #include <fcntl.h>
 #include <stdexcept>
 #include <string>
@@ -17,7 +18,9 @@ Token::Token()
 	  _buffer_pos(RANDOM_BUFFER_SIZE) {
 	_urandom_fd = open("/dev/urandom", O_RDONLY);
 	if (_urandom_fd < 0) {
-		throw std::runtime_error("Failed to open /dev/urandom");
+		int err = errno;
+		throw std::runtime_error("Open /dev/urandom failed: " +
+								 std::string(strerror(err)));
 	}
 }
 
@@ -28,6 +31,13 @@ Token::~Token() {
 	}
 }
 
+/**
+ * @brief Tokenシングルトンインスタンスを取得
+ * @note C++98環境ではスレッドセーフではないため、
+ *       このメソッドは必ずmain関数の開始時など、
+ *       スレッドが分岐するより前に一度呼び出して初期化を完了させること。
+ *       これにより、競合状態を回避できる。
+ */
 Token &Token::getInstance() {
 	static Token instance;
 	return instance;
@@ -39,7 +49,14 @@ ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
 	while (total_read < static_cast< ssize_t >(size)) {
 		ssize_t bytes_read =
 			read(_urandom_fd, buf + total_read, size - total_read);
-		if (bytes_read <= 0) {
+		if (bytes_read < 0) {
+			if (errno == EINTR) { // シグナルによる中断の場合はリトライ
+				continue;
+			}
+			return total_read;
+		}
+		if (bytes_read == 0) {
+			// EOF (通常/dev/urandomでは発生しないが、念のため
 			return total_read;
 		}
 		total_read += bytes_read;
@@ -51,11 +68,12 @@ ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
 unsigned char Token::_getRandomByte() {
 	// バッファが空または使い切った場合はリフィル
 	if (_buffer_pos >= _buffer.size()) {
-		ssize_t bytes_read =
-			_readRandomBytes(_buffer.data(), RANDOM_BUFFER_SIZE);
+		ssize_t bytes_read = _readRandomBytes(&_buffer[0], RANDOM_BUFFER_SIZE);
 
 		if (bytes_read != static_cast< ssize_t >(RANDOM_BUFFER_SIZE)) {
-			throw std::runtime_error("Failed to read from /dev/urandom");
+			int err = errno;
+			throw std::runtime_error("Read from /dev/urandom failed: " +
+									 std::string(strerror(err)));
 		}
 		_buffer_pos = 0;
 	}
@@ -94,8 +112,18 @@ size_t Token::_uniformRand(size_t min, size_t max) {
  * @param length トークンの長さ
  * @param charset トークンの文字集合
  * @return 生成されたトークン
+ * @throw std::runtime_error charsetが空、または"."のみの場合
  */
 std::string Token::genToken(const size_t length, const std::string &charset) {
+	if (charset.empty()) {
+		throw std::runtime_error("GenerateToken: Charset must not be empty");
+	}
+	// charsetが"."のみの場合、無限ループするため
+	if (charset.length() == 1 && charset[0] == '.') {
+		throw std::runtime_error(
+			"GenerateToken: Invalid charset: leads to infinite loop");
+	}
+
 	std::string token;
 	token.reserve(length);
 	for (size_t i = 0; i < length; ++i) {
