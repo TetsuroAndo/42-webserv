@@ -15,10 +15,10 @@ const size_t BYTE_RANGE = 256; // unsigned charの取り得る値の数 (0-255)
 } // namespace
 
 Token::Token()
-	: _urandom_fd(-1), _buffer(RANDOM_BUFFER_SIZE),
-	  _buffer_pos(RANDOM_BUFFER_SIZE) {
-	_urandom_fd = open("/dev/urandom", O_RDONLY);
-	if (_urandom_fd < 0) {
+	: _urandomFd(-1), _buffer(RANDOM_BUFFER_SIZE),
+	  _bufPos(RANDOM_BUFFER_SIZE) {
+	_urandomFd = open("/dev/urandom", O_RDONLY);
+	if (_urandomFd < 0) {
 		int err = errno;
 		throw std::runtime_error("Open /dev/urandom failed: " +
 								 std::string(strerror(err)));
@@ -26,9 +26,9 @@ Token::Token()
 }
 
 Token::~Token() {
-	if (_urandom_fd >= 0) {
-		close(_urandom_fd);
-		_urandom_fd = -1;
+	if (_urandomFd >= 0) {
+		close(_urandomFd);
+		_urandomFd = -1;
 	}
 }
 
@@ -46,11 +46,11 @@ Token &Token::getInstance() {
 
 /// @brief /dev/urandomをreadするヘルパー
 ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
-	ssize_t total_read = 0;
-	while (total_read < static_cast< ssize_t >(size)) {
-		ssize_t bytes_read =
-			read(_urandom_fd, buf + total_read, size - total_read);
-		if (bytes_read < 0) {
+	ssize_t totalRead = 0;
+	while (totalRead < static_cast< ssize_t >(size)) {
+		ssize_t bytesRead =
+			read(_urandomFd, buf + totalRead, size - totalRead);
+		if (bytesRead < 0) {
 			int err = errno;
 			if (err == EINTR) { // シグナルによる中断の場合はリトライ
 				continue;
@@ -59,28 +59,28 @@ ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
 									 std::string(strerror(err)));
 		}
 		// EOF (通常/dev/urandomでは発生しないが、念のため)
-		if (bytes_read == 0) {
+		if (bytesRead == 0) {
 			// 部分読み込みの場合は例外を投げる
-			if (total_read < static_cast< ssize_t >(size)) {
+			if (totalRead < static_cast< ssize_t >(size)) {
 				throw std::runtime_error(
 					"Read from /dev/urandom failed: Unexpected EOF");
 			}
-			return total_read;
+			return totalRead;
 		}
-		total_read += bytes_read;
+		totalRead += bytesRead;
 	}
-	return total_read;
+	return totalRead;
 }
 
 /// @brief バッファからバイトを取得し、必要に応じてリフィル
 unsigned char Token::_getRandomByte() {
 	// バッファが空または使い切った場合はリフィル
-	if (_buffer_pos >= _buffer.size()) {
+	if (_bufPos >= _buffer.size()) {
 		_readRandomBytes(&_buffer[0], RANDOM_BUFFER_SIZE);
-		_buffer_pos = 0;
+		_bufPos = 0;
 	}
 	// バッファからバイトを返して位置を進める
-	return _buffer[_buffer_pos++];
+	return _buffer[_bufPos++];
 }
 
 /// @brief 指定された範囲の一様分布の乱数を生成

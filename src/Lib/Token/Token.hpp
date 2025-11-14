@@ -32,8 +32,8 @@ private:
 	char _getNextChar(const std::string &charset, const std::string &token);
 
 	// /dev/urandomのファイルディスクリプタ
-	int _urandom_fd;
+	int _urandomFd;
 
 	std::vector< unsigned char > _buffer;
-	size_t _buffer_pos;
+	size_t _bufPos;
 };
