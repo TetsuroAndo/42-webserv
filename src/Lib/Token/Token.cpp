@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 #include <stdexcept>
 #include <string>
