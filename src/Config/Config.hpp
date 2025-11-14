@@ -116,8 +116,7 @@ public:
 		   const std::vector< ErrorLog > &errorLogs,
 		   unsigned int maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
 		   unsigned int biggestMaxRequestBodySize, unsigned int timeoutSec,
-		   unsigned int maxEvents,
-		   unsigned int requestHeaderTimeoutSec,
+		   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
 		   unsigned int requestBodyTimeoutSec,
 		   const std::map< int, std::string > &errorPages);
 	Config(const Config &other);

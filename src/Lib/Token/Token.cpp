@@ -98,6 +98,10 @@ size_t Token::_uniformRand(size_t min, size_t max) {
 	}
 
 	// rejection sampling で一様分布の乱数を生成
+	if (range > BYTE_RANGE) {
+		throw std::runtime_error(
+			"GenerateToken: Range too large for single-byte sampling");
+	}
 	const size_t limit = (BYTE_RANGE / range) * range;
 	size_t result;
 	do {
