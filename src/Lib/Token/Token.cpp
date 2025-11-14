@@ -15,8 +15,7 @@ const size_t BYTE_RANGE = 256; // unsigned charの取り得る値の数 (0-255)
 } // namespace
 
 Token::Token()
-	: _urandomFd(-1), _buffer(RANDOM_BUFFER_SIZE),
-	  _bufPos(RANDOM_BUFFER_SIZE) {
+	: _urandomFd(-1), _buffer(RANDOM_BUFFER_SIZE), _bufPos(RANDOM_BUFFER_SIZE) {
 	_urandomFd = open("/dev/urandom", O_RDONLY);
 	if (_urandomFd < 0) {
 		int err = errno;
@@ -48,8 +47,7 @@ Token &Token::getInstance() {
 ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
 	ssize_t totalRead = 0;
 	while (totalRead < static_cast< ssize_t >(size)) {
-		ssize_t bytesRead =
-			read(_urandomFd, buf + totalRead, size - totalRead);
+		ssize_t bytesRead = read(_urandomFd, buf + totalRead, size - totalRead);
 		if (bytesRead < 0) {
 			int err = errno;
 			if (err == EINTR) { // シグナルによる中断の場合はリトライ
@@ -89,7 +87,7 @@ size_t Token::_uniformRand(size_t min, size_t max) {
 		std::swap(min, max);
 	}
 	const size_t range = max - min + 1;
-	if (range == 1) {
+	if (range == 1 || min == max) {
 		return min;
 	}
 
