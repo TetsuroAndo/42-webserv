@@ -6,7 +6,7 @@
 #include <vector>
 
 int main() {
-	Token hasher;
+	Token &hasher = Token::getInstance();
 
 	// Test 1: Default length token
 	std::string token1 = hasher.genToken();

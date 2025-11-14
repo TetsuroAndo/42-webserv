@@ -18,5 +18,5 @@ clean:
 	rm -f $(OBJS) $(NAME)
 
 test: $(NAME)
-	./$(NAME)
+	bash -c "time ./$(NAME)"
 	$(MAKE) clean
