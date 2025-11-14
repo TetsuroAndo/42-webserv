@@ -15,9 +15,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 	// Location固有のボディサイズ制限を設定
 	const Location loc = ctx.conf.getLocation(ctx.req.getPath());
 	if (loc.hasMaxRequestBodySize) {
-		const std::size_t effectiveLimit =
-			static_cast< std::size_t >(loc.maxRequestBodySize);
-		ctx.req.setMaxBodySize(effectiveLimit);
+		ctx.req.setMaxBodySize(loc.maxRequestBodySize);
 	}
 
 	// ボディのパーシングを行う

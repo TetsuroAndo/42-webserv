@@ -325,10 +325,6 @@ size_t sizeByteStrToSizeT(const std::string &sizeStr) {
 							 "'. Use B, KB, MB, or GB.");
 }
 
-unsigned int sizeByteStrToUInt(const std::string &sizeStr) {
-	return static_cast< unsigned int >(sizeByteStrToSizeT(sizeStr));
-}
-
 // clang-format off
 std::string ipToString(uint32_t ip_addr) {
 	std::stringstream ss;

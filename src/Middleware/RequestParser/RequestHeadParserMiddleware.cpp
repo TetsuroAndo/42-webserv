@@ -7,11 +7,11 @@
 void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 										 MiddlewareProcessor *proc) {
 	if (ctx.parser.getState() == RequestParser::STATE_REQUEST_LINE) {
-		unsigned int biggestSize = 0;
+		size_t biggestSize = 0;
 		if (ctx.conf.hasBiggestMaxRequestBodySize()) {
 			biggestSize = ctx.conf.getBiggestMaxRequestBodySize();
 		}
-		const unsigned int globalSize = ctx.conf.getMaxRequestBodySize();
+		const size_t globalSize = ctx.conf.getMaxRequestBodySize();
 		ctx.req.setMaxBodySize(std::max(biggestSize, globalSize));
 	}
 

@@ -32,7 +32,6 @@ bool hexStrToSize(const char *str, size_t len, size_t &result);
 bool decStrToSize(const std::string &str, size_t &result);
 
 size_t sizeByteStrToSizeT(const std::string &sizeStr);
-unsigned int sizeByteStrToUInt(const std::string &sizeStr);
 
 std::string ipToString(uint32_t ip_addr);
 
