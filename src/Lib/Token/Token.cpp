@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace {
-const size_t RANDOM_BUFFER_SIZE = 128;
+const size_t RANDOM_BUFFER_SIZE = 4096;
 const size_t BYTE_RANGE = 256; // unsigned charの取り得る値の数 (0-255)
 } // namespace
 
