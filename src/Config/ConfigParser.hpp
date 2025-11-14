@@ -24,6 +24,9 @@ public:
 							 const std::set< std::string > &validKeys,
 							 const std::string &context);
 
+	static size_t validateConvertTimeout(const std::string &configName,
+										 const std::string &value);
+
 public:
 	ConfigParser(ConfigBuilder *builder);
 	~ConfigParser();

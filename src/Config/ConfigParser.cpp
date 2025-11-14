@@ -7,6 +7,8 @@
 #include "ConfigLocationParser.hpp"
 #include "ConfigLogParser.hpp"
 
+#include <ctime>
+#include <limits>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -14,6 +16,18 @@
 
 ConfigParser::ConfigParser(ConfigBuilder *builder) : _builder(builder) {}
 ConfigParser::~ConfigParser() {}
+
+size_t ConfigParser::validateConvertTimeout(const std::string &configName,
+											const std::string &value) {
+	const time_t timeoutAsTimeT =
+		static_cast< time_t >(StringOps::toSizeT(value));
+	if (timeoutAsTimeT > std::numeric_limits< time_t >::max()) {
+		throw std::runtime_error(
+			"Config error: " + configName +
+			" value is too large (exceeds time_t maximum)");
+	}
+	return timeoutAsTimeT;
+}
 
 void ConfigParser::validateKeys(const Node *node,
 								const std::set< std::string > &validKeys,
@@ -273,14 +287,16 @@ void ConfigParser::parseServer(const Node *serverNode) {
 			StringOps::sizeByteStrToSizeT(n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("timeoutSec"))
-		_builder->setTimeoutSec(StringOps::stringToInt(n->getValue()));
+		_builder->setTimeoutSec(
+			validateConvertTimeout("timeoutSec", n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("requestHeaderTimeoutSec"))
 		_builder->setRequestHeaderTimeoutSec(
-			StringOps::stringToInt(n->getValue()));
+			validateConvertTimeout("requestHeaderTimeoutSec", n->getValue()));
+
 	if (Node *n = serverNode->getMapNode("requestBodyTimeoutSec"))
 		_builder->setRequestBodyTimeoutSec(
-			StringOps::stringToInt(n->getValue()));
+			validateConvertTimeout("requestBodyTimeoutSec", n->getValue()));
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
 		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));

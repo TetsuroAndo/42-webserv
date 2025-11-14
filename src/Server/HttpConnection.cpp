@@ -85,12 +85,13 @@ time_t HttpConnection::calculateTimeout() const {
 	switch (state) {
 	case RequestParser::STATE_REQUEST_LINE:
 	case RequestParser::STATE_HEADERS:
-		return conf.getRequestHeaderTimeoutSec();
+		return static_cast< time_t >(conf.getRequestHeaderTimeoutSec());
 	case RequestParser::STATE_BODY:
-		return conf.getRequestBodyTimeoutSec();
+		return static_cast< time_t >(conf.getRequestBodyTimeoutSec());
 	case RequestParser::STATE_COMPLETE:
 	default:
-		return conf.getTimeoutSec(); // Keep-Aliveタイムアウト
+		return static_cast< time_t >(
+			conf.getTimeoutSec()); // Keep-Aliveタイムアウト
 	}
 }
 
