@@ -1,29 +1,38 @@
 #include "RequestHeadParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "../../Http/Parser/ParseResult.hpp"
 #include "../../Lib/Logger/Log.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include <algorithm>
 
 void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 										 MiddlewareProcessor *proc) {
-	if (ctx.parser.getState() == RequestParser::STATE_REQUEST_LINE) {
-		size_t biggestSize = 0;
-		if (ctx.conf.hasBiggestMaxRequestBodySize()) {
-			biggestSize = ctx.conf.getBiggestMaxRequestBodySize();
+	RequestParser &parser = ctx.parser;
+
+	// 既にヘッダー解析が終わっていればスキップ
+	if (parser.getState() >= RequestParser::STATE_BODY) {
+		if (proc) {
+			proc->next(ctx);
 		}
-		const size_t globalSize = ctx.conf.getMaxRequestBodySize();
-		ctx.req.setMaxBodySize(std::max(biggestSize, globalSize));
+		return;
 	}
 
-	// ヘッダーのパーシングのみを行う
-	ParseResult result = ctx.parser.parse(ctx.req, ctx.recvBuffer);
+	// グローバルなボディサイズ制限を設定
+	size_t biggestSize = 0;
+	if (ctx.conf.hasBiggestMaxRequestBodySize()) {
+		biggestSize = ctx.conf.getBiggestMaxRequestBodySize();
+	}
+	const size_t globalSize = ctx.conf.getMaxRequestBodySize();
+	ctx.req.setMaxBodySize(std::max(biggestSize, globalSize));
+
+	ParseResult result = parser.parseHead(ctx.req, ctx.recvBuffer);
 
 	switch (result) {
 	case PARSE_INCOMPLETE: {
 		return;
 	}
 	case PARSE_ERROR: {
-		ctx.res.setStatusCode(ctx.parser.getErrorCode());
+		ctx.res.setStatusCode(parser.getErrorCode());
 		if (proc) {
 			ErrorHandlerMiddleware errorHandler(ctx.conf);
 			errorHandler.handle(ctx, proc);
@@ -37,9 +46,12 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 	case PARSE_COMPLETE: {
-		// ヘッダーパーシング中に完了することはないが、念のため
+		// ヘッダー解析中にPARSE_COMPLETEが返ることはない
+		parser.setErrorCode(HttpStatus::BAD_REQUEST);
+		ctx.res.setStatusCode(parser.getErrorCode());
 		if (proc) {
-			proc->next(ctx);
+			ErrorHandlerMiddleware errorHandler(ctx.conf);
+			errorHandler.handle(ctx, proc);
 		}
 		return;
 	}

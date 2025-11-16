@@ -1,14 +1,14 @@
-#include "RequestHeaderParser.hpp"
+#include "RequestHeadParser.hpp"
 #include "../Core/HttpStatus.hpp"
 #include "ParseResult.hpp"
 
-RequestHeaderParser::RequestHeaderParser() {}
+RequestHeadParser::RequestHeadParser() {}
 
-RequestHeaderParser::~RequestHeaderParser() {}
+RequestHeadParser::~RequestHeadParser() {}
 
-ParseResult RequestHeaderParser::parse(HttpRequest &request,
-									   const std::string &headerBlock,
-									   int &errorCode) {
+ParseResult RequestHeadParser::parse(HttpRequest &request,
+									 const std::string &headerBlock,
+									 int &errorCode) {
 	const size_t size = headerBlock.size();
 	size_t lineStart = 0;
 	while (lineStart < size) {

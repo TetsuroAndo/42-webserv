@@ -5,10 +5,11 @@
 #include "../Core/HttpRequest.hpp"
 #include "ParseResult.hpp"
 
-class RequestHeaderParser {
+class RequestHeadParser {
 public:
-	RequestHeaderParser();
-	~RequestHeaderParser();
+	RequestHeadParser();
+	~RequestHeadParser();
+
 	/**
 	 * @brief ヘッダ行を解析し、HttpRequest オブジェクトにヘッダを追加します。
 	 * @param request HttpRequest オブジェクトへの参照
@@ -19,6 +20,6 @@ public:
 					  int &errorCode);
 
 private:
-	RequestHeaderParser(const RequestHeaderParser &);
-	RequestHeaderParser &operator=(const RequestHeaderParser &);
+	RequestHeadParser(const RequestHeadParser &);
+	RequestHeadParser &operator=(const RequestHeadParser &);
 };

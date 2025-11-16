@@ -4,12 +4,12 @@
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
-#include "../RequestParser/RequestBodyParserMiddleware.hpp"
 #include "../RequestParser/RequestHeadParserMiddleware.hpp"
 #include "../SubPipeline/ConnectionHeader/ConnectionHeaderMiddleware.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
 #include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
+#include "../SubPipeline/ReqBodyParser/RequestBodyParserMiddleware.hpp"
 #include "../SubPipeline/Session/SessionMiddleware.hpp"
 
 #include <iostream>

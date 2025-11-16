@@ -1,10 +1,9 @@
 #include "RequestParser.hpp"
-#include "../../Lib/Logger/Log.hpp"
 #include "../../Lib/StringOps/StringOps.hpp"
+#include "../Core/HttpRequest.hpp"
 #include "../Core/HttpStatus.hpp"
-#include "ParseResult.hpp"
 
-RequestParser::RequestParser() { reset(); }
+RequestParser::RequestParser() : _state(STATE_REQUEST_LINE), _errorCode(0) {}
 
 RequestParser::~RequestParser() {}
 
@@ -14,88 +13,136 @@ void RequestParser::reset() {
 	_bodyParser.reset();
 }
 
+RequestParser::ParseState RequestParser::getState() const { return _state; }
+
+void RequestParser::setState(ParseState state) { _state = state; }
+
 int RequestParser::getErrorCode() const { return _errorCode; }
+
+void RequestParser::setErrorCode(int code) { _errorCode = code; }
 
 bool RequestParser::isComplete() const { return _state == STATE_COMPLETE; }
 
-ParseResult RequestParser::parse(HttpRequest &request, std::string &buffer) {
-	LOG(DEBUG) << "RequestParser::parse called"
-			   << attr("buffer_size", buffer.length());
-	bool stateChanged = true;
-	while (stateChanged) {
-		stateChanged = false;
+ParseResult RequestParser::parseHead(HttpRequest &req, std::string &buffer) {
+	switch (_state) {
+	case STATE_REQUEST_LINE: {
+		// リクエストラインの抽出（\r\nまで）
+		const size_t crlfPos = buffer.find("\r\n");
+		if (crlfPos == std::string::npos) {
+			return PARSE_INCOMPLETE; // データが不完全
+		}
 
-		switch (_state) {
-		case STATE_REQUEST_LINE: {
-			const size_t crlfPos = buffer.find("\r\n");
-			if (crlfPos == std::string::npos)
-				return PARSE_INCOMPLETE;
+		if (crlfPos == 0) {
+			_errorCode = HttpStatus::BAD_REQUEST;
+			return PARSE_ERROR;
+		}
 
-			if (buffer.begin() == buffer.begin() + crlfPos) {
+		// リクエストラインをパース
+		std::string line(buffer.begin(), buffer.begin() + crlfPos);
+		buffer.erase(0, crlfPos + 2);
+
+		int errorCode = 0;
+		ParseResult result = _lineParser.parse(req, line, errorCode);
+		if (result == PARSE_ERROR) {
+			_errorCode = errorCode;
+			return PARSE_ERROR;
+		}
+
+		_state = STATE_HEADERS;
+	} // fallthrough
+	case STATE_HEADERS: {
+		// ヘッダーブロックの抽出（\r\n\r\nまで）
+		const size_t headerEndPos = buffer.find("\r\n\r\n");
+		if (headerEndPos == std::string::npos) {
+			return PARSE_INCOMPLETE; // データが不完全
+		}
+
+		// ヘッダーブロックをパース
+		std::string headerBlock(buffer.begin(), buffer.begin() + headerEndPos);
+		buffer.erase(0, headerEndPos + 4);
+
+		int errorCode = 0;
+		ParseResult result = getHeadParser().parse(req, headerBlock, errorCode);
+		if (result == PARSE_ERROR) {
+			_errorCode = errorCode;
+			return PARSE_ERROR;
+		}
+
+		// ヘッダー解析完了後、Content-LengthがmaxBodySizeを超えていないかチェック
+		if (req.hasHeader("Content-Length")) {
+			const std::string &lenStr = req.getHeader("Content-Length");
+			size_t contentLength = 0;
+			if (!StringOps::decStrToSize(lenStr, contentLength)) {
 				_errorCode = HttpStatus::BAD_REQUEST;
-				LOG(WARNING) << "Parse error: Empty request line"
-							 << attr("error_code", _errorCode);
 				return PARSE_ERROR;
 			}
-
-			std::string line(buffer.begin(), buffer.begin() + crlfPos);
-			buffer.erase(0, crlfPos + 2);
-			if (_lineParser.parse(request, line, _errorCode) == PARSE_ERROR) {
-				LOG(WARNING) << "Failed to parse request line: " << line
-							 << attr("error_code", _errorCode);
-				return PARSE_ERROR;
-			}
-			_state = STATE_HEADERS;
-			stateChanged = true;
-			break;
-		}
-		case STATE_HEADERS: {
-			const size_t headerEndPos = buffer.find("\r\n\r\n");
-			if (headerEndPos == std::string::npos) {
-				return PARSE_INCOMPLETE;
-			}
-
-			std::string headerBlock(buffer.begin(),
-									buffer.begin() + headerEndPos);
-			buffer.erase(0, headerEndPos + 4);
-			if (_headerParser.parse(request, headerBlock, _errorCode) ==
-				PARSE_ERROR) {
-				LOG(WARNING) << "Failed to parse header block"
-							 << attr("error_code", _errorCode);
-				return PARSE_ERROR;
-			}
-			_state = STATE_BODY;
-			return PARSE_HEADERS_COMPLETE;
-		}
-		case STATE_BODY: {
-
-			ParseResult res;
-			const size_t consumed =
-				_bodyParser.parse(request, buffer, _errorCode, res);
-
-			if (consumed > 0) {
-				buffer.erase(0, consumed);
-			}
-
-			if (request.getBody().length() > request.getMaxBodySize()) {
+			if (contentLength > req.getMaxBodySize()) {
 				_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
-				LOG(WARNING) << "Parse error: Payload too large"
-							 << attr("size", buffer.length())
-							 << attr("max_size", request.getMaxBodySize());
 				return PARSE_ERROR;
 			}
+		}
 
-			if (res == PARSE_COMPLETE) {
-				_state = STATE_COMPLETE;
-				LOG(DEBUG) << "Request parsing complete.";
-			}
-			return res;
-		}
-		case STATE_COMPLETE:
-			return PARSE_COMPLETE;
-		}
+		_state = STATE_BODY;
+		return PARSE_HEADERS_COMPLETE;
 	}
-	return PARSE_INCOMPLETE;
+	case STATE_BODY:
+	case STATE_COMPLETE: {
+		// 既にヘッダーパーシングが完了している
+		return PARSE_HEADERS_COMPLETE;
+	}
+	default:
+		_errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
 }
 
-RequestParser::ParseState RequestParser::getState() const { return _state; }
+ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
+	if (_state != STATE_BODY) {
+		// ボディパーシングの状態でない場合はエラー
+		_errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
+
+	// ボディのパーシングを行う（RequestBodyParser::parse()が自動的に初期化を行う）
+	int errorCode = 0;
+	ParseResult result;
+	const size_t consumed = _bodyParser.parse(req, buffer, errorCode, result);
+
+	if (consumed > 0) {
+		buffer.erase(0, consumed);
+	}
+
+	// ボディサイズチェック（パーサー内部で行うべき責務）
+	if (req.getBody().length() > req.getMaxBodySize()) {
+		_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
+		return PARSE_ERROR;
+	}
+
+	switch (result) {
+	case PARSE_INCOMPLETE: {
+		// ボディのパーシングが完了していない場合は待機
+		return PARSE_INCOMPLETE;
+	}
+	case PARSE_ERROR: {
+		_errorCode = errorCode;
+		return PARSE_ERROR;
+	}
+	case PARSE_HEADERS_COMPLETE: {
+		// ボディパーシング中にヘッダー完了が返ることはない（エラーとして扱う）
+		_errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
+	case PARSE_COMPLETE: {
+		// ボディパーシング完了
+		_state = STATE_COMPLETE;
+		return PARSE_COMPLETE;
+	}
+	default:
+		_errorCode = HttpStatus::BAD_REQUEST;
+		return PARSE_ERROR;
+	}
+}
+
+RequestLineParser &RequestParser::getLineParser() { return _lineParser; }
+RequestHeadParser &RequestParser::getHeadParser() { return _headParser; }
+RequestBodyParser &RequestParser::getBodyParser() { return _bodyParser; }
