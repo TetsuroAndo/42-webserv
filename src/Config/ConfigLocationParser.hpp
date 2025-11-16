@@ -4,9 +4,6 @@
 
 class ConfigBuilder;
 class Node;
-
-#include <cstddef>
-
 class ConfigLocationParser {
 private:
 	ConfigBuilder *_builder;
