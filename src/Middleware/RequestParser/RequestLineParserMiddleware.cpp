@@ -1,6 +1,7 @@
 #include "RequestLineParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 #include "../../Http/Parser/ParseResult.hpp"
+#include "../../Lib/Logger/Log.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 
 void RequestLineParserMiddleware::handle(PipelineContext &ctx,
@@ -28,6 +29,10 @@ void RequestLineParserMiddleware::handle(PipelineContext &ctx,
 		}
 		return;
 	case PARSE_COMPLETE:
+		LOG(DEBUG) << "RequestLineParserMiddleware: Parsed request line"
+				   << attr("method", ctx.req.getMethod())
+				   << attr("path", ctx.req.getPath())
+				   << attr("version", ctx.req.getVersion());
 		if (proc) {
 			proc->next(ctx);
 		}

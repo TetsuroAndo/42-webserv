@@ -1,4 +1,5 @@
 #include "RequestLineParser.hpp"
+#include "../../Lib/Logger/Log.hpp"
 #include "../Core/HttpStatus.hpp"
 #include "../URI/URI.hpp"
 #include <cstring>
@@ -81,6 +82,9 @@ bool RequestLineParser::parse(HttpRequest &request, const std::string &line,
 		pathLen = uriLen;
 	}
 
-	request.setPath(std::string(uriStart, pathLen));
+	std::string path(uriStart, pathLen);
+	request.setPath(path);
+	LOG(DEBUG) << "RequestLineParser: Set path" << attr("path", path)
+			   << attr("pathLen", pathLen) << attr("uriLen", uriLen);
 	return true;
 }

@@ -4,8 +4,7 @@
 #include "../Core/HttpRequest.hpp"
 #include "../Core/HttpStatus.hpp"
 
-RequestParser::RequestParser()
-	: _errorCode(HttpStatus::OK), _state(STATE_REQUEST_LINE) {}
+RequestParser::RequestParser() : _errorCode(0), _state(STATE_REQUEST_LINE) {}
 
 RequestParser::~RequestParser() {}
 
@@ -15,7 +14,7 @@ static const size_t MAX_REQ_HEADER_SIZE = 8192;
 
 void RequestParser::reset() {
 	_state = STATE_REQUEST_LINE;
-	_errorCode = HttpStatus::OK;
+	_errorCode = 0;
 	_bodyParser.reset();
 }
 
@@ -51,6 +50,11 @@ ParseResult RequestParser::parseRequestLine(HttpRequest &req,
 	if (!_lineParser.parse(req, line, _errorCode)) {
 		return PARSE_ERROR; // lineParserがfalseを返したら_errorCodeが設定されている
 	}
+
+	LOG(DEBUG) << "RequestParser::parseRequestLine: Successfully parsed"
+			   << attr("method", req.getMethod()) << attr("path", req.getPath())
+			   << attr("version", req.getVersion())
+			   << attr("path_empty", req.getPath().empty());
 
 	buffer.erase(0, crlfPos + 2); // パースした分をバッファから削除
 	_state = STATE_HEADERS;		  // 次の状態に遷移

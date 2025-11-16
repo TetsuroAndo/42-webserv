@@ -17,7 +17,12 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 
-	const Location loc = ctx.conf.getLocation(ctx.req.getPath());
+	const std::string &requestPath = ctx.req.getPath();
+	LOG(DEBUG) << "RequestHeadParserMiddleware: Parsing headers"
+			   << attr("path", requestPath)
+			   << attr("method", ctx.req.getMethod())
+			   << attr("path_empty", requestPath.empty());
+	const Location loc = ctx.conf.getLocation(requestPath);
 	size_t maxBodySize = ctx.conf.getMaxRequestBodySize();
 	if (loc.hasMaxRequestBodySize) {
 		maxBodySize = loc.maxRequestBodySize;
