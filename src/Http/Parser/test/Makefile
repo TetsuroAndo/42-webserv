@@ -6,7 +6,7 @@ TARGET = run_tests
 
 SRCS = main.cpp \
        RequestBodyParserTest.cpp ../RequestBodyParser.cpp \
-       RequestHeaderParserTest.cpp ../RequestHeaderParser.cpp \
+       RequestHeaderParserTest.cpp ../RequestHeadParser.cpp \
        RequestLineParserTest.cpp ../RequestLineParser.cpp \
        ../../Core/HttpRequest.cpp \
        ../../Core/HttpStatus.cpp \

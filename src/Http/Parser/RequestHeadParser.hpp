@@ -1,9 +1,7 @@
 #pragma once
 
-#include <string>
-
 #include "../Core/HttpRequest.hpp"
-#include "ParseResult.hpp"
+#include <string>
 
 class RequestHeadParser {
 public:
@@ -11,13 +9,14 @@ public:
 	~RequestHeadParser();
 
 	/**
-	 * @brief ヘッダ行を解析し、HttpRequest オブジェクトにヘッダを追加します。
+	 * @brief ヘッダーブロックを解析する
 	 * @param request HttpRequest オブジェクトへの参照
-	 * @param line 解析するヘッダ行の文字列
-	 * @return 解析に成功した場合は 0、失敗した場合はエラーコード
+	 * @param headerBlock 解析するヘッダーブロックの文字列
+	 * @param errorCode エラーコード（失敗時に設定される）
+	 * @return 成功した場合 true、失敗した場合 false
 	 */
-	ParseResult parse(HttpRequest &request, const std::string &headerBlock,
-					  int &errorCode);
+	bool parse(HttpRequest &request, const std::string &headerBlock,
+			   int &errorCode);
 
 private:
 	RequestHeadParser(const RequestHeadParser &);

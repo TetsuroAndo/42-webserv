@@ -1,26 +1,24 @@
 #include "RequestLineParser.hpp"
 #include "../Core/HttpStatus.hpp"
 #include "../URI/URI.hpp"
-#include "ParseResult.hpp"
 #include <cstring>
 
 RequestLineParser::RequestLineParser() {}
 
 RequestLineParser::~RequestLineParser() {}
 
-ParseResult RequestLineParser::parse(HttpRequest &request,
-									 const std::string &line, int &errorCode) {
-	// 1. 3つのパートに分割 (METHOD, URI, VERSION)
+bool RequestLineParser::parse(HttpRequest &request, const std::string &line,
+							  int &errorCode) {
 	const size_t methodEnd = line.find(' ');
 	if (methodEnd == std::string::npos) {
 		errorCode = HttpStatus::BAD_REQUEST;
-		return PARSE_ERROR;
+		return false;
 	}
 
 	const size_t uriEnd = line.find(' ', methodEnd + 1);
 	if (uriEnd == std::string::npos) {
 		errorCode = HttpStatus::BAD_REQUEST;
-		return PARSE_ERROR;
+		return false;
 	}
 
 	const size_t methodLen = methodEnd;
@@ -34,10 +32,9 @@ ParseResult RequestLineParser::parse(HttpRequest &request,
 							  line.length() - (uriEnd + 1));
 	request.setVersion(version);
 
-	// 2. HTTPバージョンを検証
 	if (version != "HTTP/1.1" && version != "HTTP/1.0") {
 		errorCode = HttpStatus::VERSION_NOT_SUPPORTED;
-		return PARSE_ERROR;
+		return false;
 	}
 
 	// 3. URIをパスとクエリに分割
@@ -85,6 +82,5 @@ ParseResult RequestLineParser::parse(HttpRequest &request,
 	}
 
 	request.setPath(std::string(uriStart, pathLen));
-
-	return PARSE_COMPLETE;
+	return true;
 }

@@ -1,14 +1,12 @@
 #include "RequestHeadParser.hpp"
 #include "../Core/HttpStatus.hpp"
-#include "ParseResult.hpp"
 
 RequestHeadParser::RequestHeadParser() {}
 
 RequestHeadParser::~RequestHeadParser() {}
 
-ParseResult RequestHeadParser::parse(HttpRequest &request,
-									 const std::string &headerBlock,
-									 int &errorCode) {
+bool RequestHeadParser::parse(HttpRequest &request,
+							  const std::string &headerBlock, int &errorCode) {
 	const size_t size = headerBlock.size();
 	size_t lineStart = 0;
 	while (lineStart < size) {
@@ -23,7 +21,7 @@ ParseResult RequestHeadParser::parse(HttpRequest &request,
 			const size_t colonPos = headerBlock.find(':', lineStart);
 			if (colonPos == std::string::npos || colonPos >= lineEnd) {
 				errorCode = HttpStatus::BAD_REQUEST;
-				return PARSE_ERROR;
+				return false;
 			}
 
 			size_t keyStart = lineStart;
@@ -37,7 +35,7 @@ ParseResult RequestHeadParser::parse(HttpRequest &request,
 			const size_t keyLen = keyEnd - keyStart;
 			if (keyLen == 0) {
 				errorCode = HttpStatus::BAD_REQUEST;
-				return PARSE_ERROR;
+				return false;
 			}
 
 			size_t valueStart = colonPos + 1;
@@ -53,7 +51,7 @@ ParseResult RequestHeadParser::parse(HttpRequest &request,
 			const char *keyPtr = headerBlock.c_str() + keyStart;
 			if (request.hasHeader(keyPtr, keyLen)) {
 				errorCode = HttpStatus::BAD_REQUEST;
-				return PARSE_ERROR;
+				return false;
 			}
 			request.addHeader(keyPtr, keyLen, headerBlock.c_str() + valueStart,
 							  valueLen);
@@ -61,5 +59,5 @@ ParseResult RequestHeadParser::parse(HttpRequest &request,
 
 		lineStart = nl + 1;
 	}
-	return PARSE_COMPLETE;
+	return true;
 }

@@ -31,8 +31,6 @@ public:
 
 	/// @brief 現在のパーシング状態を取得する
 	ParseState getState() const;
-	/// @brief パーシング状態を設定する
-	void setState(ParseState state);
 	/// @brief エラーコードを取得する
 	int getErrorCode() const;
 	/// @brief エラーコードを設定する
@@ -41,15 +39,20 @@ public:
 	bool isComplete() const;
 
 	/**
-	 * @brief リクエストヘッド（リクエストライン + ヘッダー）をパースする
+	 * @brief リクエストラインをパースする
 	 * @param req パース結果を格納するHttpRequestオブジェクト
 	 * @param buffer 受信バッファ（パース済み部分は削除される）
-	 * @return パース結果（PARSE_INCOMPLETE, PARSE_HEADERS_COMPLETE,
-	 * PARSE_ERROR）
-	 * @note
-	 * このメソッドは内部で状態管理を行い、リクエストラインとヘッダーを順次パースする
+	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
 	 */
-	ParseResult parseHead(HttpRequest &req, std::string &buffer);
+	ParseResult parseRequestLine(HttpRequest &req, std::string &buffer);
+
+	/**
+	 * @brief ヘッダーブロックをパースする
+	 * @param req パース結果を格納するHttpRequestオブジェクト
+	 * @param buffer 受信バッファ（パース済み部分は削除される）
+	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
+	 */
+	ParseResult parseHeaders(HttpRequest &req, std::string &buffer);
 
 	/**
 	 * @brief リクエストボディをパースする

@@ -4,12 +4,13 @@
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
+#include "../RequestParser/RequestBodyParserMiddleware.hpp"
 #include "../RequestParser/RequestHeadParserMiddleware.hpp"
+#include "../RequestParser/RequestLineParserMiddleware.hpp"
 #include "../SubPipeline/ConnectionHeader/ConnectionHeaderMiddleware.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
 #include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
-#include "../SubPipeline/ReqBodyParser/RequestBodyParserMiddleware.hpp"
 #include "../SubPipeline/Session/SessionMiddleware.hpp"
 
 #include <iostream>
@@ -48,7 +49,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 			routeProcessor->addMiddleware(new CgiRouterMiddleware());
 		}
 
-		// HandlerMiddleware (静的ファイル・アップロード・削除用)
+		// HandlerMiddlewareの設定
 		// CgiRouterMiddlewareを通過したリクエスト(＝CGIではない)のみが処理される
 		std::map< std::string, ISubHandler * > staticHandlers;
 		if (currentLocation.allowedMethods.count("GET")) {
@@ -72,6 +73,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		routes[currentLocation.path] = routeProcessor;
 	}
 
+	mainProc->addMiddleware(new RequestLineParserMiddleware());
 	mainProc->addMiddleware(new RequestHeadParserMiddleware());
 	mainProc->addMiddleware(new RedirectMiddleware(conf));
 	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
