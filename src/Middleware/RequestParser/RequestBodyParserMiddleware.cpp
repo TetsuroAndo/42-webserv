@@ -19,7 +19,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 
 	switch (result) {
 	case PARSE_INCOMPLETE:
-		return; // ボディがまだ全部届いていない
+		return;
 	case PARSE_ERROR:
 		ctx.res.setStatusCode(parser.getErrorCode());
 		if (proc) {
@@ -29,7 +29,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 		return;
 	case PARSE_COMPLETE:
 		if (proc) {
-			proc->next(ctx); // ボディ完了。次のミドルウェア (Redirect, etc.) へ
+			proc->next(ctx);
 		}
 		return;
 	default:

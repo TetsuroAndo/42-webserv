@@ -9,7 +9,6 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 										 MiddlewareProcessor *proc) {
 	RequestParser &parser = ctx.parser;
 
-	// 自分の担当する状態でなければ、次のミドルウェアに処理を渡す
 	if (parser.getState() != RequestParser::STATE_HEADERS) {
 		if (proc) {
 			proc->next(ctx);
@@ -43,8 +42,7 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 		return;
 	case PARSE_COMPLETE:
 		if (proc) {
-			proc->next(
-				ctx); // 次のミドルウェア (RequestBodyParserMiddleware) へ
+			proc->next(ctx);
 		}
 		return;
 	default:

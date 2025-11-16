@@ -8,7 +8,6 @@ void RequestLineParserMiddleware::handle(PipelineContext &ctx,
 										 MiddlewareProcessor *proc) {
 	RequestParser &parser = ctx.parser;
 
-	// 自分の担当する状態でなければ、次のミドルウェアに処理を渡す
 	if (parser.getState() != RequestParser::STATE_REQUEST_LINE) {
 		if (proc) {
 			proc->next(ctx);

@@ -10,6 +10,7 @@ RequestParser::~RequestParser() {}
 
 // ヘッダーの最大許容サイズ (e.g., 8KB)
 // 悪意のあるクライアントが改行を送らずにデータを送り続ける攻撃を防ぐ
+// TODO: この値をコンフィグから取得できるようにする
 static const size_t MAX_REQ_HEADER_SIZE = 8192;
 
 void RequestParser::reset() {
@@ -93,7 +94,7 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
 		}
-		// この時点で設定されている maxBodySize (Location固有値) と比較
+		// この時点で設定されている maxBodySize Location固有値 と比較
 		if (contentLength > req.getMaxBodySize()) {
 			_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
 			return PARSE_ERROR;
@@ -124,7 +125,7 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 		buffer.erase(0, consumed);
 	}
 
-	// ボディサイズチェック（パーサー内部で行うべき責務）
+	// ボディサイズチェック
 	if (req.getBody().length() > req.getMaxBodySize()) {
 		_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
 		return PARSE_ERROR;
