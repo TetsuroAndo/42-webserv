@@ -4,9 +4,14 @@
 #include "../Core/HttpRequest.hpp"
 #include "../Core/HttpStatus.hpp"
 
-RequestParser::RequestParser() : _state(STATE_REQUEST_LINE), _errorCode(0) {}
+RequestParser::RequestParser()
+	: _errorCode(HttpStatus::OK), _state(STATE_REQUEST_LINE) {}
 
 RequestParser::~RequestParser() {}
+
+// ヘッダーの最大許容サイズ (e.g., 8KB)
+// 悪意のあるクライアントが改行を送らずにデータを送り続ける攻撃を防ぐ
+static const size_t MAX_REQ_HEADER_SIZE = 8192;
 
 void RequestParser::reset() {
 	_state = STATE_REQUEST_LINE;
@@ -51,10 +56,6 @@ ParseResult RequestParser::parseRequestLine(HttpRequest &req,
 	_state = STATE_HEADERS;		  // 次の状態に遷移
 	return PARSE_COMPLETE;		  // このステップの完了
 }
-
-// ヘッダーの最大許容サイズ (e.g., 8KB)
-// 悪意のあるクライアントが改行を送らずにデータを送り続ける攻撃を防ぐ
-static const size_t MAX_REQ_HEADER_SIZE = 8192;
 
 ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 	if (_state != STATE_HEADERS) {
@@ -109,6 +110,11 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 	// ボディのパーシングを行う
 	ParseResult result;
 	const size_t consumed = _bodyParser.parse(req, buffer, _errorCode, result);
+
+	// エラーが発生した場合は即座に返す
+	if (result == PARSE_ERROR) {
+		return PARSE_ERROR;
+	}
 
 	if (consumed > 0) {
 		buffer.erase(0, consumed);

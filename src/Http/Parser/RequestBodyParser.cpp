@@ -148,6 +148,13 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 		if (_state == CHUNKED_DATA) {
 			if (buffer.length() - offset < _chunkSize + 2)
 				return offset;
+			// ボディサイズ制限をチェック
+			if (request.getBody().length() + _chunkSize >
+				request.getMaxBodySize()) {
+				errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
+				result = PARSE_ERROR;
+				return offset;
+			}
 			request.appendBody(buffer.c_str() + offset, _chunkSize);
 			if (!(buffer[offset + _chunkSize] == '\r' &&
 				  buffer[offset + _chunkSize + 1] == '\n')) {
