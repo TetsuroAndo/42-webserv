@@ -43,6 +43,7 @@ public:
 	 * @param req パース結果を格納するHttpRequestオブジェクト
 	 * @param buffer 受信バッファ（パース済み部分は削除される）
 	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
+	 * @note 例: 'GET /auth/login.html HTTP/1.1\r\n\r\n'
 	 */
 	ParseResult parseRequestLine(HttpRequest &req, std::string &buffer);
 
@@ -51,6 +52,7 @@ public:
 	 * @param req パース結果を格納するHttpRequestオブジェクト
 	 * @param buffer 受信バッファ（パース済み部分は削除される）
 	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
+	 * @note Content-LengthとLocationの上限サイズチェックもこの時点で行う
 	 */
 	ParseResult parseHeaders(HttpRequest &req, std::string &buffer);
 
