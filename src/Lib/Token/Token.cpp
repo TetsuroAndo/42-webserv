@@ -1,35 +1,17 @@
 #include "Token.hpp"
 
-#include <algorithm>
-#include <cerrno>
-#include <cstring>
-#include <fcntl.h>
 #include <stdexcept>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 namespace {
-const size_t RANDOM_BUFFER_SIZE = 4096;
-const size_t BYTE_RANGE = 256; // unsigned charの取り得る値の数 (0-255)
+// 連続ドットが生成された場合のリトライ上限
+const size_t RETRY_LIMIT = 3;
 } // namespace
 
-Token::Token()
-	: _urandomFd(-1), _buffer(RANDOM_BUFFER_SIZE), _bufPos(RANDOM_BUFFER_SIZE) {
-	_urandomFd = open("/dev/urandom", O_RDONLY);
-	if (_urandomFd < 0) {
-		int err = errno;
-		throw std::runtime_error("Open /dev/urandom failed: " +
-								 std::string(strerror(err)));
-	}
-}
+Token::Token() : _random(Random::getInstance()) {}
 
-Token::~Token() {
-	if (_urandomFd >= 0) {
-		close(_urandomFd);
-		_urandomFd = -1;
-	}
-}
+Token::~Token() {}
 
 /**
  * @brief Tokenシングルトンインスタンスを取得
@@ -41,74 +23,6 @@ Token::~Token() {
 Token &Token::getInstance() {
 	static Token instance;
 	return instance;
-}
-
-/// @brief /dev/urandomをreadするヘルパー
-ssize_t Token::_readRandomBytes(unsigned char *buf, size_t size) {
-	ssize_t totalRead = 0;
-	while (totalRead < static_cast< ssize_t >(size)) {
-		ssize_t bytesRead = read(_urandomFd, buf + totalRead, size - totalRead);
-		if (bytesRead < 0) {
-			int err = errno;
-			if (err == EINTR) { // シグナルによる中断の場合はリトライ
-				continue;
-			}
-			throw std::runtime_error("Read from /dev/urandom failed: " +
-									 std::string(strerror(err)));
-		}
-		// EOF (通常/dev/urandomでは発生しないが、念のため)
-		if (bytesRead == 0) {
-			// 部分読み込みの場合は例外を投げる
-			if (totalRead < static_cast< ssize_t >(size)) {
-				throw std::runtime_error(
-					"Read from /dev/urandom failed: Unexpected EOF");
-			}
-			return totalRead;
-		}
-		totalRead += bytesRead;
-	}
-	return totalRead;
-}
-
-/// @brief バッファからバイトを取得し、必要に応じてリフィル
-unsigned char Token::_getRandomByte() {
-	// バッファが空または使い切った場合はリフィル
-	if (_bufPos >= _buffer.size()) {
-		_readRandomBytes(&_buffer[0], RANDOM_BUFFER_SIZE);
-		_bufPos = 0;
-	}
-	// バッファからバイトを返して位置を進める
-	return _buffer[_bufPos++];
-}
-
-/// @brief 指定された範囲の一様分布の乱数を生成
-size_t Token::_uniformRand(size_t min, size_t max) {
-	if (min > max) {
-		std::swap(min, max);
-	}
-	const size_t range = max - min + 1;
-	if (range == 1 || min == max) {
-		return min;
-	}
-
-	// 2のべき乗の場合は、ビットマスクで処理
-	if ((range & (range - 1)) == 0) {
-		unsigned char byte = _getRandomByte();
-		return (static_cast< size_t >(byte) & (range - 1)) + min;
-	}
-
-	// rejection sampling で一様分布の乱数を生成
-	if (range > BYTE_RANGE) {
-		throw std::runtime_error(
-			"GenerateToken: Range too large for single-byte sampling");
-	}
-	const size_t limit = (BYTE_RANGE / range) * range;
-	size_t result;
-	do {
-		unsigned char byte = _getRandomByte();
-		result = static_cast< size_t >(byte);
-	} while (result >= limit);
-	return (result % range) + min;
 }
 
 /// @brief 非ドット文字を取得する（フォールバック処理）
@@ -123,19 +37,15 @@ char Token::_getNonDotChar(const std::string &charset) {
 		throw std::runtime_error(
 			"GenerateToken: No non-dot character found in charset");
 	}
-	size_t idx = _uniformRand(0, nonDotIndices.size() - 1);
+	size_t idx = _random.uniformRand(0, nonDotIndices.size() - 1);
 	return charset[nonDotIndices[idx]];
 }
 
 /// @brief 連続ドットを避けて次の文字を取得する
 char Token::_getNextChar(const std::string &charset, const std::string &token) {
-	// 現実的なリトライ上限の数値として文字セットサイズの10倍を上限とする
-	const size_t retryLimit = charset.length() * 10;
-
 	size_t retryCount = 0;
-	while (retryCount < retryLimit) {
-		char newChar = charset[_uniformRand(0, charset.length() - 1)];
-		// 連続ドットでない場合はそのまま返す
+	while (retryCount < RETRY_LIMIT) {
+		char newChar = charset[_random.uniformRand(0, charset.length() - 1)];
 		if (newChar != '.' || token.empty() ||
 			token[token.length() - 1] != '.') {
 			return newChar;

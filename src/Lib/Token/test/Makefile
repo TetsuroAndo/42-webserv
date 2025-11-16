@@ -1,8 +1,8 @@
 NAME = hash_test
 SPEED_NAME = speed_test
 
-SRCS = main.cpp ../Token.cpp
-SPEED_SRCS = speed.cpp ../Token.cpp
+SRCS = main.cpp ../Token.cpp ../Random.cpp
+SPEED_SRCS = speed.cpp ../Token.cpp ../Random.cpp
 OBJS = $(SRCS:.cpp=.o)
 SPEED_OBJS = $(SPEED_SRCS:.cpp=.o)
 
