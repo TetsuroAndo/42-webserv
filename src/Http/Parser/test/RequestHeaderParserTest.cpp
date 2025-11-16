@@ -1,3 +1,4 @@
+#include "../../../Config/ConfigBuilder.hpp"
 #include "../../Core/HttpRequest.hpp"
 #include "../../Core/HttpStatus.hpp"
 #include "../RequestHeadParser.hpp"
@@ -15,7 +16,9 @@
 	} while (0)
 
 static void testBasicHeaders() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestHeadParser parser;
 	int err = 0;
 	std::string headers = "Host: example.com\r\n"
@@ -33,7 +36,9 @@ static void testBasicHeaders() {
 }
 
 static void testHeaderWhitespace() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestHeadParser parser;
 	int err = 0;
 	std::string headers = "  Foo-Bar \t :  value \t \r\n";
@@ -45,7 +50,9 @@ static void testHeaderWhitespace() {
 }
 
 static void testDuplicateHeader() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestHeadParser parser;
 	int err = 0;
 	std::string headers = "X-Dup: one\r\nX-Dup: two\r\n";
@@ -56,7 +63,9 @@ static void testDuplicateHeader() {
 }
 
 static void testInvalidHeader() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestHeadParser parser;
 	int err = 0;
 	std::string headers = "InvalidHeaderWithoutColon\r\n";
@@ -67,7 +76,9 @@ static void testInvalidHeader() {
 }
 
 static void testEmptyHeaderValue() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestHeadParser parser;
 	int err = 0;
 	std::string headers = "X-Empty: \r\n";

@@ -1,4 +1,5 @@
 #include "RequestLineParserTest.hpp"
+#include "../../../Config/ConfigBuilder.hpp"
 #include "../../Core/HttpRequest.hpp"
 #include "../../Core/HttpStatus.hpp"
 #include "../../Parser/RequestLineParser.hpp"
@@ -17,7 +18,9 @@
 	} while (0)
 
 static void testValidLines() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestLineParser parser;
 	int err = 0;
 
@@ -27,7 +30,7 @@ static void testValidLines() {
 	ASSERT(req.getPath() == "/index.html", "Path /index.html");
 	ASSERT(req.getVersion() == "HTTP/1.1", "Version HTTP/1.1");
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "POST /api?x=1&y=2 HTTP/1.0", err) == true,
 		   "POST with query");
@@ -38,23 +41,25 @@ static void testValidLines() {
 }
 
 static void testEmptyAndMalformed() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestLineParser parser;
 	int err = 0;
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "", err) == false &&
 			   err == HttpStatus::BAD_REQUEST,
 		   "Empty line");
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "GET /index.html", err) == false &&
 			   err == HttpStatus::BAD_REQUEST,
 		   "Missing version");
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "GET /index.html HTTP/2.0", err) == false &&
 			   err == HttpStatus::VERSION_NOT_SUPPORTED,
@@ -62,23 +67,25 @@ static void testEmptyAndMalformed() {
 }
 
 static void testSpecialQueries() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	RequestLineParser parser;
 	int err = 0;
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "GET /path?key HTTP/1.1", err) == true,
 		   "Query key without value");
 	ASSERT(req.getQuery("key") == "", "Query key empty");
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "GET /path?key= HTTP/1.1", err) == true,
 		   "Query key empty value");
 	ASSERT(req.getQuery("key") == "", "Query key empty");
 
-	req.clear();
+	req.clear(config);
 	err = 0;
 	ASSERT(parser.parse(req, "GET /path?key=1&key=2 HTTP/1.1", err) == true,
 		   "Duplicate keys");

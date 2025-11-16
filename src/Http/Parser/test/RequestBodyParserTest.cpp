@@ -1,4 +1,5 @@
 #include "RequestBodyParserTest.hpp"
+#include "../../../Config/ConfigBuilder.hpp"
 #include "../../Core/HttpRequest.hpp"
 #include "../../Core/HttpStatus.hpp"
 #include "../RequestBodyParser.hpp"
@@ -17,7 +18,9 @@
 	} while (0)
 
 static void testIdentityZeroLength() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	req.addHeader("Content-Length", "0");
 
 	RequestBodyParser parser;
@@ -32,7 +35,9 @@ static void testIdentityZeroLength() {
 }
 
 static void testIdentityNormal() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	req.addHeader("Content-Length", "5");
 
 	RequestBodyParser parser;
@@ -51,7 +56,9 @@ static void testIdentityNormal() {
 }
 
 static void testChunkedNormal() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	req.addHeader("Transfer-Encoding", "chunked");
 
 	RequestBodyParser parser;
@@ -66,7 +73,9 @@ static void testChunkedNormal() {
 }
 
 static void testChunkedInvalidSize() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	req.addHeader("Transfer-Encoding", "chunked");
 
 	RequestBodyParser parser;
@@ -79,7 +88,9 @@ static void testChunkedInvalidSize() {
 }
 
 static void testChunkedMissingCRLF() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	req.addHeader("Transfer-Encoding", "chunked");
 
 	RequestBodyParser parser;
@@ -92,7 +103,9 @@ static void testChunkedMissingCRLF() {
 }
 
 static void testInitErrors() {
-	HttpRequest req;
+	ConfigBuilder builder("../../../../config/default.yaml");
+	Config config = builder.build();
+	HttpRequest req(config);
 	req.addHeader("Transfer-Encoding", "chunked");
 	req.addHeader("Content-Length", "5");
 
@@ -101,7 +114,7 @@ static void testInitErrors() {
 	parser.init(req, err);
 	ASSERT(err == HttpStatus::BAD_REQUEST, "Init error for both headers");
 
-	HttpRequest req2;
+	HttpRequest req2(config);
 	req2.addHeader("Transfer-Encoding", "gzip");
 	RequestBodyParser parser2;
 	err = 0;
