@@ -1,13 +1,19 @@
-#ifndef HTTP_REQUEST_HELPER_HPP
-#define HTTP_REQUEST_HELPER_HPP
+#ifndef REQUEST_PARSER_HPP
+#define REQUEST_PARSER_HPP
 
-#include "../Core/HttpRequest.hpp"
-#include "ParseResult.hpp"
-#include "RequestBodyParser.hpp"
-#include "RequestHeaderParser.hpp"
-#include "RequestLineParser.hpp"
 #include <string>
 
+#include "ParseResult.hpp"
+#include "RequestBodyParser.hpp"
+#include "RequestHeadParser.hpp"
+#include "RequestLineParser.hpp"
+
+class HttpRequest;
+
+/**
+ * @brief リクエストパーシングの状態とパーサーインスタンスを管理するクラス
+ * @note パーシング関連の責務を集約し、PipelineContextから分離する
+ */
 class RequestParser {
 public:
 	enum ParseState {
@@ -20,38 +26,59 @@ public:
 	RequestParser();
 	~RequestParser();
 
+	/// @brief パーサーと状態をリセットする
 	void reset();
 
-	/**
-	 * @brief PARSE_ERRORの場合のHTTPステータスコードを返します。
-	 * @return int エラーに対応するHTTPステータスコード (e.g., 400, 413)。
-	 */
+	/// @brief 現在のパーシング状態を取得する
+	ParseState getState() const;
+	/// @brief エラーコードを取得する
 	int getErrorCode() const;
-
-	/**
-	 * @brief パースが完了しているかどうかを返します。
-	 * @return bool パースが完了していればtrue、そうでなければfalse。
-	 */
+	/// @brief エラーコードを設定する
+	void setErrorCode(int code);
+	/// @brief パーシングが完了しているかどうかを返す
 	bool isComplete() const;
 
 	/**
-	 * @brief
-	 * 生のリクエストバッファをパースし、HttpRequestオブジェクトを構築します。
-	 * @param request 構築対象のHttpRequestオブジェクト。
-	 * @param buffer
-	 * 受信した生データが入ったバッファ。パースした分は削除されます。
-	 * @return ParseResult パース結果。
+	 * @brief リクエストラインをパースする
+	 * @param req パース結果を格納するHttpRequestオブジェクト
+	 * @param buffer 受信バッファ（パース済み部分は削除される）
+	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
+	 * @note 例: 'GET /auth/login.html HTTP/1.1\r\n\r\n'
 	 */
-	ParseResult parse(HttpRequest &request, std::string &buffer);
+	ParseResult parseRequestLine(HttpRequest &req, std::string &buffer);
 
-	ParseState getState() const;
+	/**
+	 * @brief ヘッダーブロックをパースする
+	 * @param req パース結果を格納するHttpRequestオブジェクト
+	 * @param buffer 受信バッファ（パース済み部分は削除される）
+	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
+	 * @note Content-LengthとLocationの上限サイズチェックもこの時点で行う
+	 */
+	ParseResult parseHeaders(HttpRequest &req, std::string &buffer);
+
+	/**
+	 * @brief リクエストボディをパースする
+	 * @param req
+	 * パース結果を格納するHttpRequestオブジェクト（ボディサイズ制限も含む）
+	 * @param buffer 受信バッファ（パース済み部分は削除される）
+	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
+	 * @note このメソッドは内部でボディサイズチェックも行う
+	 */
+	ParseResult parseBody(HttpRequest &req, std::string &buffer);
+
+	/// @brief リクエストラインパーサーへの参照を取得する
+	RequestLineParser &getLineParser();
+	/// @brief ヘッダーパーサーへの参照を取得する
+	RequestHeadParser &getHeadParser();
+	/// @brief ボディパーサーへの参照を取得する
+	RequestBodyParser &getBodyParser();
 
 private:
 	int _errorCode;
 	ParseState _state;
 
 	RequestLineParser _lineParser;
-	RequestHeaderParser _headerParser;
+	RequestHeadParser _headParser;
 	RequestBodyParser _bodyParser;
 
 	RequestParser(const RequestParser &);

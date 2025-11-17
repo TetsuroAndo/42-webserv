@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cstddef>
+
 class ConfigBuilder;
 class Node;
-
 class ConfigLocationParser {
 private:
 	ConfigBuilder *_builder;

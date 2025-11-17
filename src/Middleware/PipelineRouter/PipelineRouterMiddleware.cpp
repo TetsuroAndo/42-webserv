@@ -1,5 +1,6 @@
 #include "PipelineRouterMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
+#include "../../Lib/Logger/Log.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -20,6 +21,10 @@ struct CompareRoutes {
 void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 									  MiddlewareProcessor *proc) {
 	const std::string requestPath = ctx.req.getPath();
+	LOG(DEBUG) << "PipelineRouterMiddleware: Routing request"
+			   << attr("path", requestPath)
+			   << attr("method", ctx.req.getMethod())
+			   << attr("path_empty", requestPath.empty());
 	MiddlewareProcessor *nextProcessor = 0;
 
 	std::vector< std::pair< std::string, MiddlewareProcessor * > > sortedRoutes;
@@ -42,11 +47,16 @@ void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 	}
 
 	if (nextProcessor != 0) {
+		LOG(DEBUG)
+			<< "PipelineRouterMiddleware: Route matched, handling request";
 		nextProcessor->handle(ctx);
 		if (ctx.res.getStatusCode() >= 400) {
 			proc->next(ctx);
 		}
 	} else {
+		LOG(WARNING) << "PipelineRouterMiddleware: No route matched"
+					 << attr("path", requestPath)
+					 << attr("available_routes", _routes.size());
 		ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 		proc->next(ctx);
 	}
