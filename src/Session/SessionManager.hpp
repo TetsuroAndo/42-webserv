@@ -20,9 +20,9 @@ private:
 	SessionManager &operator=(const SessionManager &);
 	~SessionManager();
 
-	Token _token;
 	std::string generateSessionId() const;
 
+	Token &_hasher;
 	std::map< std::string, Session * > _sessions;
 	static const time_t _SESSION_TIMEOUT = 1800; // 30分
 };
