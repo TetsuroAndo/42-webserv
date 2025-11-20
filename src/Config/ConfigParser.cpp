@@ -63,6 +63,7 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
 	keys.insert("session");
+	keys.insert("sessionTimeoutSec");
 	return keys;
 }
 
@@ -300,4 +301,8 @@ void ConfigParser::parseServer(const Node *serverNode) {
 
 	if (Node *n = serverNode->getMapNode("maxEvents"))
 		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));
+
+	if (Node *n = serverNode->getMapNode("sessionTimeoutSec"))
+		_builder->setSessionTimeoutSec(
+			validateConvertTimeout("sessionTimeoutSec", n->getValue()));
 }

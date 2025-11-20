@@ -34,7 +34,7 @@ Config::Config(const std::vector< Listen > &listens,
 			   size_t maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
 			   size_t biggestMaxRequestBodySize, size_t timeoutSec,
 			   size_t maxEvents, size_t requestHeaderTimeoutSec,
-			   size_t requestBodyTimeoutSec,
+			   size_t requestBodyTimeoutSec, size_t sessionTimeoutSec,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
 	  _errorLogs(errorLogs), _errorPages(errorPages),
@@ -43,7 +43,8 @@ Config::Config(const std::vector< Listen > &listens,
 	  _biggestMaxRequestBodySize(biggestMaxRequestBodySize),
 	  _timeoutSec(timeoutSec), _maxEvents(maxEvents),
 	  _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
-	  _requestBodyTimeoutSec(requestBodyTimeoutSec) {}
+	  _requestBodyTimeoutSec(requestBodyTimeoutSec),
+	  _sessionTimeoutSec(sessionTimeoutSec) {}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _locations(other._locations),
@@ -54,7 +55,8 @@ Config::Config(const Config &other)
 	  _biggestMaxRequestBodySize(other._biggestMaxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
-	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec) {}
+	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec),
+	  _sessionTimeoutSec(other._sessionTimeoutSec) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -70,6 +72,7 @@ Config &Config::operator=(const Config &other) {
 		_maxEvents = other._maxEvents;
 		_requestHeaderTimeoutSec = other._requestHeaderTimeoutSec;
 		_requestBodyTimeoutSec = other._requestBodyTimeoutSec;
+		_sessionTimeoutSec = other._sessionTimeoutSec;
 	}
 	return *this;
 }
@@ -154,6 +157,8 @@ size_t Config::getRequestBodyTimeoutSec() const {
 	return _requestBodyTimeoutSec;
 }
 
+size_t Config::getSessionTimeoutSec() const { return _sessionTimeoutSec; }
+
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
@@ -162,6 +167,7 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	   << "\n";
 	os << "  requestBodyTimeoutSec: " << config._requestBodyTimeoutSec << "\n";
 	os << "  maxEvents: " << config._maxEvents << "\n";
+	os << "  sessionTimeoutSec: " << config._sessionTimeoutSec << "\n";
 
 	os << "  listens:\n";
 	for (std::vector< Listen >::const_iterator it = config._listens.begin();

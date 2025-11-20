@@ -21,6 +21,7 @@ private:
 	std::string _defaultLocationKey;
 	size_t _requestHeaderTimeoutSec;
 	size_t _requestBodyTimeoutSec;
+	size_t _sessionTimeoutSec;
 
 	void initDefaults();
 	void setup(const std::string &configFile);
@@ -43,11 +44,13 @@ public:
 	void setErrorPage(int code, const std::string &uri);
 	void setLocations(const std::map< std::string, Location > &locations);
 	void setLocation(const Location &location);
+	void setSessionTimeoutSec(size_t sec);
 
 	// サーバーブロック直下の設定（デフォルトロケーション）
 	void setServerDefaultRoot(const std::string &root);
 	void setServerDefaultAutoindex(bool autoindex);
-	void setServerDefaultindex(const std::string &index);
+	void setServerDefaultindex(
+		const std::string &index); // TODO: 名前ミス直す　Iを大文字にする
 	void setServerDefaultUploadStore(const std::string &uploadStore);
 	void setServerDefaultCgiConf(const std::string &extension,
 								 const std::string &interpreterPath);

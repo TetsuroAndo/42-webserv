@@ -13,6 +13,7 @@ servers:
       timeoutSec: 60
       requestHeaderTimeoutSec: 15
       requestBodyTimeoutSec: 30
+      sessionTimeoutSec: 1800
 
       access_logs:
         - access_log:

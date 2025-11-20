@@ -83,7 +83,7 @@ Config ConfigBuilder::build() const {
 				  _maxRequestBodySize, _hasBiggestRequestBodySize,
 				  _biggestRequestBodySize, _timeoutSec, _maxEvents,
 				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
-				  _errorPages);
+				  _sessionTimeoutSec, _errorPages);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const size_t size) {
@@ -136,6 +136,10 @@ void ConfigBuilder::setLocation(const Location &location) {
 		newLocation.index = defaultLocation.index;
 	}
 	_locations[newLocation.path] = newLocation;
+}
+
+void ConfigBuilder::setSessionTimeoutSec(const size_t sec) {
+	_sessionTimeoutSec = sec;
 }
 
 void ConfigBuilder::setServerDefaultRoot(const std::string &root) {
