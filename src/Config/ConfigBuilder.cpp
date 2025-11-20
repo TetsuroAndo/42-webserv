@@ -150,7 +150,7 @@ void ConfigBuilder::setServerDefaultAutoindex(bool autoindex) {
 	_locations[_defaultLocationKey].autoindex = autoindex;
 }
 
-void ConfigBuilder::setServerDefaultindex(const std::string &index) {
+void ConfigBuilder::setServerDefaultIndex(const std::string &index) {
 	_locations[_defaultLocationKey].index = index;
 }
 

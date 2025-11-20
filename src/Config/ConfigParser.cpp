@@ -262,7 +262,7 @@ void ConfigParser::parseServer(const Node *serverNode) {
 	if (Node *n = serverNode->getMapNode("autoindex"))
 		_builder->setServerDefaultAutoindex(n->getValue() == "true");
 	if (Node *n = serverNode->getMapNode("index"))
-		_builder->setServerDefaultindex(n->getValue());
+		_builder->setServerDefaultIndex(n->getValue());
 	if (Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
 	if (Node *n = serverNode->getMapNode("interpreterPath")) {
