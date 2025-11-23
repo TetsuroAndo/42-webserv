@@ -22,6 +22,8 @@ void ConfigBuilder::initDefaults() {
 	_requestHeaderTimeoutSec = 20;
 	_requestBodyTimeoutSec = 30;
 
+	_sessionTimeoutSec = 1800;
+
 	_defaultLocationKey = "/";
 
 	Location defaultLoc;
