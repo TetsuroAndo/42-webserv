@@ -1,12 +1,11 @@
 #include "SessionManager.hpp"
 
 #include "../Lib/Logger/Log.hpp"
-#include "../Lib/Token/Token.hpp"
 
 #include <ctime>
 #include <string>
 
-SessionManager::SessionManager() {}
+SessionManager::SessionManager() : _hasher(Token::getInstance()) {}
 
 SessionManager::~SessionManager() {
 	for (std::map< std::string, Session * >::iterator it = _sessions.begin();
@@ -19,8 +18,8 @@ SessionManager::~SessionManager() {
 std::string SessionManager::generateSessionId() const {
 	std::string sessionId;
 	do {
-		sessionId = _token.genToken(32);
-	} while (_sessions.count(sessionId) > 0);
+		sessionId = _hasher.genToken();
+	} while (_sessions.find(sessionId) != _sessions.end());
 	return sessionId;
 }
 

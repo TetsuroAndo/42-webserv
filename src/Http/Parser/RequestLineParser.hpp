@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Core/HttpRequest.hpp"
-#include "ParseResult.hpp"
 #include <string>
 
 class RequestLineParser {
@@ -10,14 +9,13 @@ public:
 	~RequestLineParser();
 
 	/**
-	 * @brief リクエストラインを解析し、メソッド、パス、バージョンを HttpRequest
-	 * オブジェクトに設定します。
+	 * @brief リクエストラインを解析する
 	 * @param request HttpRequest オブジェクトへの参照
 	 * @param line 解析するリクエストラインの文字列
-	 * @return 解析に成功した場合は 0、失敗した場合はエラーコード
+	 * @param errorCode エラーコード（失敗時に設定される）
+	 * @return 成功した場合 true、失敗した場合 false
 	 */
-	ParseResult parse(HttpRequest &request, const std::string &line,
-					  int &errorCode);
+	bool parse(HttpRequest &request, const std::string &line, int &errorCode);
 
 private:
 	RequestLineParser(const RequestLineParser &);

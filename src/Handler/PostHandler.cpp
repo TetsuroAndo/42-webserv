@@ -84,7 +84,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	std::string target_filename =
 		removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) + "-" +
 		removeSpaceColonCommaHyphen(TimeCache::getGmtTime()) + "_" +
-		Token::genToken(
+		Token::getInstance().genToken(
 			8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") +
 		expansion;
 	std::string target = uploadStore + "/" + target_filename;
