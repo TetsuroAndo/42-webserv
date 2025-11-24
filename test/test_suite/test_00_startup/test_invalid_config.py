@@ -38,7 +38,7 @@ class TestInvalidConfig:
         """無効な設定ファイルは絶対に起動できない"""
         test_dir = Path(__file__).parent.parent.parent
         valid_dir = test_dir / "confs" / "invalid"
-        yaml_files = list(valid_dir.glob("*.yaml"))
+        yaml_files = list(valid_dir.rglob("*.yaml"))
         if not yaml_files:
             pytest.skip(f"無効な設定ファイルが見つかりません: {valid_dir}")
         for yaml_file in yaml_files:
