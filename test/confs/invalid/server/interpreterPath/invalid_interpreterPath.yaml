@@ -12,3 +12,11 @@ servers:
         - error_log:
             sink: console
             level: debug
+
+      locations:
+        - location:
+            path: /cgi-bin
+            root: ./www/cgi-bin/
+            interpreterPath:
+              py: テスト
+              # TODO: 一旦保留
