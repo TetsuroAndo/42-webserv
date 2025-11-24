@@ -21,7 +21,7 @@ class TestInvalidStartup:
 
     def test_config_no_permission(self, webserv_bin):
         """
-        先頭の有効設定ファイルの読み取り権限を剥奪→起動→終了コード0を期待→権限復元
+        先頭の有効設定ファイルの読み取り権限を剥奪→起動→終了コード0以外を期待→権限復元
         """
         test_dir = Path(__file__).parent.parent.parent
         valid_dir = test_dir / "confs" / "valid"
