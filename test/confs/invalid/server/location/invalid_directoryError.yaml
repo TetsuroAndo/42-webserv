@@ -4,6 +4,14 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
+            directoryError:
+
+      locations:
+        - location:
+            path: /
+            root: ./www
+            # TODO: 思いつかない
+            directoryError:
 
       error_logs:
         - error_log:

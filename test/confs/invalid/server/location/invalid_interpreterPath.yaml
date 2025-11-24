@@ -12,3 +12,14 @@ servers:
         - error_log:
             sink: console
             level: debug
+
+      interpreterPath:
+        .py: /usr/bin/python3
+
+      locations:
+        - location:
+            path: /cgi-bin
+            root: ./www/cgi-bin/
+            interpreterPath:
+              py: テスト
+              # TODO: 設定されていない

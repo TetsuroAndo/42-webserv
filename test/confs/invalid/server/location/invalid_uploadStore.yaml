@@ -4,7 +4,12 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
-
+      locations:
+        - location:
+            path: /
+            root: ./www
+            #TODO: 思いつかない
+            uploadStore:
       error_logs:
         - error_log:
             sink: file

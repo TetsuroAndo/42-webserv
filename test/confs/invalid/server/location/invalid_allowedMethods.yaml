@@ -5,6 +5,15 @@ servers:
             interface: 0.0.0.0
             port: 8080
 
+      locations:
+        - location:
+            path: /
+            root: ./www
+            allowedMethods:
+              - GET
+              - HOGE
+
+
       error_logs:
         - error_log:
             sink: file
