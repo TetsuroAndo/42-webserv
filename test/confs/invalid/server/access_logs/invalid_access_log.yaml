@@ -4,7 +4,11 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
-      access_logs:
-        - access_log:
+
+      error_logs:
+        - error_log:
+            sink: file
+            level: debug
+        - error_log:
             sink: console
-            invalid_key: true
+            level: debug
