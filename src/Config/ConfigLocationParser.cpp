@@ -19,6 +19,22 @@ const char *const VALID_BOOL_VALUES[] = {"true", "false", "on",
 										 "off",	 "yes",	  "no"};
 const size_t VALID_BOOL_VALUES_SIZE =
 	sizeof(VALID_BOOL_VALUES) / sizeof(VALID_BOOL_VALUES[0]);
+
+void isValidBoolString(const std::string &value) {
+
+	bool flag = false;
+	for (size_t i = 0; i < VALID_BOOL_VALUES_SIZE; ++i) {
+		if (VALID_BOOL_VALUES[i] == value) {
+			flag = true;
+			break;
+		}
+	}
+	if (!flag) {
+		throw std::runtime_error("Config error: invalid value '" + value +
+								 "' in 'location' ");
+	}
+}
+
 } // namespace
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
@@ -63,17 +79,7 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *autoindexNode = l_node->getMapNode("autoindex");
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();
-			bool flag = false;
-			for (size_t i = 0; i < VALID_BOOL_VALUES_SIZE; ++i) {
-				if (VALID_BOOL_VALUES[i] == value) {
-					flag = true;
-					break;
-				}
-			}
-			if (!flag) {
-				throw std::runtime_error("Config error: invalid value '" +
-										 value + "' in 'location' ");
-			}
+			isValidBoolString(value);
 			loc.autoindex =
 				(value == "true" || value == "on" || value == "yes");
 		}
@@ -117,8 +123,11 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		loc.allowedMethods = ConfigParser::VALID_ALLOWED_METHODS;
 
 		Node *sessionNode = l_node->getMapNode("session");
-		if (sessionNode)
-			loc.session = (sessionNode->getValue() == "true");
+		if (sessionNode) {
+			std::string value = sessionNode->getValue();
+			isValidBoolString(value);
+			loc.session = (value == "true" || value == "on" || value == "yes");
+		}
 
 		if (Node *allowMethodsNode = l_node->getMapNode("allowedMethods")) {
 			loc.allowedMethods.clear();
