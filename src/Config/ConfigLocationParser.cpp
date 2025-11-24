@@ -15,10 +15,10 @@
 #include <vector>
 
 namespace {
-const char *const VALID_AUTOINDEX_VALUES[] = {"true", "false", "on",
-											  "off",  "yes",   "no"};
-const size_t VALID_AUTOINDEX_VALUES_SIZE =
-	sizeof(VALID_AUTOINDEX_VALUES) / sizeof(VALID_AUTOINDEX_VALUES[0]);
+const char *const VALID_BOOL_VALUES[] = {"true", "false", "on",
+										 "off",	 "yes",	  "no"};
+const size_t VALID_BOOL_VALUES_SIZE =
+	sizeof(VALID_BOOL_VALUES) / sizeof(VALID_BOOL_VALUES[0]);
 } // namespace
 
 ConfigLocationParser::ConfigLocationParser(ConfigBuilder *builder)
@@ -64,8 +64,8 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		if (autoindexNode) {
 			std::string value = autoindexNode->getValue();
 			bool flag = false;
-			for (size_t i = 0; i < VALID_AUTOINDEX_VALUES_SIZE; ++i) {
-				if (VALID_AUTOINDEX_VALUES[i] == value) {
+			for (size_t i = 0; i < VALID_BOOL_VALUES_SIZE; ++i) {
+				if (VALID_BOOL_VALUES[i] == value) {
 					flag = true;
 					break;
 				}
