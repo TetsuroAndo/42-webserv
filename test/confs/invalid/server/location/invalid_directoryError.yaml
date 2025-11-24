@@ -10,7 +10,6 @@ servers:
         - location:
             path: /
             root: ./www
-            # TODO: 思いつかない
             directoryError:
 
       error_logs:

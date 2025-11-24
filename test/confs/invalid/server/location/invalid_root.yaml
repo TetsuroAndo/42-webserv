@@ -7,7 +7,6 @@ servers:
       locations:
         - location:
             path: /
-            # TODO: 思いつかない
             root:
       error_logs:
         - error_log:

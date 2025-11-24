@@ -6,7 +6,6 @@ servers:
             port: 8080
       locations:
         - location:
-            # TODO: 思いつかない
             path:
             root: ./www
 

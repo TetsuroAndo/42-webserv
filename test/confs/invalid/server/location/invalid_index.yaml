@@ -8,7 +8,6 @@ servers:
         - location:
             path: /
             root: ./www
-            # TODO: 思いつかない
             index:
       error_logs:
         - error_log:
