@@ -12,3 +12,5 @@ servers:
         - error_log:
             sink: console
             level: debug
+
+      timeoutSec: 42000000000000000000
