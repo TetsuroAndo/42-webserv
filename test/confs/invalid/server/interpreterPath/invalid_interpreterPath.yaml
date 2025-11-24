@@ -13,6 +13,9 @@ servers:
             sink: console
             level: debug
 
+      interpreterPath:
+        py: /usr/bin/python3
+
       locations:
         - location:
             path: /cgi-bin
