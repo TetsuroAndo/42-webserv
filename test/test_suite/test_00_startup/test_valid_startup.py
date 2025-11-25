@@ -58,10 +58,9 @@ class TestValidStartup:
                 stdout, stderr = proc.communicate()
                 pytest.fail(f"有効な設定ファイル {yaml_file.name} が起動に失敗: {stderr}")
 
-    @pytest.mark.config("valid/multi_listen.yaml")
     def test_multi_listen(self, webserv_bin):
         proc = subprocess.Popen(
-            [webserv_bin],
+            [webserv_bin, str("../../confs/valid/multi_listen.yaml")],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -70,7 +69,7 @@ class TestValidStartup:
         time.sleep(0.5)
 
         try:
-            if proc.poll():
+            if proc.poll() is None:
                 url = "http://0.0.0.0:8080/"
                 response = requests.get(url)
                 assert response.status_code == 200
@@ -87,8 +86,8 @@ class TestValidStartup:
                 proc.wait()
             else:
                 assert False, "起動に失敗"
-        except:
-            if proc.poll():
+        except Exception:
+            if proc.poll() is None:
                 proc.terminate()
                 proc.wait()
 

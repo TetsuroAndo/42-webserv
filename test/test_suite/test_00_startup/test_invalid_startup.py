@@ -57,6 +57,7 @@ class TestInvalidStartup:
             try:
                 os.chmod(target, original_mode)
             except Exception:
+                print("fail chmod")
                 pass
 
     def test_duplicate_start_same_config_fails(self, webserv_bin):
