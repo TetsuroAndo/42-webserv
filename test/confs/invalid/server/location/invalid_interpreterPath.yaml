@@ -13,13 +13,9 @@ servers:
             sink: console
             level: debug
 
-      interpreterPath:
-        .py: /usr/bin/python3
-
       locations:
         - location:
             path: /cgi-bin
             root: ./www/cgi-bin/
             interpreterPath:
-              py:
-              # TODO: 設定されていないパスでも通すのかと、server直下の設定と被っていないかっていう話があるので検討
+              py: /usr/bin/python3

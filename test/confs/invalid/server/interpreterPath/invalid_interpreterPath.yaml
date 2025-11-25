@@ -20,6 +20,3 @@ servers:
         - location:
             path: /cgi-bin
             root: ./www/cgi-bin/
-            interpreterPath:
-              py:
-              # TODO: 一旦保留
