@@ -79,7 +79,8 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 		return PARSE_INCOMPLETE;
 	}
 
-	std::string headerBlock(buffer.begin(), buffer.begin() + headerEndPos);
+	const std::string headerBlock(buffer.begin(),
+								  buffer.begin() + headerEndPos);
 	if (!_headParser.parse(req, headerBlock, _errorCode)) {
 		return PARSE_ERROR;
 	}
