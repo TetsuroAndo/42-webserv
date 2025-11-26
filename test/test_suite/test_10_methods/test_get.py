@@ -86,3 +86,37 @@ class TestGET:
         url = f"{managed_server['base_url']}/not_allow_get/hello.txt"
         response = requests.get(url)
         assert response.status_code == 405
+
+    @pytest.mark.config("valid/config_basic_get.yaml")
+    def test_prevent_directory_traversal(self, managed_server):
+        # ../によるアクセスを検証（ルート外は参照できない）
+        base = managed_server["base_url"]
+
+        # 明示的に親ディレクトリを指すリクエストは 404 になるべき
+        r1 = requests.get(f"{base}/../index.html")
+        assert r1.status_code == 404
+
+        # さらに上位を狙うパスも 404（ルート脱出は不可）
+        r2 = requests.get(f"{base}/../../README.md")
+        assert r2.status_code == 404
+
+    @pytest.mark.config("valid/config_basic_get.yaml")
+    def test_prevent_encoded_directory_traversal(self, managed_server):
+        # `%2e%2e/` を含むエンコード済みの親参照は無効化される（404）
+        base = managed_server["base_url"]
+
+        r = requests.get(f"{base}/%2e%2e/index.html")
+        assert r.status_code == 404
+
+    @pytest.mark.config("valid/config_basic_get.yaml")
+    def test_safe_url_decode_special_chars(self, managed_server):
+        # %2F（スラッシュ）や%20（スペース）のデコード安全性を検証
+        base = managed_server["base_url"]
+
+        # %2F はディレクトリ区切りとして扱われず、404 となること
+        r1 = requests.get(f"{base}/hello%2Fworld.txt")
+        assert r1.status_code == 404
+
+        # %20 を含むパス（該当ファイルなし）は 404 となること
+        r2 = requests.get(f"{base}/hello%20.txt")
+        assert r2.status_code == 404
