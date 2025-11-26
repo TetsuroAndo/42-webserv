@@ -14,6 +14,16 @@ class TestGET:
         assert "Hello from webserv test!" in response.text
         assert "text/plain" in response.headers.get("Content-Type", "")
 
+        url = f"{managed_server['base_url']}/img.jpg"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "image/jpeg" in response.headers.get("Content-Type", "")
+
+        url = f"{managed_server['base_url']}/unknown_ex.unknown"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "application/octet-stream" in response.headers.get("Content-Type", "")
+
     @pytest.mark.config("valid/config_basic_get.yaml")
     def test_static_file_not_found(self, managed_server):
         url = f"{managed_server['base_url']}/non-existent-file.txt"
