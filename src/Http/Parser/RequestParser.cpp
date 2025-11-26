@@ -87,9 +87,10 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 	buffer.erase(0, headerEndPos + 4); // パースした分をバッファから削除
 
 	// Content-Lengthのチェック
-	if (req.hasHeader("Content-Length")) {
+	const bool hasContentLength = req.hasHeader("Content-Length");
+	size_t contentLength = 0;
+	if (hasContentLength) {
 		const std::string &lenStr = req.getHeader("Content-Length");
-		size_t contentLength = 0;
 		if (!StringOps::decStrToSize(lenStr, contentLength)) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
@@ -101,7 +102,17 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 		}
 	}
 
-	_state = STATE_BODY;
+	// Transfer-Encoding ヘッダの有無を確認
+	const bool hasTransferEncoding = req.hasHeader("Transfer-Encoding");
+
+	// ボディが存在しない（もしくは Content-Length: 0 ）場合は
+	// ここでリクエストのパース完了にする。
+	// そうでなければボディの受信状態へ遷移。
+	if (!hasTransferEncoding && (!hasContentLength || contentLength == 0)) {
+		_state = STATE_COMPLETE;
+	} else {
+		_state = STATE_BODY;
+	}
 	return PARSE_COMPLETE;
 }
 
