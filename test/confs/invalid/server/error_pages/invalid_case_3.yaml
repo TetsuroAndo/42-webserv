@@ -4,7 +4,13 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
+
       error_logs:
         - error_log:
+            sink: file
+            level: debug
+        - error_log:
             sink: console
-            invalid_key: true # Invalid key
+            level: debug
+      error_pages:
+        600: /errors/404.html

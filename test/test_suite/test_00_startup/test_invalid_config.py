@@ -1,6 +1,7 @@
 """
 設定ファイルのバリデーション（異常系）
 """
+import time
 import pytest
 import subprocess
 from pathlib import Path
@@ -16,59 +17,41 @@ class TestInvalidConfig:
         project_root = test_dir.parent
         return str(project_root / "webserv")
 
-    def test_invalid_key_server(self, webserv_bin):
-        """無効なキーがserverブロックに含まれる場合"""
-        test_dir = Path(__file__).parent.parent.parent
-        config_path = str(test_dir / "confs" / "invalid" / "test_invalid_key_server.yaml")
-
-        result = subprocess.run(
-            [webserv_bin, config_path],
+    def test_no_exist_file(self, webserv_bin):
+        proc = subprocess.Popen(
+            [webserv_bin, "no_exist.yaml"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
         )
 
-        assert result.returncode != 0, "サーバーは無効なキーで起動に失敗すべき"
-        assert "unknown directive" in result.stderr.lower() or result.returncode != 0
+        time.sleep(0.5)
 
-    def test_invalid_key_location(self, webserv_bin):
-        """無効なキーがlocationブロックに含まれる場合"""
+        if proc.poll() is None:
+            proc.terminate()
+            proc.wait()
+            assert False, "起動に成功"
+        else:
+            assert True, "起動に失敗"
+
+    def test_invalid_config(self, webserv_bin):
+        """無効な設定ファイルは絶対に起動できない"""
         test_dir = Path(__file__).parent.parent.parent
-        config_path = str(test_dir / "confs" / "invalid" / "test_invalid_key_location.yaml")
+        valid_dir = test_dir / "confs" / "invalid"
+        yaml_files = list(valid_dir.rglob("*.yaml"))
+        if not yaml_files:
+            pytest.skip(f"無効な設定ファイルが見つかりません: {valid_dir}")
+        for yaml_file in yaml_files:
+            proc = subprocess.Popen(
+                [webserv_bin, str(yaml_file)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            time.sleep(0.5)
+            if proc.poll() is None:
+                proc.terminate()
+                proc.wait()
+                pytest.fail(f"無効な設定ファイル {yaml_file.name} が起動に成功")
 
-        result = subprocess.run(
-            [webserv_bin, config_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
 
-        assert result.returncode != 0, "サーバーは無効なキーで起動に失敗すべき"
-
-    def test_invalid_key_listen(self, webserv_bin):
-        """無効なキーがlistenブロックに含まれる場合"""
-        test_dir = Path(__file__).parent.parent.parent
-        config_path = str(test_dir / "confs" / "invalid" / "test_invalid_key_listen.yaml")
-
-        result = subprocess.run(
-            [webserv_bin, config_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        assert result.returncode != 0, "サーバーは無効なキーで起動に失敗すべき"
-
-    def test_invalid_key_log(self, webserv_bin):
-        """無効なキーがlogブロックに含まれる場合"""
-        test_dir = Path(__file__).parent.parent.parent
-        config_path = str(test_dir / "confs" / "invalid" / "test_invalid_key_log.yaml")
-
-        result = subprocess.run(
-            [webserv_bin, config_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        assert result.returncode != 0, "サーバーは無効なキーで起動に失敗すべき"

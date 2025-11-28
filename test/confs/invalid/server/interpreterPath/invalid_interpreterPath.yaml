@@ -1,0 +1,22 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      error_logs:
+        - error_log:
+            sink: file
+            level: debug
+        - error_log:
+            sink: console
+            level: debug
+
+      interpreterPath:
+        py: /usr/bin/python3
+
+      locations:
+        - location:
+            path: /cgi-bin
+            root: ./www/cgi-bin/

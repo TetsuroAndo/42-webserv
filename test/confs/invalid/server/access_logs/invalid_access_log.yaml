@@ -1,0 +1,15 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      access_logs:
+        - access_log:
+            sink: hogehuga
+
+      error_logs:
+        - error_log:
+            sink: console
+            level: debug
