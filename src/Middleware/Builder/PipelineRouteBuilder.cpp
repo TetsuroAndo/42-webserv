@@ -35,11 +35,6 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
 
-		routeProcessor->addMiddleware(new RequestBodyParserMiddleware());
-		// if (currentLocation.allowedMethods.count("POST")) {
-		// 	routeProcessor->addMiddleware(new RequestBodyParserMiddleware());
-		// }
-
 		if (currentLocation.session == true &&
 			!currentLocation.allowedMethods.empty()) {
 			routeProcessor->addMiddleware(new SessionMiddleware());
@@ -76,6 +71,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 
 	mainProc->addMiddleware(new RequestLineParserMiddleware());
 	mainProc->addMiddleware(new RequestHeadParserMiddleware());
+	mainProc->addMiddleware(new RequestBodyParserMiddleware());
 	mainProc->addMiddleware(new RedirectMiddleware(conf));
 	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
