@@ -22,6 +22,8 @@ void ConfigBuilder::initDefaults() {
 	_requestHeaderTimeoutSec = 20;
 	_requestBodyTimeoutSec = 30;
 
+	_sessionTimeoutSec = 1800;
+
 	_defaultLocationKey = "/";
 
 	Location defaultLoc;
@@ -83,7 +85,7 @@ Config ConfigBuilder::build() const {
 				  _maxRequestBodySize, _hasBiggestRequestBodySize,
 				  _biggestRequestBodySize, _timeoutSec, _maxEvents,
 				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
-				  _errorPages);
+				  _sessionTimeoutSec, _errorPages);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const size_t size) {
@@ -138,6 +140,10 @@ void ConfigBuilder::setLocation(const Location &location) {
 	_locations[newLocation.path] = newLocation;
 }
 
+void ConfigBuilder::setSessionTimeoutSec(const size_t sec) {
+	_sessionTimeoutSec = sec;
+}
+
 void ConfigBuilder::setServerDefaultRoot(const std::string &root) {
 	_locations[_defaultLocationKey].root = root;
 }
@@ -146,7 +152,7 @@ void ConfigBuilder::setServerDefaultAutoindex(bool autoindex) {
 	_locations[_defaultLocationKey].autoindex = autoindex;
 }
 
-void ConfigBuilder::setServerDefaultindex(const std::string &index) {
+void ConfigBuilder::setServerDefaultIndex(const std::string &index) {
 	_locations[_defaultLocationKey].index = index;
 }
 
