@@ -2,32 +2,32 @@
 
 ## 📌 基本ヘッダ / レスポンス
 
-* [ ] Content-Type が拡張子に応じて正しい
-* [ ] 不明な拡張子は `application/octet-stream`
-* [ ] charset（UTF-8 など）が正しく付与される
+* [x] Content-Type が拡張子に応じて正しい
+* [x] 不明な拡張子は `application/octet-stream`
+* [x] charset（UTF-8 など）が正しく付与される
 
 ---
 
 ## 📄 GET / 静的ファイル
 
 * [ ] 大きいファイルの GET（ストリーミング対応）
-* [ ] URL 末尾 `/` の有無によるリダイレクト挙動（301/302）
+* [x] URL 末尾 `/` の有無によるリダイレクト挙動（301/302）
 
 ---
 
 ## 🔐 セキュリティ（重要）
 
-* [ ] Directory traversal（`../`）を防止
-* [ ] URL エンコードされた traversal（`%2e%2e/`）を防止
-* [ ] URL Decode の安全性（%2F, %20 など）
+* [x] Directory traversal（`../`）を防止
+* [x] URL エンコードされた traversal（`%2e%2e/`）を防止
+* [x] URL Decode の安全性（%2F, %20 など）
 
 
 ## 📨 POST（アップロード）
 
-* [ ] Content-Length が無い POST を正しく拒否する（400など）
-* [ ] body が空の POST の挙動確認
-* [ ] multipart/form-data のアップロード（必要なら）
-* [ ] アップロード先のディレクトリが存在しない場合の挙動
+* [x] Content-Length が無い POST を正しく拒否する（400など）
+  * テストは書いたけど、pythonからだとうまくいかない。netcatでやると問題ありだったので修正の必要あり。
+* [x] body が空の POST の挙動確認
+* [x] アップロード先のディレクトリが存在しない場合の挙動
 
 ---
 
@@ -41,7 +41,6 @@
 
 ## 🔀 メソッド系
 
-* [ ] HEAD → body 無しで 200（GET と同等ヘッダ）
 * [ ]  Allow ヘッダの内容検証（405時）
 
 ---
