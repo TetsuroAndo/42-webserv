@@ -103,7 +103,9 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 		}
 	}
 
-	if (!hasContentLength || contentLength == 0) {
+	const bool hasTransferEncoding = req.hasHeader("Transfer-Encoding");
+
+	if (!hasTransferEncoding && (!hasContentLength || contentLength == 0)) {
 		if (hasContentLength && contentLength == 0 && !buffer.empty()) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
