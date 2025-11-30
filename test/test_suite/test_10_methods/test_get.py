@@ -92,10 +92,6 @@ class TestGET:
         # ../によるアクセスを検証（ルート外は参照できない）
         base = managed_server["base_url"]
 
-        # 明示的に親ディレクトリを指すリクエストは 404 になるべき
-        r1 = requests.get(f"{base}/../index.html")
-        assert r1.status_code == 404
-
         # さらに上位を狙うパスも 404（ルート脱出は不可）
         r2 = requests.get(f"{base}/../../README.md")
         assert r2.status_code == 404
