@@ -1,0 +1,18 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+      locations:
+        - location:
+            path: /
+            root: ./www
+            session: 0
+      error_logs:
+        - error_log:
+            sink: file
+            level: debug
+        - error_log:
+            sink: console
+            level: debug

@@ -4,16 +4,14 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
+        - listen:
+            interface: 127.0.0.1
+            port: 3000
 
       locations:
         - location:
             path: /
-            root: /tmp/www
-            index: index.html
-            autoindex: true
+            root: ./test/test_www/static
             allowedMethods:
+              - HEAD
               - GET
-
-        - location:
-            path: /new-query
-            return: 307 /query

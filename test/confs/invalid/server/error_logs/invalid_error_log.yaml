@@ -4,4 +4,8 @@ servers:
         - listen:
             interface: 0.0.0.0
             port: 8080
-            invalid_key: true # Invalid key
+
+      error_logs:
+        - error_log:
+            sink: console
+            level: hogehuga
