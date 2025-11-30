@@ -37,8 +37,9 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 			}
 			return;
 		}
-		if (static_cast< int >(ctx.req.getBody().size()) !=
-			StringOps::stringToInt(ctx.req.getHeader("Content-Length"))) {
+		if (ctx.req.getBody().size() !=
+			static_cast< size_t >(
+				StringOps::stringToInt(ctx.req.getHeader("Content-Length")))) {
 			ctx.res.setStatusCode(400);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler(ctx.conf);

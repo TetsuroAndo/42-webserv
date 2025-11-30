@@ -96,7 +96,6 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
 		}
-		// この時点で設定されている maxBodySize Location固有値 と比較
 		if (contentLength > req.getMaxBodySize()) {
 			_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
 			return PARSE_ERROR;
@@ -134,9 +133,6 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 	}
 
 	if (consumed > 0) {
-		// Content-Length に対する読み取り完了後に、まだ未処理データが
-		// バッファに残っている場合は、宣言よりも大きなボディが送られて
-		// きている可能性があるため 400 を返す。
 		if (result == PARSE_COMPLETE && req.hasHeader("Content-Length") &&
 			!req.hasHeader("Transfer-Encoding") &&
 			req.getHeader("Connection") == "close") {
