@@ -87,6 +87,8 @@ class TestGET:
         response = requests.get(url)
         assert response.status_code == 405
 
+        assert response.headers.get("Allow") in "HEAD"
+
     @pytest.mark.config("valid/config_basic_get.yaml")
     def test_prevent_directory_traversal(self, managed_server):
         # ../によるアクセスを検証（ルート外は参照できない）
