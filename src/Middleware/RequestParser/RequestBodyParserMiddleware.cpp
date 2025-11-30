@@ -1,6 +1,7 @@
 #include "RequestBodyParserMiddleware.hpp"
 #include "../../Http/Core/HttpStatus.hpp"
 #include "../../Http/Parser/ParseResult.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 
 void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
@@ -28,6 +29,15 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 		}
 		return;
 	case PARSE_COMPLETE:
+		if (static_cast< int >(ctx.req.getBody().size()) !=
+			StringOps::stringToInt(ctx.req.getHeader("Content-Length"))) {
+			ctx.res.setStatusCode(400);
+			if (proc) {
+				ErrorHandlerMiddleware errorHandler(ctx.conf);
+				errorHandler.handle(ctx, proc);
+			}
+			return;
+		}
 		if (proc) {
 			proc->next(ctx);
 		}
