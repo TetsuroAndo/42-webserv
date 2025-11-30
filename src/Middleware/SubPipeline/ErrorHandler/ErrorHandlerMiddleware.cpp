@@ -19,6 +19,7 @@ void ErrorHandlerMiddleware::handle(PipelineContext &ctx,
 		// 設定されていない場合はデフォルトのエラーページを返す
 		ErrorHandler errorHandler;
 		ctx.res = errorHandler.handle(ctx);
+		ctx.res.setHeader("Connection", "close");
 	}
 	// エラーハンドリング後はパイプラインを終了
 }
