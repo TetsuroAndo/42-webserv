@@ -87,7 +87,7 @@ class TestGET:
         response = requests.get(url)
         assert response.status_code == 405
 
-        assert response.headers.get("Allow") in "HEAD"
+        assert "HEAD" in response.headers.get("Allow", "")
 
     @pytest.mark.config("valid/config_basic_get.yaml")
     def test_prevent_directory_traversal(self, managed_server):

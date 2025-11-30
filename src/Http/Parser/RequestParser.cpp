@@ -103,19 +103,8 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 		}
 	}
 
-	// Transfer-Encoding ヘッダの有無を確認
-	const bool hasTransferEncoding = req.hasHeader("Transfer-Encoding");
-
-	// ボディが存在しない（もしくは Content-Length: 0 ）場合は
-	// ここでリクエストのパース完了にする。ただし、ヘッダの直後に
-	// 余剰データが存在する場合は不正なリクエストとして 400 を返す。
-	// そうでなければボディの受信状態へ遷移。
-	if (!hasTransferEncoding && (!hasContentLength || contentLength == 0)) {
-		// Content-Length: 0 を明示しているのに、ヘッダ直後にデータがある
-		// （宣言されたボディ長と実体が不一致）
-		// 明示的に Connection: close の場合に 400 とする（テスト要件）。
-		if (hasContentLength && contentLength == 0 && !buffer.empty() &&
-			req.getHeader("Connection") == "close") {
+	if (!hasContentLength || contentLength == 0) {
+		if (hasContentLength && contentLength == 0 && !buffer.empty()) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
 		}
