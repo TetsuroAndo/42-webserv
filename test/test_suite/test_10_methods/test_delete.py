@@ -23,6 +23,9 @@ class TestDELETE:
         url_del = f"{base}/upload/delete_me.txt"
         resp = requests.delete(url_del)
         assert resp.status_code in (200, 204)
+
+        res = requests.get(url_del)
+        assert res.status_code == 404
         # 実体消去
         assert not (Path("test/post_test/uploads") / "to_delete.txt").exists()
 
