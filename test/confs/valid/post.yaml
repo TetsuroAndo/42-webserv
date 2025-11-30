@@ -24,5 +24,6 @@ servers:
             root: ./test/test_www/uploads
             uploadStore: ./test/test_www/uploads
             allowedMethods:
+              - GET
               - POST
               - DELETE
