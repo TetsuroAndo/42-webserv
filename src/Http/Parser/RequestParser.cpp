@@ -134,8 +134,7 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 
 	if (consumed > 0) {
 		if (result == PARSE_COMPLETE && req.hasHeader("Content-Length") &&
-			!req.hasHeader("Transfer-Encoding") &&
-			req.getHeader("Connection") == "close") {
+			!req.hasHeader("Transfer-Encoding")) {
 			if (buffer.length() > consumed) {
 				_errorCode = HttpStatus::BAD_REQUEST;
 				return PARSE_ERROR;
