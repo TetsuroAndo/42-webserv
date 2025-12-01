@@ -96,20 +96,19 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
 		}
-		// この時点で設定されている maxBodySize Location固有値 と比較
 		if (contentLength > req.getMaxBodySize()) {
 			_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
 			return PARSE_ERROR;
 		}
 	}
 
-	// Transfer-Encoding ヘッダの有無を確認
 	const bool hasTransferEncoding = req.hasHeader("Transfer-Encoding");
 
-	// ボディが存在しない（もしくは Content-Length: 0 ）場合は
-	// ここでリクエストのパース完了にする。
-	// そうでなければボディの受信状態へ遷移。
 	if (!hasTransferEncoding && (!hasContentLength || contentLength == 0)) {
+		if (hasContentLength && contentLength == 0 && !buffer.empty()) {
+			_errorCode = HttpStatus::BAD_REQUEST;
+			return PARSE_ERROR;
+		}
 		_state = STATE_COMPLETE;
 	} else {
 		_state = STATE_BODY;
@@ -134,6 +133,13 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 	}
 
 	if (consumed > 0) {
+		if (result == PARSE_COMPLETE && req.hasHeader("Content-Length") &&
+			!req.hasHeader("Transfer-Encoding")) {
+			if (buffer.length() > consumed) {
+				_errorCode = HttpStatus::BAD_REQUEST;
+				return PARSE_ERROR;
+			}
+		}
 		buffer.erase(0, consumed);
 	}
 

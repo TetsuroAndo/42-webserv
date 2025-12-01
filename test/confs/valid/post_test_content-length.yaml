@@ -6,7 +6,9 @@ servers:
             port: 8080
 
       maxRequestBodySize: 1KB
-      timeoutSec: 60
+      timeoutSec: 2
+      requestHeaderTimeoutSec: 2
+      requestBodyTimeoutSec: 2
       maxEvents: 1024
 
       access_logs:
@@ -21,9 +23,8 @@ servers:
         # Location for testing uploads and deletes specifically
         - location:
             path: /upload
-            root: ./test/test_www/uploads
+            root: ./test/test_www/
             uploadStore: ./test/test_www/uploads
             allowedMethods:
-              - GET
               - POST
               - DELETE
