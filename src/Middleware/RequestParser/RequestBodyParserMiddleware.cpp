@@ -29,7 +29,8 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 		}
 		return;
 	case PARSE_COMPLETE:
-		if (ctx.req.hasHeader("Content-Length") == false) {
+		if (ctx.req.hasHeader("Content-Length") == false &&
+			ctx.recvBuffer.size() != 0) {
 			ctx.res.setStatusCode(400);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler(ctx.conf);
@@ -37,9 +38,10 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 			}
 			return;
 		}
-		if (ctx.req.getBody().size() !=
-			static_cast< size_t >(
-				StringOps::stringToInt(ctx.req.getHeader("Content-Length")))) {
+		if (ctx.req.hasHeader("Content-Length") == true &&
+			ctx.req.getBody().size() !=
+				static_cast< size_t >(StringOps::stringToInt(
+					ctx.req.getHeader("Content-Length")))) {
 			ctx.res.setStatusCode(400);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler(ctx.conf);
