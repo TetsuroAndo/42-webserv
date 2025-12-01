@@ -154,7 +154,7 @@ const std::set< std::string > ConfigParser::VALID_DISABLED_ERROR_LOG_KEYS =
 const std::set< std::string > ConfigParser::VALID_ALLOWED_METHODS =
 	createValidAllowedMethods();
 
-void ConfigParser::parseListens(const Node *node) {
+void ConfigParser::parseListens(const Node *node) const {
 	if (!node)
 		throw std::runtime_error("Config error: missing 'listens' node");
 	const std::vector< Node * > &listensNodes = node->getSeq();
@@ -196,7 +196,7 @@ void ConfigParser::parseListens(const Node *node) {
 	_builder->setListens(listens);
 }
 
-void ConfigParser::parseErrorPages(Node *node) {
+void ConfigParser::parseErrorPages(const Node *node) const {
 	if (!node)
 		return;
 
@@ -217,7 +217,7 @@ void ConfigParser::parseErrorPages(Node *node) {
 	}
 }
 
-void ConfigParser::parseServer(const Node *serverNode) {
+void ConfigParser::parseServer(const Node *serverNode) const {
 	ConfigParser::validateKeys(serverNode, ConfigParser::VALID_SERVER_KEYS,
 							   "server block");
 
@@ -270,11 +270,16 @@ void ConfigParser::parseServer(const Node *serverNode) {
 		for (std::vector< std::string >::const_iterator cgi_it =
 				 cgiKeys.begin();
 			 cgi_it != cgiKeys.end(); ++cgi_it) {
-			Node *cgiValueNode = n->getMapNode(*cgi_it);
+			const Node *cgiValueNode = n->getMapNode(*cgi_it);
 			if (!cgiValueNode) {
 				throw std::runtime_error(
 					"Config error: invalid structure in cgi block for key '" +
 					*cgi_it + "'");
+			}
+			const std::string &key = *cgi_it;
+			if (key[0] != '.') {
+				throw std::runtime_error(
+					"Config error: invalid Interpreter extension");
 			}
 			_builder->setServerDefaultCgiConf(*cgi_it,
 											  cgiValueNode->getValue());
