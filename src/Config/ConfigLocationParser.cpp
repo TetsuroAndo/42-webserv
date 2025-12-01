@@ -153,8 +153,7 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				const std::string &ext = *keyIt;
 				Node *interpreterPathNode = interpreterNode->getMapNode(ext);
 				if (interpreterPathNode) {
-					std::string key = *keyIt;
-					if (key[0] != '.') {
+					if (ext[0] != '.') {
 						throw std::runtime_error(
 							"Config error: invalid Interpreter extension");
 					}
