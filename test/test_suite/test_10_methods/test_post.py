@@ -60,7 +60,7 @@ def test_post_method_not_allowed(managed_server):
     assert resp.status_code == 405
 
 @pytest.mark.config("valid/post_test.yaml")
-def test_post_no_content_length(managed_server):
+def test_post_content_length_zero_with_body(managed_server):
     url = f"{managed_server['base_url']}/upload"
     # Content-Length: 0 にも関わらずボディを送る（不整合）。
     # 生ソケットで送信して Content-Length を厳密に制御する。
