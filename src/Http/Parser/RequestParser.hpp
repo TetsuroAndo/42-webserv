@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "../../Config/Config.hpp"
 #include "ParseResult.hpp"
 #include "RequestBodyParser.hpp"
 #include "RequestHeadParser.hpp"
@@ -23,7 +24,7 @@ public:
 		STATE_COMPLETE
 	};
 
-	RequestParser();
+	RequestParser(const Config &config);
 	~RequestParser();
 
 	/// @brief パーサーと状態をリセットする
@@ -80,6 +81,8 @@ private:
 	RequestLineParser _lineParser;
 	RequestHeadParser _headParser;
 	RequestBodyParser _bodyParser;
+
+	const Config &_config;
 
 	RequestParser(const RequestParser &);
 	RequestParser &operator=(const RequestParser &);

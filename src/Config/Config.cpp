@@ -26,15 +26,17 @@ Performance::Performance()
 	  cgiMaxWorkers(CGI_MAX_WORKERS) {}
 
 // clang-format on
-
 Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
-			   size_t maxRequestBodySize, bool hasBiggestMaxRequestBodySize,
-			   size_t biggestMaxRequestBodySize, size_t timeoutSec,
-			   size_t maxEvents, size_t requestHeaderTimeoutSec,
-			   size_t requestBodyTimeoutSec, size_t sessionTimeoutSec,
+			   const size_t maxRequestBodySize,
+			   const bool hasBiggestMaxRequestBodySize,
+			   const size_t biggestMaxRequestBodySize, const size_t timeoutSec,
+			   const size_t maxEvents, const size_t requestHeaderTimeoutSec,
+			   const size_t requestBodyTimeoutSec,
+			   const size_t sessionTimeoutSec,
+			   const size_t maxRequestHeaderSize,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
 	  _errorLogs(errorLogs), _errorPages(errorPages),
@@ -44,7 +46,8 @@ Config::Config(const std::vector< Listen > &listens,
 	  _timeoutSec(timeoutSec), _maxEvents(maxEvents),
 	  _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
 	  _requestBodyTimeoutSec(requestBodyTimeoutSec),
-	  _sessionTimeoutSec(sessionTimeoutSec) {}
+	  _sessionTimeoutSec(sessionTimeoutSec),
+	  _maxRequestHeaderSize(maxRequestHeaderSize) {}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _locations(other._locations),
@@ -56,7 +59,8 @@ Config::Config(const Config &other)
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
 	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec),
-	  _sessionTimeoutSec(other._sessionTimeoutSec) {}
+	  _sessionTimeoutSec(other._sessionTimeoutSec),
+	  _maxRequestHeaderSize(other._maxRequestHeaderSize) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -73,6 +77,7 @@ Config &Config::operator=(const Config &other) {
 		_requestHeaderTimeoutSec = other._requestHeaderTimeoutSec;
 		_requestBodyTimeoutSec = other._requestBodyTimeoutSec;
 		_sessionTimeoutSec = other._sessionTimeoutSec;
+		_maxRequestHeaderSize = other._maxRequestHeaderSize;
 	}
 	return *this;
 }
@@ -89,7 +94,7 @@ const std::map< int, std::string > &Config::getErrorPages() const {
 	return _errorPages;
 }
 
-const std::string &Config::getErrorPage(int code) const {
+const std::string &Config::getErrorPage(const int code) const {
 	std::map< int, std::string >::const_iterator it = _errorPages.find(code);
 	if (it != _errorPages.end()) {
 		return it->second;
@@ -159,6 +164,8 @@ size_t Config::getRequestBodyTimeoutSec() const {
 
 size_t Config::getSessionTimeoutSec() const { return _sessionTimeoutSec; }
 
+size_t Config::getMaxRequestHeaderSize() const { return _maxRequestHeaderSize; }
+
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
 	os << "  maxRequestBodySize: " << config._maxRequestBodySize << "\n";
@@ -168,6 +175,7 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "  requestBodyTimeoutSec: " << config._requestBodyTimeoutSec << "\n";
 	os << "  maxEvents: " << config._maxEvents << "\n";
 	os << "  sessionTimeoutSec: " << config._sessionTimeoutSec << "\n";
+	os << "  maxRequestHeaderSize: " << config._maxRequestHeaderSize << "\n";
 
 	os << "  listens:\n";
 	for (std::vector< Listen >::const_iterator it = config._listens.begin();
