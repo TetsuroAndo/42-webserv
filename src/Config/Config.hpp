@@ -110,6 +110,7 @@ private:
 	size_t _requestHeaderTimeoutSec;
 	size_t _requestBodyTimeoutSec;
 	size_t _sessionTimeoutSec;
+	size_t _maxRequestHeaderSize;
 
 public:
 	Config(const std::vector< Listen > &listens,
@@ -119,6 +120,7 @@ public:
 		   bool hasBiggestMaxRequestBodySize, size_t biggestMaxRequestBodySize,
 		   size_t timeoutSec, size_t maxEvents, size_t requestHeaderTimeoutSec,
 		   size_t requestBodyTimeoutSec, size_t sessionTimeoutSec,
+		   size_t maxRequestHeaderSize,
 		   const std::map< int, std::string > &errorPages);
 	Config(const Config &other);
 	Config &operator=(const Config &other);
@@ -135,7 +137,6 @@ public:
 	// error_pages
 	const std::map< int, std::string > &getErrorPages() const;
 	const std::string &getErrorPage(int code) const;
-
 	size_t getMaxRequestBodySize() const;
 	bool hasBiggestMaxRequestBodySize() const;
 	size_t getBiggestMaxRequestBodySize() const;
@@ -144,6 +145,7 @@ public:
 	size_t getRequestHeaderTimeoutSec() const;
 	size_t getRequestBodyTimeoutSec() const;
 	size_t getSessionTimeoutSec() const;
+	size_t getMaxRequestHeaderSize() const;
 
 	friend std::ostream &operator<<(std::ostream &os, const Config &config);
 };

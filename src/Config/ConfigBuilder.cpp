@@ -22,6 +22,8 @@ void ConfigBuilder::initDefaults() {
 	_requestHeaderTimeoutSec = 20;
 	_requestBodyTimeoutSec = 30;
 
+	_maxRequestHeaderSize = 8192;
+
 	_sessionTimeoutSec = 1800;
 
 	_defaultLocationKey = "/";
@@ -85,7 +87,7 @@ Config ConfigBuilder::build() const {
 				  _maxRequestBodySize, _hasBiggestRequestBodySize,
 				  _biggestRequestBodySize, _timeoutSec, _maxEvents,
 				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
-				  _sessionTimeoutSec, _errorPages);
+				  _sessionTimeoutSec, _maxRequestHeaderSize, _errorPages);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const size_t size) {
@@ -221,4 +223,8 @@ void ConfigBuilder::setRequestHeaderTimeoutSec(const size_t sec) {
 
 void ConfigBuilder::setRequestBodyTimeoutSec(const size_t sec) {
 	_requestBodyTimeoutSec = sec;
+}
+
+void ConfigBuilder::setMaxRequestHeaderSize(const size_t size) {
+	_maxRequestHeaderSize = size;
 }

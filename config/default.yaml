@@ -9,6 +9,7 @@ servers:
             port: 3000
 
       maxRequestBodySize: 6291456
+      maxRequestHeaderSize: 8KB
       maxEvents: 1024
       timeoutSec: 60
       requestHeaderTimeoutSec: 15

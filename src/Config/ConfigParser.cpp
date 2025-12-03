@@ -64,6 +64,7 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("interpreterPath");
 	keys.insert("session");
 	keys.insert("sessionTimeoutSec");
+	keys.insert("maxRequestHeaderSize");
 	return keys;
 }
 
@@ -161,7 +162,7 @@ void ConfigParser::parseListens(const Node *node) const {
 	std::vector< Listen > listens;
 	for (std::vector< Node * >::const_iterator it = listensNodes.begin();
 		 it != listensNodes.end(); ++it) {
-		Node *l_node = *it;
+		const Node *l_node = *it;
 		if (l_node->getKey() != "listen") {
 			throw std::runtime_error(
 				"Config error: missing 'listen' key in listen item");
@@ -172,17 +173,17 @@ void ConfigParser::parseListens(const Node *node) const {
 		validateKeys(l_node, validKeys, "listen block");
 
 		Listen l;
-		Node *interfaceNode = l_node->getMapNode("interface");
+		const Node *interfaceNode = l_node->getMapNode("interface");
 		if (!interfaceNode)
 			throw std::runtime_error(
 				"Config error: missing 'interface' in listen item");
 		l.interface = interfaceNode->getValue();
 
-		Node *portNode = l_node->getMapNode("port");
+		const Node *portNode = l_node->getMapNode("port");
 		if (!portNode)
 			throw std::runtime_error(
 				"Config error: missing 'port' in listen item");
-		int port = StringOps::stringToInt(portNode->getValue());
+		const int port = StringOps::stringToInt(portNode->getValue());
 		if (port < 1024 || port > 65535) {
 			std::stringstream ss;
 			ss << "Config error: invalid port number " << port
@@ -203,12 +204,12 @@ void ConfigParser::parseErrorPages(const Node *node) const {
 	const std::vector< std::string > &keys = node->getKeys();
 	for (std::vector< std::string >::const_iterator it = keys.begin();
 		 it != keys.end(); ++it) {
-		int code = StringOps::stringToInt(*it);
+		const int code = StringOps::stringToInt(*it);
 		if (HttpStatus::isValidStatusCode(code, 400, 600) == false) {
 			throw std::runtime_error("Config error: invalid error_page code '" +
 									 *it + "'");
 		}
-		Node *uriNode = node->getMapNode(*it);
+		const Node *uriNode = node->getMapNode(*it);
 		if (!uriNode) {
 			throw std::runtime_error(
 				"Config error: missing URI for error_page code '" + *it + "'");
@@ -218,8 +219,7 @@ void ConfigParser::parseErrorPages(const Node *node) const {
 }
 
 void ConfigParser::parseServer(const Node *serverNode) const {
-	ConfigParser::validateKeys(serverNode, ConfigParser::VALID_SERVER_KEYS,
-							   "server block");
+	validateKeys(serverNode, VALID_SERVER_KEYS, "server block");
 
 	parseListens(serverNode->getMapNode("listens"));
 
@@ -228,21 +228,21 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 	}
 
 	ConfigLocationParser locationParser(_builder);
-	if (Node *locationsNode = serverNode->getMapNode("locations")) {
+	if (const Node *locationsNode = serverNode->getMapNode("locations")) {
 		locationParser.parseLocations(locationsNode);
 	}
 
 	ConfigLogParser logParser(_builder);
-	if (Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
+	if (const Node *accessLogsNode = serverNode->getMapNode("access_logs")) {
 		logParser.parseAccessLogs(accessLogsNode);
 	}
-	if (Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
+	if (const Node *errorLogsNode = serverNode->getMapNode("error_logs")) {
 		logParser.parseErrorLogs(errorLogsNode);
 	}
 
-	if (Node *n = serverNode->getMapNode("root"))
+	if (const Node *n = serverNode->getMapNode("root"))
 		_builder->setServerDefaultRoot(n->getValue());
-	if (Node *n = serverNode->getMapNode("allowedMethods")) {
+	if (const Node *n = serverNode->getMapNode("allowedMethods")) {
 		const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
 		std::set< std::string > validMethods(validMethodsArr,
 											 validMethodsArr + 4);
@@ -259,13 +259,13 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 		}
 		_builder->setServerDefaultAllowedMethods(methodsSet);
 	}
-	if (Node *n = serverNode->getMapNode("autoindex"))
+	if (const Node *n = serverNode->getMapNode("autoindex"))
 		_builder->setServerDefaultAutoindex(n->getValue() == "true");
-	if (Node *n = serverNode->getMapNode("index"))
+	if (const Node *n = serverNode->getMapNode("index"))
 		_builder->setServerDefaultIndex(n->getValue());
-	if (Node *n = serverNode->getMapNode("uploadStore"))
+	if (const Node *n = serverNode->getMapNode("uploadStore"))
 		_builder->setServerDefaultUploadStore(n->getValue());
-	if (Node *n = serverNode->getMapNode("interpreterPath")) {
+	if (const Node *n = serverNode->getMapNode("interpreterPath")) {
 		const std::vector< std::string > &cgiKeys = n->getKeys();
 		for (std::vector< std::string >::const_iterator cgi_it =
 				 cgiKeys.begin();
@@ -285,29 +285,33 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 											  cgiValueNode->getValue());
 		}
 	}
-	if (Node *n = serverNode->getMapNode("session"))
+	if (const Node *n = serverNode->getMapNode("session"))
 		_builder->setServerDefaultSession(n->getValue() == "true");
 
-	if (Node *n = serverNode->getMapNode("maxRequestBodySize"))
+	if (const Node *n = serverNode->getMapNode("maxRequestBodySize"))
 		_builder->setMaxRequestBodySize(
 			StringOps::sizeByteStrToSizeT(n->getValue()));
 
-	if (Node *n = serverNode->getMapNode("timeoutSec"))
+	if (const Node *n = serverNode->getMapNode("timeoutSec"))
 		_builder->setTimeoutSec(
 			validateConvertTimeout("timeoutSec", n->getValue()));
 
-	if (Node *n = serverNode->getMapNode("requestHeaderTimeoutSec"))
+	if (const Node *n = serverNode->getMapNode("requestHeaderTimeoutSec"))
 		_builder->setRequestHeaderTimeoutSec(
 			validateConvertTimeout("requestHeaderTimeoutSec", n->getValue()));
 
-	if (Node *n = serverNode->getMapNode("requestBodyTimeoutSec"))
+	if (const Node *n = serverNode->getMapNode("requestBodyTimeoutSec"))
 		_builder->setRequestBodyTimeoutSec(
 			validateConvertTimeout("requestBodyTimeoutSec", n->getValue()));
 
-	if (Node *n = serverNode->getMapNode("maxEvents"))
+	if (const Node *n = serverNode->getMapNode("maxEvents"))
 		_builder->setMaxEvents(StringOps::stringToInt(n->getValue()));
 
-	if (Node *n = serverNode->getMapNode("sessionTimeoutSec"))
+	if (const Node *n = serverNode->getMapNode("sessionTimeoutSec"))
 		_builder->setSessionTimeoutSec(
 			validateConvertTimeout("sessionTimeoutSec", n->getValue()));
+
+	if (const Node *n = serverNode->getMapNode("maxRequestHeaderSize"))
+		_builder->setMaxRequestHeaderSize(
+			StringOps::sizeByteStrToSizeT(n->getValue()));
 }

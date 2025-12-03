@@ -22,6 +22,7 @@ private:
 	size_t _requestHeaderTimeoutSec;
 	size_t _requestBodyTimeoutSec;
 	size_t _sessionTimeoutSec;
+	size_t _maxRequestHeaderSize;
 
 	void initDefaults();
 	void setup(const std::string &configFile);
@@ -62,4 +63,5 @@ public:
 	void setServerDefaultSession(bool enable);
 	void setRequestHeaderTimeoutSec(size_t sec);
 	void setRequestBodyTimeoutSec(size_t sec);
+	void setMaxRequestHeaderSize(size_t size);
 };
