@@ -147,12 +147,17 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *interpreterNode = l_node->getMapNode("interpreterPath");
 		if (interpreterNode) {
 			const std::vector< std::string > &keys = interpreterNode->getKeys();
-			for (std::vector< std::string >::const_iterator it = keys.begin();
-				 it != keys.end(); ++it) {
-				const std::string &ext = *it;
-				Node *pathNode = interpreterNode->getMapNode(ext);
-				if (pathNode) {
-					loc.cgiConf[ext] = pathNode->getValue();
+			for (std::vector< std::string >::const_iterator keyIt =
+					 keys.begin();
+				 keyIt != keys.end(); ++keyIt) {
+				const std::string &ext = *keyIt;
+				Node *interpreterPathNode = interpreterNode->getMapNode(ext);
+				if (interpreterPathNode) {
+					if (ext[0] != '.') {
+						throw std::runtime_error(
+							"Config error: invalid Interpreter extension");
+					}
+					loc.cgiConf[ext] = interpreterPathNode->getValue();
 				}
 			}
 		}

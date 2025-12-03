@@ -276,6 +276,11 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 					"Config error: invalid structure in cgi block for key '" +
 					*cgi_it + "'");
 			}
+			const std::string &key = *cgi_it;
+			if (key[0] != '.') {
+				throw std::runtime_error(
+					"Config error: invalid Interpreter extension");
+			}
 			_builder->setServerDefaultCgiConf(*cgi_it,
 											  cgiValueNode->getValue());
 		}
