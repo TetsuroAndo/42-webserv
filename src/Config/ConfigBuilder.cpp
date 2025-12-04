@@ -41,6 +41,8 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
 	defaultLoc.session = true;
+	defaultLoc.hasChunkedTimeoutSec = true;
+	defaultLoc.chunkedTimeoutSec = 10;
 	_locations["/"] = defaultLoc;
 
 	_accessLogs.push_back(AccessLog());
@@ -140,6 +142,10 @@ void ConfigBuilder::setLocation(const Location &location) {
 	if (newLocation.index.empty()) {
 		newLocation.index = defaultLocation.index;
 	}
+	if (newLocation.hasChunkedTimeoutSec == false) {
+		newLocation.chunkedTimeoutSec = defaultLocation.chunkedTimeoutSec;
+		newLocation.hasChunkedTimeoutSec = true;
+	}
 	_locations[newLocation.path] = newLocation;
 }
 
@@ -228,4 +234,8 @@ void ConfigBuilder::setRequestBodyTimeoutSec(const size_t sec) {
 
 void ConfigBuilder::setMaxRequestHeaderSize(const size_t size) {
 	_maxRequestHeaderSize = size;
+}
+
+void ConfigBuilder::setServerDefaultChunkedTimeoutSec(const size_t sec) {
+	_locations[_defaultLocationKey].chunkedTimeoutSec = sec;
 }

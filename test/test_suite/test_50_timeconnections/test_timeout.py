@@ -592,7 +592,8 @@ class TestTimeout:
         try:
             # 複数のゆっくりしたリクエストを送信
             for i in range(3):
-                sock.sendall(b"GET /")
+                if i == 0:
+                    sock.sendall(b"GET /")
                 time.sleep(2)
 
                 sock.sendall(b" HTTP/1.1\r\n")

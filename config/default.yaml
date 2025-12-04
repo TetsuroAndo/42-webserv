@@ -15,6 +15,7 @@ servers:
       requestHeaderTimeoutSec: 15
       requestBodyTimeoutSec: 30
       sessionTimeoutSec: 1800
+      chunkedTimeoutSec: 10
 
       access_logs:
         - access_log:
@@ -66,6 +67,7 @@ servers:
             autoindex: false
             directoryError: directoryError.html
             session: true
+            chunkedTimeoutSec: 20
             allowedMethods:
               - GET
               - HEAD

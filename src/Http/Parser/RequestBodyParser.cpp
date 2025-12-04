@@ -6,7 +6,9 @@
 #include <cstring>
 #include <ctime>
 
-RequestBodyParser::RequestBodyParser() { reset(); }
+RequestBodyParser::RequestBodyParser(const Config &config) : _config(config) {
+	reset();
+}
 
 RequestBodyParser::~RequestBodyParser() {}
 
@@ -103,14 +105,21 @@ size_t RequestBodyParser::parseIdentity(HttpRequest &request,
 size_t RequestBodyParser::parseChunked(HttpRequest &request,
 									   const std::string &buffer,
 									   int &errorCode, ParseResult &result) {
-	const int timeoutSeconds =
-		10; // TODO: ちゃんとしたタイムアウト時間を設定。暫定Timeout値
 	size_t offset = 0;
 	result = PARSE_INCOMPLETE;
 
+	size_t timeoutSeconds;
+	try {
+		// getLocationが例外吐くことがあるけど、
+		// ここでそのハンドルをするのはパーサーの責務じゃ無いから握り潰す
+		const Location loc = _config.getLocation(request.getPath());
+		timeoutSeconds = loc.chunkedTimeoutSec;
+	} catch (...) {
+		timeoutSeconds = 10;
+	}
 	while (offset < buffer.length()) {
 		const time_t now = time(NULL);
-		if (now - _lastReceiveTime > timeoutSeconds) {
+		if (static_cast< time_t >(timeoutSeconds) < now - _lastReceiveTime) {
 			errorCode = HttpStatus::REQUEST_TIMEOUT;
 			result = PARSE_ERROR;
 			return offset;
