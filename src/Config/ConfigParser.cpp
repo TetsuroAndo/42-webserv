@@ -65,6 +65,7 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("session");
 	keys.insert("sessionTimeoutSec");
 	keys.insert("maxRequestHeaderSize");
+	keys.insert("chunkedTimeoutSec");
 	return keys;
 }
 
@@ -88,6 +89,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("session");
 	keys.insert("maxRequestBodySize");
 	keys.insert("directoryError");
+	keys.insert("chunkedTimeoutSec");
 	return keys;
 }
 
@@ -314,4 +316,9 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 	if (const Node *n = serverNode->getMapNode("maxRequestHeaderSize"))
 		_builder->setMaxRequestHeaderSize(
 			StringOps::sizeByteStrToSizeT(n->getValue()));
+
+	if (const Node *n = serverNode->getMapNode("chunkedTimeoutSec")) {
+		_builder->setServerDefaultChunkedTimeoutSec(
+			validateConvertTimeout("chunkedTimeoutSec", n->getValue()));
+	}
 }

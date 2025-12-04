@@ -3,12 +3,13 @@
 #include <ctime>
 #include <string>
 
+#include "../../Config/Config.hpp"
 #include "../Core/HttpRequest.hpp"
 #include "ParseResult.hpp"
 
 class RequestBodyParser {
 public:
-	RequestBodyParser();
+	RequestBodyParser(const Config &config);
 	~RequestBodyParser();
 
 	void reset();
@@ -47,6 +48,7 @@ private:
 	size_t _contentLengthRemaining;
 	size_t _chunkSize;
 	time_t _lastReceiveTime;
+	const Config &_config;
 
 	size_t parseIdentity(HttpRequest &request, const std::string &buffer,
 						 ParseResult &result);
