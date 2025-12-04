@@ -317,8 +317,8 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 		_builder->setMaxRequestHeaderSize(
 			StringOps::sizeByteStrToSizeT(n->getValue()));
 
-	if (const Node *n = serverNode->getMapNode("chunkedTimeout")) {
+	if (const Node *n = serverNode->getMapNode("chunkedTimeoutSec")) {
 		_builder->setServerDefaultChunkedTimeoutSec(
-			validateConvertTimeout("chunkedTimeout", n->getValue()));
+			validateConvertTimeout("chunkedTimeoutSec", n->getValue()));
 	}
 }

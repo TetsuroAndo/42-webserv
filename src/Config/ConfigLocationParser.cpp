@@ -162,10 +162,10 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 			}
 		}
 
-		Node *chunkedTimeoutNode = l_node->getMapNode("chunkedTimeout");
-		if (chunkedTimeoutNode) {
+		Node *chunkedTimeoutSecNode = l_node->getMapNode("chunkedTimeoutSec");
+		if (chunkedTimeoutSecNode) {
 			loc.chunkedTimeoutSec = ConfigParser::validateConvertTimeout(
-				"chunkedTimeout", chunkedTimeoutNode->getValue());
+				"chunkedTimeoutSec", chunkedTimeoutSecNode->getValue());
 			loc.hasChunkedTimeoutSec = true;
 		}
 		_builder->setLocation(loc);
