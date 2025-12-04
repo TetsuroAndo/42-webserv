@@ -161,6 +161,13 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 				}
 			}
 		}
+
+		Node *chunkedTimeoutNode = l_node->getMapNode("chunkedTimeout");
+		if (chunkedTimeoutNode) {
+			loc.chunkedTimeoutSec = ConfigParser::validateConvertTimeout(
+				"chunkedTimeout", chunkedTimeoutNode->getValue());
+			loc.hasChunkedTimeoutSec = true;
+		}
 		_builder->setLocation(loc);
 	}
 	_builder->setBiggestRequestBodySize(_hasBiggestMaxBodySize,

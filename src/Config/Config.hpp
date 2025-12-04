@@ -46,6 +46,8 @@ struct Location {
 	bool autoindex;
 	bool hasMaxRequestBodySize;
 	size_t maxRequestBodySize;
+	bool hasChunkedTimeoutSec;
+	size_t chunkedTimeoutSec;
 	std::string index;
 	std::string directoryError;
 	std::string uploadStore;
@@ -58,7 +60,8 @@ struct Location {
 
 	Location()
 		: autoindex(false), hasMaxRequestBodySize(false), maxRequestBodySize(0),
-		  session(false), hasRedirect(false), redirectCode(0) {}
+		  hasChunkedTimeoutSec(false), chunkedTimeoutSec(0), session(false),
+		  hasRedirect(false), redirectCode(0) {}
 };
 
 struct AccessLog {

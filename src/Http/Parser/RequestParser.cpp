@@ -5,7 +5,8 @@
 #include "../Core/HttpStatus.hpp"
 
 RequestParser::RequestParser(const Config &config)
-	: _errorCode(0), _state(STATE_REQUEST_LINE), _config(config) {}
+	: _errorCode(0), _state(STATE_REQUEST_LINE), _bodyParser(config),
+	  _config(config) {}
 
 RequestParser::~RequestParser() {}
 
@@ -20,7 +21,7 @@ void RequestParser::reset() {
 
 RequestParser::ParseState RequestParser::getState() const { return _state; }
 int RequestParser::getErrorCode() const { return _errorCode; }
-void RequestParser::setErrorCode(int code) { _errorCode = code; }
+void RequestParser::setErrorCode(const int code) { _errorCode = code; }
 bool RequestParser::isComplete() const { return _state == STATE_COMPLETE; }
 
 ParseResult RequestParser::parseRequestLine(HttpRequest &req,
@@ -32,7 +33,7 @@ ParseResult RequestParser::parseRequestLine(HttpRequest &req,
 	}
 
 	// DoS対策: バッファが最大ヘッダーサイズを超えたらエラー
-	if (buffer.size() > _config.getMaxRequestHeaderSize()) {
+	if (_config.getMaxRequestHeaderSize() < buffer.size()) {
 		_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
 		return PARSE_ERROR;
 	}
@@ -46,7 +47,7 @@ ParseResult RequestParser::parseRequestLine(HttpRequest &req,
 		return PARSE_ERROR;
 	}
 
-	std::string line(buffer.begin(), buffer.begin() + crlfPos);
+	const std::string line(buffer.begin(), buffer.begin() + crlfPos);
 	if (!_lineParser.parse(req, line, _errorCode)) {
 		return PARSE_ERROR; // lineParserがfalseを返したら_errorCodeが設定されている
 	}
@@ -71,7 +72,7 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 	const size_t headerEndPos = buffer.find("\r\n\r\n");
 	if (headerEndPos == std::string::npos) {
 		// ヘッダーが終わっていないが、サイズ制限は超えていないか再度チェック
-		if (buffer.size() > _config.getMaxRequestHeaderSize()) {
+		if (_config.getMaxRequestHeaderSize() < buffer.size()) {
 			_errorCode = HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE;
 			return PARSE_ERROR;
 		}
@@ -95,7 +96,7 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 			_errorCode = HttpStatus::BAD_REQUEST;
 			return PARSE_ERROR;
 		}
-		if (contentLength > req.getMaxBodySize()) {
+		if (req.getMaxBodySize() < contentLength) {
 			_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
 			return PARSE_ERROR;
 		}
@@ -131,7 +132,7 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 		return PARSE_ERROR;
 	}
 
-	if (consumed > 0) {
+	if (0 < consumed) {
 		if (result == PARSE_COMPLETE && req.hasHeader("Content-Length") &&
 			!req.hasHeader("Transfer-Encoding")) {
 			if (buffer.length() > consumed) {
@@ -143,7 +144,7 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 	}
 
 	// ボディサイズチェック
-	if (req.getBody().length() > req.getMaxBodySize()) {
+	if (req.getMaxBodySize() < req.getBody().length()) {
 		_errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
 		return PARSE_ERROR;
 	}

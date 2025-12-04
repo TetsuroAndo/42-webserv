@@ -213,6 +213,8 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 				   ? StringOps::toString(it->second.maxRequestBodySize)
 				   : "default")
 		   << "\n";
+		os << "      chunkedTimeoutSec: " << (it->second.hasChunkedTimeoutSec)
+		   << "\n";
 		os << "      cgiConf:\n";
 		for (std::map< std::string, std::string >::const_iterator cit =
 				 it->second.cgiConf.begin();

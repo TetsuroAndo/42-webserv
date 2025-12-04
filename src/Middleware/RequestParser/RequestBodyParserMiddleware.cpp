@@ -16,7 +16,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 	}
 
 	// ボディのパーシングを行う
-	ParseResult result = parser.parseBody(ctx.req, ctx.recvBuffer);
+	const ParseResult result = parser.parseBody(ctx.req, ctx.recvBuffer);
 
 	switch (result) {
 	case PARSE_INCOMPLETE:
