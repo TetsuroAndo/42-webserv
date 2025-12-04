@@ -64,5 +64,5 @@ public:
 	void setRequestHeaderTimeoutSec(size_t sec);
 	void setRequestBodyTimeoutSec(size_t sec);
 	void setMaxRequestHeaderSize(size_t size);
-	void setSeverDefaultChunkedTimeoutSec(size_t sec);
+	void setServerDefaultChunkedTimeoutSec(size_t sec);
 };

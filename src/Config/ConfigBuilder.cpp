@@ -235,6 +235,6 @@ void ConfigBuilder::setMaxRequestHeaderSize(const size_t size) {
 	_maxRequestHeaderSize = size;
 }
 
-void ConfigBuilder::setSeverDefaultChunkedTimeoutSec(const size_t sec) {
+void ConfigBuilder::setServerDefaultChunkedTimeoutSec(const size_t sec) {
 	_locations[_defaultLocationKey].chunkedTimeoutSec = sec;
 }

@@ -318,7 +318,7 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 			StringOps::sizeByteStrToSizeT(n->getValue()));
 
 	if (const Node *n = serverNode->getMapNode("chunkedTimeout")) {
-		_builder->setSeverDefaultChunkedTimeoutSec(
+		_builder->setServerDefaultChunkedTimeoutSec(
 			validateConvertTimeout("chunkedTimeout", n->getValue()));
 	}
 }
