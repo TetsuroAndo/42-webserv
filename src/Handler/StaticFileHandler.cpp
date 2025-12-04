@@ -148,7 +148,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 		std::string indexPath = filePath + "/" + loc.index;
 		struct stat indexStat;
 		bool flag = true;
-		if (stat(indexPath.c_str(), &indexStat) == 0 &&
+		if (loc.noIndex == false && stat(indexPath.c_str(), &indexStat) == 0 &&
 			S_ISREG(indexStat.st_mode) &&
 			((requestPath[requestPath.size() - 1] != '/' ||
 			  requestPath.size() == 1) ||

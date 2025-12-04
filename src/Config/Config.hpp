@@ -47,6 +47,7 @@ struct Location {
 	bool hasMaxRequestBodySize;
 	size_t maxRequestBodySize;
 	std::string index;
+	bool noIndex;
 	std::string directoryError;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
@@ -58,7 +59,7 @@ struct Location {
 
 	Location()
 		: autoindex(false), hasMaxRequestBodySize(false), maxRequestBodySize(0),
-		  session(false), hasRedirect(false), redirectCode(0) {}
+		  noIndex(false), session(false), hasRedirect(false), redirectCode(0) {}
 };
 
 struct AccessLog {

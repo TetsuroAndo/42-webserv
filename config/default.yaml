@@ -131,6 +131,23 @@ servers:
             allowedMethods:
               - GET
 
+        - location:
+            path: /no_index
+            root: ./www/static
+            noIndex: true
+            allowedMethods:
+                - HEAD
+                - GET
+
+        - location:
+            path: /no_index_yes_autoindex
+            root: ./www/static
+            noIndex: true
+            autoindex: true
+            allowedMethods:
+              - HEAD
+              - GET
+
         # Location for testing 403 on a file with no permissions
         - location:
             path: /forbidden
