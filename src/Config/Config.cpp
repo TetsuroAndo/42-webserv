@@ -205,7 +205,11 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "\n";
 		os << "      autoindex: " << (it->second.autoindex ? "on" : "off")
 		   << "\n";
-		os << "      index: " << it->second.index << "\n";
+		if (it->second.noIndex == false) {
+			os << "      index: " << it->second.index << "\n";
+		}
+		os << "      noIndex: " << (it->second.noIndex ? "true" : "false")
+		   << "\n";
 		os << "      directoryError: " << it->second.directoryError << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
 		os << "      maxRequestBodySize: "

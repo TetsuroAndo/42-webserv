@@ -21,3 +21,12 @@ servers:
             allowedMethods:
               - GET
               - HEAD
+
+        - location:
+            path: /without_index
+            root: ./test/test_www/static
+            autoindex: true
+            noIndex: true
+            allowedMethods:
+              - GET
+              - HEAD

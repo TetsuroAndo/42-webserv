@@ -83,6 +83,7 @@ static std::set< std::string > createValidLocationKeys() {
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
 	keys.insert("index");
+	keys.insert("noIndex");
 	keys.insert("uploadStore");
 	keys.insert("interpreterPath");
 	keys.insert("return");

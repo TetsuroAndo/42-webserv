@@ -49,6 +49,7 @@ struct Location {
 	bool hasChunkedTimeoutSec;
 	size_t chunkedTimeoutSec;
 	std::string index;
+	bool noIndex;
 	std::string directoryError;
 	std::string uploadStore;
 	std::map< std::string, std::string > cgiConf;
@@ -60,7 +61,7 @@ struct Location {
 
 	Location()
 		: autoindex(false), hasMaxRequestBodySize(false), maxRequestBodySize(0),
-		  hasChunkedTimeoutSec(false), chunkedTimeoutSec(0), session(false),
+		  noIndex(false), hasChunkedTimeoutSec(false), chunkedTimeoutSec(0), session(false),
 		  hasRedirect(false), redirectCode(0) {}
 };
 

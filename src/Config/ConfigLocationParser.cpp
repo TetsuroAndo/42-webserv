@@ -73,6 +73,12 @@ void ConfigLocationParser::parseLocations(const Node *node) {
 		Node *indexNode = l_node->getMapNode("index");
 		if (indexNode)
 			loc.index = indexNode->getValue();
+		Node *noIndexNode = l_node->getMapNode("noIndex");
+		if (noIndexNode) {
+			std::string value = noIndexNode->getValue();
+			isValidBoolString(value);
+			loc.noIndex = value == "true" || value == "on" || value == "yes";
+		}
 		Node *directoryErrorNode = l_node->getMapNode("directoryError");
 		if (directoryErrorNode)
 			loc.directoryError = directoryErrorNode->getValue();

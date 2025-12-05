@@ -33,6 +33,7 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.root = "./www";
 	defaultLoc.uploadStore = "./www/uploads";
 	defaultLoc.index = "index.html";
+	defaultLoc.noIndex = false;
 	defaultLoc.directoryError = "";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
