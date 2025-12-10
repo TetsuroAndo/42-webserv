@@ -131,6 +131,9 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 		requestPathWithoutBase.erase(0, 1);
 	}
 
+	if (requestPathWithoutBase.empty()) {
+		return false;
+	}
 	const std::vector< std::string > splitRequest =
 		StringOps::split(requestPathWithoutBase, "/");
 	int scriptIndex = -1;
