@@ -133,7 +133,8 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 
 	const std::vector< std::string > splitRequest =
 		StringOps::split(requestPathWithoutBase, "/");
-	int scriptIndex = -1;
+	int scriptIndex = 0;
+	bool flag = false;
 	{
 		for (size_t i = 0; i < splitRequest.size(); i++) {
 			const size_t dotPos = splitRequest.at(i).rfind('.');
@@ -141,13 +142,14 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 				const std::string ext = splitRequest.at(i).substr(dotPos);
 				if (loc.cgiConf.count(ext) > 0) {
 					scriptIndex = i;
+					flag = true;
 					break;
 				}
 			}
 		}
 	}
 
-	if (scriptIndex == -1) {
+	if (flag == false) {
 		return false;
 	}
 
