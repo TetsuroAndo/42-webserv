@@ -140,8 +140,10 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 			std::map< std::string, std::string >::const_iterator cgiExtMapItt =
 				loc.cgiConf.begin();
 			while (cgiExtMapItt != loc.cgiConf.end()) {
-				if (splitRequest.at(i).rfind(cgiExtMapItt->first) !=
-					std::string::npos) {
+				const std::string &segment = splitRequest.at(i);
+				const std::string &ext = cgiExtMapItt->first;
+				if (segment.size() >= ext.size() &&
+					segment.compare(segment.size() - ext.size(), ext.size(), ext) == 0) {
 					scriptIndex = i;
 					break;
 				}
