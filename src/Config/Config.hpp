@@ -61,8 +61,8 @@ struct Location {
 
 	Location()
 		: autoindex(false), hasMaxRequestBodySize(false), maxRequestBodySize(0),
-		  noIndex(false), hasChunkedTimeoutSec(false), chunkedTimeoutSec(0), session(false),
-		  hasRedirect(false), redirectCode(0) {}
+		  hasChunkedTimeoutSec(false), chunkedTimeoutSec(0), noIndex(false),
+		  session(false), hasRedirect(false), redirectCode(0) {}
 };
 
 struct AccessLog {
