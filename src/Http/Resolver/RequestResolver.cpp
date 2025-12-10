@@ -125,29 +125,24 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 		return false;
 	}
 
-	// Location部分を除いたリクエスト（先頭の'/'は削る）
+	// Location部分を除いたリクエスト
 	std::string requestPathWithoutBase = requestPath.substr(base.length());
 	if (!requestPathWithoutBase.empty() && requestPathWithoutBase[0] == '/') {
 		requestPathWithoutBase.erase(0, 1);
 	}
-	LOG(DEBUG) << "requestPathWithoutBase: " << requestPathWithoutBase;
 
 	const std::vector< std::string > splitRequest =
 		StringOps::split(requestPathWithoutBase, "/");
 	int scriptIndex = -1;
 	{
 		for (size_t i = 0; i < splitRequest.size(); i++) {
-			std::map< std::string, std::string >::const_iterator cgiExtMapItt =
-				loc.cgiConf.begin();
-			while (cgiExtMapItt != loc.cgiConf.end()) {
-				const std::string &segment = splitRequest.at(i);
-				const std::string &ext = cgiExtMapItt->first;
-				if (segment.size() >= ext.size() &&
-					segment.compare(segment.size() - ext.size(), ext.size(), ext) == 0) {
+			const size_t dotPos = splitRequest.at(i).rfind('.');
+			if (dotPos != std::string::npos) {
+				const std::string ext = splitRequest.at(i).substr(dotPos);
+				if (loc.cgiConf.count(ext) > 0) {
 					scriptIndex = i;
 					break;
 				}
-				++cgiExtMapItt;
 			}
 		}
 	}
@@ -176,9 +171,6 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 			pathInfo += "/" + splitRequest.at(i);
 		}
 	}
-
-	LOG(DEBUG) << "scriptVirtual result: " << scriptVirtual;
-	LOG(DEBUG) << "pathInfo result: " << pathInfo;
 
 	return true;
 }
