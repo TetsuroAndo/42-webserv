@@ -1,6 +1,7 @@
 #include "PipelineRouteBuilder.hpp"
 #include "../../Handler/DeleteHandler.hpp"
 #include "../../Handler/PostHandler.hpp"
+#include "../../Handler/PutHandler.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
@@ -59,6 +60,9 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		}
 		if (currentLocation.allowedMethods.count("DELETE")) {
 			staticHandlers["DELETE"] = new DeleteHandler();
+		}
+		if (currentLocation.allowedMethods.count("PUT")) {
+			staticHandlers["PUT"] = new PutHandler();
 		}
 
 		if (!staticHandlers.empty()) {
