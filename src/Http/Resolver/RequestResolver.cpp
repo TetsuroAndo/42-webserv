@@ -125,33 +125,58 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 		return false;
 	}
 
-	// Location基準のパスに変換
-	std::string inLoc = requestPath.substr(base.size());
-	if (!inLoc.empty() && inLoc[0] == '/') {
-		inLoc.erase(0, 1);
+	// Location部分を除いたリクエスト
+	std::string requestPathWithoutBase = requestPath.substr(base.length());
+	if (!requestPathWithoutBase.empty() && requestPathWithoutBase[0] == '/') {
+		requestPathWithoutBase.erase(0, 1);
 	}
 
-	// 先頭セグメントをスクリプト候補とする
-	if (inLoc.empty()) {
+	if (requestPathWithoutBase.empty()) {
 		return false;
 	}
-	const std::string::size_type slash = inLoc.find('/');
-	const std::string scriptSeg =
-		(slash == std::string::npos) ? inLoc : inLoc.substr(0, slash);
-
-	// scriptVirtual の構築
-	scriptVirtual = base;
-	if (!scriptVirtual.empty() && scriptVirtual != "/" &&
-		scriptVirtual[scriptVirtual.size() - 1] != '/') {
-		scriptVirtual += "/";
+	const std::vector< std::string > splitRequest =
+		StringOps::split(requestPathWithoutBase, "/");
+	int scriptIndex = 0;
+	bool flag = false;
+	{
+		for (size_t i = 0; i < splitRequest.size(); i++) {
+			const size_t dotPos = splitRequest.at(i).rfind('.');
+			if (dotPos != std::string::npos) {
+				const std::string ext = splitRequest.at(i).substr(dotPos);
+				if (loc.cgiConf.count(ext) > 0) {
+					scriptIndex = i;
+					flag = true;
+					break;
+				}
+			}
+		}
 	}
-	scriptVirtual += scriptSeg;
 
-	// PATH_INFO の構築
-	pathInfo = (slash == std::string::npos) ? "" : inLoc.substr(slash);
-	if (!pathInfo.empty() && pathInfo[0] != '/') {
-		pathInfo = "/" + pathInfo; // 念のため先頭に'/'を付ける
+	if (flag == false) {
+		return false;
 	}
+
+	{
+		scriptVirtual = base;
+		if (!scriptVirtual.empty() &&
+			scriptVirtual[scriptVirtual.size() - 1] != '/') {
+			scriptVirtual += "/";
+		}
+		for (int i = 0; i <= scriptIndex; i++) {
+			if (i > 0) {
+				scriptVirtual += "/";
+			}
+			scriptVirtual += splitRequest.at(i);
+		}
+	}
+
+	{
+		pathInfo = "";
+		for (size_t i = scriptIndex + 1; i < splitRequest.size(); i++) {
+			pathInfo += "/" + splitRequest.at(i);
+		}
+	}
+
 	return true;
 }
 
