@@ -125,33 +125,59 @@ bool extractCgiScript(const std::string &requestPath, const Location &loc,
 		return false;
 	}
 
-	// Location基準のパスに変換
-	std::string inLoc = requestPath.substr(base.size());
-	if (!inLoc.empty() && inLoc[0] == '/') {
-		inLoc.erase(0, 1);
+	// Location部分を除いたリクエスト（先頭の'/'は削る）
+	std::string requestPathWithoutBase = requestPath.substr(base.length());
+	if (!requestPathWithoutBase.empty() && requestPathWithoutBase[0] == '/') {
+		requestPathWithoutBase.erase(0, 1);
+	}
+	LOG(DEBUG) << "requestPathWithoutBase: " << requestPathWithoutBase;
+
+	const std::vector< std::string > splitRequest =
+		StringOps::split(requestPathWithoutBase, "/");
+	int scriptIndex = -1;
+	{
+		for (size_t i = 0; i < splitRequest.size(); i++) {
+			std::map< std::string, std::string >::const_iterator cgiExtMapItt =
+				loc.cgiConf.begin();
+			while (cgiExtMapItt != loc.cgiConf.end()) {
+				if (splitRequest.at(i).rfind(cgiExtMapItt->first) !=
+					std::string::npos) {
+					scriptIndex = i;
+					break;
+				}
+				++cgiExtMapItt;
+			}
+		}
 	}
 
-	// 先頭セグメントをスクリプト候補とする
-	if (inLoc.empty()) {
+	if (scriptIndex == -1) {
 		return false;
 	}
-	const std::string::size_type slash = inLoc.find('/');
-	const std::string scriptSeg =
-		(slash == std::string::npos) ? inLoc : inLoc.substr(0, slash);
 
-	// scriptVirtual の構築
-	scriptVirtual = base;
-	if (!scriptVirtual.empty() && scriptVirtual != "/" &&
-		scriptVirtual[scriptVirtual.size() - 1] != '/') {
-		scriptVirtual += "/";
+	{
+		scriptVirtual = base;
+		if (!scriptVirtual.empty() &&
+			scriptVirtual[scriptVirtual.size() - 1] != '/') {
+			scriptVirtual += "/";
+		}
+		for (int i = 0; i <= scriptIndex; i++) {
+			if (i > 0) {
+				scriptVirtual += "/";
+			}
+			scriptVirtual += splitRequest.at(i);
+		}
 	}
-	scriptVirtual += scriptSeg;
 
-	// PATH_INFO の構築
-	pathInfo = (slash == std::string::npos) ? "" : inLoc.substr(slash);
-	if (!pathInfo.empty() && pathInfo[0] != '/') {
-		pathInfo = "/" + pathInfo; // 念のため先頭に'/'を付ける
+	{
+		pathInfo = "";
+		for (size_t i = scriptIndex + 1; i < splitRequest.size(); i++) {
+			pathInfo += "/" + splitRequest.at(i);
+		}
 	}
+
+	LOG(DEBUG) << "scriptVirtual result: " << scriptVirtual;
+	LOG(DEBUG) << "pathInfo result: " << pathInfo;
+
 	return true;
 }
 

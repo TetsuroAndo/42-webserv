@@ -108,8 +108,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		}
 
 		if (interpreterPath.empty()) {
-			LOG(WARNING) << "No CGI interpreter found for the request path: "
-						 << scriptPath;
+			LOG(DEBUG) << "No CGI interpreter found for the request path: "
+					   << scriptPath;
 			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 			return;
 		}
