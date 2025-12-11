@@ -37,24 +37,41 @@ class TestCGIExec:
         url = f"{managed_server['base_url']}/cgi-bin/test.py"
         response = requests.get(url)
         assert response.status_code == 200
-        # TODO:環境変数のテストを書く
         # "CONTENT_LENGTH"
-        # "CONTENT_TYPE"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/CONTENT_LENGTH.sh"
+        response = requests.post(url, "hello")
+        assert response.status_code == 200
+        assert "5" in response.text
         # "QUERY_STRING"
-        # "REMOTE_HOST"
-        # "REMOTE_IDENT"
-        # "REQUEST_METHOD"
-        # "SCRIPT_NAME"
-        # "SERVER_PORT"
-        # "SERVER_PROTOCOL"
-        # "SERVER_SOFTWARE"
-    @pytest.mark.config("valid/cgi.yaml")
-    def test_check_cgi_env_content_length(self, managed_server):
-        url = f"{managed_server['base_url']}/cgi-bin/test.py"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/QUERY_STRING.sh?id=0"
         response = requests.get(url)
         assert response.status_code == 200
-        # TODO:環境変数のテストを書く
-        # "CONTENT_LENGTH"
+        assert "id=0" in response.text
+        # "REQUEST_METHOD"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/REQUEST_METHOD.sh"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "GET" in response.text
+        # "SCRIPT_NAME"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/SCRIPT_NAME.sh"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "SCRIPT_NAME.sh" in response.text
+        # "SERVER_PORT"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/SERVER_PORT.sh"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "8082" in response.text
+        # "SERVER_PROTOCOL"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/SERVER_PROTOCOL.sh"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "HTTP/1.1" in response.text
+        # "SERVER_SOFTWARE"
+        url = f"{managed_server['base_url']}/cgi-bin/env_test_sh/SERVER_SOFTWARE.sh"
+        response = requests.get(url)
+        assert response.status_code == 200
+        assert "Webserv/42" in response.text
 
     @pytest.mark.config("valid/cgi.yaml")
     def test_shell_script_cgi(self, managed_server):
