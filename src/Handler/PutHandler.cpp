@@ -23,32 +23,48 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 	HttpResponse &res = ctx.res;
 	const Config &config = ctx.conf;
 
-	LOG(INFO) << "PostHandler processing request"
+	LOG(INFO) << "PutHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());
 
 	const std::string filePath =
 		RequestResolver::resolvePath(req.getPath(), config);
 	const Location &loc = config.getLocation(req.getPath());
 
-	// TODO: upload storeが存在しない →
-	// ファイル作成をするディレクトリが存在しないに書き換える
-	const std::string uploadStore = Path::getAbsolutePath(loc.uploadStore);
+	std::string pathWithoutBase = req.getPath().substr(loc.path.length());
+
+	if (pathWithoutBase.empty() == false && pathWithoutBase[0] == '/') {
+		pathWithoutBase = pathWithoutBase.substr(1);
+	}
+
+	std::vector< std::string > splitPath =
+		StringOps::split(pathWithoutBase, "/");
+	std::string uploadStore = loc.root;
+	if (uploadStore.empty() == false &&
+		uploadStore[uploadStore.length() - 1] == '/') {
+		uploadStore = uploadStore.substr(0, uploadStore.length() - 1);
+	}
+	{
+		for (size_t i = 0; i < splitPath.size() - 1; ++i) {
+			uploadStore += "/" + splitPath[i];
+		}
+	}
+
 	struct stat s;
 	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
-		LOG(ERROR) << "PostHandler: Upload Store \"" << uploadStore
+		LOG(ERROR) << "PutHandler: Upload Store \"" << uploadStore
 				   << "\" is not exist or not a directory. errno: "
 				   << strerror(errno);
 		std::cout << uploadStore.c_str() << std::endl;
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
-	// TODO: リクエストからパースする
-	std::string target_filename = "";
+
+	std::string target_filename = splitPath[splitPath.size() - 1];
 	std::string target = uploadStore + "/" + target_filename;
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
-		LOG(ERROR) << "PostHandler: Can't create file \"" << target
+		LOG(ERROR) << "PutHandler: Can't create file \"" << target
 				   << "\". errno: " << strerror(errno);
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
