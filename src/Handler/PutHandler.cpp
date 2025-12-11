@@ -38,14 +38,21 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 
 	std::vector< std::string > splitPath =
 		StringOps::split(pathWithoutBase, "/");
+	if (splitPath.empty()) {
+		LOG(ERROR) << "PutHandler: No target file specified in request path.";
+		res.setStatusCode(HttpStatus::BAD_REQUEST);
+		return res;
+	}
 	std::string uploadStore = loc.root;
 	if (uploadStore.empty() == false &&
 		uploadStore[uploadStore.length() - 1] == '/') {
 		uploadStore = uploadStore.substr(0, uploadStore.length() - 1);
 	}
 	{
-		for (size_t i = 0; i < splitPath.size() - 1; ++i) {
-			uploadStore += "/" + splitPath[i];
+		if (0 < splitPath.size()) {
+			for (size_t i = 0; i < splitPath.size() - 1; ++i) {
+				uploadStore += "/" + splitPath[i];
+			}
 		}
 	}
 
@@ -54,7 +61,6 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 		LOG(ERROR) << "PutHandler: Upload Store \"" << uploadStore
 				   << "\" is not exist or not a directory. errno: "
 				   << strerror(errno);
-		std::cout << uploadStore.c_str() << std::endl;
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}

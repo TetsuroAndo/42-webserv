@@ -69,7 +69,6 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 		LOG(ERROR) << "PostHandler: Upload Store \"" << uploadStore
 				   << "\" is not exist or not a directory. errno: "
 				   << strerror(errno);
-		std::cout << uploadStore.c_str() << std::endl;
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
