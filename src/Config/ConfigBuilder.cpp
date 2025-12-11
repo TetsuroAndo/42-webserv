@@ -1,7 +1,9 @@
 #include "ConfigBuilder.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "ConfigParser.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -141,6 +143,16 @@ void ConfigBuilder::setLocation(const Location &location) {
 	}
 	if (newLocation.index.empty()) {
 		newLocation.index = defaultLocation.index;
+	}
+	std::map< std::string, std::string >::const_iterator it =
+		newLocation.cgiConf.begin();
+	while (it != newLocation.cgiConf.end()) {
+		if (StringOps::endsWith(newLocation.index, it->first)) {
+			throw std::runtime_error(
+				"Config error: CGI scripts cannot be used as index files (\"" +
+				it->first + "\").");
+		}
+		++it;
 	}
 	if (newLocation.hasChunkedTimeoutSec == false) {
 		newLocation.chunkedTimeoutSec = defaultLocation.chunkedTimeoutSec;

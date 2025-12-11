@@ -10,7 +10,7 @@ private:
 	/**
 	 * @brief リクエストがCGI実行対象か（拡張子と設定が一致するか）を判定
 	 */
-	bool isCgiRequest(PipelineContext &ctx, const Location &loc) const;
+	bool isCgiRequest(const PipelineContext &ctx, const Location &loc) const;
 
 public:
 	CgiRouterMiddleware();

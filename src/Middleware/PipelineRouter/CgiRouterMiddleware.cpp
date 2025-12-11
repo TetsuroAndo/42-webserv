@@ -10,7 +10,7 @@ CgiRouterMiddleware::~CgiRouterMiddleware() { delete _cgiHandler; }
 /**
  * @brief リクエストがCGI実行対象か（拡張子と設定が一致するか）を判定
  */
-bool CgiRouterMiddleware::isCgiRequest(PipelineContext &ctx,
+bool CgiRouterMiddleware::isCgiRequest(const PipelineContext &ctx,
 									   const Location &loc) const {
 	if (loc.cgiConf.empty()) {
 		return false;
