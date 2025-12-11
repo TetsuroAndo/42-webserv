@@ -85,3 +85,9 @@ class TestCGIExec:
         response = requests.get(url)
         assert response.status_code == 200
         assert  "Hello from CGI!" in response.text
+
+    @pytest.mark.config("valid/cgi.yaml")
+    def test_fail_cgi(self, managed_server):
+        url = f"{managed_server['base_url']}/cgi-bin/fail.sh"
+        response = requests.get(url)
+        assert response.status_code == 500
