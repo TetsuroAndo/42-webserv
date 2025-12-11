@@ -56,8 +56,9 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 		}
 	}
 
-	struct stat s;
-	if (stat(uploadStore.c_str(), &s) != 0 || !S_ISDIR(s.st_mode)) {
+	struct stat directoryStat;
+	if (stat(uploadStore.c_str(), &directoryStat) != 0 ||
+		!S_ISDIR(directoryStat.st_mode)) {
 		LOG(ERROR) << "PutHandler: Upload Store \"" << uploadStore
 				   << "\" is not exist or not a directory. errno: "
 				   << strerror(errno);
@@ -67,6 +68,15 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 
 	std::string target_filename = splitPath[splitPath.size() - 1];
 	std::string target = uploadStore + "/" + target_filename;
+
+	int status = HttpStatus::CREATED;
+	struct stat fileStat;
+	if (stat(target.c_str(), &fileStat) == 0) {
+		if (S_ISREG(fileStat.st_mode)) {
+			status = HttpStatus::NO_CONTENT;
+		}
+	}
+
 	std::ofstream file(target.c_str());
 	// ファイル作成失敗
 	if (!file) {
@@ -79,9 +89,9 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 	// Bodyの中身を書き込む
 	file << req.getBody();
 	file.close();
-	DefaultPageBuilder::generateSimpleBody(req.getMethod(), res,
-										   HttpStatus::CREATED,
+	DefaultPageBuilder::generateSimpleBody(req.getMethod(), res, status,
 										   "Created : " + target_filename);
+	ctx.res.appendHeader("Content-Location", req.getPath());
 	LOG(INFO) << "PutHandler : File \"" << target << "\" created successfully.";
 	return res;
 }
