@@ -40,7 +40,7 @@ private:
 	std::vector< char > _readBuffer;
 
 	// HTTPリクエストの処理
-	void parseRequest();
+	void handleRequest();
 	void generateResponse();
 	void resetForNextRequest();
 
