@@ -8,7 +8,9 @@ servers:
         - location:
             path: /
             root: ./www
-            index:
+            index: index.html
+            interpreterPath:
+              .html: hoge
       error_logs:
         - error_log:
             sink: file
