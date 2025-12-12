@@ -135,8 +135,9 @@ static std::set< std::string > createValidDisabledErrorLogKeys() {
 static std::set< std::string > createValidAllowedMethods() {
 	std::set< std::string > keys;
 	keys.insert("GET");
-	keys.insert("POST");
 	keys.insert("HEAD");
+	keys.insert("POST");
+	keys.insert("PUT");
 	keys.insert("DELETE");
 	return keys;
 }
