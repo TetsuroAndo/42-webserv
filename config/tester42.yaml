@@ -50,12 +50,14 @@ servers:
             autoindex: true
             allowedMethods:
               - POST
+              - PUT
 
         # Requirement 4: /post_body は POST のみ、maxBody 100
         - location:
             path: /post_body
             root: ./www
             index: index.html
+            maxRequestBodySize: 100
             allowedMethods:
               - POST
 
