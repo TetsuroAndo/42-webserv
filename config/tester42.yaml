@@ -68,7 +68,7 @@ servers:
             root: ./YoupiBanane
             # Requirement 5: index は youpi.bad_extension
             index: youpi.bad_extension
-            autoindex: true
+            autoindex: false
             allowedMethods:
               - GET
               - POST
