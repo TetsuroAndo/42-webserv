@@ -1,7 +1,9 @@
 #include "ConfigBuilder.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/MyYAML/MyYAML.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "ConfigParser.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -14,11 +16,17 @@ void ConfigBuilder::initDefaults() {
 	_errorPages.clear();
 
 	_maxRequestBodySize = 1024 * 1024;
+	_hasBiggestRequestBodySize = false;
+	_biggestRequestBodySize = 0;
 	_maxEvents = 1024;
 
 	_timeoutSec = 60;
 	_requestHeaderTimeoutSec = 20;
 	_requestBodyTimeoutSec = 30;
+
+	_maxRequestHeaderSize = 8192;
+
+	_sessionTimeoutSec = 1800;
 
 	_defaultLocationKey = "/";
 
@@ -27,13 +35,16 @@ void ConfigBuilder::initDefaults() {
 	defaultLoc.root = "./www";
 	defaultLoc.uploadStore = "./www/uploads";
 	defaultLoc.index = "index.html";
-	defaultLoc.errorFile = "./www/error.html";
+	defaultLoc.noIndex = false;
+	defaultLoc.directoryError = "";
 	defaultLoc.autoindex = true;
 	defaultLoc.allowedMethods.insert("GET");
 	defaultLoc.allowedMethods.insert("HEAD");
 	defaultLoc.allowedMethods.insert("POST");
 	defaultLoc.allowedMethods.insert("DELETE");
 	defaultLoc.session = true;
+	defaultLoc.hasChunkedTimeoutSec = true;
+	defaultLoc.chunkedTimeoutSec = 10;
 	_locations["/"] = defaultLoc;
 
 	_accessLogs.push_back(AccessLog());
@@ -78,18 +89,24 @@ ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
 	return Config(_listens, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _timeoutSec, _maxEvents,
+				  _maxRequestBodySize, _hasBiggestRequestBodySize,
+				  _biggestRequestBodySize, _timeoutSec, _maxEvents,
 				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
-				  _errorPages);
+				  _sessionTimeoutSec, _maxRequestHeaderSize, _errorPages);
 }
 
-void ConfigBuilder::setMaxRequestBodySize(const unsigned int size) {
+void ConfigBuilder::setMaxRequestBodySize(const size_t size) {
 	_maxRequestBodySize = size;
 }
 
-void ConfigBuilder::setTimeoutSec(const unsigned int sec) { _timeoutSec = sec; }
+void ConfigBuilder::setBiggestRequestBodySize(bool hasValue, size_t size) {
+	_hasBiggestRequestBodySize = hasValue;
+	_biggestRequestBodySize = size;
+}
 
-void ConfigBuilder::setMaxEvents(const unsigned int maxEvents) {
+void ConfigBuilder::setTimeoutSec(const size_t sec) { _timeoutSec = sec; }
+
+void ConfigBuilder::setMaxEvents(const size_t maxEvents) {
 	_maxEvents = maxEvents;
 }
 
@@ -127,7 +144,25 @@ void ConfigBuilder::setLocation(const Location &location) {
 	if (newLocation.index.empty()) {
 		newLocation.index = defaultLocation.index;
 	}
+	std::map< std::string, std::string >::const_iterator it =
+		newLocation.cgiConf.begin();
+	while (it != newLocation.cgiConf.end()) {
+		if (StringOps::endsWith(newLocation.index, it->first)) {
+			throw std::runtime_error(
+				"Config error: CGI scripts cannot be used as index files (\"" +
+				it->first + "\").");
+		}
+		++it;
+	}
+	if (newLocation.hasChunkedTimeoutSec == false) {
+		newLocation.chunkedTimeoutSec = defaultLocation.chunkedTimeoutSec;
+		newLocation.hasChunkedTimeoutSec = true;
+	}
 	_locations[newLocation.path] = newLocation;
+}
+
+void ConfigBuilder::setSessionTimeoutSec(const size_t sec) {
+	_sessionTimeoutSec = sec;
 }
 
 void ConfigBuilder::setServerDefaultRoot(const std::string &root) {
@@ -138,7 +173,7 @@ void ConfigBuilder::setServerDefaultAutoindex(bool autoindex) {
 	_locations[_defaultLocationKey].autoindex = autoindex;
 }
 
-void ConfigBuilder::setServerDefaultindex(const std::string &index) {
+void ConfigBuilder::setServerDefaultIndex(const std::string &index) {
 	_locations[_defaultLocationKey].index = index;
 }
 
@@ -201,10 +236,18 @@ void ConfigBuilder::setServerDefaultSession(bool enable) {
 	_locations[_defaultLocationKey].session = enable;
 }
 
-void ConfigBuilder::setRequestHeaderTimeoutSec(const unsigned int sec) {
+void ConfigBuilder::setRequestHeaderTimeoutSec(const size_t sec) {
 	_requestHeaderTimeoutSec = sec;
 }
 
-void ConfigBuilder::setRequestBodyTimeoutSec(const unsigned int sec) {
+void ConfigBuilder::setRequestBodyTimeoutSec(const size_t sec) {
 	_requestBodyTimeoutSec = sec;
+}
+
+void ConfigBuilder::setMaxRequestHeaderSize(const size_t size) {
+	_maxRequestHeaderSize = size;
+}
+
+void ConfigBuilder::setServerDefaultChunkedTimeoutSec(const size_t sec) {
+	_locations[_defaultLocationKey].chunkedTimeoutSec = sec;
 }

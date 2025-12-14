@@ -24,11 +24,14 @@ public:
 							 const std::set< std::string > &validKeys,
 							 const std::string &context);
 
+	static size_t validateConvertTimeout(const std::string &configName,
+										 const std::string &value);
+
 public:
 	ConfigParser(ConfigBuilder *builder);
 	~ConfigParser();
 
-	void parseServer(const Node *serverNode);
-	void parseListens(const Node *node);
-	void parseErrorPages(Node *node);
+	void parseServer(const Node *serverNode) const;
+	void parseListens(const Node *node) const;
+	void parseErrorPages(const Node *node) const;
 };

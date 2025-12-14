@@ -16,7 +16,7 @@ HttpConnection::HttpConnection(Client *client, PipelineContext &context,
 HttpConnection::~HttpConnection() {}
 
 void HttpConnection::processRequest() {
-	parseRequest();
+	handleRequest();
 	generateResponse();
 }
 
@@ -26,7 +26,7 @@ void HttpConnection::handleReadEvent() {
 
 	if (bytesRead > 0) {
 		_context.recvBuffer.append(_readBuffer.data(), bytesRead);
-		parseRequest();
+		handleRequest();
 		_client->updateTimeout(); // データ受信時にタイムアウトをリセット
 	} else if (bytesRead == 0) {
 		LOG(INFO) << "Client disconnected gracefully"
@@ -85,12 +85,13 @@ time_t HttpConnection::calculateTimeout() const {
 	switch (state) {
 	case RequestParser::STATE_REQUEST_LINE:
 	case RequestParser::STATE_HEADERS:
-		return conf.getRequestHeaderTimeoutSec();
+		return static_cast< time_t >(conf.getRequestHeaderTimeoutSec());
 	case RequestParser::STATE_BODY:
-		return conf.getRequestBodyTimeoutSec();
+		return static_cast< time_t >(conf.getRequestBodyTimeoutSec());
 	case RequestParser::STATE_COMPLETE:
 	default:
-		return conf.getTimeoutSec(); // Keep-Aliveタイムアウト
+		return static_cast< time_t >(
+			conf.getTimeoutSec()); // Keep-Aliveタイムアウト
 	}
 }
 
@@ -98,7 +99,7 @@ RequestParser::ParseState HttpConnection::getParserState() const {
 	return _context.parser.getState();
 }
 
-void HttpConnection::parseRequest() {
+void HttpConnection::handleRequest() {
 	// ミドルウェア処理
 	_client->getServer().getMainProcessor().handle(_context);
 

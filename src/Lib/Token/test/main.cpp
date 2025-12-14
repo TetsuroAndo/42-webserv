@@ -6,16 +6,14 @@
 #include <vector>
 
 int main() {
-	Token hasher;
-
 	// Test 1: Default length token
-	std::string token1 = hasher.genToken();
+	std::string token1 = Token::getInstance().genToken();
 	std::cout << "Token1 (default length): " << token1 << std::endl;
 	assert(token1.length() == 32);
 
 	// Test 2: Custom length token
 	size_t customLength = 64;
-	std::string token2 = hasher.genToken(customLength);
+	std::string token2 = Token::getInstance().genToken(customLength);
 	std::cout << "Token2 (custom length): " << token2 << std::endl;
 	assert(token2.length() == customLength);
 
@@ -24,7 +22,7 @@ int main() {
 	std::set< std::string > tokens;
 	bool unique = true;
 	for (int i = 0; i < 999999; ++i) {
-		std::string t = hasher.genToken();
+		std::string t = Token::getInstance().genToken();
 		if (tokens.count(t)) {
 			unique = false;
 			break;

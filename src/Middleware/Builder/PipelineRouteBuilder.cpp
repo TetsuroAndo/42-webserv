@@ -1,10 +1,13 @@
 #include "PipelineRouteBuilder.hpp"
 #include "../../Handler/DeleteHandler.hpp"
 #include "../../Handler/PostHandler.hpp"
+#include "../../Handler/PutHandler.hpp"
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
-#include "../RequestParser/RequestParserMiddleware.hpp"
+#include "../RequestParser/RequestBodyParserMiddleware.hpp"
+#include "../RequestParser/RequestHeadParserMiddleware.hpp"
+#include "../RequestParser/RequestLineParserMiddleware.hpp"
 #include "../SubPipeline/ConnectionHeader/ConnectionHeaderMiddleware.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
@@ -29,7 +32,6 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 	for (std::map< std::string, Location >::const_iterator it =
 			 locations.begin();
 		 it != locations.end(); ++it) {
-
 		const Location &currentLocation = it->second;
 		MiddlewareProcessor *routeProcessor = new MiddlewareProcessor();
 		_createdProcessors.push_back(routeProcessor);
@@ -44,7 +46,7 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 			routeProcessor->addMiddleware(new CgiRouterMiddleware());
 		}
 
-		// HandlerMiddleware (静的ファイル・アップロード・削除用)
+		// HandlerMiddlewareの設定
 		// CgiRouterMiddlewareを通過したリクエスト(＝CGIではない)のみが処理される
 		std::map< std::string, ISubHandler * > staticHandlers;
 		if (currentLocation.allowedMethods.count("GET")) {
@@ -59,6 +61,9 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		if (currentLocation.allowedMethods.count("DELETE")) {
 			staticHandlers["DELETE"] = new DeleteHandler();
 		}
+		if (currentLocation.allowedMethods.count("PUT")) {
+			staticHandlers["PUT"] = new PutHandler();
+		}
 
 		if (!staticHandlers.empty()) {
 			routeProcessor->addMiddleware(
@@ -68,7 +73,9 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 		routes[currentLocation.path] = routeProcessor;
 	}
 
-	mainProc->addMiddleware(new RequestParserMiddleware());
+	mainProc->addMiddleware(new RequestLineParserMiddleware());
+	mainProc->addMiddleware(new RequestHeadParserMiddleware());
+	mainProc->addMiddleware(new RequestBodyParserMiddleware());
 	mainProc->addMiddleware(new RedirectMiddleware(conf));
 	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));

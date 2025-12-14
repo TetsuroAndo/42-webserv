@@ -16,6 +16,10 @@ CONF			:= $(CONF_DIR)/default.yaml
 LOG_DIR			:= $(ROOT_DIR)/logs
 TEST_DIR		:= $(ROOT_DIR)/test
 
+# Docker settings
+DOCKER_IMAGE	:= webserv-devenv
+DOCKER_TAG		:= latest
+
 SRC 	:= $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
@@ -105,6 +109,8 @@ check:
 
 # ============= BUILD RULES =============
 
+# Check if OS is Linux (Ubuntu), otherwise use Docker
+ifeq ($(UNAME_S),Linux)
 $(NAME): $(OBJ) | $(LOG_DIR)
 	$(CXX) $(CXXFLAG) $(OPT) $(IDFLAG) $(LFLAG) $(DEFINE) -o  $@ $^
 	@echo "====================="
@@ -119,10 +125,35 @@ $(NAME): $(OBJ) | $(LOG_DIR)
 	@echo "[Optimizer flags/OPT]: $(OPT)"
 	@echo "[DEFINE]: $(DEFINE)"
 	@echo "====================="
+else
+$(NAME):
+	@echo "=========================="
+	@echo "== Building with Docker =="
+	@echo "=========================="
+	@echo "[OS/Arch]: $(UNAME_S)"
+	@echo "[Docker Image]: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+	@if ! docker image inspect $(DOCKER_IMAGE):$(DOCKER_TAG) >/dev/null 2>&1; then \
+		echo "Building Docker image..."; \
+		docker buildx build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR); \
+	fi
+	@echo "Building $(NAME) in Docker container..."
+	@docker run --rm -v $(ROOT_DIR):/workspace -w /workspace $(DOCKER_IMAGE):$(DOCKER_TAG) \
+		make $(NAME) -j $$(nproc)
+endif
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAG) $(OPT) $(IDFLAG) $(DEFINE) -fPIC -MMD -MP  -c $< -o $@
+
+# ============= DOCKER RULES =============
+
+docker-build:
+	@echo "Building Docker image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+	@docker buildx build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR)
+
+docker-clean:
+	@echo "Removing Docker image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+	@docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) 2>/dev/null || echo "Image not found or already removed"
 
 # ================ MISC =================
 
@@ -167,6 +198,8 @@ help:
 	@echo "  test             Run Python tests using pytest"
 	@echo "  tidy             Run static analysis using clang-tidy"
 	@echo "  check            Run static analysis using cppcheck"
+	@echo "  docker-build     Build Docker image for cross-platform compilation"
+	@echo "  docker-clean     Remove Docker image"
 	@echo "  nm               List undefined symbols in object files"
 	@echo "  nmbin            List undefined symbols in the executable"
 	@echo "  printsrc         Print source files"
@@ -176,4 +209,4 @@ help:
 	@echo "  submodule        Update and initialize git submodules"
 	@echo "  help             Print this help message"
 
-.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test tidy check nm nmbin printsrc printobj fill view submodule help
+.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test tidy check docker-build docker-clean nm nmbin printsrc printobj fill view submodule help

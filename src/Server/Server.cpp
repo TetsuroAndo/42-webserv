@@ -241,7 +241,7 @@ void Server::run() {
 		}
 
 		if (time(NULL) - lastCleanTime >
-			900) { // 暫定的に15分ごとにセッションをクリア
+			static_cast< time_t >(_config.getSessionTimeoutSec())) {
 			SessionManager::getInstance().cleanupExpiredSessions();
 			lastCleanTime = time(NULL);
 		}

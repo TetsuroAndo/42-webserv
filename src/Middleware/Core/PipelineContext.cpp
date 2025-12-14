@@ -4,7 +4,8 @@
 PipelineContext::PipelineContext(const Config &c, Client &client,
 								 CgiManager &serverCgiManager)
 	: conf(c), req(c), res(c), session(NULL), recvBuffer(""), sendBuffer(""),
-	  ownerClient(client), cgiManager(serverCgiManager), isCgi(false) {}
+	  ownerClient(client), cgiManager(serverCgiManager), isCgi(false),
+	  parser(conf) {}
 
 PipelineContext::~PipelineContext() {}
 

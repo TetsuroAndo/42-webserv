@@ -8,7 +8,16 @@ servers:
       locations:
         - location:
             path: /
-            root: ./www/http_test_root
+            root: ./www
             allowedMethods:
               - GET
-              - PUT
+              - HOGE
+
+
+      error_logs:
+        - error_log:
+            sink: file
+            level: debug
+        - error_log:
+            sink: console
+            level: debug

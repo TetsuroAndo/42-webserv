@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../../Config/Config.hpp"
-#include "../../Http/Core/HttpRequest.hpp"
 #include "MiddlewareProcessor.hpp"
 #include "PipelineContext.hpp"
 

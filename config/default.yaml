@@ -9,10 +9,13 @@ servers:
             port: 3000
 
       maxRequestBodySize: 6291456
+      maxRequestHeaderSize: 8KB
       maxEvents: 1024
       timeoutSec: 60
       requestHeaderTimeoutSec: 15
       requestBodyTimeoutSec: 30
+      sessionTimeoutSec: 1800
+      chunkedTimeoutSec: 10
 
       access_logs:
         - access_log:
@@ -62,7 +65,9 @@ servers:
             uploadStore: ./www/uploads
             index: index.html
             autoindex: false
+            directoryError: directoryError.html
             session: true
+            chunkedTimeoutSec: 20
             allowedMethods:
               - GET
               - HEAD
@@ -126,6 +131,23 @@ servers:
             root: ./www/no_autoindex_dir
             autoindex: false
             allowedMethods:
+              - GET
+
+        - location:
+            path: /no_index
+            root: ./www/static
+            noIndex: true
+            allowedMethods:
+                - HEAD
+                - GET
+
+        - location:
+            path: /no_index_yes_autoindex
+            root: ./www/static
+            noIndex: true
+            autoindex: true
+            allowedMethods:
+              - HEAD
               - GET
 
         # Location for testing 403 on a file with no permissions

@@ -69,7 +69,6 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 		LOG(ERROR) << "PostHandler: Upload Store \"" << uploadStore
 				   << "\" is not exist or not a directory. errno: "
 				   << strerror(errno);
-		std::cout << uploadStore.c_str() << std::endl;
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
@@ -84,7 +83,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	std::string target_filename =
 		removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) + "-" +
 		removeSpaceColonCommaHyphen(TimeCache::getGmtTime()) + "_" +
-		Token::genToken(
+		Token::getInstance().genToken(
 			8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") +
 		expansion;
 	std::string target = uploadStore + "/" + target_filename;

@@ -25,3 +25,4 @@ servers:
               - POST
             interpreterPath:
               .py: /usr/bin/python3
+              .sh: /usr/bin/bash

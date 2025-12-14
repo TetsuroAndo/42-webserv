@@ -1,7 +1,9 @@
 #include "Config.hpp"
 #include "../Lib/Logger/Log.hpp"
+#include "../Lib/StringOps/StringOps.hpp"
 #include "Info/App.hpp"
 #include "PerformanceConfig.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -15,8 +17,8 @@ AppInfo::AppInfo()
 	  httpProtocolVersion(HTTP_VERSION),
 	  cgiVersion(CGI_VERSION) {}
 
-unsigned int Performance::ioBuffersSize = IO_BUFFER_SIZE;
-unsigned int Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
+size_t Performance::ioBuffersSize = IO_BUFFER_SIZE;
+size_t Performance::cgiIoBufferSize = CGI_IO_BUFFER_SIZE;
 Performance::Performance()
 	: responseReserveSize(RESPONSE_RESERVE_SIZE),
 	  pollTimeoutMs(POLL_TIMEOUT_MS),
@@ -24,29 +26,41 @@ Performance::Performance()
 	  cgiMaxWorkers(CGI_MAX_WORKERS) {}
 
 // clang-format on
-
 Config::Config(const std::vector< Listen > &listens,
 			   const std::map< std::string, Location > &locations,
 			   const std::vector< AccessLog > &accessLogs,
 			   const std::vector< ErrorLog > &errorLogs,
-			   unsigned int maxRequestBodySize, unsigned int timeoutSec,
-			   unsigned int maxEvents, unsigned int requestHeaderTimeoutSec,
-			   unsigned int requestBodyTimeoutSec,
+			   const size_t maxRequestBodySize,
+			   const bool hasBiggestMaxRequestBodySize,
+			   const size_t biggestMaxRequestBodySize, const size_t timeoutSec,
+			   const size_t maxEvents, const size_t requestHeaderTimeoutSec,
+			   const size_t requestBodyTimeoutSec,
+			   const size_t sessionTimeoutSec,
+			   const size_t maxRequestHeaderSize,
 			   const std::map< int, std::string > &errorPages)
 	: _listens(listens), _locations(locations), _accessLogs(accessLogs),
 	  _errorLogs(errorLogs), _errorPages(errorPages),
-	  _maxRequestBodySize(maxRequestBodySize), _timeoutSec(timeoutSec),
-	  _maxEvents(maxEvents), _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
-	  _requestBodyTimeoutSec(requestBodyTimeoutSec) {}
+	  _maxRequestBodySize(maxRequestBodySize),
+	  _hasBiggestMaxRequestBodySize(hasBiggestMaxRequestBodySize),
+	  _biggestMaxRequestBodySize(biggestMaxRequestBodySize),
+	  _timeoutSec(timeoutSec), _maxEvents(maxEvents),
+	  _requestHeaderTimeoutSec(requestHeaderTimeoutSec),
+	  _requestBodyTimeoutSec(requestBodyTimeoutSec),
+	  _sessionTimeoutSec(sessionTimeoutSec),
+	  _maxRequestHeaderSize(maxRequestHeaderSize) {}
 
 Config::Config(const Config &other)
 	: _listens(other._listens), _locations(other._locations),
 	  _accessLogs(other._accessLogs), _errorLogs(other._errorLogs),
 	  _errorPages(other._errorPages),
 	  _maxRequestBodySize(other._maxRequestBodySize),
+	  _hasBiggestMaxRequestBodySize(other._hasBiggestMaxRequestBodySize),
+	  _biggestMaxRequestBodySize(other._biggestMaxRequestBodySize),
 	  _timeoutSec(other._timeoutSec), _maxEvents(other._maxEvents),
 	  _requestHeaderTimeoutSec(other._requestHeaderTimeoutSec),
-	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec) {}
+	  _requestBodyTimeoutSec(other._requestBodyTimeoutSec),
+	  _sessionTimeoutSec(other._sessionTimeoutSec),
+	  _maxRequestHeaderSize(other._maxRequestHeaderSize) {}
 
 Config &Config::operator=(const Config &other) {
 	if (this != &other) {
@@ -56,10 +70,14 @@ Config &Config::operator=(const Config &other) {
 		_errorLogs = other._errorLogs;
 		_errorPages = other._errorPages;
 		_maxRequestBodySize = other._maxRequestBodySize;
+		_hasBiggestMaxRequestBodySize = other._hasBiggestMaxRequestBodySize;
+		_biggestMaxRequestBodySize = other._biggestMaxRequestBodySize;
 		_timeoutSec = other._timeoutSec;
 		_maxEvents = other._maxEvents;
 		_requestHeaderTimeoutSec = other._requestHeaderTimeoutSec;
 		_requestBodyTimeoutSec = other._requestBodyTimeoutSec;
+		_sessionTimeoutSec = other._sessionTimeoutSec;
+		_maxRequestHeaderSize = other._maxRequestHeaderSize;
 	}
 	return *this;
 }
@@ -76,7 +94,7 @@ const std::map< int, std::string > &Config::getErrorPages() const {
 	return _errorPages;
 }
 
-const std::string &Config::getErrorPage(int code) const {
+const std::string &Config::getErrorPage(const int code) const {
 	std::map< int, std::string >::const_iterator it = _errorPages.find(code);
 	if (it != _errorPages.end()) {
 		return it->second;
@@ -122,21 +140,31 @@ const std::vector< ErrorLog > &Config::getErrorLogs() const {
 	return _errorLogs;
 }
 
-unsigned int Config::getMaxRequestBodySize() const {
-	return _maxRequestBodySize;
+size_t Config::getMaxRequestBodySize() const { return _maxRequestBodySize; }
+
+bool Config::hasBiggestMaxRequestBodySize() const {
+	return _hasBiggestMaxRequestBodySize;
 }
 
-unsigned int Config::getTimeoutSec() const { return _timeoutSec; }
+size_t Config::getBiggestMaxRequestBodySize() const {
+	return _biggestMaxRequestBodySize;
+}
 
-unsigned int Config::getMaxEvents() const { return _maxEvents; }
+size_t Config::getTimeoutSec() const { return _timeoutSec; }
 
-unsigned int Config::getRequestHeaderTimeoutSec() const {
+size_t Config::getMaxEvents() const { return _maxEvents; }
+
+size_t Config::getRequestHeaderTimeoutSec() const {
 	return _requestHeaderTimeoutSec;
 }
 
-unsigned int Config::getRequestBodyTimeoutSec() const {
+size_t Config::getRequestBodyTimeoutSec() const {
 	return _requestBodyTimeoutSec;
 }
+
+size_t Config::getSessionTimeoutSec() const { return _sessionTimeoutSec; }
+
+size_t Config::getMaxRequestHeaderSize() const { return _maxRequestHeaderSize; }
 
 std::ostream &operator<<(std::ostream &os, const Config &config) {
 	os << "Config:\n";
@@ -146,6 +174,8 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 	   << "\n";
 	os << "  requestBodyTimeoutSec: " << config._requestBodyTimeoutSec << "\n";
 	os << "  maxEvents: " << config._maxEvents << "\n";
+	os << "  sessionTimeoutSec: " << config._sessionTimeoutSec << "\n";
+	os << "  maxRequestHeaderSize: " << config._maxRequestHeaderSize << "\n";
 
 	os << "  listens:\n";
 	for (std::vector< Listen >::const_iterator it = config._listens.begin();
@@ -175,9 +205,20 @@ std::ostream &operator<<(std::ostream &os, const Config &config) {
 		os << "\n";
 		os << "      autoindex: " << (it->second.autoindex ? "on" : "off")
 		   << "\n";
-		os << "      index: " << it->second.index << "\n";
-		os << "      errorFile: " << it->second.errorFile << "\n";
+		if (it->second.noIndex == false) {
+			os << "      index: " << it->second.index << "\n";
+		}
+		os << "      noIndex: " << (it->second.noIndex ? "true" : "false")
+		   << "\n";
+		os << "      directoryError: " << it->second.directoryError << "\n";
 		os << "      uploadStore: " << it->second.uploadStore << "\n";
+		os << "      maxRequestBodySize: "
+		   << (it->second.hasMaxRequestBodySize
+				   ? StringOps::toString(it->second.maxRequestBodySize)
+				   : "default")
+		   << "\n";
+		os << "      chunkedTimeoutSec: " << (it->second.hasChunkedTimeoutSec)
+		   << "\n";
 		os << "      cgiConf:\n";
 		for (std::map< std::string, std::string >::const_iterator cit =
 				 it->second.cgiConf.begin();
