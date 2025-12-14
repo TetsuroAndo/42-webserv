@@ -72,3 +72,29 @@ def test_post_no_ex_dir(managed_server):
     upload_dir = Path("test/www_test/uploads")
     txt_files = list(upload_dir.glob("*.txt"))
     assert not txt_files, f"Unexpected .txt file(s) found: {[f.name for f in txt_files]}"
+
+@pytest.mark.config("valid/post.yaml")
+def test_post_no_permission_directory(managed_server):
+    base = managed_server['base_url']
+
+    here = Path(__file__).resolve().parent
+    # POST 実行
+    url_post = f"{base}/upload/"
+    upload_dir = here / "../../test_www/uploads/"
+
+    # ディレクトリの w 権限を抜く
+    old_mode = upload_dir.stat().st_mode
+    upload_dir.chmod(0o555)  # 7-2=5
+
+    try:
+        # DELETE 実行
+        resp = requests.post(url_post, "hello world",headers={"Content-Type": "text/plain"})
+        # 評価 禁止 or 見えない
+        assert resp.status_code in (403, 404)
+
+    finally:
+        # 後始末：権限を戻す
+        upload_dir.chmod(old_mode)
+        upload_dir = Path("test/www_test/uploads")
+        txt_files = list(upload_dir.glob("*.txt"))
+        assert not txt_files, f"Unexpected .txt file(s) found: {[f.name for f in txt_files]}"
