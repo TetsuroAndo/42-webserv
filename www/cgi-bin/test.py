@@ -20,6 +20,7 @@ print("<ul>")
 
 # Display some CGI environment variables
 cgi_vars = [
+    'HTTP_COOKIE',
     'SERVER_SOFTWARE',
     'SERVER_NAME',
     'GATEWAY_INTERFACE',
