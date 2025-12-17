@@ -7,7 +7,7 @@ servers:
             port: 8080
 
       # /post_body 以外のための、妥当なグローバル最大サイズ
-      maxRequestBodySize: 1048576
+      maxRequestBodySize: 2560000000
 
       # ログ設定 (コンソール出力)
       access_logs:
@@ -15,14 +15,20 @@ servers:
             sink : console
             format : ELF
       error_logs:
-        - error_log:
+          - error_log:
             sink : console
             level : debug
+          - error_log:
+              sink: file
+              filename: error.log
+              logDir: ./logs
+              format: ELF
+              level: debug
 
       # Requirement 3: .bla 拡張子を持つファイルは cgi_test を呼び出す
       # (cgi_test がプロジェクトルートにあると仮定)
       interpreterPath:
-        .bla: ./cgi_test
+        .bla: /usr/bin/bash
 
       # エラーページ (413: Payload Too Large を /post_body テスト用に推奨)
       error_pages:
@@ -63,12 +69,15 @@ servers:
 
         # Requirement 5: /directory/ は GET、root YoupiBanane、index youpi.bad_extension
         - location:
-            path: /directory/
+            path: /directory
             # Requirement 5: root は YoupiBanane
             root: ./YoupiBanane
             # Requirement 5: index は youpi.bad_extension
             index: youpi.bad_extension
             autoindex: false
+            uploadStore: ./test/test_www/uploads
+            interpreterPath:
+              .bla: ./cgi_test
             allowedMethods:
               - GET
               - POST
