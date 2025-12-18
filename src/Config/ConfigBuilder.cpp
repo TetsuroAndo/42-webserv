@@ -154,6 +154,18 @@ void ConfigBuilder::setLocation(const Location &location) {
 		}
 		++it;
 	}
+	it = defaultLocation.cgiConf.begin();
+	while (it != defaultLocation.cgiConf.end()) {
+		if (StringOps::endsWith(newLocation.index, it->first)) {
+			throw std::runtime_error(
+				"Config error: CGI scripts cannot be used as index files (\"" +
+				it->first + "\").");
+		}
+		if (newLocation.cgiConf[it->first].empty()) {
+			newLocation.cgiConf[it->first] = it->second;
+		}
+		++it;
+	}
 	if (newLocation.hasChunkedTimeoutSec == false) {
 		newLocation.chunkedTimeoutSec = defaultLocation.chunkedTimeoutSec;
 		newLocation.hasChunkedTimeoutSec = true;
