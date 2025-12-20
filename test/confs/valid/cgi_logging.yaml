@@ -11,9 +11,9 @@ servers:
 
       error_logs:
         - error_log:
-            sink: console
-#            filename: error.log
-#            logDir: ./logs
+            sink: file
+            filename: cgi_logging_test.log
+            logDir: ./test/test_www/uploads
             level: debug
 
       locations:
@@ -25,4 +25,4 @@ servers:
               - POST
             interpreterPath:
               .py: /usr/bin/python3
-              .sh: /usr/bin/bash
+              .sh: /bin/bash

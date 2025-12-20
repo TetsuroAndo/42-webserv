@@ -151,6 +151,9 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		if (worker->getWriteFd() >= 0) {
 			_pipeFdToWorker[worker->getWriteFd()] = worker;
 		}
+		if (worker->getErrFd() >= 0) {
+			_pipeFdToWorker[worker->getErrFd()] = worker;
+		}
 		_clientFdToWorker[worker->getClientFd()] = worker;
 		if (worker->getPid() > 0) {
 			_pidToWorker[worker->getPid()] = worker;
@@ -171,12 +174,20 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			ev.eventType = EPOLLOUT;
 			_add.push(ev);
 		}
+		// CGIスクリプトからの標準エラー出力を監視
+		if (worker->getErrFd() >= 0) {
+			FdEventChange ev;
+			ev.fd = worker->getErrFd();
+			ev.eventType = EPOLLIN;
+			_add.push(ev);
+		}
 
 		LOG(INFO) << "CGI worker created"
 				  << attr("clientFd", worker->getClientFd())
 				  << attr("pid", worker->getPid())
 				  << attr("readFd", worker->getReadFd())
-				  << attr("writeFd", worker->getWriteFd());
+				  << attr("writeFd", worker->getWriteFd())
+				  << attr("errFd", worker->getErrFd());
 
 	} catch (const std::exception &e) {
 		// new または execute で失敗した場合に備えて delete (NULLでも問題なし)
@@ -196,7 +207,12 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 	worker->updateLastActivityTime();
 
 	if (event_type & EPOLLIN) { // CGIからの読み込み可能
-		worker->handleRead();
+		// 標準エラー出力用のFDか標準出力用のFDかを判定
+		if (fd == worker->getErrFd()) {
+			worker->handleReadErr();
+		} else {
+			worker->handleRead();
+		}
 	}
 	if (event_type & EPOLLOUT) { // CGIへの書き込み可能
 		worker->handleWrite();
@@ -233,6 +249,15 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 				_remove.push(ev);
 			}
 			_pipeFdToWorker.erase(worker->getWriteFd());
+		}
+		// 標準エラー出力FDがまだ監視対象ならそれも削除リストに追加
+		if (_pipeFdToWorker.count(worker->getErrFd())) {
+			{
+				FdEventChange ev;
+				ev.fd = worker->getErrFd();
+				_remove.push(ev);
+			}
+			_pipeFdToWorker.erase(worker->getErrFd());
 		}
 		// 完了したクライアントFDを通知キューに積む
 		_completedClients.push(worker->getClientFd());
