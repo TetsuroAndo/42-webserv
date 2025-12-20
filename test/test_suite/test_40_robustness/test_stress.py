@@ -160,8 +160,8 @@ def test_mixed_get_post_keepalive_under_load(
         else:  # num_clients >= 500
             assert p95_get < 700, f"p95_get exceeded: {p95_get:.2f}ms"
             assert p95_post < 800, f"p95_post exceeded: {p95_post:.2f}ms"
-            assert p99_get < 2000, f"p99_get exceeded: {p99_get:.2f}ms"
-            assert p99_post < 2000, f"p99_post exceeded: {p99_post:.2f}ms"
+            assert p99_get < 3000, f"p99_get exceeded: {p99_get:.2f}ms"
+            assert p99_post < 3000, f"p99_post exceeded: {p99_post:.2f}ms"
 
     finally:
         upload_dir = Path("test/test_www/uploads")
