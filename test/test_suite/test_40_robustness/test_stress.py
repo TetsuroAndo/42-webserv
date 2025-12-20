@@ -5,6 +5,7 @@ GET / POST 混在 + keep-alive + 軽負荷並列テスト（同期版）
 - keep-alive 接続を維持した状態でもレイテンシが劣化しない
 - GET / POST を混ぜても相互干渉しない
 - クライアント数・POST body サイズで極端な劣化が起きない
+- 各ステータスコード（300, 400, 500など）の耐久テスト
 """
 
 import math
@@ -17,6 +18,8 @@ from pathlib import Path
 import pytest
 import requests
 import sys
+import subprocess
+import re
 
 
 # =========================
@@ -141,7 +144,7 @@ def test_mixed_get_post_keepalive_under_load(
         # assert
         # =========================
         assert error_rate < 0.05, f"Error rate too high: {error_rate:.4%}"
-        
+
         if num_clients <= 10:
             assert p95_get < 60, f"p95_get exceeded: {p95_get:.2f}ms"
             assert p95_post < 70, f"p95_post exceeded: {p95_post:.2f}ms"
@@ -171,3 +174,377 @@ def test_mixed_get_post_keepalive_under_load(
                     continue
                 if entry.is_file():
                     entry.unlink()
+
+
+# =========================
+# ステータスコード別耐久テスト用ワーカー
+# =========================
+def status_code_worker(
+        base_url: str,
+        target_status: int,
+        request_func,
+        results: dict,
+        requests_per_client: int = 50,
+):
+    """特定のステータスコードを期待するリクエストを送信するワーカー"""
+    session = requests.Session()
+
+    for _ in range(requests_per_client):
+        start = time.perf_counter()
+        try:
+            r = request_func(session, base_url)
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            results["latency"].append(elapsed_ms)
+            results["status"].append(r.status_code)
+            results["expected_status"].append(target_status)
+            results["success"].append(r.status_code == target_status)
+        except Exception as e:
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            results["latency"].append(elapsed_ms)
+            results["status"].append(0)
+            results["expected_status"].append(target_status)
+            results["success"].append(False)
+            results["errors"].append(str(e))
+
+        time.sleep(random.uniform(0.0, 0.001))
+
+
+# =========================
+# 300系リダイレクトの耐久テスト
+# =========================
+@pytest.mark.config("valid/config_301.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_redirect_301(managed_server, num_clients):
+    """301リダイレクトの耐久テスト"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        return session.get(f"{url}/old-path", allow_redirects=False)
+
+    print(f"\n>>> 301リダイレクト耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 301, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[301 redirect clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"301リダイレクト成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+
+
+@pytest.mark.config("valid/config_302.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_redirect_302(managed_server, num_clients):
+    """302リダイレクトの耐久テスト"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        return session.get(f"{url}/temp-old", allow_redirects=False)
+
+    print(f"\n>>> 302リダイレクト耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 302, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[302 redirect clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"302リダイレクト成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+
+
+# =========================
+# 400系エラーの耐久テスト
+# =========================
+@pytest.mark.config("valid/config_basic_get.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_404_not_found(managed_server, num_clients):
+    """404 Not Foundの耐久テスト"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        # 存在しないファイルへのリクエスト
+        return session.get(f"{url}/non-existent-{random.randint(1000, 9999)}.txt")
+
+    print(f"\n>>> 404 Not Found耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 404, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[404 Not Found clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"404エラー成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+
+
+@pytest.mark.config("valid/config_autoindex_off.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_403_forbidden(managed_server, num_clients):
+    """403 Forbiddenの耐久テスト"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        # autoindex offでディレクトリにアクセス
+        return session.get(f"{url}/")
+
+    print(f"\n>>> 403 Forbidden耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 403, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[403 Forbidden clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"403エラー成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+
+
+@pytest.mark.config("valid/config_basic_get.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_405_method_not_allowed(managed_server, num_clients):
+    """405 Method Not Allowedの耐久テスト"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        # GETが許可されていないパスにPOSTを送信
+        return session.post(f"{url}/not_allow_get/hello.txt", data=b"test")
+
+    print(f"\n>>> 405 Method Not Allowed耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 405, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[405 Method Not Allowed clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"405エラー成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+
+
+@pytest.mark.config("valid/post_test.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_413_payload_too_large(managed_server, num_clients):
+    """413 Payload Too Largeの耐久テスト"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        # 2KBを超えるペイロードを送信（maxRequestBodySize: 1KB）
+        body = b"x" * 2048
+        return session.post(
+            f"{url}/upload",
+            data=body,
+            headers={"Content-Type": "application/octet-stream"}
+        )
+
+    print(f"\n>>> 413 Payload Too Large耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 413, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[413 Payload Too Large clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"413エラー成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 200, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+
+
+@pytest.mark.config("valid/post_test_content-length.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50])
+def test_stress_400_bad_request(managed_server, num_clients):
+    """400 Bad Requestの耐久テスト（Content-Length不一致）"""
+    host = "127.0.0.1"
+    port = managed_server["port"]
+    results = defaultdict(list)
+    requests_per_client = 20
+
+    def worker_400():
+        """400エラーを生成するワーカー"""
+        for _ in range(requests_per_client):
+            start = time.perf_counter()
+            try:
+                # Content-Length不一致のリクエストを送信
+                length = random.randint(0, 20)
+                http_request = (
+                    f"POST /upload HTTP/1.1\\r\\n"
+                    f"Host: {host}:{port}\\r\\n"
+                    f"Content-Type: text/plain\\r\\n"
+                    f"Content-Length: {length}\\r\\n"
+                    f"Connection: close\\r\\n"
+                    f"\\r\\n"
+                    f"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                )
+
+                cmd = f"printf '%b' '{http_request}' | curl --no-buffer --raw -s telnet://{host}:{port}"
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                output = result.stderr + result.stdout
+                status_match = re.search(r'HTTP/1\.\d+\s+(\d+)', output)
+
+                if status_match:
+                    status_code = int(status_match.group(1))
+                    results["latency"].append(elapsed_ms)
+                    results["status"].append(status_code)
+                    results["expected_status"].append(400)
+                    results["success"].append(status_code == 400)
+                else:
+                    results["latency"].append(elapsed_ms)
+                    results["status"].append(0)
+                    results["expected_status"].append(400)
+                    results["success"].append(False)
+                    results["errors"].append(f"Status code not found: {output}")
+            except Exception as e:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                results["latency"].append(elapsed_ms)
+                results["status"].append(0)
+                results["expected_status"].append(400)
+                results["success"].append(False)
+                results["errors"].append(str(e))
+
+            time.sleep(random.uniform(0.0, 0.001))
+
+    print(f"\n>>> 400 Bad Request耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(worker_400)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[400 Bad Request clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.95, f"400エラー成功率が低すぎます: {success_rate:.4%}"
+
+
+# =========================
+# 500系エラーの耐久テスト
+# =========================
+@pytest.mark.config("valid/cgi.yaml")
+@pytest.mark.parametrize("num_clients", [10, 50, 100])
+def test_stress_500_internal_server_error(managed_server, num_clients):
+    """500 Internal Server Errorの耐久テスト（CGIエラー）"""
+    base_url = managed_server["base_url"]
+    results = defaultdict(list)
+
+    def request_func(session, url):
+        # 失敗するCGIスクリプトを実行
+        return session.get(f"{url}/cgi-bin/fail.sh")
+
+    print(f"\n>>> 500 Internal Server Error耐久テスト開始: クライアント数 = {num_clients}")
+    sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=num_clients) as executor:
+        futures = [
+            executor.submit(status_code_worker, base_url, 500, request_func, results)
+            for _ in range(num_clients)
+        ]
+        for f in as_completed(futures):
+            f.result()
+
+    success_rate = sum(results["success"]) / len(results["success"]) if results["success"] else 0
+    p95_latency = percentile(results["latency"], 95) if results["latency"] else None
+
+    print(
+        f"[500 Internal Server Error clients={num_clients}] "
+        f"success_rate={success_rate:.4%} | "
+        f"p95_latency={p95_latency:.2f}ms"
+    )
+
+    assert success_rate >= 0.99, f"500エラー成功率が低すぎます: {success_rate:.4%}"
+    assert p95_latency < 500, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
