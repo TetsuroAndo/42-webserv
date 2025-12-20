@@ -70,7 +70,9 @@ void parseLogs(const Node *node, const std::string &logKey,
 		 it != logs.end(); ++it) {
 		Node *logNode = *it;
 		if (logNode->getKey() != logKey) {
-			continue;
+			throw std::runtime_error("Configuration error: invalid key '" +
+									 logNode->getKey() + "'; expected '" +
+									 logKey + "'.");
 		}
 
 		LogType log;
