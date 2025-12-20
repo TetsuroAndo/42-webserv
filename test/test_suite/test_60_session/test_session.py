@@ -4,6 +4,7 @@ GET + Cookie / Session のテスト（Set-Cookie 基準）
 import pytest
 import requests
 import re
+import time
 
 
 def extract_session_id(set_cookie_header):
@@ -62,7 +63,7 @@ class TestGETCookieSession:
             assert sid1 == sid2
 
     @pytest.mark.config("valid/config_zero_sessionTimeoutSec.yaml")
-    @pytest.mark.skip(reason="このテストは30分かかるようになってるので、高速に実行する際はコンパイルをし直してください。")
+    #@pytest.mark.skip(reason="このテストは30分かかるようになってるので、高速に実行する際はコンパイルをし直してください。")
     def test_session_timeout_zero_creates_new_session(self, managed_server):
         """
         sessionTimeout=0 の場合、
@@ -72,12 +73,16 @@ class TestGETCookieSession:
         base_url = managed_server["base_url"]
         session = requests.Session()
 
+        time.sleep(0.1)
+
         # 1回目
         r1 = session.get(f"{base_url}/")
         assert r1.status_code == 200
 
         sid1 = extract_session_id(r1.headers.get("Set-Cookie"))
         assert sid1 is not None
+
+        time.sleep(0.1)
 
         # 2回目
         r2 = session.get(f"{base_url}/")
