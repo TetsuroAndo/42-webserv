@@ -146,7 +146,6 @@ void Server::setupListenSockets() {
 
 void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
-	time_t lastCleanTime = time(NULL);
 	while (true) {
 		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
 		const int nEvents = _socketsManager.wait(timeoutMs);
@@ -242,13 +241,7 @@ void Server::run() {
 			}
 		}
 
-		time_t sessionTimeoutSec =
-			static_cast< time_t >(_config.getSessionTimeoutSec());
-		if (time(NULL) - lastCleanTime > sessionTimeoutSec) {
-			SessionManager::getInstance().cleanupExpiredSessions(
-				sessionTimeoutSec);
-			lastCleanTime = time(NULL);
-		}
+		SessionManager::getInstance().cleanupIfNeeded();
 	}
 }
 
