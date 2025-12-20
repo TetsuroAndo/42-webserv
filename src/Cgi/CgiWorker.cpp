@@ -192,8 +192,12 @@ void CgiWorker::handleRead() {
 			if (0 < result) {
 				if (WIFEXITED(status)) {
 					int exitCode = WEXITSTATUS(status);
+					LOG(DEBUG) << "CGI process exited"
+							   << attr("pid", _pid)
+							   << attr("exitCode", exitCode);
 					if (exitCode != 0) {
 						setError();
+						_state = CGI_ERROR;
 					} else {
 						_state = CGI_COMPLETE;
 					}
