@@ -187,10 +187,18 @@ std::vector< std::string > split(const std::string &str,
 
 /**
  * @brief 文字列をsize_tに変換する
- * @throw std::invalid_argument 変換できない文字が含まれる場合
+ * @throw std::invalid_argument
+ * 変換できない文字が含まれる場合、または負の値の場合
  * @throw std::out_of_range      数値がsize_tの範囲を超える場合
  */
 size_t toSizeT(const std::string &str) {
+	// 負の値のチェック（文字列レベルで）
+	std::string trimmed = trim(str);
+	if (!trimmed.empty() && trimmed[0] == '-') {
+		throw std::invalid_argument(
+			"Invalid conversion to size_t: negative value not allowed");
+	}
+
 	std::stringstream ss(str);
 	size_t res;
 	ss >> res;
