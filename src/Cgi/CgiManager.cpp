@@ -137,7 +137,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		}
 
 		LOG(DEBUG) << "Using CGI interpreter"
-				   << attr("interpreter", interpreterPath)
+				   << attr("interpreterPath", interpreterPath)
+				   << attr("resolvedInterpreterPath", resolvedInterpreterPath)
 				   << attr("script", scriptPath);
 
 		worker = new CgiWorker(ctx, scriptPath, interpreterPath);
