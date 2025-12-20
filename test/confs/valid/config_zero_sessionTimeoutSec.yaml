@@ -1,0 +1,21 @@
+servers:
+  - server:
+      sessionTimeoutSec: 0
+      listens:
+        - listen:
+            interface: 0.0.0.0
+            port: 8080
+
+      error_logs:
+        - error_log:
+            level: debug
+            sink: console
+
+      locations:
+        - location:
+            path: /
+            root: ./test/test_www/static
+            session: true
+            allowedMethods:
+              - GET
+              - HEAD
