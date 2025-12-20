@@ -11,9 +11,9 @@ servers:
 
       error_logs:
         - error_log:
-            sink: file
-            filename: error.log
-            logDir: ./logs
+            sink: console
+#            filename: error.log
+#            logDir: ./logs
             level: debug
 
       locations:
@@ -23,6 +23,6 @@ servers:
             allowedMethods:
               - GET
               - POST
-            interpreterPath:
-              .py: /usr/bin/python3
-              .sh: /usr/bin/bash
+#            interpreterPath:
+#              .py: /usr/bin/python3
+#              .sh: /usr/bin/bash
