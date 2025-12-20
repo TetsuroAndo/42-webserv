@@ -227,13 +227,8 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 
 	parseListens(serverNode->getMapNode("listens"));
 
-	if (Node *errorPagesNode = serverNode->getMapNode("error_pages")) {
+	if (const Node *errorPagesNode = serverNode->getMapNode("error_pages")) {
 		parseErrorPages(errorPagesNode);
-	}
-
-	ConfigLocationParser locationParser(_builder);
-	if (const Node *locationsNode = serverNode->getMapNode("locations")) {
-		locationParser.parseLocations(locationsNode);
 	}
 
 	ConfigLogParser logParser(_builder);
@@ -322,5 +317,10 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 	if (const Node *n = serverNode->getMapNode("chunkedTimeoutSec")) {
 		_builder->setServerDefaultChunkedTimeoutSec(
 			validateConvertTimeout("chunkedTimeoutSec", n->getValue()));
+	}
+
+	ConfigLocationParser locationParser(_builder);
+	if (const Node *locationsNode = serverNode->getMapNode("locations")) {
+		locationParser.parseLocations(locationsNode);
 	}
 }
