@@ -125,8 +125,7 @@ void CgiWorker::handleWrite() {
 
 	if (_bytesSent == 0) {
 		LOG(DEBUG) << "Sending request body to CGI"
-				   << attr("clientFd", _clientFd)
-				   << attr("pid", _pid)
+				   << attr("clientFd", _clientFd) << attr("pid", _pid)
 				   << attr("bodySize", _requestBody.size())
 				   << attr("body", _requestBody);
 	}
@@ -210,15 +209,15 @@ void CgiWorker::handleReadErr() {
 	if (getErrFd() < 0) {
 		return;
 	}
-	const ssize_t bytes =
-		read(getErrFd(), &_errBuffer[0], _errBuffer.size());
+	const ssize_t bytes = read(getErrFd(), &_errBuffer[0], _errBuffer.size());
 
 	if (bytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
 			// 次のEPOLLINで再試行
 			return;
 		}
-		LOG(ERROR) << "Read error from CGI stderr" << attr("error", strerror(errno));
+		LOG(ERROR) << "Read error from CGI stderr"
+				   << attr("error", strerror(errno));
 		_closePipe(_pipeErr[0]);
 		return;
 	}
@@ -227,10 +226,8 @@ void CgiWorker::handleReadErr() {
 		_closePipe(_pipeErr[0]);
 	} else {
 		std::string errOutput(&_errBuffer[0], bytes);
-		LOG(ERROR) << "CGI stderr output"
-				   << attr("clientFd", _clientFd)
-				   << attr("pid", _pid)
-				   << attr("stderr", errOutput);
+		LOG(ERROR) << "CGI stderr output" << attr("clientFd", _clientFd)
+				   << attr("pid", _pid) << attr("stderr", errOutput);
 	}
 	updateLastActivityTime();
 }

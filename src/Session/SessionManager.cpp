@@ -6,7 +6,8 @@
 #include <string>
 
 SessionManager::SessionManager()
-	: _hasher(Token::getInstance()), _timeoutSec(1800), _lastCleanupTime(std::time(NULL)) {}
+	: _hasher(Token::getInstance()), _timeoutSec(1800),
+	  _lastCleanupTime(std::time(NULL)) {}
 
 SessionManager::~SessionManager() {
 	for (std::map< std::string, Session * >::iterator it = _sessions.begin();
