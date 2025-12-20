@@ -20,6 +20,8 @@ Server::Server(const Config &config)
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
+	SessionManager::getInstance().setTimeoutSec(
+		static_cast< time_t >(_config.getSessionTimeoutSec()));
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";
@@ -240,9 +242,11 @@ void Server::run() {
 			}
 		}
 
-		if (time(NULL) - lastCleanTime >
-			static_cast< time_t >(_config.getSessionTimeoutSec())) {
-			SessionManager::getInstance().cleanupExpiredSessions();
+		time_t sessionTimeoutSec =
+			static_cast< time_t >(_config.getSessionTimeoutSec());
+		if (time(NULL) - lastCleanTime > sessionTimeoutSec) {
+			SessionManager::getInstance().cleanupExpiredSessions(
+				sessionTimeoutSec);
 			lastCleanTime = time(NULL);
 		}
 	}
