@@ -1,6 +1,6 @@
 NAME		:= webserv
 
-UNAME_S 		:= $(shell uname -s)
+UNAME_S 	:= $(shell uname -s)
 
 CXX			:= c++
 CXXFLAG		:= -Wall -Wextra -Werror -std=c++98 -pedantic
@@ -8,17 +8,19 @@ OPT			:= -O3
 RM			:= rm -rf
 DEFINE		:= -D_GLIBCXX_USE_CXX11_ABI=0
 
-ROOT_DIR		:= .
-SRC_DIR			:= $(ROOT_DIR)/src
-OBJ_DIR			:= $(ROOT_DIR)/obj
-CONF_DIR		:= $(ROOT_DIR)/config
-CONF			:= $(CONF_DIR)/default.yaml
-LOG_DIR			:= $(ROOT_DIR)/logs
-TEST_DIR		:= $(ROOT_DIR)/test
+ROOT_DIR	:= .
+SRC_DIR		:= $(ROOT_DIR)/src
+OBJ_DIR		:= $(ROOT_DIR)/obj
+CONF_DIR	:= $(ROOT_DIR)/config
+CONF		:= $(CONF_DIR)/default.yaml
+LOG_DIR		:= $(ROOT_DIR)/logs
+TEST_DIR	:= $(ROOT_DIR)/test
 
 # Docker settings
 DOCKER_IMAGE	:= webserv-devenv
 DOCKER_TAG		:= latest
+
+VENV_DIR	:= $(ROOT_DIR)/.venv
 
 SRC 	:= $(shell find $(SRC_DIR) -path '*/test' -prune -o -name '*.cpp' -print)
 OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
@@ -73,8 +75,8 @@ play-netpractice: $(NAME) submodule
 
 # Create a virtual environment and install dependencies
 pyinit:
-	python3 -m venv $(ROOT_DIR)/venv
-	@. $(ROOT_DIR)/venv/bin/activate && \
+	python3 -m venv $(VENV_DIR)
+	@. $(VENV_DIR)/bin/activate && \
 	if command -v uv &> /dev/null; then \
 		uv pip install -r $(TEST_DIR)/requirements.txt; \
 	else \
@@ -83,7 +85,7 @@ pyinit:
 	fi
 
 test:
-	. venv/bin/activate && cd $(TEST_DIR) && pytest
+	. $(VENV_DIR)/bin/activate && cd $(TEST_DIR) && pytest
 
 # ============= STATIC ANALYSIS =============
 
