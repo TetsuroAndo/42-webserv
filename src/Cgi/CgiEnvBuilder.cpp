@@ -118,6 +118,8 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 		return std::vector< std::string >();
 	}
 
+	// リクエストが来た実際のポートを使用（複数のlisten設定がある場合に対応）
+	const int serverPort = ctx.ownerClient.getListenPort();
 	const Listen &listen = c.getListens()[0];
 
 	std::map< std::string, std::string > env;
@@ -139,7 +141,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["REQUEST_METHOD"] = req.getMethod();
 	env["SCRIPT_NAME"] = fileName(requestedPath);
 	env["SERVER_NAME"] = listen.interface;
-	env["SERVER_PORT"] = StringOps::toString(listen.port);
+	env["SERVER_PORT"] = StringOps::toString(serverPort);
 	env["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
 	env["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
 	env["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
