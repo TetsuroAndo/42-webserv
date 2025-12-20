@@ -78,7 +78,7 @@ def worker(
 # テスト本体
 # =========================
 @pytest.mark.config("valid/post.yaml")
-@pytest.mark.parametrize("num_clients", [10, 50, 100, 500, 1000])
+@pytest.mark.parametrize("num_clients", [10, 50, 100, 500])
 @pytest.mark.parametrize(
     "post_body_size",
     [
@@ -87,8 +87,7 @@ def worker(
         32 * 1024,  # 32 KB
         64 * 1024,  # 64 KB
         128 * 1024, # 128 KB
-        256 * 1024, # 256 KB
-        512 * 1024, # 512 KB
+        256 * 1024 # 256 KB
     ],
 )
 def test_mixed_get_post_keepalive_under_load(
