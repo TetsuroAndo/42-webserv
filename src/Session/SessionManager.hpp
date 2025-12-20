@@ -12,7 +12,8 @@ public:
 	Session *createSession();
 	Session *getSession(const std::string &sessionId);
 	bool destroySession(const std::string &sessionId);
-	void cleanupExpiredSessions();
+	void cleanupExpiredSessions(const time_t timeoutSec);
+	void setTimeoutSec(time_t timeoutSec);
 
 private:
 	SessionManager();
@@ -24,5 +25,5 @@ private:
 
 	Token &_hasher;
 	std::map< std::string, Session * > _sessions;
-	static const time_t _SESSION_TIMEOUT = 1800; // 30分
+	time_t _timeoutSec;
 };

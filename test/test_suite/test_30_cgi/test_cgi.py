@@ -3,6 +3,8 @@ CGI 実行の基本テスト
 """
 import pytest
 import requests
+from pathlib import Path
+import os
 
 
 class TestCGIExec:
@@ -91,3 +93,24 @@ class TestCGIExec:
         url = f"{managed_server['base_url']}/cgi-bin/fail.sh"
         response = requests.get(url)
         assert response.status_code == 500
+
+    @pytest.mark.config("valid/cgi_exec_error.yaml")
+    def test_cgi_interpreter_not_found(self, managed_server):
+        url = f"{managed_server['base_url']}/cgi-bin/missing_interpreter.nf"
+        response = requests.get(url)
+        assert response.status_code == 404
+
+    @pytest.mark.config("valid/cgi_exec_error.yaml")
+    def test_cgi_interpreter_not_executable(self, managed_server):
+        interpreter_path = (
+            Path(__file__).resolve().parents[3]
+            / "test/test_www/cgi-bin/non_exec_interpreter"
+        )
+        original_mode = os.stat(interpreter_path).st_mode
+        os.chmod(interpreter_path, 0o644)
+        try:
+            url = f"{managed_server['base_url']}/cgi-bin/not_executable.ne"
+            response = requests.get(url)
+            assert response.status_code == 403
+        finally:
+            os.chmod(interpreter_path, original_mode)
