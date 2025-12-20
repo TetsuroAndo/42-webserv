@@ -1,15 +1,14 @@
 servers:
   - server:
-      sessionTimeoutSec: 0
+      error_logs:
+        - error_log:
+            sink: console
+            level: debug
+      sessionTimeoutSec: 1800
       listens:
         - listen:
             interface: 0.0.0.0
             port: 8080
-
-      error_logs:
-        - error_log:
-            level: debug
-            sink: console
 
       locations:
         - location:

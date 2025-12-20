@@ -1,6 +1,5 @@
 servers:
   - server:
-      sessionTimeoutSec: 1800
       listens:
         - listen:
             interface: 0.0.0.0
