@@ -16,9 +16,15 @@ class TestCGILogging:
     @pytest.fixture(autouse=True)
     def cleanup_log_file(self):
         """テスト後にログファイルをクリーンアップするfixture"""
-        yield
+        # テスト前に既存のログファイルを削除
         log_file_path = Path(self.LOG_FILE)
+        if log_file_path.exists():
+            log_file_path.unlink()
+
+        yield
+
         # テスト後にログファイルを削除
+        log_file_path = Path(self.LOG_FILE)
         if log_file_path.exists():
             log_file_path.unlink()
 
