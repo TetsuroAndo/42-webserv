@@ -63,7 +63,6 @@ class TestGETCookieSession:
             assert sid1 == sid2
 
     @pytest.mark.config("valid/config_zero_sessionTimeoutSec.yaml")
-    #@pytest.mark.skip(reason="このテストは30分かかるようになってるので、高速に実行する際はコンパイルをし直してください。")
     def test_session_timeout_zero_creates_new_session(self, managed_server):
         """
         sessionTimeout=0 の場合、
