@@ -6,7 +6,7 @@
 #include <string>
 
 SessionManager::SessionManager()
-	: _hasher(Token::getInstance()), _timeoutSec(1800) {}
+	: _hasher(Token::getInstance()), _timeoutSec(1800), _lastCleanupTime(std::time(NULL)) {}
 
 SessionManager::~SessionManager() {
 	for (std::map< std::string, Session * >::iterator it = _sessions.begin();
@@ -49,7 +49,9 @@ Session *SessionManager::getSession(const std::string &sessionId) {
 	if (it != _sessions.end()) {
 		// タイムアウト判定を追加
 		const time_t now = std::time(NULL);
-		if (now - it->second->getLastAccess() > _timeoutSec) {
+		const time_t elapsed = now - it->second->getLastAccess();
+		// _timeoutSecが0の場合は即座に期限切れ、それ以外は経過時間がタイムアウト時間を超えた場合に期限切れ
+		if (_timeoutSec == 0 || elapsed > _timeoutSec) {
 			// 期限切れのセッションは削除してNULLを返す
 			delete it->second;
 			_sessions.erase(it);
@@ -72,13 +74,14 @@ bool SessionManager::destroySession(const std::string &sessionId) {
 	return false;
 }
 
-void SessionManager::cleanupExpiredSessions(const time_t timeoutSec) {
+void SessionManager::cleanupExpiredSessions() {
 	const time_t now = std::time(NULL);
 	size_t deleteCount = 0;
 
 	std::map< std::string, Session * >::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {
-		if (now - it->second->getLastAccess() > timeoutSec) {
+		const time_t elapsed = now - it->second->getLastAccess();
+		if (_timeoutSec == 0 || elapsed > _timeoutSec) {
 			delete it->second;
 			_sessions.erase(it++);
 			deleteCount++;
@@ -89,6 +92,15 @@ void SessionManager::cleanupExpiredSessions(const time_t timeoutSec) {
 	if (0 < deleteCount) {
 		LOG(INFO) << "SessionManager::cleanupExpiredSessions closed Session: "
 				  << deleteCount;
+	}
+}
+
+void SessionManager::cleanupIfNeeded() {
+	const time_t now = std::time(NULL);
+	// タイムアウト時間が0の場合は毎回クリーンアップ、それ以外はタイムアウト時間経過後にクリーンアップ
+	if (_timeoutSec == 0 || now - _lastCleanupTime >= _timeoutSec) {
+		cleanupExpiredSessions();
+		_lastCleanupTime = now;
 	}
 }
 
