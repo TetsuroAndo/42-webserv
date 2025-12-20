@@ -1,0 +1,28 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8082
+
+      maxRequestBodySize: 1048576
+      timeoutSec: 60
+      maxEvents: 128
+
+      error_logs:
+        - error_log:
+            sink: file
+            filename: error.log
+            logDir: ./logs
+            level: debug
+
+      locations:
+        - location:
+            path: /cgi-bin
+            root: ./test/test_www/cgi-bin
+            allowedMethods:
+              - GET
+              - POST
+            interpreterPath:
+              .nf: /no/such/interpreter
+              .ne: ./non_exec_interpreter

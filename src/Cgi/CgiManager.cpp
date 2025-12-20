@@ -114,6 +114,28 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
+		std::string resolvedInterpreterPath = interpreterPath;
+		if (!interpreterPath.empty() && interpreterPath[0] != '/') {
+			const size_t lastSlashPos = scriptPath.find_last_of('/');
+			if (lastSlashPos != std::string::npos) {
+				const std::string scriptDir =
+					scriptPath.substr(0, lastSlashPos);
+				resolvedInterpreterPath = scriptDir + "/" + interpreterPath;
+			}
+		}
+		if (access(resolvedInterpreterPath.c_str(), F_OK) != 0) {
+			LOG(WARNING) << "CGI interpreter not found"
+						 << attr("interpreter", resolvedInterpreterPath);
+			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
+			return;
+		}
+		if (access(resolvedInterpreterPath.c_str(), X_OK) != 0) {
+			LOG(WARNING) << "CGI interpreter not executable"
+						 << attr("interpreter", resolvedInterpreterPath);
+			ctx.res.setStatusCode(HttpStatus::FORBIDDEN);
+			return;
+		}
+
 		LOG(DEBUG) << "Using CGI interpreter"
 				   << attr("interpreter", interpreterPath)
 				   << attr("script", scriptPath);
