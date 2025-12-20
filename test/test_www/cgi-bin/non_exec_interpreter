@@ -1,0 +1,2 @@
+#!/usr/bin/env false
+This file is intentionally non-executable for CGI tests.

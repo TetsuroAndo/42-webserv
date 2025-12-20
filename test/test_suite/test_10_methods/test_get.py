@@ -3,7 +3,7 @@ GET メソッドのテスト
 """
 import pytest
 import requests
-
+from pathlib import Path
 
 class TestGET:
     @pytest.mark.config("valid/config_basic_get.yaml")
@@ -131,3 +131,27 @@ class TestGET:
         # %20 を含むパス（該当ファイルなし）は 404 となること
         r2 = requests.get(f"{base}/hello%20.txt")
         assert r2.status_code == 404
+
+    @pytest.mark.config("valid/config_basic_get.yaml")
+    def test_get_no_permission_file(self, managed_server):
+        base = managed_server['base_url']
+        url = f"{base}/index.html"
+
+        here = Path(__file__).resolve().parent
+        file_path = here / "../../test_www/static/index.html"
+        file_path = file_path.resolve()
+
+        # ディレクトリの r 権限を剥奪
+        old_mode = file_path.stat().st_mode
+        file_path.chmod(0o333) # 7-4=3
+
+        try:
+            # GET 実行
+            resp = requests.get(url)
+            # 評価 禁止 or 見えない
+            assert resp.status_code in (403, 404)
+
+        finally:
+            # 後始末：権限を戻す
+            file_path.chmod(old_mode)
+

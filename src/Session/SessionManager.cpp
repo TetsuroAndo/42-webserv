@@ -5,7 +5,8 @@
 #include <ctime>
 #include <string>
 
-SessionManager::SessionManager() : _hasher(Token::getInstance()) {}
+SessionManager::SessionManager()
+	: _hasher(Token::getInstance()), _timeoutSec(1800), _lastCleanupTime(std::time(NULL)) {}
 
 SessionManager::~SessionManager() {
 	for (std::map< std::string, Session * >::iterator it = _sessions.begin();
@@ -46,6 +47,13 @@ Session *SessionManager::getSession(const std::string &sessionId) {
 	const std::map< std::string, Session * >::iterator it =
 		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
+		const time_t now = std::time(NULL);
+		const time_t elapsed = now - it->second->getLastAccess();
+		if (_timeoutSec == 0 || elapsed > _timeoutSec) {
+			delete it->second;
+			_sessions.erase(it);
+			return NULL;
+		}
 		it->second->updateLastAccess();
 		return it->second;
 	}
@@ -69,7 +77,8 @@ void SessionManager::cleanupExpiredSessions() {
 
 	std::map< std::string, Session * >::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {
-		if (now - it->second->getLastAccess() > _SESSION_TIMEOUT) {
+		const time_t elapsed = now - it->second->getLastAccess();
+		if (_timeoutSec == 0 || elapsed > _timeoutSec) {
 			delete it->second;
 			_sessions.erase(it++);
 			deleteCount++;
@@ -81,4 +90,17 @@ void SessionManager::cleanupExpiredSessions() {
 		LOG(INFO) << "SessionManager::cleanupExpiredSessions closed Session: "
 				  << deleteCount;
 	}
+}
+
+void SessionManager::cleanupIfNeeded() {
+	const time_t now = std::time(NULL);
+	// タイムアウト時間が0の場合は毎回クリーンアップ、それ以外はタイムアウト時間経過後にクリーンアップ
+	if (_timeoutSec == 0 || now - _lastCleanupTime >= _timeoutSec) {
+		cleanupExpiredSessions();
+		_lastCleanupTime = now;
+	}
+}
+
+void SessionManager::setTimeoutSec(time_t timeoutSec) {
+	_timeoutSec = timeoutSec;
 }
