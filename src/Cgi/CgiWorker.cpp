@@ -16,16 +16,20 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	: _ctx(ctx), _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
 	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)),
-	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
+	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize),
+	  _errBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
 	_pipeIn[0] = -1;
 	_pipeIn[1] = -1;
 	_pipeOut[0] = -1;
 	_pipeOut[1] = -1;
+	_pipeErr[0] = -1;
+	_pipeErr[1] = -1;
 }
 
 CgiWorker::~CgiWorker() {
 	_closePipe(_pipeIn[1]);
 	_closePipe(_pipeOut[0]);
+	_closePipe(_pipeErr[0]);
 
 	if (0 < _pid) {
 		// プロセスがまだ終了していないか確認（非ブロッキング）
@@ -33,7 +37,6 @@ CgiWorker::~CgiWorker() {
 		pid_t result = waitpid(_pid, &status, WNOHANG);
 
 		if (result == 0) {
-			// プロセスはまだ実行中
 			LOG(DEBUG)
 				<< "CgiWorker destroyed, sending SIGKILL to running child"
 				<< attr("pid", _pid);
@@ -47,7 +50,7 @@ CgiWorker::~CgiWorker() {
 }
 
 void CgiWorker::execute() {
-	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0) {
+	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0) {
 		_state = CGI_ERROR;
 		return;
 	}
@@ -59,6 +62,8 @@ void CgiWorker::execute() {
 		_closePipe(_pipeIn[1]);
 		_closePipe(_pipeOut[0]);
 		_closePipe(_pipeOut[1]);
+		_closePipe(_pipeErr[0]);
+		_closePipe(_pipeErr[1]);
 		return;
 	}
 
@@ -85,13 +90,16 @@ void CgiWorker::execute() {
 
 	_closePipe(_pipeIn[0]);
 	_closePipe(_pipeOut[1]);
+	_closePipe(_pipeErr[1]);
 
 	if (fcntl(_pipeIn[1], F_SETFL, O_NONBLOCK) < 0 ||
-		fcntl(_pipeOut[0], F_SETFL, O_NONBLOCK) < 0) {
+		fcntl(_pipeOut[0], F_SETFL, O_NONBLOCK) < 0 ||
+		fcntl(_pipeErr[0], F_SETFL, O_NONBLOCK) < 0) {
 		_state = CGI_ERROR;
 		kill(_pid, SIGKILL);
 		_closePipe(_pipeIn[1]);
 		_closePipe(_pipeOut[0]);
+		_closePipe(_pipeErr[0]);
 		return;
 	}
 
@@ -113,6 +121,13 @@ void CgiWorker::handleWrite() {
 		_closePipe(_pipeIn[1]);
 		_state = CGI_RECEIVING;
 		return;
+	}
+
+	if (_bytesSent == 0) {
+		LOG(DEBUG) << "Sending request body to CGI"
+				   << attr("clientFd", _clientFd) << attr("pid", _pid)
+				   << attr("bodySize", _requestBody.size())
+				   << attr("body", _requestBody);
 	}
 
 	const ssize_t bytesToWrite =
@@ -141,7 +156,6 @@ void CgiWorker::handleWrite() {
 
 void CgiWorker::handleRead() {
 	if (getReadFd() < 0) {
-		// 既にクローズ済み。余計なエラーを出さずに無視する。
 		return;
 	}
 	const ssize_t bytes =
@@ -163,7 +177,7 @@ void CgiWorker::handleRead() {
 		_responseParser.parse(_responseBuffer);
 		bool headersFound = _responseParser.headersFound();
 
-		// ★ 削除：waitpid() はメインループで一元管理される
+		// waitpid() はメインループで一元管理される
 		// 子プロセスのステータス回収は CgiManager::cleanupFinishedWorkers()
 		// で非ブロッキングに行う
 
@@ -191,21 +205,50 @@ void CgiWorker::handleRead() {
 	updateLastActivityTime();
 }
 
+void CgiWorker::handleReadErr() {
+	if (getErrFd() < 0) {
+		return;
+	}
+	const ssize_t bytes = read(getErrFd(), &_errBuffer[0], _errBuffer.size());
+
+	if (bytes < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+			// 次のEPOLLINで再試行
+			return;
+		}
+		LOG(ERROR) << "Read error from CGI stderr"
+				   << attr("error", strerror(errno));
+		_closePipe(_pipeErr[0]);
+		return;
+	}
+
+	if (bytes == 0) {
+		_closePipe(_pipeErr[0]);
+	} else {
+		std::string errOutput(&_errBuffer[0], bytes);
+		LOG(ERROR) << "CGI stderr output" << attr("clientFd", _clientFd)
+				   << attr("pid", _pid) << attr("stderr", errOutput);
+	}
+	updateLastActivityTime();
+}
+
 void CgiWorker::_childProcess(
 	const std::string &scriptPath, const std::string &interpreterPath,
 	const std::vector< std::string > &envp_strs) const {
 	close(_pipeIn[1]);
 	close(_pipeOut[0]);
+	close(_pipeErr[0]);
 
 	if (dup2(_pipeIn[0], STDIN_FILENO) < 0 ||
 		dup2(_pipeOut[1], STDOUT_FILENO) < 0 ||
-		dup2(_pipeOut[1], STDERR_FILENO) < 0) {
+		dup2(_pipeErr[1], STDERR_FILENO) < 0) {
 		perror("dup2 failed");
 		exit(EXIT_FAILURE);
 	}
 
 	close(_pipeIn[0]);
 	close(_pipeOut[1]);
+	close(_pipeErr[1]);
 
 	const size_t lastSlashPos = scriptPath.find_last_of('/');
 	if (lastSlashPos != std::string::npos) {
@@ -242,6 +285,8 @@ int CgiWorker::getClientFd() const { return _clientFd; }
 int CgiWorker::getReadFd() const { return _pipeOut[0]; }
 
 int CgiWorker::getWriteFd() const { return _pipeIn[1]; }
+
+int CgiWorker::getErrFd() const { return _pipeErr[0]; }
 
 pid_t CgiWorker::getPid() const { return _pid; }
 
