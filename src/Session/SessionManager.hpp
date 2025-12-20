@@ -13,6 +13,7 @@ public:
 	Session *getSession(const std::string &sessionId);
 	bool destroySession(const std::string &sessionId);
 	void cleanupExpiredSessions(const time_t timeoutSec);
+	void setTimeoutSec(time_t timeoutSec);
 
 private:
 	SessionManager();
@@ -24,4 +25,5 @@ private:
 
 	Token &_hasher;
 	std::map< std::string, Session * > _sessions;
+	time_t _timeoutSec;
 };

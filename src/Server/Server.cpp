@@ -20,6 +20,8 @@ Server::Server(const Config &config)
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
+	SessionManager::getInstance().setTimeoutSec(
+		static_cast< time_t >(_config.getSessionTimeoutSec()));
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";

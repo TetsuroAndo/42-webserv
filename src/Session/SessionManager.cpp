@@ -5,7 +5,8 @@
 #include <ctime>
 #include <string>
 
-SessionManager::SessionManager() : _hasher(Token::getInstance()) {}
+SessionManager::SessionManager()
+	: _hasher(Token::getInstance()), _timeoutSec(1800) {}
 
 SessionManager::~SessionManager() {
 	for (std::map< std::string, Session * >::iterator it = _sessions.begin();
@@ -46,6 +47,14 @@ Session *SessionManager::getSession(const std::string &sessionId) {
 	const std::map< std::string, Session * >::iterator it =
 		_sessions.find(sessionId);
 	if (it != _sessions.end()) {
+		// タイムアウト判定を追加
+		const time_t now = std::time(NULL);
+		if (now - it->second->getLastAccess() > _timeoutSec) {
+			// 期限切れのセッションは削除してNULLを返す
+			delete it->second;
+			_sessions.erase(it);
+			return NULL;
+		}
 		it->second->updateLastAccess();
 		return it->second;
 	}
@@ -81,4 +90,8 @@ void SessionManager::cleanupExpiredSessions(const time_t timeoutSec) {
 		LOG(INFO) << "SessionManager::cleanupExpiredSessions closed Session: "
 				  << deleteCount;
 	}
+}
+
+void SessionManager::setTimeoutSec(time_t timeoutSec) {
+	_timeoutSec = timeoutSec;
 }
