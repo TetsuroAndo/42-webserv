@@ -63,13 +63,13 @@ bool SessionManager::destroySession(const std::string &sessionId) {
 	return false;
 }
 
-void SessionManager::cleanupExpiredSessions() {
+void SessionManager::cleanupExpiredSessions(const time_t timeoutSec) {
 	const time_t now = std::time(NULL);
 	size_t deleteCount = 0;
 
 	std::map< std::string, Session * >::iterator it = _sessions.begin();
 	while (it != _sessions.end()) {
-		if (now - it->second->getLastAccess() > _SESSION_TIMEOUT) {
+		if (now - it->second->getLastAccess() > timeoutSec) {
 			delete it->second;
 			_sessions.erase(it++);
 			deleteCount++;
