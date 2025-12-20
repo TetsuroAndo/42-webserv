@@ -287,7 +287,7 @@ void CgiManager::cleanupTimedOutWorkers() {
 			kill(pid, SIGKILL);
 			const pid_t result = waitpid(pid, NULL, WNOHANG);
 			if (0 < result) {
-				worker->setError();
+				worker->setTimeout();
 			}
 			_pidToWorker.erase(pid);
 		}
