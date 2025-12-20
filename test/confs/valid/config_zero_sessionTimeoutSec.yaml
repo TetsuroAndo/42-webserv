@@ -1,6 +1,6 @@
 servers:
   - server:
-      sessionTimeoutSec: 1800
+      sessionTimeoutSec: 0
       listens:
         - listen:
             interface: 0.0.0.0
@@ -18,4 +18,4 @@ servers:
             path: /not_allow_get
             root: ./test/test_www/static
             allowedMethods:
-                - HEAD
+              - HEAD

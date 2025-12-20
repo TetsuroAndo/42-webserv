@@ -1,0 +1,3 @@
+# set-cookieヘッダーを確認する(valid/config_basic_get.yaml)
+# set-cookieヘッダーを受け取ったらそれをヘッダーにつけたリクエストをしてセッションのものが返ってくることを確認する(valid/config_basic_get.yaml)
+# sessionTimeoutが0のconfigファイルを用意して、一個上と同じことをしたときに、違うセッションが帰ってくることを確認する(valid/config_zero_sessionTimeoutSec.yaml.yaml)
