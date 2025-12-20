@@ -87,7 +87,7 @@ def worker(
         32 * 1024,  # 32 KB
         64 * 1024,  # 64 KB
         128 * 1024, # 128 KB
-        256 * 1024 # 256 KB
+        256 * 1024  # 256 KB
     ],
 )
 def test_mixed_get_post_keepalive_under_load(
