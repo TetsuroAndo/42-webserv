@@ -181,14 +181,28 @@ void CgiWorker::handleRead() {
 		// 子プロセスのステータス回収は CgiManager::cleanupFinishedWorkers()
 		// で非ブロッキングに行う
 
-		// ヘッダが見つからない場合のみ CGI_ERROR と判定
+		// ヘッダが見つからない場合 CGI_ERROR と判定
 		if (!headersFound) {
 			LOG(WARNING) << "CGI response has no headers" << attr("pid", _pid)
 						 << attr("output", _responseBuffer);
-			_state = CGI_ERROR;
+			setError();
 		} else {
-			// CGIレスポンスの受信完了
-			_state = CGI_COMPLETE;
+			int status;
+			const pid_t result = waitpid(_pid, &status, 0);
+			if (0 < result) {
+				if (WIFEXITED(status)) {
+					int exitCode = WEXITSTATUS(status);
+					if (exitCode != 0) {
+						setError();
+					} else {
+						_state = CGI_COMPLETE;
+					}
+				} else {
+					setError();
+				}
+			} else {
+				_state = CGI_COMPLETE;
+			}
 		}
 	} else {
 		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;

@@ -285,7 +285,10 @@ void CgiManager::cleanupTimedOutWorkers() {
 		pid_t pid = worker->getPid();
 		if (pid > 0) {
 			kill(pid, SIGKILL);
-			waitpid(pid, NULL, WNOHANG);
+			const pid_t result = waitpid(pid, NULL, WNOHANG);
+			if (0 < result) {
+				worker->setError();
+			}
 			_pidToWorker.erase(pid);
 		}
 		worker->setTimeout();
@@ -334,6 +337,14 @@ void CgiManager::cleanupFinishedWorkers() {
 					   << attr("pid", pid) << attr("status", status);
 
 			_pidToWorker.erase(pid);
+
+			if (WIFEXITED(status)) {
+				int code = WEXITSTATUS(status);
+				if (code != 0) {
+					LOG(DEBUG) << "CGI process exited with code " << code;
+					worker->setError();
+				}
+			}
 
 			// ワーカーがまだ終了状態 (COMPLETE, ERROR, TIMEOUT)
 			// になっていなければ (例:
@@ -389,10 +400,13 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 
 	// CGIの状態に基づいてHTTPレスポンスを生成
 	if (worker->getState() == CgiWorker::CGI_COMPLETE) {
+		LOG(DEBUG) << "RES COMPLETE";
 		worker->createHttpResponse(res);
 	} else if (worker->getState() == CgiWorker::CGI_TIMEOUT) {
+		LOG(DEBUG) << "RES TIMEOUT";
 		res.setStatusCode(HttpStatus::GATEWAY_TIMEOUT);
 	} else { // CGI_ERROR
+		LOG(DEBUG) << "RES FAILED";
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 	}
 
