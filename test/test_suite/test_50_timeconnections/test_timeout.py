@@ -251,11 +251,10 @@ class TestTimeout:
             sock.sendall(b"\r\n")
 
             sock.sendall(b"A" * 100)
-            time.sleep(5)
-            sock.sendall(b"B" * 100)
+            time.sleep(6)
 
             response = sock.recv(4096)
-            assert_200_response(response)
+            assert_408_response(response)
 
         finally:
             sock.close()
