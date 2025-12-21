@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-SUBMIT_FILES=("src/" "config/" "Makefile" ".gitignore")
+SUBMIT_FILES=("src/" "config/" "test/" "Makefile" ".gitignore")
 REPO_NAME="submit-for-42"
 SUBMIT_BRANCH="master"
 

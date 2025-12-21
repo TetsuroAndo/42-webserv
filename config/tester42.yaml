@@ -28,7 +28,7 @@ servers:
       # Requirement 3: .bla 拡張子を持つファイルは cgi_test を呼び出す
       # (cgi_test がプロジェクトルートにあると仮定)
       interpreterPath:
-        .bla: ./cgi_test
+        .bla: cgi_test
 
       # エラーページ (413: Payload Too Large を /post_body テスト用に推奨)
       error_pages:
