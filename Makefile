@@ -85,7 +85,7 @@ pyinit:
 	fi
 
 test:
-	. $(VENV_DIR)/bin/activate && cd $(TEST_DIR) && pytest
+	. $(VENV_DIR)/bin/activate && pytest $(TEST_DIR)/test_suite
 
 # ============= STATIC ANALYSIS =============
 
