@@ -55,7 +55,7 @@ git add "${SUBMIT_FILES[@]}"
 # src/ は丸ごと追加せず、src/**/test ディレクトリ配下を除外して追加
 # （例: src/Cgi/test, src/Http/.../test など）
 if [[ -d "$SRC_DIR" ]]; then
-  git add "$SRC_DIR"/ -- "${SRC_EXCLUDE_TEST_DIRS[@]}"
+  git add "$SRC_DIR" -- "${SRC_EXCLUDE_TEST_DIRS[@]}"
 fi
 
 if ! git diff --cached --quiet; then
