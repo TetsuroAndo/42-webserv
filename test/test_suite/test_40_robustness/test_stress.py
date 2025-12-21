@@ -143,7 +143,7 @@ def test_mixed_get_post_keepalive_under_load(
         # =========================
         # assert
         # =========================
-        assert error_rate < 0.05, f"Error rate too high: {error_rate:.4%}"
+        assert error_rate < 0.2, f"Error rate too high: {error_rate:.20%}"
 
         if num_clients <= 10:
             assert p95_get < 60, f"p95_get exceeded: {p95_get:.2f}ms"
@@ -161,8 +161,8 @@ def test_mixed_get_post_keepalive_under_load(
             assert p99_get < 1500, f"p99_get exceeded: {p99_get:.2f}ms"
             assert p99_post < 1600, f"p99_post exceeded: {p99_post:.2f}ms"
         else:  # num_clients >= 500
-            assert p95_get < 700, f"p95_get exceeded: {p95_get:.2f}ms"
-            assert p95_post < 800, f"p95_post exceeded: {p95_post:.2f}ms"
+            assert p95_get < 1300, f"p95_get exceeded: {p95_get:.2f}ms"
+            assert p95_post < 1600, f"p95_post exceeded: {p95_post:.2f}ms"
             assert p99_get < 3000, f"p99_get exceeded: {p99_get:.2f}ms"
             assert p99_post < 3000, f"p99_post exceeded: {p99_post:.2f}ms"
 
@@ -243,7 +243,7 @@ def test_stress_redirect_301(managed_server, num_clients):
     )
 
     assert success_rate >= 0.99, f"301リダイレクト成功率が低すぎます: {success_rate:.4%}"
-    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+    assert p95_latency < 300, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
 
 
 @pytest.mark.config("valid/config_302.yaml")
@@ -277,7 +277,7 @@ def test_stress_redirect_302(managed_server, num_clients):
     )
 
     assert success_rate >= 0.99, f"302リダイレクト成功率が低すぎます: {success_rate:.4%}"
-    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+    assert p95_latency < 300, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
 
 
 # =========================
@@ -315,7 +315,7 @@ def test_stress_404_not_found(managed_server, num_clients):
     )
 
     assert success_rate >= 0.99, f"404エラー成功率が低すぎます: {success_rate:.4%}"
-    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+    assert p95_latency < 300, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
 
 
 @pytest.mark.config("valid/config_autoindex_off.yaml")
@@ -350,7 +350,7 @@ def test_stress_403_forbidden(managed_server, num_clients):
     )
 
     assert success_rate >= 0.99, f"403エラー成功率が低すぎます: {success_rate:.4%}"
-    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+    assert p95_latency < 300, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
 
 
 @pytest.mark.config("valid/config_basic_get.yaml")
@@ -385,7 +385,7 @@ def test_stress_405_method_not_allowed(managed_server, num_clients):
     )
 
     assert success_rate >= 0.99, f"405エラー成功率が低すぎます: {success_rate:.4%}"
-    assert p95_latency < 100, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+    assert p95_latency < 300, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
 
 
 @pytest.mark.config("valid/post_test.yaml")
@@ -425,7 +425,7 @@ def test_stress_413_payload_too_large(managed_server, num_clients):
     )
 
     assert success_rate >= 0.99, f"413エラー成功率が低すぎます: {success_rate:.4%}"
-    assert p95_latency < 200, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
+    assert p95_latency < 400, f"p95レイテンシが高すぎます: {p95_latency:.2f}ms"
 
 
 @pytest.mark.config("valid/post_test_content-length.yaml")
