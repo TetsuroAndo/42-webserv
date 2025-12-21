@@ -359,7 +359,11 @@ void CgiManager::cleanupFinishedWorkers() {
 						<< "CGI process exited with non-zero status"
 						<< attr("pid", pid)
 						<< attr("status", WEXITSTATUS(status));
-					worker->setError();
+					// Statusヘッダーが設定されている場合は、そのステータスコードを優先するため
+					// エラー状態にしない
+					if (!worker->hasStatusHeader()) {
+						worker->setError();
+					}
 				}
 			}
 			if (worker->isFinished()) {
@@ -399,7 +403,12 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 	} else if (worker->getState() == CgiWorker::CGI_TIMEOUT) {
 		res.setStatusCode(HttpStatus::GATEWAY_TIMEOUT);
 	} else { // CGI_ERROR
-		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		// Statusヘッダーが設定されている場合は、そのステータスコードを優先する
+		if (worker->hasStatusHeader()) {
+			worker->createHttpResponse(res);
+		} else {
+			res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	_removeWorker(worker);

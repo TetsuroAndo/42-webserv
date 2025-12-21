@@ -94,6 +94,18 @@ class TestCGIExec:
         response = requests.get(url)
         assert response.status_code == 500
 
+    @pytest.mark.config("valid/cgi.yaml")
+    def test_cgi_with_status_header_and_exit(self, managed_server):
+        """
+        Statusヘッダーが設定されている場合、exit(1)でもStatusヘッダーの
+        ステータスコードが優先されることを確認するテスト
+        """
+        url = f"{managed_server['base_url']}/cgi-bin/status_with_exit.py"
+        response = requests.get(url)
+        # Statusヘッダーで404が設定されているので、exit(1)でも404が返されるべき
+        assert response.status_code == 404
+        assert "This CGI exits with status 1 but has Status header set to 404" in response.text
+
     @pytest.mark.config("valid/cgi_exec_error.yaml")
     def test_cgi_interpreter_not_found(self, managed_server):
         url = f"{managed_server['base_url']}/cgi-bin/missing_interpreter.nf"
