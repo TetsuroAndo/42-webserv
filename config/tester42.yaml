@@ -1,0 +1,90 @@
+servers:
+  - server:
+      # テスターが http://localhost:8080 を使用するためポートを8080に設定
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8080
+
+      # /post_body 以外のための、妥当なグローバル最大サイズ
+      maxRequestBodySize: 2560000000
+
+      # ログ設定 (コンソール出力)
+      access_logs:
+        - access_log:
+            sink : console
+            format : ELF
+      error_logs:
+          - error_log:
+            sink : console
+            level : debug
+          - error_log:
+              sink: file
+              filename: error.log
+              logDir: ./logs
+              format: ELF
+              level: debug
+
+      # Requirement 3: .bla 拡張子を持つファイルは cgi_test を呼び出す
+      # (cgi_test がプロジェクトルートにあると仮定)
+      interpreterPath:
+        .bla: cgi_test
+
+      # エラーページ (413: Payload Too Large を /post_body テスト用に推奨)
+      error_pages:
+        404: /errors/404.html
+        403: /errors/403.html
+        413: /errors/413.html
+        500: /errors/500.html
+
+      locations:
+        # Requirement 1: / は GET のみ
+        - location:
+            path: /
+            root: ./www/static
+            index: index.html
+            autoindex: false
+            allowedMethods:
+              - GET
+
+        # Requirement 2: /put_test/* は PUT でファイル保存
+        - location:
+            path: /put_test/
+            # このディレクトリにファイルが保存されます (要事前作成)
+            root: ./uploads_put
+            uploadStore: ./uploads_put
+            autoindex: true
+            allowedMethods:
+              - POST
+              - PUT
+
+        # Requirement 4: /post_body は POST のみ、maxBody 100
+        - location:
+            path: /post_body
+            root: ./www
+            index: index.html
+            maxRequestBodySize: 100
+            allowedMethods:
+              - POST
+
+        # Requirement 5: /directory/ は GET、root YoupiBanane、index youpi.bad_extension
+        - location:
+            path: /directory
+            # Requirement 5: root は YoupiBanane
+            root: ./YoupiBanane
+            # Requirement 5: index は youpi.bad_extension
+            index: youpi.bad_extension
+            autoindex: false
+            uploadStore: ./test/test_www/uploads
+            interpreterPath:
+              .bla: ./cgi_test
+            allowedMethods:
+              - GET
+              - POST
+
+        # エラーページ配信用 (例から流用)
+        - location:
+            path: /errors
+            root: ./www/static/errors
+            allowedMethods:
+              - GET
