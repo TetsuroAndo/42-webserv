@@ -417,11 +417,7 @@ class TestTimeout:
                 assert_408_response(data)
 
             finally:
-                for sock2 in sockets:
-                    try:
-                        sock2.close()
-                    except Exception:
-                        pass
+                sock.close()
 
     @pytest.mark.config("valid/config_timeout.yaml")
     def test_partial_chunked_transfer_timeout(self, managed_server):
