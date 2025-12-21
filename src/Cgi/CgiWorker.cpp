@@ -280,10 +280,6 @@ void CgiWorker::_childProcess(
 	close(_pipeOut[1]);
 	close(_pipeErr[1]);
 
-	sigset_t mask;
-	sigemptyset(&mask);
-	sigprocmask(SIG_SETMASK, &mask, NULL);
-
 	const size_t lastSlashPos = scriptPath.find_last_of('/');
 	if (lastSlashPos != std::string::npos) {
 		const std::string scriptDir = scriptPath.substr(0, lastSlashPos);
