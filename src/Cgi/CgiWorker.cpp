@@ -12,6 +12,19 @@
 #include <unistd.h>
 #include <vector>
 
+namespace {
+    void blockForeverNoCpu() {
+        while (1) {
+            select(0, NULL, NULL, NULL, NULL);
+        }
+    }
+
+	void notifyErrorToParentAndStop(int statusWriteFd, int err) {
+        write(statusWriteFd, &err, sizeof(err));
+        blockForeverNoCpu();
+    }
+}
+
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath, CgiManager *manager)
 	: _ctx(ctx), _manager(manager), _state(CGI_INIT),
@@ -27,6 +40,8 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	_pipeOut[1] = -1;
 	_pipeErr[0] = -1;
 	_pipeErr[1] = -1;
+	_pipeStatus[0] = -1;
+	_pipeStatus[1] = -1;
 }
 
 CgiWorker::~CgiWorker() {
@@ -53,7 +68,7 @@ CgiWorker::~CgiWorker() {
 }
 
 void CgiWorker::execute() {
-	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0) {
+	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0 || pipe(_pipeStatus) < 0) {
 		_state = CGI_ERROR;
 		_outputComplete = true;
 		_exitStatusSet = true;
@@ -69,38 +84,58 @@ void CgiWorker::execute() {
 		_closePipe(_pipeOut[1]);
 		_closePipe(_pipeErr[0]);
 		_closePipe(_pipeErr[1]);
+		_closePipe(_pipeStatus[1]);
 		_outputComplete = true;
 		_exitStatusSet = true;
 		return;
 	}
 
 	if (_pid == 0) {
+		close(_pipeStatus[0]);
+		fcntl(_pipeStatus[1], F_SETFD, FD_CLOEXEC);
 		try {
 			const std::vector< std::string > envpStrs =
 				CgiEnvBuilder::build(_ctx, _scriptPath);
 			if (envpStrs.empty()) {
-				LOG(ERROR) << "CGI environment build failed: empty environment";
-				errno = EXIT_FAILURE;
-				return;
+				notifyErrorToParentAndStop(_pipeStatus[1], EINVAL);
 			}
 			_childProcess(_scriptPath, _interpreterPath, envpStrs);
 		} catch (const std::exception &e) {
 			const std::string msg =
 				std::string("CGI environment build failed: ") + e.what();
 			LOG(ERROR) << msg;
-			errno = EXIT_FAILURE;
-			return;
+			int err = errno ? errno : ECHILD;
+			notifyErrorToParentAndStop(_pipeStatus[1], err);
 		} catch (...) {
 			const std::string msg = "Unknown error in CGI child process\n";
 			LOG(ERROR) << msg;
-			errno = EXIT_FAILURE;
-			return;
+			int err = errno ? errno : ECHILD;
+			notifyErrorToParentAndStop(_pipeStatus[1], err);
 		}
 	}
 
 	_closePipe(_pipeIn[0]);
 	_closePipe(_pipeOut[1]);
 	_closePipe(_pipeErr[1]);
+	_closePipe(_pipeStatus[1]);
+
+	fcntl(_pipeStatus[0], F_SETFL, O_NONBLOCK);
+	int childErr = 0;
+	ssize_t n = read(_pipeStatus[0], &childErr, sizeof(childErr));
+	_closePipe(_pipeStatus[0]);
+
+	if (n > 0) {
+		LOG(ERROR) << "CGI child failed"
+				<< attr("pid", _pid)
+				<< attr("errno", childErr)
+				<< attr("msg", strerror(childErr));
+
+		_state = CGI_ERROR;
+		kill(_pid, SIGKILL);
+		_outputComplete = true;
+		_exitStatusSet = true;
+		return;
+	}
 
 	if (fcntl(_pipeIn[1], F_SETFL, O_NONBLOCK) < 0 ||
 		fcntl(_pipeOut[0], F_SETFL, O_NONBLOCK) < 0 ||
@@ -275,7 +310,7 @@ void CgiWorker::_childProcess(
 		dup2(_pipeOut[1], STDOUT_FILENO) < 0 ||
 		dup2(_pipeErr[1], STDERR_FILENO) < 0) {
 		perror("dup2 failed");
-		exit(EXIT_FAILURE);
+		notifyErrorToParentAndStop(_pipeStatus[1], errno);
 	}
 
 	close(_pipeIn[0]);
@@ -287,7 +322,7 @@ void CgiWorker::_childProcess(
 		const std::string scriptDir = scriptPath.substr(0, lastSlashPos);
 		if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
 			perror("chdir failed");
-			exit(EXIT_FAILURE);
+			notifyErrorToParentAndStop(_pipeStatus[1], errno);
 		}
 	}
 
@@ -302,7 +337,7 @@ void CgiWorker::_childProcess(
 
 	execve(interpreterPath.c_str(), argv, envp.data());
 	perror("execve failed");
-	exit(EXIT_FAILURE);
+	notifyErrorToParentAndStop(_pipeStatus[1], errno);
 }
 
 void CgiWorker::_closePipe(int &fd) {
