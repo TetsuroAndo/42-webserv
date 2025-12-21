@@ -9,12 +9,15 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdexcept>
+#include <sys/signalfd.h>
 #include <unistd.h>
 #include <vector>
 
 Server::Server(const Config &config)
-	: _config(config), _cgiManager(config), _socketsManager(config) {
+	: _config(config), _cgiManager(config), _socketsManager(config),
+	  _sigchldFd(-1) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
@@ -35,6 +38,9 @@ Server::~Server() {
 	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
 		delete it->second;
+	}
+	if (_sigchldFd >= 0) {
+		close(_sigchldFd);
 	}
 }
 
@@ -145,6 +151,7 @@ void Server::setupListenSockets() {
 }
 
 void Server::run() {
+	setupSignalFd();
 	LOG(INFO) << "Server is running and waiting for events.";
 	while (true) {
 		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
@@ -167,6 +174,11 @@ void Server::run() {
 			const uint32_t eventTypes = events[i].events;
 
 			applyCgiChanges();
+
+			if (fd == _sigchldFd) {
+				handleSigchldEvent();
+				continue;
+			}
 
 			// CGIのFDを優先的に処理する
 			if (_cgiManager.isCgiFd(fd)) {
@@ -243,6 +255,51 @@ void Server::run() {
 
 		SessionManager::getInstance().cleanupIfNeeded();
 	}
+}
+
+void Server::setupSignalFd() {
+	if (_sigchldFd >= 0) {
+		return;
+	}
+
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGCHLD);
+	if (sigprocmask(SIG_BLOCK, &mask, NULL) < 0) {
+		throw std::runtime_error("sigprocmask(SIGCHLD) failed");
+	}
+
+	_sigchldFd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
+	if (_sigchldFd < 0) {
+		throw std::runtime_error("signalfd(SIGCHLD) failed");
+	}
+
+	try {
+		_socketsManager.registerSocket(_sigchldFd, EPOLLIN);
+	} catch (...) {
+		close(_sigchldFd);
+		_sigchldFd = -1;
+		throw;
+	}
+}
+
+void Server::handleSigchldEvent() {
+	signalfd_siginfo fdsi;
+	while (true) {
+		const ssize_t bytes = read(_sigchldFd, &fdsi, sizeof(fdsi));
+		if (bytes == static_cast< ssize_t >(sizeof(fdsi))) {
+			continue;
+		}
+		if (bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+			break;
+		}
+		if (bytes < 0) {
+			LOG(ERROR) << "read(signalfd) failed"
+					   << attr("error", strerror(errno));
+		}
+		break;
+	}
+	_cgiManager.cleanupFinishedWorkers();
 }
 
 void Server::handleNewConnection(const int listenFd) {

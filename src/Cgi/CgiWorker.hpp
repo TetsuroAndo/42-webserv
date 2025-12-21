@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <vector>
 
+class CgiManager;
+
 class CgiWorker {
 public:
 	enum CgiState {
@@ -18,7 +20,7 @@ public:
 	};
 
 	CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
-			  const std::string &interpreterPath);
+			  const std::string &interpreterPath, CgiManager *manager);
 	~CgiWorker();
 
 	/// @brief CGIプロセスをfork/execveで実行する
@@ -72,11 +74,27 @@ public:
 	/// @brief CGIの実行結果をHttpResponseオブジェクトに設定する
 	void createHttpResponse(HttpResponse &res);
 
+	/// @brief プロセスの終了ステータスを設定する
+	void setExitStatus(int status);
+
+	/// @brief プロセスの終了ステータスを取得する
+	int getExitStatus() const;
+
+	/// @brief Status:ヘッダが明示的に設定されたかを判定する
+	bool hasStatusHeader() const;
+
+	/// @brief 終了ステータスが設定されたかを判定する
+	bool isExitStatusSet() const;
+
 private:
 	PipelineContext &_ctx;
+	CgiManager *_manager;
 	CgiState _state;
 	int _clientFd;
 	pid_t _pid;
+	int _exitStatus;
+	bool _exitStatusSet;
+	bool _outputComplete;
 	int _pipeIn[2];
 	int _pipeOut[2];
 	int _pipeErr[2];
