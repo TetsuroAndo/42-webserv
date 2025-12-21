@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <vector>
-#include <limits.h>
+#include <climits>
 
 namespace Path {
 
