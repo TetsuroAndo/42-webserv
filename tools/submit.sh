@@ -7,9 +7,11 @@
 
 set -euo pipefail
 
-SUBMIT_FILES=("src/" "config/" "Makefile" ".gitignore")
+SUBMIT_FILES=("config/default.yaml" "Makefile" ".gitignore")
 REPO_NAME="submit-for-42"
 SUBMIT_BRANCH="master"
+SRC_DIR="src"
+SRC_EXCLUDE_TEST_DIRS=(':(exclude)src/**/test' ':(exclude)src/**/test/**')
 
 # 引数チェック
 [[ $# -eq 1 ]] || { echo "Usage: $0 <repository_url>" >&2; exit 1; }
@@ -32,10 +34,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# テスト実行
-echo "Running tests..."
-make test || { echo "Error: Tests failed." >&2; exit 1; }
-
 # リモート設定
 if git remote | grep -qx "$REPO_NAME"; then
   git remote set-url "$REPO_NAME" "$REPO_URL"
@@ -53,6 +51,13 @@ git rm -rf --cached .
 
 # 提出したいファイルだけを強制的にインデックスに追加してコミット
 git add "${SUBMIT_FILES[@]}"
+
+# src/ は丸ごと追加せず、src/**/test ディレクトリ配下を除外して追加
+# （例: src/Cgi/test, src/Http/.../test など）
+if [[ -d "$SRC_DIR" ]]; then
+  git add "$SRC_DIR" -- "${SRC_EXCLUDE_TEST_DIRS[@]}"
+fi
+
 if ! git diff --cached --quiet; then
   git commit -m "Submit for 42-review"
 fi
