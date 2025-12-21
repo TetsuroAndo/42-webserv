@@ -141,7 +141,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				   << attr("resolvedInterpreterPath", resolvedInterpreterPath)
 				   << attr("script", scriptPath);
 
-		worker = new CgiWorker(ctx, scriptPath, interpreterPath);
+		worker = new CgiWorker(ctx, scriptPath, interpreterPath, this);
 		worker->execute(); // pipe, fork, execveの実行
 
 		_workers.push_back(worker);
@@ -188,6 +188,9 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				  << attr("readFd", worker->getReadFd())
 				  << attr("writeFd", worker->getWriteFd())
 				  << attr("errFd", worker->getErrFd());
+		if (worker->isFinished()) {
+			_completedClients.push(worker->getClientFd());
+		}
 
 	} catch (const std::exception &e) {
 		// new または execute で失敗した場合に備えて delete (NULLでも問題なし)
@@ -205,10 +208,13 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 
 	CgiWorker *worker = it->second;
 	worker->updateLastActivityTime();
+	const int readFd = worker->getReadFd();
+	const int writeFd = worker->getWriteFd();
+	const int errFd = worker->getErrFd();
 
 	if (event_type & EPOLLIN) { // CGIからの読み込み可能
 		// 標準エラー出力用のFDか標準出力用のFDかを判定
-		if (fd == worker->getErrFd()) {
+		if (fd == errFd) {
 			worker->handleReadErr();
 		} else {
 			worker->handleRead();
@@ -218,14 +224,28 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 		worker->handleWrite();
 	}
 
-	// 書き込みが完了したら、書き込みFDの監視を解除
-	if (worker->getState() == CgiWorker::CGI_RECEIVING) {
-		if (worker->getWriteFd() >= 0) {
-			FdEventChange ev;
-			ev.fd = worker->getWriteFd();
-			_remove.push(ev);
-		}
-		_pipeFdToWorker.erase(worker->getWriteFd());
+	if (readFd >= 0 && worker->getReadFd() < 0 &&
+		_pipeFdToWorker.count(readFd)) {
+		FdEventChange ev;
+		ev.fd = readFd;
+		ev.eventType = EPOLLIN;
+		_remove.push(ev);
+		_pipeFdToWorker.erase(readFd);
+	}
+	if (writeFd >= 0 && worker->getWriteFd() < 0 &&
+		_pipeFdToWorker.count(writeFd)) {
+		FdEventChange ev;
+		ev.fd = writeFd;
+		ev.eventType = EPOLLOUT;
+		_remove.push(ev);
+		_pipeFdToWorker.erase(writeFd);
+	}
+	if (errFd >= 0 && worker->getErrFd() < 0 && _pipeFdToWorker.count(errFd)) {
+		FdEventChange ev;
+		ev.fd = errFd;
+		ev.eventType = EPOLLIN;
+		_remove.push(ev);
+		_pipeFdToWorker.erase(errFd);
 	}
 
 	// CGIプロセスが完了またはエラーになったかチェック
@@ -234,30 +254,21 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 				  << attr("clientFd", worker->getClientFd())
 				  << attr("pid", worker->getPid())
 				  << attr("state", worker->getState());
-		// このイベントを発火させたfdを確実に削除
 		{
-			FdEventChange ev;
-			ev.fd = fd;
-			_remove.push(ev);
-		}
-		_pipeFdToWorker.erase(fd);
-		// 書き込みFDがまだ監視対象ならそれも削除リストに追加
-		if (_pipeFdToWorker.count(worker->getWriteFd())) {
-			{
-				FdEventChange ev;
-				ev.fd = worker->getWriteFd();
-				_remove.push(ev);
+			std::vector< int > keys;
+			for (std::map< int, CgiWorker * >::iterator it2 =
+					 _pipeFdToWorker.begin();
+				 it2 != _pipeFdToWorker.end(); ++it2) {
+				if (it2->second == worker) {
+					keys.push_back(it2->first);
+				}
 			}
-			_pipeFdToWorker.erase(worker->getWriteFd());
-		}
-		// 標準エラー出力FDがまだ監視対象ならそれも削除リストに追加
-		if (_pipeFdToWorker.count(worker->getErrFd())) {
-			{
+			for (size_t i = 0; i < keys.size(); ++i) {
 				FdEventChange ev;
-				ev.fd = worker->getErrFd();
+				ev.fd = keys[i];
 				_remove.push(ev);
+				_pipeFdToWorker.erase(keys[i]);
 			}
-			_pipeFdToWorker.erase(worker->getErrFd());
 		}
 		// 完了したクライアントFDを通知キューに積む
 		_completedClients.push(worker->getClientFd());
@@ -334,29 +345,25 @@ void CgiManager::cleanupFinishedWorkers() {
 					   << attr("pid", pid) << attr("status", status);
 
 			_pidToWorker.erase(pid);
-
-			// ワーカーがまだ終了状態 (COMPLETE, ERROR, TIMEOUT)
-			// になっていなければ (例:
-			// パイプEOFより先にプロセスがクラッシュした)
-			// 強制的に終了処理を行う。
-			if (!worker->isFinished()) {
-				LOG(WARNING)
-					<< "CGI process exited unexpectedly (reaped by manager)"
-					<< attr("pid", pid);
-
-				// パイプFDをepollから削除するようキューに入れる
-				if (worker->getReadFd() >= 0) {
-					FdEventChange ev;
-					ev.fd = worker->getReadFd();
-					_remove.push(ev);
+			worker->setExitStatus(status);
+			if (!worker->isTimeout()) {
+				if (WIFSIGNALED(status)) {
+					LOG(WARNING)
+						<< "CGI process terminated by signal"
+						<< attr("pid", pid) << attr("signal", WTERMSIG(status));
+					worker->setError();
+				} else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+					LOG(WARNING) << "CGI process exited with non-zero status"
+								 << attr("pid", pid)
+								 << attr("status", WEXITSTATUS(status));
+					// Statusヘッダーが設定されている場合は、そのステータスコードを優先するため
+					// エラー状態にしない
+					if (!worker->hasStatusHeader()) {
+						worker->setError();
+					}
 				}
-				if (worker->getWriteFd() >= 0) {
-					FdEventChange ev;
-					ev.fd = worker->getWriteFd();
-					_remove.push(ev);
-				}
-				worker->setError();
-				// 予期せぬ終了を通知
+			}
+			if (worker->isFinished()) {
 				_completedClients.push(worker->getClientFd());
 			}
 		} else {
@@ -393,7 +400,12 @@ bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
 	} else if (worker->getState() == CgiWorker::CGI_TIMEOUT) {
 		res.setStatusCode(HttpStatus::GATEWAY_TIMEOUT);
 	} else { // CGI_ERROR
-		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		// Statusヘッダーが設定されている場合は、そのステータスコードを優先する
+		if (worker->hasStatusHeader()) {
+			worker->createHttpResponse(res);
+		} else {
+			res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	_removeWorker(worker);

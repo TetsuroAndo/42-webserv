@@ -29,6 +29,18 @@ public:
 	 */
 	void setResponse(HttpResponse &httpResponse);
 
+	/**
+	 * @brief 解析されたHTTPステータスコードを取得する
+	 * @return ステータスコード（Status:ヘッダがない場合は200）
+	 */
+	int getStatusCode() const;
+
+	/**
+	 * @brief Status:ヘッダが明示的に設定されたかを判定する
+	 * @return Status:ヘッダが設定された場合はtrue
+	 */
+	bool hasStatusHeader() const;
+
 private:
 	int _statusCode;
 	std::string
@@ -36,6 +48,7 @@ private:
 	std::map< std::string, std::string > _headers;
 	std::string _body;
 	bool _headersParsed;
+	bool _hasStatusHeader;
 
 	void _parseHeaders(const std::string &headerBlock);
 

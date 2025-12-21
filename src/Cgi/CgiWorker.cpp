@@ -2,6 +2,7 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Server/Client.hpp"
 #include "CgiEnvBuilder.hpp"
+#include "CgiManager.hpp"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>
@@ -12,8 +13,10 @@
 #include <vector>
 
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
-					 const std::string &interpreterPath)
-	: _ctx(ctx), _state(CGI_INIT), _clientFd(ctx.ownerClient.getFd()), _pid(-1),
+					 const std::string &interpreterPath, CgiManager *manager)
+	: _ctx(ctx), _manager(manager), _state(CGI_INIT),
+	  _clientFd(ctx.ownerClient.getFd()), _pid(-1), _exitStatus(-1),
+	  _exitStatusSet(false), _outputComplete(false),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
 	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)),
 	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize),
@@ -52,6 +55,8 @@ CgiWorker::~CgiWorker() {
 void CgiWorker::execute() {
 	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0) {
 		_state = CGI_ERROR;
+		_outputComplete = true;
+		_exitStatusSet = true;
 		return;
 	}
 
@@ -64,6 +69,8 @@ void CgiWorker::execute() {
 		_closePipe(_pipeOut[1]);
 		_closePipe(_pipeErr[0]);
 		_closePipe(_pipeErr[1]);
+		_outputComplete = true;
+		_exitStatusSet = true;
 		return;
 	}
 
@@ -100,6 +107,7 @@ void CgiWorker::execute() {
 		_closePipe(_pipeIn[1]);
 		_closePipe(_pipeOut[0]);
 		_closePipe(_pipeErr[0]);
+		_outputComplete = true;
 		return;
 	}
 
@@ -117,9 +125,16 @@ void CgiWorker::handleWrite() {
 		return;
 	}
 
+	if (_state == CGI_ERROR || _state == CGI_TIMEOUT) {
+		_closePipe(_pipeIn[1]);
+		return;
+	}
+
 	if (_requestBody.empty()) {
 		_closePipe(_pipeIn[1]);
-		_state = CGI_RECEIVING;
+		if (_state != CGI_ERROR && _state != CGI_TIMEOUT) {
+			_state = CGI_RECEIVING;
+		}
 		return;
 	}
 
@@ -169,6 +184,10 @@ void CgiWorker::handleRead() {
 		LOG(ERROR) << "Read error in CGI" << attr("error", strerror(errno));
 		_state = CGI_ERROR;
 		_closePipe(_pipeOut[0]);
+		_outputComplete = true;
+		if (_manager) {
+			_manager->cleanupFinishedWorkers();
+		}
 		return;
 	}
 
@@ -186,9 +205,15 @@ void CgiWorker::handleRead() {
 			LOG(WARNING) << "CGI response has no headers" << attr("pid", _pid)
 						 << attr("output", _responseBuffer);
 			_state = CGI_ERROR;
-		} else {
+		} else if (_state != CGI_ERROR && _state != CGI_TIMEOUT) {
 			// CGIレスポンスの受信完了
 			_state = CGI_COMPLETE;
+		}
+
+		_outputComplete = true;
+		// EOFを検出したらプロセス終了の回収を試みる
+		if (_manager) {
+			_manager->cleanupFinishedWorkers();
 		}
 	} else {
 		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;
@@ -198,6 +223,10 @@ void CgiWorker::handleRead() {
 					   << attr("limit", MAX_CGI_RESPONSE_SIZE);
 			_state = CGI_ERROR;
 			_closePipe(_pipeOut[0]);
+			_outputComplete = true;
+			if (_manager) {
+				_manager->cleanupFinishedWorkers();
+			}
 			return;
 		}
 		_responseBuffer.append(&_readBuffer[0], bytes);
@@ -303,10 +332,25 @@ void CgiWorker::updateLastActivityTime() { _lastActivityTime = time(NULL); }
 bool CgiWorker::isTimeout() const { return _state == CGI_TIMEOUT; }
 
 bool CgiWorker::isFinished() const {
-	return _state == CGI_COMPLETE || _state == CGI_ERROR ||
-		   _state == CGI_TIMEOUT;
+	if (_state == CGI_TIMEOUT) {
+		return true;
+	}
+	return _outputComplete && _exitStatusSet;
 }
 
 void CgiWorker::createHttpResponse(HttpResponse &res) {
 	_responseParser.setResponse(res);
 }
+
+bool CgiWorker::hasStatusHeader() const {
+	return _responseParser.hasStatusHeader();
+}
+
+void CgiWorker::setExitStatus(int status) {
+	_exitStatus = status;
+	_exitStatusSet = true;
+}
+
+int CgiWorker::getExitStatus() const { return _exitStatus; }
+
+bool CgiWorker::isExitStatusSet() const { return _exitStatusSet; }

@@ -9,12 +9,28 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdexcept>
 #include <unistd.h>
 #include <vector>
 
+namespace {
+int g_sigchldWriteFd = -1;
+
+void sigchldHandler(int) {
+	if (g_sigchldWriteFd < 0) {
+		return;
+	}
+	const char byte = 1;
+	ssize_t res = write(g_sigchldWriteFd, &byte, 1);
+	(void)res;
+}
+} // namespace
+
 Server::Server(const Config &config)
 	: _config(config), _cgiManager(config), _socketsManager(config) {
+	_sigchldPipe[0] = -1;
+	_sigchldPipe[1] = -1;
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(_config);
 	std::ostringstream oss;
@@ -35,6 +51,15 @@ Server::~Server() {
 	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
 		delete it->second;
+	}
+	if (_sigchldPipe[0] >= 0) {
+		close(_sigchldPipe[0]);
+	}
+	if (_sigchldPipe[1] >= 0) {
+		close(_sigchldPipe[1]);
+	}
+	if (g_sigchldWriteFd == _sigchldPipe[1]) {
+		g_sigchldWriteFd = -1;
 	}
 }
 
@@ -145,6 +170,7 @@ void Server::setupListenSockets() {
 }
 
 void Server::run() {
+	setupSignalPipe();
 	LOG(INFO) << "Server is running and waiting for events.";
 	while (true) {
 		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
@@ -167,6 +193,11 @@ void Server::run() {
 			const uint32_t eventTypes = events[i].events;
 
 			applyCgiChanges();
+
+			if (fd == _sigchldPipe[0]) {
+				handleSigchldEvent();
+				continue;
+			}
 
 			// CGIのFDを優先的に処理する
 			if (_cgiManager.isCgiFd(fd)) {
@@ -243,6 +274,73 @@ void Server::run() {
 
 		SessionManager::getInstance().cleanupIfNeeded();
 	}
+}
+
+void Server::setupSignalPipe() {
+	if (_sigchldPipe[0] >= 0 || _sigchldPipe[1] >= 0) {
+		return;
+	}
+
+	if (pipe(_sigchldPipe) < 0) {
+		throw std::runtime_error("pipe(SIGCHLD) failed");
+	}
+
+	int flags = fcntl(_sigchldPipe[0], F_GETFL, 0);
+	if (flags < 0 || fcntl(_sigchldPipe[0], F_SETFL, flags | O_NONBLOCK) < 0) {
+		close(_sigchldPipe[0]);
+		close(_sigchldPipe[1]);
+		_sigchldPipe[0] = -1;
+		_sigchldPipe[1] = -1;
+		throw std::runtime_error("fcntl(SIGCHLD pipe read) failed");
+	}
+	flags = fcntl(_sigchldPipe[1], F_GETFL, 0);
+	if (flags < 0 || fcntl(_sigchldPipe[1], F_SETFL, flags | O_NONBLOCK) < 0) {
+		close(_sigchldPipe[0]);
+		close(_sigchldPipe[1]);
+		_sigchldPipe[0] = -1;
+		_sigchldPipe[1] = -1;
+		throw std::runtime_error("fcntl(SIGCHLD pipe write) failed");
+	}
+
+	g_sigchldWriteFd = _sigchldPipe[1];
+	if (signal(SIGCHLD, sigchldHandler) == SIG_ERR) {
+		close(_sigchldPipe[0]);
+		close(_sigchldPipe[1]);
+		_sigchldPipe[0] = -1;
+		_sigchldPipe[1] = -1;
+		g_sigchldWriteFd = -1;
+		throw std::runtime_error("signal(SIGCHLD) failed");
+	}
+
+	try {
+		_socketsManager.registerSocket(_sigchldPipe[0], EPOLLIN);
+	} catch (...) {
+		close(_sigchldPipe[0]);
+		close(_sigchldPipe[1]);
+		_sigchldPipe[0] = -1;
+		_sigchldPipe[1] = -1;
+		g_sigchldWriteFd = -1;
+		throw;
+	}
+}
+
+void Server::handleSigchldEvent() {
+	char buffer[64];
+	while (true) {
+		const ssize_t bytes = read(_sigchldPipe[0], buffer, sizeof(buffer));
+		if (bytes > 0) {
+			continue;
+		}
+		if (bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+			break;
+		}
+		if (bytes < 0) {
+			LOG(ERROR) << "read(SIGCHLD pipe) failed"
+					   << attr("error", strerror(errno));
+		}
+		break;
+	}
+	_cgiManager.cleanupFinishedWorkers();
 }
 
 void Server::handleNewConnection(const int listenFd) {
