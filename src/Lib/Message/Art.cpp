@@ -14,8 +14,8 @@ void art5();
 void art6();
 
 void art() {
-	srand(static_cast< unsigned int >(time(0)));
-	int i = rand() % 7;
+	std::srand(static_cast< unsigned int >(std::time(0)));
+	int i = std::rand() % 7;
 	if (i == 0)
 		art0();
 	if (i == 1)
@@ -61,8 +61,8 @@ void art4() {
 	std::cerr << "/*                                                    +:+ +:+         +:+     */ \n";
 	std::cerr << "/*   By: teando <teando@student.42tokyo.jp>         +#+  +:+       +#+        */ \n";
 	std::cerr << "/*                                                +#+#+#+#+#+   +#+           */ \n";
-	std::cerr << "/*   Created: 2025/01/13 00:02:41 by teando            #+#    #+#             */ \n";
-	std::cerr << "/*   Updated: 2025/10/16 02:52:31 by teando           ###   ########.fr       */ \n";
+	std::cerr << "/*   Created: 2042/04/02 00:04:02 by teando            #+#    #+#             */ \n";
+	std::cerr << "/*   Updated: 2042/42/42 42:42:42 by teando           ###   ########.fr       */ \n";
 	std::cerr << "/*                                                                            */ \n";
 	std::cerr << "/* ************************************************************************** */ \n";
 	std::cerr << "" << std::endl;

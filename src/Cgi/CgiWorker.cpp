@@ -18,7 +18,7 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	  _clientFd(ctx.ownerClient.getFd()), _pid(-1), _exitStatus(-1),
 	  _exitStatusSet(false), _outputComplete(false),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
-	  _interpreterPath(interpreterPath), _lastActivityTime(time(NULL)),
+	  _interpreterPath(interpreterPath), _lastActivityTime(std::time(NULL)),
 	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize),
 	  _errBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
 	_pipeIn[0] = -1;
@@ -80,18 +80,21 @@ void CgiWorker::execute() {
 				CgiEnvBuilder::build(_ctx, _scriptPath);
 			if (envpStrs.empty()) {
 				LOG(ERROR) << "CGI environment build failed: empty environment";
-				_exit(EXIT_FAILURE);
+				errno = EXIT_FAILURE;
+				return;
 			}
 			_childProcess(_scriptPath, _interpreterPath, envpStrs);
 		} catch (const std::exception &e) {
 			const std::string msg =
 				std::string("CGI environment build failed: ") + e.what();
 			LOG(ERROR) << msg;
-			_exit(EXIT_FAILURE);
+			errno = EXIT_FAILURE;
+			return;
 		} catch (...) {
 			const std::string msg = "Unknown error in CGI child process\n";
 			LOG(ERROR) << msg;
-			_exit(EXIT_FAILURE);
+			errno = EXIT_FAILURE;
+			return;
 		}
 	}
 
