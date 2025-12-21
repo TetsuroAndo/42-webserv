@@ -286,8 +286,7 @@ void Server::setupSignalPipe() {
 	}
 
 	int flags = fcntl(_sigchldPipe[0], F_GETFL, 0);
-	if (flags < 0 ||
-		fcntl(_sigchldPipe[0], F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (flags < 0 || fcntl(_sigchldPipe[0], F_SETFL, flags | O_NONBLOCK) < 0) {
 		close(_sigchldPipe[0]);
 		close(_sigchldPipe[1]);
 		_sigchldPipe[0] = -1;
@@ -295,8 +294,7 @@ void Server::setupSignalPipe() {
 		throw std::runtime_error("fcntl(SIGCHLD pipe read) failed");
 	}
 	flags = fcntl(_sigchldPipe[1], F_GETFL, 0);
-	if (flags < 0 ||
-		fcntl(_sigchldPipe[1], F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (flags < 0 || fcntl(_sigchldPipe[1], F_SETFL, flags | O_NONBLOCK) < 0) {
 		close(_sigchldPipe[0]);
 		close(_sigchldPipe[1]);
 		_sigchldPipe[0] = -1;

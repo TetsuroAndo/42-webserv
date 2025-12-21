@@ -240,8 +240,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 		_remove.push(ev);
 		_pipeFdToWorker.erase(writeFd);
 	}
-	if (errFd >= 0 && worker->getErrFd() < 0 &&
-		_pipeFdToWorker.count(errFd)) {
+	if (errFd >= 0 && worker->getErrFd() < 0 && _pipeFdToWorker.count(errFd)) {
 		FdEventChange ev;
 		ev.fd = errFd;
 		ev.eventType = EPOLLIN;
@@ -351,14 +350,12 @@ void CgiManager::cleanupFinishedWorkers() {
 				if (WIFSIGNALED(status)) {
 					LOG(WARNING)
 						<< "CGI process terminated by signal"
-						<< attr("pid", pid)
-						<< attr("signal", WTERMSIG(status));
+						<< attr("pid", pid) << attr("signal", WTERMSIG(status));
 					worker->setError();
 				} else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-					LOG(WARNING)
-						<< "CGI process exited with non-zero status"
-						<< attr("pid", pid)
-						<< attr("status", WEXITSTATUS(status));
+					LOG(WARNING) << "CGI process exited with non-zero status"
+								 << attr("pid", pid)
+								 << attr("status", WEXITSTATUS(status));
 					// Statusヘッダーが設定されている場合は、そのステータスコードを優先するため
 					// エラー状態にしない
 					if (!worker->hasStatusHeader()) {
