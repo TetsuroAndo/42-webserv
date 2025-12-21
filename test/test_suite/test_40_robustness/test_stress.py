@@ -18,8 +18,6 @@ from pathlib import Path
 import pytest
 import requests
 import sys
-import subprocess
-import re
 
 
 # =========================
