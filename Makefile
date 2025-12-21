@@ -76,12 +76,16 @@ play-netpractice: $(NAME) submodule
 # Create a virtual environment and install dependencies
 pyinit:
 	python3 -m venv $(VENV_DIR)
-	@. $(VENV_DIR)/bin/activate && \
-	if command -v uv &> /dev/null; then \
+	@. $(VENV_DIR)/bin/activate; \
+	python -m pip install --upgrade pip; \
+	if ! command -v uv >/dev/null 2>&1; then \
+		python -m pip install -U uv >/dev/null 2>&1 || true; \
+	fi; \
+	if command -v uv >/dev/null 2>&1; then \
 		uv pip install -r $(TEST_DIR)/requirements.txt; \
 	else \
-		pip install --upgrade pip uv && \
-		uv pip install -r $(TEST_DIR)/requirements.txt; \
+		echo "uv install failed or unavailable; using pip"; \
+		python -m pip install -r $(TEST_DIR)/requirements.txt; \
 	fi
 
 test:
