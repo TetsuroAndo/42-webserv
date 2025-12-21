@@ -2,17 +2,18 @@
 #include <cstdlib>
 #include <sstream>
 #include <vector>
+#include <climits>
 
 namespace Path {
 
 std::string getAbsolutePath(const std::string &path) {
-	char *realPathPtr = realpath(path.c_str(), NULL);
-	if (realPathPtr == NULL) {
-		return "";
-	}
-	std::string realPath(realPathPtr);
-	free(realPathPtr);
-	return realPath;
+    char buf[PATH_MAX];
+
+    if (realpath(path.c_str(), buf) == NULL) {
+        return "";
+    }
+
+    return std::string(buf);
 }
 
 std::string normalize(const std::string &path) {

@@ -276,7 +276,7 @@ void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
 }
 
 void CgiManager::cleanupTimedOutWorkers() {
-	const time_t now = time(NULL);
+	const time_t now = std::time(NULL);
 	std::vector< CgiWorker * > workersToCleanup;
 
 	for (std::vector< CgiWorker * >::iterator it = _workers.begin();

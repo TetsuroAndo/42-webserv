@@ -16,7 +16,7 @@ void RequestBodyParser::reset() {
 	_state = UNINITIALIZED;
 	_contentLengthRemaining = 0;
 	_chunkSize = 0;
-	_lastReceiveTime = time(NULL);
+	_lastReceiveTime = std::time(NULL);
 }
 
 void RequestBodyParser::init(const HttpRequest &request, int &errorCode) {
@@ -51,7 +51,7 @@ void RequestBodyParser::init(const HttpRequest &request, int &errorCode) {
 size_t RequestBodyParser::parse(HttpRequest &request, const std::string &buffer,
 								int &errorCode, ParseResult &result) {
 	if (!buffer.empty()) {
-		_lastReceiveTime = time(NULL);
+		_lastReceiveTime = std::time(NULL);
 	}
 
 	if (_state == UNINITIALIZED) {
@@ -118,7 +118,7 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 		timeoutSeconds = 10;
 	}
 	while (offset < buffer.length()) {
-		const time_t now = time(NULL);
+		const time_t now = std::time(NULL);
 		if (static_cast< time_t >(timeoutSeconds) < now - _lastReceiveTime) {
 			errorCode = HttpStatus::REQUEST_TIMEOUT;
 			result = PARSE_ERROR;
@@ -133,7 +133,7 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 			const char *sizeLineStart = buffer.c_str() + offset;
 			size_t sizeLineLen = crlfPos - offset;
 
-			const void *semiPosPtr = memchr(sizeLineStart, ';', sizeLineLen);
+			const void *semiPosPtr = std::memchr(sizeLineStart, ';', sizeLineLen);
 			if (semiPosPtr != NULL) {
 				sizeLineLen =
 					static_cast< const char * >(semiPosPtr) - sizeLineStart;

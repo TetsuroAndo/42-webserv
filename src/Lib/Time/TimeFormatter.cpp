@@ -21,7 +21,7 @@ void getTime(std::string &data, const tm &timeinfo) {
 
 void getHeaderTimestamp(std::string &data, const tm &timeinfo) {
 	char timeStr[64];
-	if (strftime(timeStr, sizeof(timeStr), "%a, %d %b %Y %H:%M:%S GMT",
+	if (std::strftime(timeStr, sizeof(timeStr), "%a, %d %b %Y %H:%M:%S GMT",
 				 &timeinfo) == 0) {
 		data = "Thu, 01 Jan 1970 00:00:00 GMT";
 	} else {
@@ -31,7 +31,7 @@ void getHeaderTimestamp(std::string &data, const tm &timeinfo) {
 
 void getIsoTimestamp(std::string &data, const tm &timeinfo) {
 	char timeStr[64];
-	if (strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", &timeinfo) ==
+	if (std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", &timeinfo) ==
 		0) {
 		data = "1970-01-01T00:00:00Z";
 	} else {
@@ -41,7 +41,7 @@ void getIsoTimestamp(std::string &data, const tm &timeinfo) {
 
 void getLocalTimestamp(std::string &data, const tm &timeinfo) {
 	char timeStr[64];
-	if (strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", &timeinfo) ==
+	if (std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%S", &timeinfo) ==
 		0) {
 		data = "1970-01-01T00:00:00";
 	} else {
@@ -51,7 +51,7 @@ void getLocalTimestamp(std::string &data, const tm &timeinfo) {
 
 void getUtcTimestamp(std::string &data, const tm &timeinfo) {
 	char timeStr[64];
-	if (strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%SZ", &timeinfo) ==
+	if (std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%SZ", &timeinfo) ==
 		0) {
 		data = "1970-01-01 00:00:00Z";
 	} else {

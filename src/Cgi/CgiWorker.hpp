@@ -98,6 +98,7 @@ private:
 	int _pipeIn[2];
 	int _pipeOut[2];
 	int _pipeErr[2];
+	int _pipeStatus[2];
 	std::string _requestBody;
 	size_t _bytesSent;
 	std::string _scriptPath;

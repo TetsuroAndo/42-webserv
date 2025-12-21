@@ -25,6 +25,18 @@ void sigchldHandler(int) {
 	ssize_t res = write(g_sigchldWriteFd, &byte, 1);
 	(void)res;
 }
+
+void makeClientIp(char *clientIp, size_t size, const unsigned char bytes[4]) {
+    std::ostringstream oss;
+    oss << static_cast<unsigned int>(bytes[0]) << "."
+        << static_cast<unsigned int>(bytes[1]) << "."
+        << static_cast<unsigned int>(bytes[2]) << "."
+        << static_cast<unsigned int>(bytes[3]);
+
+    std::string tmp = oss.str();
+    std::strncpy(clientIp, tmp.c_str(), size);
+    clientIp[size - 1] = '\0';
+}
 } // namespace
 
 Server::Server(const Config &config)
@@ -361,8 +373,7 @@ void Server::handleNewConnection(const int listenFd) {
 	char clientIp[INET_ADDRSTRLEN];
 	const unsigned char *bytes =
 		reinterpret_cast< unsigned char * >(&clientAddr.sin_addr.s_addr);
-	snprintf(clientIp, sizeof(clientIp), "%u.%u.%u.%u", bytes[0], bytes[1],
-			 bytes[2], bytes[3]);
+	makeClientIp(clientIp, sizeof(clientIp), bytes);
 	const int clientPort = ntohs(clientAddr.sin_port);
 
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
