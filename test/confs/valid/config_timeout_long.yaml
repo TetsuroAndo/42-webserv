@@ -6,8 +6,8 @@ servers:
             port: 8080
 
       timeoutSec: 30
-      requestHeaderTimeoutSec: 10
-      requestBodyTimeoutSec: 10
+      requestHeaderTimeoutSec: 60
+      requestBodyTimeoutSec: 3
 
       error_logs:
         - error_log:
