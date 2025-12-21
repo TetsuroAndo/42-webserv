@@ -32,14 +32,12 @@ void HttpConnection::handleReadEvent() {
 		LOG(INFO) << "Client disconnected gracefully"
 				  << attr("fd", _client->getFd());
 		_eventHandler.onConnectionClose(_client->getFd());
-		return;
 	} else {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
 			LOG(ERROR) << "recv() failed" << attr("fd", _client->getFd())
 					   << attr("error", strerror(errno));
 			_eventHandler.onConnectionClose(_client->getFd());
 		}
-		return;
 	}
 }
 
