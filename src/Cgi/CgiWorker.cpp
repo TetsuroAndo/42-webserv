@@ -20,7 +20,10 @@ namespace {
     }
 
 	void notifyErrorToParentAndStop(int statusWriteFd, int err) {
-        write(statusWriteFd, &err, sizeof(err));
+        ssize_t ret = write(statusWriteFd, &err, sizeof(err));
+        if (ret < 0) {
+            LOG(ERROR) << "write failed: " << strerror(errno);
+        }
         blockForeverNoCpu();
     }
 }
