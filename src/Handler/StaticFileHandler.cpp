@@ -178,7 +178,7 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 			} else {
 				LOG(WARNING) << "Directory listing is disabled for"
 							 << attr("path", filePath);
-				res.setStatusCode(HttpStatus::NOT_FOUND);
+				res.setStatusCode(HttpStatus::FORBIDDEN);
 			}
 			return res;
 		}

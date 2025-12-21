@@ -47,13 +47,13 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	const Location &loc = config.getLocation(req.getPath());
 
 	// ファイルパスが不正
-	// if (req.getPath() != loc.path) {
-	// 	LOG(INFO) << "Requested path does not match location path"
-	// 			  << attr("request_path", req.getPath())
-	// 			  << attr("location_path", loc.path);
-	// 	res.setStatusCode(HttpStatus::NOT_FOUND);
-	// 	return res;
-	// }
+	if (req.getPath() != loc.path) {
+		LOG(INFO) << "Requested path does not match location path"
+				  << attr("request_path", req.getPath())
+				  << attr("location_path", loc.path);
+		res.setStatusCode(HttpStatus::NOT_FOUND);
+		return res;
+	}
 
 	// uploadする場所が指定されていない
 	if (loc.uploadStore.empty()) {
@@ -72,14 +72,13 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
 		return res;
 	}
-	std::string expansion =
+	const std::string expansion =
 		MimeType::getExtension(req.getHeader("Content-Type"));
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
-		expansion = ".txt";
-		// LOG(INFO) << "PostHandler: This Content-Type is Not Supported";
-		// res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
-		// return res;
+		LOG(INFO) << "PostHandler: This Content-Type is Not Supported";
+		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		return res;
 	}
 	std::string target_filename =
 		removeSpaceColonCommaHyphen(TimeCache::getGmtDate()) + "-" +
