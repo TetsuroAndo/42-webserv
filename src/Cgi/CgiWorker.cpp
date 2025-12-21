@@ -124,9 +124,16 @@ void CgiWorker::handleWrite() {
 		return;
 	}
 
+	if (_state == CGI_ERROR || _state == CGI_TIMEOUT) {
+		_closePipe(_pipeIn[1]);
+		return;
+	}
+
 	if (_requestBody.empty()) {
 		_closePipe(_pipeIn[1]);
-		_state = CGI_RECEIVING;
+		if (_state != CGI_ERROR && _state != CGI_TIMEOUT) {
+			_state = CGI_RECEIVING;
+		}
 		return;
 	}
 
@@ -156,7 +163,9 @@ void CgiWorker::handleWrite() {
 	_bytesSent += bytes;
 	if (_bytesSent >= _requestBody.size()) {
 		_closePipe(_pipeIn[1]);
-		_state = CGI_RECEIVING;
+		if (_state != CGI_ERROR && _state != CGI_TIMEOUT) {
+			_state = CGI_RECEIVING;
+		}
 	}
 	updateLastActivityTime();
 }
@@ -197,7 +206,7 @@ void CgiWorker::handleRead() {
 			LOG(WARNING) << "CGI response has no headers" << attr("pid", _pid)
 						 << attr("output", _responseBuffer);
 			_state = CGI_ERROR;
-		} else {
+		} else if (_state != CGI_ERROR && _state != CGI_TIMEOUT) {
 			// CGIレスポンスの受信完了
 			_state = CGI_COMPLETE;
 		}
