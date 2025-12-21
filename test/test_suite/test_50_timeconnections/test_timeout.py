@@ -445,8 +445,8 @@ class TestTimeout:
             time.sleep(3)
 
             # 接続が閉じられているか確認
-            sock.recv(4096)
-            assert_408_response(sock.recv(4096))
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
