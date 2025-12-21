@@ -40,11 +40,11 @@ class TestTimeout:
         # ソケット接続を確立
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(5)
-        sock.connect(("127.0.0.1", 8082))
+        sock.connect(("127.0.0.1", 8080))
 
         try:
             sock.sendall(b"GET / HTTP/1.1\r\n")
-            time.sleep(5)
+            time.sleep(3)
             data = sock.recv(4096)
             assert_408_response(data)
         finally:
@@ -418,9 +418,9 @@ class TestTimeout:
                 assert_408_response(data)
 
             finally:
-                for sock in sockets:
+                for sock2 in sockets:
                     try:
-                        sock.close()
+                        sock2.close()
                     except Exception:
                         pass
 
