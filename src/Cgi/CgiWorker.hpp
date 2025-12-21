@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <vector>
 
+class CgiManager;
+
 class CgiWorker {
 public:
 	enum CgiState {
@@ -18,7 +20,7 @@ public:
 	};
 
 	CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
-			  const std::string &interpreterPath);
+			  const std::string &interpreterPath, CgiManager *manager);
 	~CgiWorker();
 
 	/// @brief CGIプロセスをfork/execveで実行する
@@ -30,6 +32,9 @@ public:
 	/// @brief CGIプロセスの標準出力からレスポンスを読み込む
 	void handleRead();
 
+	/// @brief CGIプロセスの標準エラー出力からエラーメッセージを読み込む
+	void handleReadErr();
+
 	/// @brief クライアントFDを取得する
 	int getClientFd() const;
 
@@ -38,6 +43,9 @@ public:
 
 	/// @brief 書き込み用パイプのFDを取得する
 	int getWriteFd() const;
+
+	/// @brief 標準エラー出力読み込み用パイプのFDを取得する
+	int getErrFd() const;
 
 	/// @brief 子プロセスのPIDを取得する
 	pid_t getPid() const;
@@ -66,13 +74,30 @@ public:
 	/// @brief CGIの実行結果をHttpResponseオブジェクトに設定する
 	void createHttpResponse(HttpResponse &res);
 
+	/// @brief プロセスの終了ステータスを設定する
+	void setExitStatus(int status);
+
+	/// @brief プロセスの終了ステータスを取得する
+	int getExitStatus() const;
+
+	/// @brief Status:ヘッダが明示的に設定されたかを判定する
+	bool hasStatusHeader() const;
+
+	/// @brief 終了ステータスが設定されたかを判定する
+	bool isExitStatusSet() const;
+
 private:
 	PipelineContext &_ctx;
+	CgiManager *_manager;
 	CgiState _state;
 	int _clientFd;
 	pid_t _pid;
+	int _exitStatus;
+	bool _exitStatusSet;
+	bool _outputComplete;
 	int _pipeIn[2];
 	int _pipeOut[2];
+	int _pipeErr[2];
 	std::string _requestBody;
 	size_t _bytesSent;
 	std::string _scriptPath;
@@ -80,6 +105,7 @@ private:
 	time_t _lastActivityTime;
 	std::string _responseBuffer;
 	std::vector< char > _readBuffer;
+	std::vector< char > _errBuffer;
 
 	CgiResponseParser _responseParser;
 

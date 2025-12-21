@@ -1,0 +1,270 @@
+# ============================================================================
+# Webサーバー設定ファイル example.yaml
+# ============================================================================
+# このファイルは、config/ディレクトリのYAMLファイルで設定可能な
+# 全ての項目を含む完全なexampleです。
+# 注意: このYAMLパーサーは、インラインコメントをサポートしてないため、このままでは動作しません。
+# ============================================================================
+
+servers:
+  - server:
+      # ======================================================================
+      # listens: サーバーがリッスンするインターフェースとポート（必須）
+      # ======================================================================
+      listens:
+        - listen:
+            interface: 0.0.0.0   # 全てのインターフェースでリッスン
+            port: 8080           # ポート番号（1024-65535の範囲）
+        - listen:
+            interface: 127.0.0.1  # ローカルホストのみ
+            port: 3000
+
+      # ======================================================================
+      # リクエストサイズ制限
+      # ======================================================================
+      maxRequestBodySize: 6291456      # 最大リクエストボディサイズ（バイト単位、KB/MB等も可、例: "8KB", "10MB"）
+      maxRequestHeaderSize: 8KB        # 最大リクエストヘッダーサイズ（バイト単位、KB/MB等も可）
+
+      # ======================================================================
+      # タイムアウト設定（秒単位）
+      # ======================================================================
+      timeoutSec: 60                    # 全体的なタイムアウト
+      requestHeaderTimeoutSec: 15       # リクエストヘッダーのタイムアウト
+      requestBodyTimeoutSec: 30         # リクエストボディのタイムアウト
+      sessionTimeoutSec: 1800           # セッションタイムアウト（30分）
+      chunkedTimeoutSec: 10             # チャンク転送のタイムアウト
+
+      # ======================================================================
+      # パフォーマンス設定
+      # ======================================================================
+      maxEvents: 1024                   # 最大イベント数（epoll等で使用）
+
+      # ======================================================================
+      # アクセスログ設定
+      # ======================================================================
+      access_logs:
+        # ファイルに出力するアクセスログ
+        - access_log:
+            sink: file                  # 出力先: file または console
+            filename: access.log         # ログファイル名（sink=fileの場合のみ）
+            logDir: ./logs              # ログディレクトリ（sink=fileの場合のみ）
+            format: ELF                 # フォーマット: JSON または ELF
+            maxSize: 10MB               # 最大ファイルサイズ（sink=fileの場合のみ、バイト単位、KB/MB等も可）
+            maxBackup: 5                # 最大バックアップファイル数（sink=fileの場合のみ）
+
+        # コンソールに出力するアクセスログ
+        - access_log:
+            sink: console
+            format: JSON
+
+        # アクセスログを無効化
+        # - access_log:
+        #     disable: true
+
+      # ======================================================================
+      # エラーログ設定
+      # ======================================================================
+      error_logs:
+        # ファイルに出力するエラーログ
+        - error_log:
+            sink: file                  # 出力先: file または console
+            filename: error.log         # ログファイル名（sink=fileの場合のみ）
+            logDir: ./logs              # ログディレクトリ（sink=fileの場合のみ）
+            format: ELF                 # フォーマット: JSON または ELF
+            level: WARNING              # ログレベル: DEBUG, INFO, WARNING, ERROR, FATAL
+            mode: GREATER_OR_EQUAL      # フィルタモード: GREATER_OR_EQUAL または EXACT
+            maxSize: 10MB               # 最大ファイルサイズ（sink=fileの場合のみ、バイト単位、KB/MB等も可）
+            maxBackup: 5                # 最大バックアップファイル数（sink=fileの場合のみ）
+
+        # コンソールに出力するエラーログ
+        - error_log:
+            sink: console
+            level: DEBUG
+            format: JSON
+            mode: EXACT
+
+        # エラーログを無効化
+        # - error_log:
+        #     disable: true
+
+      # ======================================================================
+      # エラーページ設定
+      # ======================================================================
+      error_pages:
+        400: /errors/400.html           # ステータスコード -> エラーページURI
+        403: /errors/403.html
+        404: /errors/404.html
+        500: /errors/500.html
+        502: /errors/502.html
+        503: /errors/503.html
+
+      # ======================================================================
+      # サーバーレベルのデフォルト設定（ロケーションで上書き可能）
+      # ======================================================================
+      root: ./www                       # デフォルトルートディレクトリ
+      index: index.html                 # デフォルトインデックスファイル
+      autoindex: false                  # デフォルトオートインデックス（true/false/on/off/yes/no）
+      uploadStore: ./www/uploads        # デフォルトアップロード保存先
+      session: true                     # デフォルトセッション有効化（true/false/on/off/yes/no）
+      allowedMethods:                   # デフォルト許可メソッド
+        - GET
+        - HEAD
+        - POST
+        - PUT
+        - DELETE
+
+      # ======================================================================
+      # CGIインタープリターパス（サーバーレベルデフォルト）
+      # ======================================================================
+      interpreterPath:
+        .php: /usr/bin/php-cgi           # 拡張子 -> インタープリターパス
+        .py: /usr/bin/python3
+        .cgi: /usr/bin/perl
+
+      # ======================================================================
+      # locations: ロケーションブロック（パスごとの設定）
+      # ======================================================================
+      locations:
+        # 基本ロケーション
+        - location:
+            path: /                              # パス（必須）
+            root: ./www                          # ルートディレクトリ
+            index: index.html                    # インデックスファイル
+            autoindex: false                     # オートインデックス（true/false/on/off/yes/no）
+            noIndex: false                       # インデックスファイルを無効化（true/false/on/off/yes/no）
+            directoryError: directoryError.html  # ディレクトリエラーページ
+            uploadStore: ./www/uploads           # アップロード保存先
+            session: true                        # セッション有効化（true/false/on/off/yes/no）
+            maxRequestBodySize: 10MB             # このロケーションの最大リクエストボディサイズ
+            chunkedTimeoutSec: 20                # このロケーションのチャンクタイムアウト
+            allowedMethods:                      # 許可メソッド（GET, HEAD, POST, PUT, DELETE）
+              - GET
+              - HEAD
+              - POST
+              - DELETE
+
+        # CGI用ロケーション
+        - location:
+            path: /cgi-bin
+            root: ./www/cgi-bin/
+            autoindex: true
+            session: true
+            interpreterPath:                     # ロケーションレベルのCGIインタープリターパス
+              .cgi: /usr/bin/perl
+              .php: /usr/bin/php-cgi
+              .py: /usr/bin/python3
+            allowedMethods:
+              - GET
+              - POST
+
+        # API用ロケーション
+        - location:
+            path: /api
+            root: ./www/api/
+            autoindex: false
+            session: true
+            interpreterPath:
+              .py: /usr/bin/python3
+            allowedMethods:
+              - GET
+              - POST
+
+        # アップロード専用ロケーション
+        - location:
+            path: /upload
+            root: ./www/uploads
+            uploadStore: ./uploads
+            allowedMethods:
+              - POST
+              - DELETE
+
+        # リダイレクトロケーション（returnディレクティブ）
+        - location:
+            path: /cgi-bin/auth.py
+            return: 301 /login.html    # "ステータスコード URL"形式（300-399の範囲）
+
+        - location:
+            path: /cgi-bin/send_message.py
+            return: 301 /chat.html
+
+        - location:
+            path: /cgi-bin/strange.py
+            return: 301 /error.html
+
+        # エラーページ用ロケーション
+        - location:
+            path: /errors
+            root: ./www/static/errors
+            allowedMethods:
+              - GET
+
+        # オートインデックス無効のロケーション
+        - location:
+            path: /no_autoindex
+            root: ./www/no_autoindex_dir
+            autoindex: false
+            allowedMethods:
+              - GET
+
+        # インデックスファイル無効のロケーション
+        - location:
+            path: /no_index
+            root: ./www/static
+            noIndex: true
+            allowedMethods:
+              - HEAD
+              - GET
+
+        # インデックスファイル無効だがオートインデックス有効のロケーション
+        - location:
+            path: /no_index_yes_autoindex
+            root: ./www/static
+            noIndex: true
+            autoindex: true
+            allowedMethods:
+              - HEAD
+              - GET
+
+        # 許可されていないメソッドのテスト用ロケーション
+        - location:
+            path: /get_only
+            root: ./www/
+            allowedMethods:
+              - GET
+
+# ============================================================================
+# 設定項目の説明
+# ============================================================================
+#
+# 【必須項目】
+#   - listens: サーバーがリッスンするインターフェースとポート（必須）
+#   - location.path: ロケーションブロックのパス（必須）
+#
+# 【オプション項目】
+#   上記以外の全ての項目はオプションです。
+#
+# 【値の形式】
+#   - ブール値: true/false, on/off, yes/no のいずれか
+#   - サイズ: 数値（バイト）または "8KB", "10MB" などの文字列形式
+#   - タイムアウト: 数値（秒単位）
+#   - ポート: 1024-65535 の範囲
+#   - リダイレクト: "ステータスコード URL" 形式（例: "301 /login.html"）
+#   - エラーページ: ステータスコードは 400-599 の範囲
+#
+# 【ログ設定】
+#   - sink: file または console
+#   - format: JSON または ELF
+#   - level (error_logのみ): DEBUG, INFO, WARNING, ERROR, FATAL
+#   - mode (error_logのみ): GREATER_OR_EQUAL または EXACT
+#   - sink=file の場合のみ: filename, logDir, maxSize, maxBackup が有効
+#   - sink=console の場合: filename, logDir, maxSize, maxBackup は指定不可
+#
+# 【HTTPメソッド】
+#   許可されるメソッド: GET, HEAD, POST, PUT, DELETE
+#
+# 【CGIインタープリター】
+#   - 拡張子は "." で始まる必要がある（例: .php, .py, .cgi）
+#   - サーバーレベルとロケーションレベルで設定可能
+#   - ロケーションレベルの設定が優先される
+#
+# ============================================================================

@@ -4,7 +4,8 @@
 #include <sstream>
 
 CgiResponseParser::CgiResponseParser()
-	: _statusCode(200), _statusMessage("OK"), _headersParsed(false) {}
+	: _statusCode(200), _statusMessage("OK"), _headersParsed(false),
+	  _hasStatusHeader(false) {}
 
 CgiResponseParser::~CgiResponseParser() {}
 
@@ -12,6 +13,7 @@ bool CgiResponseParser::headersFound() const { return _headersParsed; }
 
 void CgiResponseParser::parse(const std::string &rawResponse) {
 	_headersParsed = false;
+	_hasStatusHeader = false;
 	std::string::size_type headerEndPos = rawResponse.find("\r\n\r\n");
 	size_t headerEndLen = 4;
 
@@ -48,6 +50,10 @@ void CgiResponseParser::setResponse(HttpResponse &httpResponse) {
 		httpResponse.setHeader(it->first, it->second);
 	}
 }
+
+int CgiResponseParser::getStatusCode() const { return _statusCode; }
+
+bool CgiResponseParser::hasStatusHeader() const { return _hasStatusHeader; }
 
 void CgiResponseParser::_parseHeaders(const std::string &headerBlock) {
 	std::istringstream iss(headerBlock);
@@ -95,6 +101,7 @@ void CgiResponseParser::_parseHeaders(const std::string &headerBlock) {
 		std::string lowerKey = key;
 		StringOps::toLower(lowerKey);
 		if (lowerKey == "status") {
+			_hasStatusHeader = true;
 			std::istringstream statusIss(value);
 			statusIss >> _statusCode;
 

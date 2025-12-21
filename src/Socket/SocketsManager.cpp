@@ -1,5 +1,6 @@
 #include "SocketsManager.hpp"
 #include "../Config/Config.hpp"
+#include <cerrno>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -40,12 +41,18 @@ void SocketsManager::unregisterSocket(const int fd) const {
 }
 
 int SocketsManager::wait(const int timeout) {
-	const int eventSize =
-		epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
-	if (eventSize < 0) {
-		throw std::runtime_error("epoll_wait() failed");
+	int eventSize;
+	while (true) {
+		eventSize =
+			epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
+		if (eventSize < 0 && errno == EINTR) {
+			continue;
+		}
+		if (eventSize < 0) {
+			throw std::runtime_error("epoll_wait() failed");
+		}
+		return eventSize;
 	}
-	return eventSize;
 }
 
 epoll_event *SocketsManager::getEvents() { return _events.data(); }
