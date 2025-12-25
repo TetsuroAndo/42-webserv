@@ -72,6 +72,17 @@ def test_post_no_ex_dir(managed_server):
     upload_dir = Path("test/www_test/uploads")
     txt_files = list(upload_dir.glob("*.txt"))
     assert not txt_files, f"Unexpected .txt file(s) found: {[f.name for f in txt_files]}"
+@pytest.mark.config("valid/post_test.yaml")
+def test_not_allow_file_type(managed_server):
+    url = f"{managed_server['base_url']}/"
+    # 対応していないcontent typeの POST は 403 を期待
+    resp = requests.post(url, data=b"hello", headers={"Content-Type": "hoge/huga"})
+    assert resp.status_code == 403
+
+    # 念のため、アップロードディレクトリにファイルが作られていないことも確認
+    upload_dir = Path("test/www_test/uploads")
+    txt_files = list(upload_dir.glob("*.txt"))
+    assert not txt_files, f"Unexpected .txt file(s) found: {[f.name for f in txt_files]}"
 
 @pytest.mark.config("valid/post.yaml")
 def test_post_no_permission_directory(managed_server):

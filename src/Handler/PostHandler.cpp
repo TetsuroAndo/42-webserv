@@ -77,7 +77,7 @@ HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	// このサーバーで処理できないMimeType
 	if (expansion.empty()) {
 		LOG(INFO) << "PostHandler: This Content-Type is Not Supported";
-		res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+		res.setStatusCode(HttpStatus::FORBIDDEN);
 		return res;
 	}
 	std::string target_filename =
