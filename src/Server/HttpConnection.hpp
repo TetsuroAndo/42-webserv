@@ -7,7 +7,7 @@
 #include "HttpConnectionEventHandler.hpp"
 #include <string>
 
-class Client; // _clientはポインタのため前方宣言のまま
+class Client;
 class Server;
 
 /**
@@ -17,7 +17,6 @@ class Server;
  */
 class HttpConnection {
 public:
-	// コンストラクタのシグネチャを変更 (ポインタから参照へ)
 	HttpConnection(Client *client, PipelineContext &context,
 				   HttpConnectionEventHandler &eventHandler);
 	~HttpConnection();

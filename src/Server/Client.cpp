@@ -1,12 +1,15 @@
 #include "Client.hpp"
+#include "../Handler/ErrorHandler.hpp"
 #include "../Http/Builder/ResponseBuilder.hpp"
 #include "../Http/Core/HttpRequest.hpp"
 #include "../Http/Core/HttpResponse.hpp"
+#include "../Http/Core/HttpStatus.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
 #include "HttpConnection.hpp"
 #include "Server.hpp"
+
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -51,13 +54,19 @@ const HttpConnection &Client::getHttpConnection() const {
 
 void Client::onTimeout() {
 	LOG(INFO) << "Client timed out for fd: " << _fd;
+	_context.res.setStatusCode(HttpStatus::REQUEST_TIMEOUT);
+	ErrorHandler handler;
+	handler.handle(_context);
+	const std::string response = ResponseBuilder::build(_context.res);
+	getSocket().setSendBuffer(response);
+	getHttpConnection().handleWriteEvent();
 	_server.closeConnection(this->getFd());
 }
 
 void Client::handleReadEvent() { _httpConnection.handleReadEvent(); }
 void Client::handleWriteEvent() { _httpConnection.handleWriteEvent(); }
 void Client::updateTimeout() {
-	time_t timeoutSec = _httpConnection.calculateTimeout();
+	const time_t timeoutSec = _httpConnection.calculateTimeout();
 	_server.getTimeoutManager().add(this, timeoutSec);
 }
 
