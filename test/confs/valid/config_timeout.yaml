@@ -6,6 +6,7 @@ servers:
             port: 8080
 
       timeoutSec: 3
+      maxRequestBodySize: 6291456
       requestHeaderTimeoutSec: 2
       requestBodyTimeoutSec: 2
 
@@ -29,6 +30,7 @@ servers:
             path: /
             root: ./www/static
             index: index.html
+            uploadStore: ./test/test_www/uploads
             allowedMethods:
               - GET
               - POST

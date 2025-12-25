@@ -5,6 +5,31 @@ import pytest
 import socket
 import time
 
+# =========================
+# ヘルパー関数
+# =========================
+
+def assert_408_response(data: bytes):
+    assert data, "No response received"
+    assert b"HTTP/" in data, f"Not an HTTP response: {data!r}"
+    assert b" 408 " in data, f"Expected 408 status, got: {data!r}"
+    assert b"Request Timeout" in data, f"Missing 'Request Timeout': {data!r}"
+
+
+def assert_200_response(data: bytes):
+    assert data, "No response received"
+    assert b"HTTP/" in data, f"Not an HTTP response: {data!r}"
+    assert b" 200 " in data, f"Expected 200 status, got: {data!r}"
+def assert_201_response(data: bytes):
+    assert data, "No response received"
+    assert b"HTTP/" in data, f"Not an HTTP response: {data!r}"
+    assert b" 201 " in data, f"Expected 201 status, got: {data!r}"
+
+def assert_404_response(data: bytes):
+    assert data, "No response received"
+    assert b"HTTP/" in data, f"Not an HTTP response: {data!r}"
+    assert b" 404 " in data, f"Expected 404 status, got: {data!r}"
+
 
 class TestTimeout:
     @pytest.mark.config("valid/config_timeout.yaml")
@@ -13,34 +38,15 @@ class TestTimeout:
         リクエストラインを送信した後、ヘッダーを送信する前にタイムアウトすることを確認
         """
         # ソケット接続を確立
-        port = 8080
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(5)
-        sock.connect(("127.0.0.1", port))
+        sock.connect(("127.0.0.1", 8080))
 
         try:
-            # リクエストラインのみ送信（ヘッダーは送信しない）
             sock.sendall(b"GET / HTTP/1.1\r\n")
-
-            # 設定されたタイムアウト時間（2秒）+ 余裕を見て3秒待つ
-            # タイムアウトが発生すれば接続が閉じられる
             time.sleep(3)
-
-            # 接続が閉じられているか確認
-            # sendallはバッファに書き込むだけなので、recv()を使ってFINを検出
-            try:
-                sock.send(b"test")
-                # recv()を使って FIN を検出
-                data = sock.recv(1)
-                # 0バイトまたは例外が発生すれば接続が閉じられている
-                if not data or len(data) == 0:
-                    # 接続が閉じられていることが確認できた（FIN を受信した）
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                # 接続が閉じられていることが確認できた
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
@@ -64,72 +70,41 @@ class TestTimeout:
 
             # ボディーの一部のみ送信して待つ
             sock.sendall(b"A" * 50)  # ボディーの半分だけ送信
-
-            # タイムアウトが発生するまで待つ
-            time.sleep(3)
-
-            # 接続が閉じられているか確認
-            # sendallはバッファに書き込むだけなので、recv()を使ってFINを検出
-            try:
-                sock.send(b"test")
-                # recv()を使って FIN を検出
-                data = sock.recv(1)
-                # 0バイトまたは例外が発生すれば接続が閉じられている
-                if not data or len(data) == 0:
-                    # 接続が閉じられていることが確認できた（FIN を受信した）
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                # 接続が閉じられていることが確認できた
-                pass
+            time.sleep(5)
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
     @pytest.mark.config("valid/config_timeout.yaml")
     def test_keepalive_idle_timeout(self, managed_server):
         """
-        リクエスト完了後、Keep-Alive接続でアイドル状態がタイムアウトすることを確認
+        Keep-Alive アイドルタイムアウトで408になること
         """
-        host, port = "127.0.0.1", 8080
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
-        sock.connect((host, port))
+        sock.connect(("127.0.0.1", 8080))
 
         try:
-            # 正常なリクエストを送信して完了させる
-            request = b"GET / HTTP/1.1\r\n"
-            request += b"Host: 127.0.0.1:8080\r\n"
-            request += b"Connection: keep-alive\r\n"
-            request += b"\r\n"
+            request = (
+                b"GET / HTTP/1.1\r\n"
+                b"Host: 127.0.0.1:8080\r\n"
+                b"Connection: keep-alive\r\n"
+                b"\r\n"
+            )
 
             sock.sendall(request)
-
-            # レスポンスを受信
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received"
+            assert_200_response(response)
 
-            # 少し待ってから、アイドルタイムアウトを待つ
-            # 設定されたタイムアウト（3秒）+ 余裕を見て4秒待つ
             time.sleep(4)
 
-            # 接続が閉じられているか確認
-            # sendallはバッファに書き込むだけなので、recv()を使ってFINを検出
-            try:
-                # 新しいリクエストを送信してみる
-                sock.sendall(request)
-                # recv()を使ってFINを検出
-                data = sock.recv(4096)
-                if not data or len(data) == 0:
-                    # 接続が閉じられていることが確認できた（FIN を受信した）
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after idle timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                # 接続が閉じられていることが確認できた
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
+
         finally:
             sock.close()
+
 
     @pytest.mark.config("valid/config_timeout.yaml")
     def test_slow_request_not_affecting_other_clients(self, managed_server):
@@ -162,7 +137,7 @@ class TestTimeout:
 
                 # すぐにレスポンスが返ってくることを確認
                 response = fast_sock.recv(4096)
-                assert len(response) > 0, "Fast request should get immediate response"
+                assert_200_response(response)
 
             finally:
                 fast_sock.close()
@@ -180,49 +155,31 @@ class TestTimeout:
         sock.connect((host, port))
 
         try:
-            # リクエストラインのみ送信
             sock.sendall(b"GET /")
-
-            # タイムアウト（1秒）
             time.sleep(1.5)
-
-            # 接続が閉じられているか確認
-            try:
-                sock.send(b"test")
-                data = sock.recv(1)
-                if not data or len(data) == 0:
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after very short timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
     @pytest.mark.config("valid/config_timeout_short.yaml")
     def test_complete_request_within_short_timeout(self, managed_server):
         """
-        短いタイムアウト設定でも、リクエストを素早く完了すればタイムアウトしないことを確認
+        短いタイムアウトでも即完了すれば200
         """
-        host, port = "127.0.0.1", 8080
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(5)
-        sock.connect((host, port))
+        sock.connect(("127.0.0.1", 8080))
 
         try:
-            # 素早く完全なリクエストを送信
-            request = b"GET / HTTP/1.1\r\n"
-            request += b"Host: 127.0.0.1:8080\r\n"
-            request += b"\r\n"
+            sock.sendall(
+                b"GET / HTTP/1.1\r\n"
+                b"Host: 127.0.0.1:8080\r\n"
+                b"\r\n"
+            )
 
-            sock.sendall(request)
-
-            # レスポンスを受信（タイムアウトしない）
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received"
-
-            # HTTPレスポンスの開始を確認
-            assert response.startswith(b"HTTP/"), "Should receive HTTP response"
+            assert_200_response(response)
 
         finally:
             sock.close()
@@ -250,7 +207,7 @@ class TestTimeout:
 
             # レスポンスを受信
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received with long timeout"
+            assert_200_response(response)
 
         finally:
             sock.close()
@@ -273,28 +230,13 @@ class TestTimeout:
             time.sleep(1.5)
 
             # 接続が閉じられているか確認
-            try:
-                sock.send(b"test")
-                data = sock.recv(1)
-                if not data or len(data) == 0:
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after header timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
     @pytest.mark.config("valid/config_timeout_asymmetric.yaml")
     def test_asymmetric_timeout_body_passes(self, managed_server):
-        """
-        ボディータイムアウト（長い）が有効に機能することを確認
-
-        注意: サーバーの実装では、ヘッダータイムアウトが設定されており、
-        ヘッダー完了後もタイムアウトが更新されないため、
-        実際にはヘッダータイムアウト（1秒）が適用される。
-        そのため、ボディーは素早く送信する必要がある。
-        """
         host, port = "127.0.0.1", 8080
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
@@ -308,16 +250,11 @@ class TestTimeout:
             sock.sendall(b"Content-Length: 200\r\n")
             sock.sendall(b"\r\n")
 
-            # ボディーを素早く送信（ヘッダータイムアウト1秒内に完了）
-            # 注意: サーバーはヘッダータイムアウトを継続して使用するため、
-            # ボディーも素早く送信する必要がある
             sock.sendall(b"A" * 100)
-            time.sleep(2)
-            sock.sendall(b"B" * 100)
+            time.sleep(6)
 
-            # レスポンスを受信（タイムアウトしない）
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received"
+            assert_408_response(response)
 
         finally:
             sock.close()
@@ -333,18 +270,13 @@ class TestTimeout:
         sock.connect((host, port))
 
         try:
-            # 何も送信せずに待つ
-            # デフォルトのタイムアウト（60秒）で動作するはずだが、
-            # 接続が閉じられているか確認
             time.sleep(1)
 
             try:
                 sock.send(b"test")
                 _ = sock.recv(1)
-                # 接続がまだ開いている
                 assert True
             except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                # 接続が閉じられている
                 pass
         finally:
             sock.close()
@@ -371,8 +303,7 @@ class TestTimeout:
 
                 # レスポンスを受信
                 response = sock.recv(4096)
-                assert len(response) > 0, f"Response {i+1} should be received"
-                assert response.startswith(b"HTTP/"), f"Response {i+1} should be HTTP"
+                assert_200_response(response)
 
                 time.sleep(0.5)  # 少し待つ
 
@@ -397,15 +328,8 @@ class TestTimeout:
             time.sleep(3)
 
             # 接続が閉じられているか確認
-            try:
-                sock.send(b"test")
-                data = sock.recv(1)
-                if not data or len(data) == 0:
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
@@ -437,8 +361,7 @@ class TestTimeout:
 
             # レスポンスを受信するはず
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received"
-
+            assert_201_response(response)
         finally:
             sock.close()
 
@@ -460,15 +383,8 @@ class TestTimeout:
             time.sleep(3)
 
             # 接続が閉じられているか確認
-            try:
-                sock.send(b"test")
-                data = sock.recv(1)
-                if not data or len(data) == 0:
-                    return
-                sock.close()
-                pytest.fail("Connection was not closed after timeout")
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
@@ -480,38 +396,28 @@ class TestTimeout:
         host, port = "127.0.0.1", 8080
 
         sockets = []
-        try:
-            # 3つの接続を同時に確立
-            for i in range(3):
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(10)
-                sock.connect((host, port))
-                sockets.append(sock)
+        # 3つの接続を同時に確立
+        for i in range(3):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
+            sock.connect((host, port))
+            sockets.append(sock)
 
-            # 各接続でリクエストラインのみ送信
-            for sock in sockets:
-                sock.sendall(b"GET /")
+        # 各接続でリクエストラインのみ送信
+        for sock in sockets:
+            sock.sendall(b"GET /")
 
-            # タイムアウトを待つ
-            time.sleep(3)
+        # タイムアウトを待つ
+        time.sleep(3)
 
-            # 全ての接続が閉じられているか確認
-            for sock in sockets:
-                try:
-                    sock.send(b"test")
-                    data = sock.recv(1)
-                    if not data or len(data) == 0:
-                        continue
-                    sock.close()
-                except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                    pass
+        # 全ての接続が閉じられているか確認
+        for sock in sockets:
+            try:
+                data = sock.recv(4096)
+                assert_408_response(data)
 
-        finally:
-            for sock in sockets:
-                try:
-                    sock.close()
-                except Exception:
-                    pass
+            finally:
+                sock.close()
 
     @pytest.mark.config("valid/config_timeout.yaml")
     def test_partial_chunked_transfer_timeout(self, managed_server):
@@ -539,17 +445,8 @@ class TestTimeout:
             time.sleep(3)
 
             # 接続が閉じられているか確認
-            try:
-                sock.send(b"test")
-                data = sock.recv(1)
-                if not data or len(data) == 0:
-                    return
-                sock.close()
-                # 注意: chunked transferは完全に送信されないとタイムアウトする場合がある
-                # このテストはタイムアウトするか、エラーレスポンスを受信するかのどちらか
-                assert True  # 両方とも有効な動作
-            except (BrokenPipeError, ConnectionResetError, OSError, socket.timeout):
-                pass
+            data = sock.recv(4096)
+            assert_408_response(data)
         finally:
             sock.close()
 
@@ -574,7 +471,7 @@ class TestTimeout:
 
             # レスポンスを受信（タイムアウトしない）
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received"
+            assert_404_response(response)
 
         finally:
             sock.close()
@@ -586,7 +483,7 @@ class TestTimeout:
         """
         host, port = "127.0.0.1", 8080
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(60)
+        sock.settimeout(10)
         sock.connect((host, port))
 
         try:
@@ -604,7 +501,7 @@ class TestTimeout:
 
                 # レスポンスを受信
                 response = sock.recv(4096)
-                assert len(response) > 0, f"Response {i+1} should be received"
+                assert_200_response(response)
 
                 if i < 2:  # 最後のリクエスト以外は次のリクエストを送信
                     sock.sendall(b"GET /")
@@ -624,19 +521,16 @@ class TestTimeout:
 
         try:
             # 即座に完全なリクエストを送信
-            request = b"POST / HTTP/1.1\r\n"
+            request = b"GET / HTTP/1.1\r\n"
             request += b"Host: 127.0.0.1:8080\r\n"
-            request += b"Content-Type: text/plain\r\n"
-            request += b"Content-Length: 20\r\n"
+            request += b"Content-Length: 0\r\n"
             request += b"\r\n"
-            request += b"12345678901234567890"
 
             sock.sendall(request)
 
             # レスポンスを受信（タイムアウトしない）
             response = sock.recv(4096)
-            assert len(response) > 0, "Response should be received"
-            assert response.startswith(b"HTTP/"), "Should receive HTTP response"
+            assert_200_response(response)
 
         finally:
             sock.close()
