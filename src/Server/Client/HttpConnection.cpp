@@ -1,8 +1,8 @@
 #include "HttpConnection.hpp"
-#include "../Http/Builder/ResponseBuilder.hpp"
-#include "../Lib/Logger/Log.hpp"
+#include "../../Http/Builder/ResponseBuilder.hpp"
+#include "../../Lib/Logger/Log.hpp"
+#include "../Server.hpp"
 #include "Client.hpp"
-#include "Server.hpp"
 #include <cerrno>
 #include <cstring>
 #include <sys/epoll.h>

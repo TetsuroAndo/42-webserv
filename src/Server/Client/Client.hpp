@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Config/Config.hpp"
-#include "../Lib/Timeout/ITimeoutable.hpp"
-#include "../Middleware/Core/PipelineContext.hpp"
-#include "../Socket/Socket.hpp"
+#include "../../Config/Config.hpp"
+#include "../../Lib/Timeout/ITimeoutable.hpp"
+#include "../../Middleware/Core/PipelineContext.hpp"
+#include "../../Socket/Socket.hpp"
 #include "HttpConnection.hpp"
 #include "HttpConnectionEventHandler.hpp"
 #include <netinet/in.h>
@@ -36,6 +36,7 @@ public:
 	virtual void onTimeout();
 
 	// Serverから委譲されるイベント
+	// TODO: ここをEventで一本化する
 	void handleReadEvent();
 	void handleWriteEvent();
 	void updateTimeout();

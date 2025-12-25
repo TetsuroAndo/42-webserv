@@ -1,14 +1,14 @@
 #include "Client.hpp"
-#include "../Handler/ErrorHandler.hpp"
-#include "../Http/Builder/ResponseBuilder.hpp"
-#include "../Http/Core/HttpRequest.hpp"
-#include "../Http/Core/HttpResponse.hpp"
-#include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Logger/Log.hpp"
-#include "../Lib/StringOps/StringOps.hpp"
-#include "../Middleware/Core/PipelineContext.hpp"
+#include "../../Handler/ErrorHandler.hpp"
+#include "../../Http/Builder/ResponseBuilder.hpp"
+#include "../../Http/Core/HttpRequest.hpp"
+#include "../../Http/Core/HttpResponse.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
+#include "../../Lib/Logger/Log.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
+#include "../../Middleware/Core/PipelineContext.hpp"
+#include "../Server.hpp"
 #include "HttpConnection.hpp"
-#include "Server.hpp"
 
 #include <arpa/inet.h>
 #include <cerrno>
@@ -30,6 +30,7 @@ Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = StringOps::ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
+	// TODO: ここでEventを設定する。
 }
 // clang-format on
 

@@ -8,7 +8,7 @@
 #include "../Socket/FdEventChanges.hpp"
 #include "../Socket/Socket.hpp"
 #include "../Socket/SocketsManager.hpp"
-#include "Client.hpp"
+#include "Client/Client.hpp"
 #include <map>
 
 class Server {

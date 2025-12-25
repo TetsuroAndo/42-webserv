@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Config/Config.hpp"
-#include "../Http/Parser/RequestParser.hpp"
-#include "../Middleware/Core/PipelineContext.hpp" // &で持つため完全な定義が必要
-#include "../Socket/Socket.hpp"
+#include "../../Config/Config.hpp"
+#include "../../Http/Parser/RequestParser.hpp"
+#include "../../Middleware/Core/PipelineContext.hpp"
+#include "../../Socket/Socket.hpp"
 #include "HttpConnectionEventHandler.hpp"
 #include <string>
 
@@ -23,8 +23,8 @@ public:
 
 	// HTTP接続の処理
 	void processRequest();
-	void handleReadEvent();
-	void handleWriteEvent();
+	void handleReadEvent();	 // TODO: AEventを継承した新クラスと統合する
+	void handleWriteEvent(); // TODO: AEventを継承した新クラスと統合する
 
 	// パーサー状態に基づくタイムアウト計算
 	time_t calculateTimeout() const;

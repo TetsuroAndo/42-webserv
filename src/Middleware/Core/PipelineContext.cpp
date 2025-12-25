@@ -1,5 +1,5 @@
 #include "PipelineContext.hpp"
-#include "../../Server/Client.hpp"
+#include "../../Server/Client/Client.hpp"
 
 PipelineContext::PipelineContext(const Config &c, Client &client,
 								 CgiManager &serverCgiManager)

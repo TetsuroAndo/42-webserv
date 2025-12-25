@@ -1,6 +1,6 @@
 #include "CgiWorker.hpp"
 #include "../Lib/Logger/Log.hpp"
-#include "../Server/Client.hpp"
+#include "../Server/Client/Client.hpp"
 #include "CgiEnvBuilder.hpp"
 #include "CgiManager.hpp"
 #include <algorithm>
@@ -13,20 +13,20 @@
 #include <vector>
 
 namespace {
-    void blockForeverNoCpu() {
-        while (1) {
-            select(0, NULL, NULL, NULL, NULL);
-        }
-    }
-
-	void notifyErrorToParentAndStop(int statusWriteFd, int err) {
-        ssize_t ret = write(statusWriteFd, &err, sizeof(err));
-        if (ret < 0) {
-            LOG(ERROR) << "write failed: " << strerror(errno);
-        }
-        blockForeverNoCpu();
-    }
+void blockForeverNoCpu() {
+	while (1) {
+		select(0, NULL, NULL, NULL, NULL);
+	}
 }
+
+void notifyErrorToParentAndStop(int statusWriteFd, int err) {
+	ssize_t ret = write(statusWriteFd, &err, sizeof(err));
+	if (ret < 0) {
+		LOG(ERROR) << "write failed: " << strerror(errno);
+	}
+	blockForeverNoCpu();
+}
+} // namespace
 
 CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 					 const std::string &interpreterPath, CgiManager *manager)
@@ -71,7 +71,8 @@ CgiWorker::~CgiWorker() {
 }
 
 void CgiWorker::execute() {
-	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0 || pipe(_pipeStatus) < 0) {
+	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0 ||
+		pipe(_pipeStatus) < 0) {
 		_state = CGI_ERROR;
 		_outputComplete = true;
 		_exitStatusSet = true;
@@ -128,10 +129,9 @@ void CgiWorker::execute() {
 	_closePipe(_pipeStatus[0]);
 
 	if (n > 0) {
-		LOG(ERROR) << "CGI child failed"
-				<< attr("pid", _pid)
-				<< attr("errno", childErr)
-				<< attr("msg", strerror(childErr));
+		LOG(ERROR) << "CGI child failed" << attr("pid", _pid)
+				   << attr("errno", childErr)
+				   << attr("msg", strerror(childErr));
 
 		_state = CGI_ERROR;
 		kill(_pid, SIGKILL);

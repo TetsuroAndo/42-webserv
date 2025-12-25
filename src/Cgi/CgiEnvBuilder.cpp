@@ -4,7 +4,7 @@
 #include "../Lib/Base64/Base64.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Lib/StringOps/StringOps.hpp"
-#include "../Server/Client.hpp"
+#include "../Server/Client/Client.hpp"
 #include <algorithm>
 #include <map>
 
