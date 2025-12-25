@@ -87,13 +87,7 @@ def test_post_content_length_mismatch_no_body(managed_server):
         )
 
         output = result.stderr + result.stdout
-        status_match = re.search(r'HTTP/1\.\d+\s+(\d+)', output)
-
-        if status_match is not None:
-            status_code = int(status_match.group(1))
-            pytest.fail(
-                f"Expected timeout, but got {status_code}. Output:\n{output}"
-            )
+        assert "408" in output, f"Expected 408 Bad Request, but got {output}."
 
     except subprocess.TimeoutExpired:
         # タイムアウトで接続を閉じることは許容される動作
@@ -136,13 +130,6 @@ def test_post_content_length_mismatch_too_small(managed_server):
         output = result.stderr + result.stdout
         status_match = re.search(r'HTTP/1\.\d+\s+(\d+)', output)
 
-        if status_match is not None:
-            status_code = int(status_match.group(1))
-            pytest.fail(
-                f"Expected timeout, but got {status_code}. Output:\n{output}"
-            )
+        assert "408" in output, f"Expected 408 Bad Request, but got {output}."
     except subprocess.TimeoutExpired:
-        # タイムアウトで接続を閉じることは許容される動作
-        # サーバーがContent-Lengthで指定されたバイト数を待ち続けてタイムアウトし、
-        # 接続を閉じた場合は正常な動作として扱う
-        pass
+        assert False, f"Expected timeout, but got {status_code}. Output:\n{output}"
