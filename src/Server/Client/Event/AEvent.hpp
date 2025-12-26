@@ -14,7 +14,7 @@ public:
 
 	virtual void handle() = 0;
 
-private:
+protected:
 	Client &_client;
 	PipelineContext &_context;
 	HttpConnection &_httpConnection;

@@ -3,7 +3,8 @@
 
 class ReadEvent : public AEvent {
 public:
-	ReadEvent();
+	ReadEvent(Client *client, PipelineContext &context,
+			  HttpConnection &httpConnection);
 	~ReadEvent();
 
 	void handle();

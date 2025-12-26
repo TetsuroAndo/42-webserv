@@ -3,7 +3,8 @@
 
 class WriteEvent : public AEvent {
 public:
-	WriteEvent();
+	WriteEvent(Client *client, PipelineContext &context,
+			   HttpConnection &httpConnection);
 	~WriteEvent();
 
 	void handle();

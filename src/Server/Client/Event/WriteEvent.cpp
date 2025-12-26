@@ -1,7 +1,9 @@
 #include "WriteEvent.hpp"
 
-WriteEvent::WriteEvent() {}
+WriteEvent::WriteEvent(Client *client, PipelineContext &context,
+					   HttpConnection &httpConnection)
+	: AEvent(client, context, httpConnection) {}
 
 WriteEvent::~WriteEvent() {}
 
-void WriteEvent::handle() {}
+void WriteEvent::handle() { _httpConnection.handleWriteEvent(); }
