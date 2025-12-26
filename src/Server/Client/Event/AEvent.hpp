@@ -3,7 +3,7 @@
 
 /**
  * @class AEvent
- * @brief
+ * @brief イベント処理
  * epollのもつfdで管理される、Clientが発火するべきイベントを抽象的に利用するためのクラス
  */
 class AEvent {
