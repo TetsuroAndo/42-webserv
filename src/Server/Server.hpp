@@ -9,6 +9,8 @@
 #include "../Socket/Socket.hpp"
 #include "../Socket/SocketsManager.hpp"
 #include "Client/Client.hpp"
+#include "Client/EventManager.hpp"
+
 #include <map>
 
 class Server {
@@ -40,6 +42,7 @@ private:
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
 	MiddlewareProcessor _mainProcessor;
+	EventManager _eventManager;
 
 	void setupListenSockets();
 	void setupSignalPipe();

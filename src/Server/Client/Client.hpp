@@ -4,16 +4,19 @@
 #include "../../Lib/Timeout/ITimeoutable.hpp"
 #include "../../Middleware/Core/PipelineContext.hpp"
 #include "../../Socket/Socket.hpp"
+#include "EventManager.hpp"
 #include "HttpConnection.hpp"
 #include "HttpConnectionEventHandler.hpp"
 #include <netinet/in.h>
 #include <string>
 
-class Server; // Serverは参照で持つため前方宣言のままでOK
+class Server;
+class EventManager;
 
 class Client : public ITimeoutable, public HttpConnectionEventHandler {
 public:
-	Client(int fd, const sockaddr_in &addr, int listenPort, Server &server);
+	Client(int fd, const sockaddr_in &addr, int listenPort, Server &server,
+		   EventManager &eventManager);
 	~Client();
 
 	/// @brief Serverへのアクセス（HttpConnectionから使用を想定）
@@ -56,6 +59,7 @@ private:
 	Socket _socket;
 	PipelineContext _context;
 	HttpConnection _httpConnection;
+	EventManager &_eventManager;
 
 	Client(const Client &);
 	Client &operator=(const Client &);
