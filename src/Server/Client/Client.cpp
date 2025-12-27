@@ -63,7 +63,7 @@ void Client::onTimeout() {
 	const std::string response = ResponseBuilder::build(_context.res);
 	getSocket().setSendBuffer(response);
 	getHttpConnection().handleWriteEvent();
-	_eventManager.removeEvents(this->getFd());
+	_eventManager.removeFd(this->getFd());
 }
 
 void Client::handleReadEvent() { _httpConnection.handleReadEvent(); }

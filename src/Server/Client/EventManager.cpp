@@ -30,7 +30,7 @@ void EventManager::handle(const int fd, const unsigned int events) {
 	}
 	if (events & EPOLLERR || events & EPOLLHUP) {
 		LOG(WARNING) << "EPOLLERR or EPOLLHUP for client fd: " << fd;
-		removeEvents(fd);
+		removeFd(fd);
 		return;
 	}
 	for (std::vector< AEvent * >::const_reverse_iterator it =
@@ -59,7 +59,7 @@ void EventManager::addEvent(const int fd, AEvent *event) {
 	_eventsTable[fd].push_back(event);
 }
 
-void EventManager::removeEvents(const int fd) {
+void EventManager::removeFd(const int fd) {
 	if (_eventsTable.count(fd) <= 0) {
 		LOG(WARNING) << "called on non-existing fd " << fd;
 		return;
@@ -77,4 +77,17 @@ void EventManager::removeEvents(const int fd) {
 	}
 	_clientTable[fd]->getServer().closeConnection(fd);
 	_clientTable.erase(fd);
+}
+
+void EventManager::clearEvents(const int fd) {
+	if (_eventsTable.count(fd) <= 0) {
+		LOG(WARNING) << "called on non-existing fd " << fd;
+		return;
+	}
+	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
+		 it != _eventsTable[fd].end(); ++it) {
+		(*it)->close();
+		delete (*it);
+	}
+	_eventsTable.erase(fd);
 }

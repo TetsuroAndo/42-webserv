@@ -14,7 +14,8 @@ public:
 	void initFd(Client &client);
 	void handle(int fd, unsigned int events);
 	void addEvent(int fd, AEvent *event);
-	void removeEvents(int fd);
+	void removeFd(int fd);
+	void clearEvents(int fd);
 
 private:
 	std::map< int, std::vector< AEvent * > > _eventsTable;
