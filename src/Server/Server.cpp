@@ -244,14 +244,6 @@ void Server::run() {
 					if (!_clients[fd]->getSocket().getSendBuffer().empty()) {
 						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
 					}
-				} else {
-					// if (eventTypes & EPOLLIN) {
-					// 	_clients[fd]->handleReadEvent();
-					// }
-					// //タイムアウトでクライアントが削除された可能性があるため再度チェック
-					// if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
-					// 	_clients[fd]->handleWriteEvent();
-					// }
 				}
 			}
 		}
