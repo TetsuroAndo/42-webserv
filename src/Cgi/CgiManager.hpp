@@ -29,7 +29,7 @@ public:
 	 * @param fd イベントが発生したファイルディスクリプタ
 	 * @param event_type イベントのタイプ (EPOLLIN or EPOLLOUT)
 	 */
-	void handleEvent(int fd, uint32_t event_type);
+	void handleEvent(int fd, uint32_t event_type); // TODO: AEventにする
 	/**
 	 * @brief 完了またはタイムアウトしたWorkerをクリーンアップする
 	 */

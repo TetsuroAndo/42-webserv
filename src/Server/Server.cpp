@@ -3,6 +3,8 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
+#include "Client/Events/ReadEvent.hpp"
+#include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
 #include <cerrno>
 #include <cstring>
@@ -27,15 +29,15 @@ void sigchldHandler(int) {
 }
 
 void makeClientIp(char *clientIp, size_t size, const unsigned char bytes[4]) {
-    std::ostringstream oss;
-    oss << static_cast<unsigned int>(bytes[0]) << "."
-        << static_cast<unsigned int>(bytes[1]) << "."
-        << static_cast<unsigned int>(bytes[2]) << "."
-        << static_cast<unsigned int>(bytes[3]);
+	std::ostringstream oss;
+	oss << static_cast< unsigned int >(bytes[0]) << "."
+		<< static_cast< unsigned int >(bytes[1]) << "."
+		<< static_cast< unsigned int >(bytes[2]) << "."
+		<< static_cast< unsigned int >(bytes[3]);
 
-    std::string tmp = oss.str();
-    std::strncpy(clientIp, tmp.c_str(), size);
-    clientIp[size - 1] = '\0';
+	std::string tmp = oss.str();
+	std::strncpy(clientIp, tmp.c_str(), size);
+	clientIp[size - 1] = '\0';
 }
 } // namespace
 
@@ -224,12 +226,8 @@ void Server::run() {
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
 			} else if (_clients.count(fd)) {
-				if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
-					LOG(WARNING)
-						<< "EPOLLERR or EPOLLHUP for client fd: " << fd;
-					closeConnection(fd);
-					continue;
-				}
+				_eventManager.handle(fd, eventTypes);
+
 				HttpResponse cgiRes(_config);
 				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
 					AccessLogger::getInstance().log(
@@ -247,13 +245,13 @@ void Server::run() {
 						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
 					}
 				} else {
-					if (eventTypes & EPOLLIN) {
-						_clients[fd]->handleReadEvent();
-					}
-					// タイムアウトでクライアントが削除された可能性があるため再度チェック
-					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
-						_clients[fd]->handleWriteEvent();
-					}
+					// if (eventTypes & EPOLLIN) {
+					// 	_clients[fd]->handleReadEvent();
+					// }
+					// //タイムアウトでクライアントが削除された可能性があるため再度チェック
+					// if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
+					// 	_clients[fd]->handleWriteEvent();
+					// }
 				}
 			}
 		}
@@ -395,9 +393,13 @@ void Server::handleNewConnection(const int listenFd) {
 			return;
 		}
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
-		Client *client = new Client(clientFd, clientAddr, listenPort, *this);
+		Client *client =
+			new Client(clientFd, clientAddr, listenPort, *this, _eventManager);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
+		_eventManager.initFd(*client);
+		_eventManager.addEvent(clientFd, new ReadEvent(client));
+		_eventManager.addEvent(clientFd, new WriteEvent(client));
 		// 最初はヘッダ受信待ちのタイムアウトを設定
 		client->updateTimeout();
 	} catch (const std::bad_alloc &e) {
