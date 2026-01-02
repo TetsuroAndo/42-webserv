@@ -461,17 +461,9 @@ FdEventChange CgiManager::popRemoveChange() {
 	return change;
 }
 
-FdEventChange CgiManager::popNotifyChange() {
-	const FdEventChange change = _notify.front();
-	_notify.pop();
-	return change;
-}
-
 size_t CgiManager::sizeAddEvent() const { return _add.size(); }
 
 size_t CgiManager::sizeRemoveEvent() const { return _remove.size(); }
-
-size_t CgiManager::sizeNotifyEvent() const { return _notify.size(); }
 
 int CgiManager::popCompletedClientFd() {
 	const int cfd = _completedClients.front();

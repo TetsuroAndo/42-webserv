@@ -85,8 +85,7 @@ const Config &Server::getConfig() const { return _config; }
 
 void Server::applyCgiChanges() {
 	FdEventChange event;
-	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent() ||
-		   _cgiManager.sizeNotifyEvent()) {
+	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent()) {
 		try {
 			while (_cgiManager.sizeAddEvent()) {
 				event = _cgiManager.popAddChange();
@@ -96,11 +95,6 @@ void Server::applyCgiChanges() {
 			while (_cgiManager.sizeRemoveEvent()) {
 				event = _cgiManager.popRemoveChange();
 				_socketsManager.unregisterSocket(event.fd);
-			}
-			while (_cgiManager.sizeNotifyEvent()) {
-				event = _cgiManager.popNotifyChange();
-				_socketsManager.modifySocket(
-					event.fd, static_cast< uint32_t >(event.eventType));
 			}
 		} catch (const std::runtime_error &e) {
 			LOG(ERROR) << "applyCgiChanges: socket operation failed"
