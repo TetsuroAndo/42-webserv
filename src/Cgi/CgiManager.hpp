@@ -30,10 +30,6 @@ public:
 	 * @param event_type イベントのタイプ (EPOLLIN or EPOLLOUT)
 	 */
 	void handleEvent(int fd, uint32_t event_type); // TODO: AEventにする
-	/**
-	 * @brief 完了またはタイムアウトしたWorkerをクリーンアップする
-	 */
-	void cleanupWorkers();
 
 	/**
 	 * @brief タイムアウトしたWorkerをクリーンアップする
@@ -79,12 +75,6 @@ public:
 	FdEventChange popRemoveChange();
 
 	/**
-	 * @brief _notifyから情報を一個取り出す
-	 * @return _notifyの一番先頭の要素
-	 */
-	FdEventChange popNotifyChange();
-
-	/**
 	 * @brief 残っているaddのFdEventChangesの数を返す
 	 * @return 残っているaddのFdEventChangesの数
 	 */
@@ -94,11 +84,6 @@ public:
 	 * @return 残っているdeleteのFdEventChangesの数
 	 */
 	size_t sizeRemoveEvent() const;
-	/**
-	 * @brief 残っているnotifyのFdEventChangesの数を返す
-	 * @return 残っているnotifyのFdEventChangesの数
-	 */
-	size_t sizeNotifyEvent() const;
 
 	/**
 	 * @brief 完了通知（クライアントFD）を一件取り出す
@@ -126,7 +111,6 @@ private:
 	// FdEventChangesを貯めるキュー
 	std::queue< FdEventChange > _add;
 	std::queue< FdEventChange > _remove;
-	std::queue< FdEventChange > _notify;
 
 	// 完了・エラー・タイムアウトしたCGIに紐づくクライアントFD通知キュー
 	std::queue< int > _completedClients;
