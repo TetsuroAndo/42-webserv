@@ -76,8 +76,11 @@ CgiWorker::~CgiWorker() {
 }
 
 void CgiWorker::execute() {
-	if (pipe(_pipeIn) < 0 || pipe(_pipeOut) < 0 || pipe(_pipeErr) < 0 ||
-		pipe(_pipeStatus) < 0 || pipe(_pipeComplete) < 0) {
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeIn) < 0 ||
+		socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeOut) < 0 ||
+		socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeErr) < 0 ||
+		socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeStatus) < 0 ||
+		socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeComplete) < 0) {
 		_state = CGI_ERROR;
 		_outputComplete = true;
 		_exitStatusSet = true;

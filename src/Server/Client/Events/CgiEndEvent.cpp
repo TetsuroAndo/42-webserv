@@ -6,7 +6,6 @@
 
 #include <cstring>
 #include <signal.h>
-#include <sys/wait.h>
 
 CgiEndEvent::CgiEndEvent(Client *client, CgiWorker &worker)
 	: AEvent(client, client->getContext(), client->getHttpConnection(),
@@ -52,7 +51,11 @@ void CgiEndEvent::process() {
 															 EPOLLOUT);
 	}
 	_client.getServer().getSocketsManager().unregisterSocket(_fd);
+
+	// handleで終了処理みたいなことをやっている都合、ここで閉じる
 	::close(_fd);
+	EventManager &eventManager = _client.getEventManager();
+	eventManager.forgetFd(_fd);
 }
 
 void CgiEndEvent::close() {}

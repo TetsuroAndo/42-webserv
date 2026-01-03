@@ -347,6 +347,9 @@ void Server::closeConnection(const int clientFd) {
 	_cgiManager.abortClient(clientFd);
 	_socketsManager.unregisterSocket(clientFd);
 
+	// unregisterSocketをしたことで、終了通知が行かなくなるので、ここでクリアしておく
+	_eventManager.forgetFd(clientFd);
+
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {
 		LOG(INFO) << "Closing connection"

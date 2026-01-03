@@ -15,9 +15,9 @@ public:
 	void initFd(int fd);
 	void handle(int fd, unsigned int events);
 	void addEvent(int fd, AEvent *event);
-	bool checkCanRemoveFd(int fd, unsigned int events);
 	void removeFd(int fd);
 	void clearEvents(int fd);
+	void forgetFd(int fd);
 
 private:
 	std::map< int, std::vector< AEvent * > > _eventsTable;

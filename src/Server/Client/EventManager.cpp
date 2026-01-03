@@ -32,22 +32,25 @@ void EventManager::handle(const int fd, const unsigned int events) {
 	}
 	unsigned int effective = events;
 	if (events & EPOLLHUP) {
-		effective |= EPOLLIN;
+		char buf[8];
+		// MSG_PEEKを利用して、データがソケットに届いているかを確認
+		const ssize_t recv_res = recv(fd, buf, 1, MSG_PEEK);
+		if (0 < recv_res)
+			effective |= EPOLLIN;
+	} else if (events & EPOLLERR || events & EPOLLHUP) {
+		LOG(WARNING) << "EPOLLERR or EPOLLHUP for client fd: " << fd;
+		removeFd(fd);
 	}
 	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
 		 it != _eventsTable[fd].end(); ++it) {
 		if ((*it) == NULL) {
 			continue;
 		}
-		if ((*it)->isExpectedEventType(events) == false) {
+		if ((*it)->isExpectedEventType(effective) == false) {
 			continue;
 		}
 		(*it)->handle();
 		return;
-	}
-	if (events & EPOLLERR || events & EPOLLHUP) {
-		LOG(WARNING) << "EPOLLERR or EPOLLHUP for client fd: " << fd;
-		removeFd(fd);
 	}
 }
 
@@ -89,4 +92,11 @@ void EventManager::clearEvents(const int fd) {
 		delete (*it);
 	}
 	_eventsTable.erase(fd);
+}
+
+void EventManager::forgetFd(const int fd) {
+	if (_eventsTable.count(fd) > 0) {
+		clearEvents(fd);
+	}
+	_clientTable.erase(fd);
 }
