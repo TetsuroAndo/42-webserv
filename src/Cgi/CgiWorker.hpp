@@ -47,6 +47,15 @@ public:
 	/// @brief 標準エラー出力読み込み用パイプのFDを取得する
 	int getErrFd() const;
 
+	/// @brief CGI起動ステータス読み込み用パイプのFDを取得する
+	int getStatusFd() const;
+
+	/// @brief CGIが完了したイベントを受け取るためのFDを取得する
+	int getCompletionFdOut() const;
+
+	/// @brief CGIが完了したイベントを発火するためのFDを取得する
+	int getCompletionFdIn() const;
+
 	/// @brief 子プロセスのPIDを取得する
 	pid_t getPid() const;
 
@@ -86,6 +95,15 @@ public:
 	/// @brief 終了ステータスが設定されたかを判定する
 	bool isExitStatusSet() const;
 
+	/// @brief 紐ずくCgiManagerを取得する
+	CgiManager *getManager() const;
+
+	/// @brief 通知済みかを取得する
+	bool isCompletionNotified() const;
+
+	/// @brief 通知済みにする
+	void setCompletionNotified();
+
 private:
 	PipelineContext &_ctx;
 	CgiManager *_manager;
@@ -95,10 +113,12 @@ private:
 	int _exitStatus;
 	bool _exitStatusSet;
 	bool _outputComplete;
+	bool _completionNotified;
 	int _pipeIn[2];
 	int _pipeOut[2];
 	int _pipeErr[2];
 	int _pipeStatus[2];
+	int _pipeComplete[2];
 	std::string _requestBody;
 	size_t _bytesSent;
 	std::string _scriptPath;
@@ -114,7 +134,6 @@ private:
 					   const std::string &interpreterPath,
 					   const std::vector< std::string > &envpStrs) const;
 	static void _closePipe(int &fd);
-	void _updateLastActivityTime();
 
 	CgiWorker(const CgiWorker &);
 	CgiWorker &operator=(const CgiWorker &);

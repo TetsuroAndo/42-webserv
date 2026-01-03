@@ -35,11 +35,11 @@ public:
 	HttpConnection &getHttpConnection();
 	const HttpConnection &getHttpConnection() const;
 
+	EventManager &getEventManager() const;
+
 	/// @brief Timeout処理
 	virtual void onTimeout();
 
-	// Serverから委譲されるイベント
-	// TODO: ここをEventで一本化する
 	void handleReadEvent();
 	void handleWriteEvent();
 	void updateTimeout();

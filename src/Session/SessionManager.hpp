@@ -12,7 +12,7 @@ public:
 	Session *createSession();
 	Session *getSession(const std::string &sessionId);
 	bool destroySession(const std::string &sessionId);
-	void cleanupIfNeeded();
+	void cleanup();
 	void setTimeoutSec(time_t timeoutSec);
 
 private:

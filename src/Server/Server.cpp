@@ -189,9 +189,9 @@ void Server::run() {
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
-		// wait()から戻ったら、まず終了したCGIプロセスを回収する
+		// 終了したpidを拾う
 		_cgiManager.cleanupFinishedWorkers();
-		// タイムアウトのチェックも行う（イベント駆動で完了通知を積む）
+		// タイムアウトのチェック
 		_cgiManager.cleanupTimedOutWorkers();
 
 		const epoll_event *events = _socketsManager.getEvents();
@@ -200,75 +200,18 @@ void Server::run() {
 			int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			applyCgiChanges();
-
 			if (fd == _sigchldPipe[0]) {
 				handleSigchldEvent();
 				continue;
 			}
 
-			// CGIのFDを優先的に処理する
-			if (_cgiManager.isCgiFd(fd)) {
-				uint32_t ev = eventTypes;
-				if (eventTypes & EPOLLHUP) {
-					ev |= EPOLLIN; // EOF処理のため
-				}
-				_cgiManager.handleEvent(fd, ev);
-				continue;
-			}
-
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
-			} else if (_clients.count(fd)) {
+			} else {
 				_eventManager.handle(fd, eventTypes);
-
-				HttpResponse cgiRes(_config);
-				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
-					AccessLogger::getInstance().log(
-						&_clients[fd]->getContext().req, &cgiRes,
-						_clients[fd]->getIp(), _clients[fd]->getPort(),
-						getSessionId(&_clients[fd]->getContext()));
-					const std::string responseStr =
-						ResponseBuilder::build(cgiRes);
-					if (!responseStr.empty()) {
-						_clients[fd]->getSocket().setSendBuffer(
-							_clients[fd]->getSocket().getSendBuffer() +
-							responseStr);
-					}
-					if (!_clients[fd]->getSocket().getSendBuffer().empty()) {
-						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
-					}
-				}
 			}
 		}
-
-		// このラウンドでCgiManagerから出た変更・通知を反映
-		applyCgiChanges();
-
-		// 完了通知が来たクライアントのみレスポンス組立て・送信準備
-		while (_cgiManager.sizeCompletedClientFd()) {
-			const int cfd = _cgiManager.popCompletedClientFd();
-			if (_clients.count(cfd) == 0)
-				continue;
-			HttpResponse cgiRes(_config);
-			if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
-				AccessLogger::getInstance().log(
-					&_clients[cfd]->getContext().req, &cgiRes,
-					_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-					getSessionId(&_clients[cfd]->getContext()));
-				const std::string responseStr = ResponseBuilder::build(cgiRes);
-				if (!responseStr.empty()) {
-					_clients[cfd]->getSocket().setSendBuffer(
-						_clients[cfd]->getSocket().getSendBuffer() +
-						responseStr);
-				}
-				if (!_clients[cfd]->getSocket().getSendBuffer().empty()) {
-					_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
-				}
-			}
-		}
-
-		SessionManager::getInstance().cleanupIfNeeded();
+		SessionManager::getInstance().cleanup();
 	}
 }
 

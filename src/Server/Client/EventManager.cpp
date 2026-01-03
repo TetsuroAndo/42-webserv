@@ -23,19 +23,19 @@ void EventManager::initFd(Client &client) {
 	_clientTable[client.getFd()] = &client;
 }
 
+void EventManager::initFd(const int fd) { _clientTable[fd] = NULL; }
+
 void EventManager::handle(const int fd, const unsigned int events) {
 	if (_eventsTable.count(fd) <= 0) {
 		LOG(WARNING) << "called on non-existing fd " << fd;
 		return;
 	}
-	if (events & EPOLLERR || events & EPOLLHUP) {
-		LOG(WARNING) << "EPOLLERR or EPOLLHUP for client fd: " << fd;
-		removeFd(fd);
-		return;
+	unsigned int effective = events;
+	if (events & EPOLLHUP) {
+		effective |= EPOLLIN;
 	}
-	for (std::vector< AEvent * >::const_reverse_iterator it =
-			 _eventsTable[fd].rbegin();
-		 it != _eventsTable[fd].rend(); ++it) {
+	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
+		 it != _eventsTable[fd].end(); ++it) {
 		if ((*it) == NULL) {
 			continue;
 		}
@@ -44,6 +44,10 @@ void EventManager::handle(const int fd, const unsigned int events) {
 		}
 		(*it)->handle();
 		return;
+	}
+	if (events & EPOLLERR || events & EPOLLHUP) {
+		LOG(WARNING) << "EPOLLERR or EPOLLHUP for client fd: " << fd;
+		removeFd(fd);
 	}
 }
 
@@ -56,26 +60,21 @@ void EventManager::addEvent(const int fd, AEvent *event) {
 		return;
 	}
 	event->setFd(fd);
-	_eventsTable[fd].push_back(event);
+	if (_clientTable.count(fd) > 0) {
+		LOG(DEBUG) << "adding event fd " << fd;
+		_eventsTable[fd].push_back(event);
+	}
 }
 
 void EventManager::removeFd(const int fd) {
-	if (_eventsTable.count(fd) <= 0) {
-		LOG(WARNING) << "called on non-existing fd " << fd;
-		return;
-	}
-	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
-		 it != _eventsTable[fd].end(); ++it) {
-		(*it)->close();
-		delete (*it);
-	}
-	_eventsTable.erase(fd);
+	clearEvents(fd);
 
 	if (_clientTable.count(fd) <= 0) {
 		LOG(WARNING) << "called on non-existing fd " << fd;
 		return;
 	}
-	_clientTable[fd]->getServer().closeConnection(fd);
+	if (_clientTable[fd] != NULL)
+		_clientTable[fd]->getServer().closeConnection(fd);
 	_clientTable.erase(fd);
 }
 

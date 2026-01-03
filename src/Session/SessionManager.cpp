@@ -93,7 +93,7 @@ void SessionManager::cleanupExpiredSessions() {
 	}
 }
 
-void SessionManager::cleanupIfNeeded() {
+void SessionManager::cleanup() {
 	const time_t now = std::time(NULL);
 	// タイムアウト時間が0の場合は毎回クリーンアップ、それ以外はタイムアウト時間経過後にクリーンアップ
 	if (_timeoutSec == 0 || now - _lastCleanupTime >= _timeoutSec) {

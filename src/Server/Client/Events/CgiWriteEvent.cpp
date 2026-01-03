@@ -1,11 +1,22 @@
 #include "CgiWriteEvent.hpp"
+#include "../../../Lib/Logger/Log.hpp"
+#include "../../Server.hpp"
 
-CgiWriteEvent::CgiWriteEvent(Client *client)
+CgiWriteEvent::CgiWriteEvent(Client *client, CgiWorker &worker)
 	: AEvent(client, client->getContext(), client->getHttpConnection(),
-			 EPOLLOUT) {}
+			 EPOLLOUT),
+	  ACgiEvent(worker) {}
 
 CgiWriteEvent::~CgiWriteEvent() {}
 
-void CgiWriteEvent::handle() {}
+void CgiWriteEvent::handle() { CgiHandle(); }
 
-void CgiWriteEvent::close() {}
+void CgiWriteEvent::process() {
+	LOG(DEBUG) << "handle write" << attr("client fd", _client.getFd());
+	_worker.handleWrite();
+}
+
+void CgiWriteEvent::close() {
+	_client.getServer().getSocketsManager().unregisterSocket(_fd);
+	::close(_fd);
+}

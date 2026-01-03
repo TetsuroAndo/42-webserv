@@ -5,7 +5,15 @@
 #include "../Http/Resolver/RequestResolver.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Core/PipelineContext.hpp"
+#include "../Server/Client/Client.hpp"
+#include "../Server/Client/Events/CgiEndEvent.hpp"
+#include "../Server/Client/Events/CgiErrorEvent.hpp"
+#include "../Server/Client/Events/CgiReadEvent.hpp"
+#include "../Server/Client/Events/CgiWriteEvent.hpp"
+#include "../Server/Server.hpp"
+#include "../Socket/SocketsManager.hpp"
 #include "CgiWorker.hpp"
+
 #include <algorithm>
 #include <cstring>
 #include <signal.h>
@@ -64,9 +72,9 @@ CgiManager::~CgiManager() {
 }
 
 void CgiManager::createWorker(PipelineContext &ctx) {
-	// catch ブロックで delete できるように try の外で宣言
 	CgiWorker *worker = NULL;
 	try {
+		// worker上限に達していないかを確認
 		if (_workers.size() >= _maxWorkers) {
 			LOG(WARNING) << "CGI worker limit reached"
 						 << attr("limit", _maxWorkers);
@@ -78,6 +86,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		// リクエストからスクリプト仮想パスとPATH_INFOを切り出す
 		std::string scriptVirtual;
 		std::string pathInfo;
+
+		// 有効なCgiスクリプトではなかった場合
 		if (!RequestResolver::extractCgiScript(ctx.req.getPath(), loc,
 											   scriptVirtual, pathInfo)) {
 			LOG(WARNING) << "Failed to extract CGI script from request"
@@ -86,10 +96,11 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
-		// スクリプトの実ファイル（絶対パス）を解決（PATH_INFOは含めない）
+		// スクリプトの実ファイル（絶対パス）を解決
 		const std::string scriptPath =
 			RequestResolver::resolvePath(scriptVirtual, ctx.conf);
 
+		// ファイルが存在しなかった場合
 		if (scriptPath.empty()) {
 			LOG(WARNING) << "CGI script not found"
 						 << attr("scriptVirtual", scriptVirtual);
@@ -97,7 +108,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
-		// インタプリタの解決（拡張子は scriptVirtual から）
+		// インタプリタの解決
 		std::string interpreterPath;
 		const size_t dotPosVirtual = scriptVirtual.rfind('.');
 		if (dotPosVirtual != std::string::npos) {
@@ -107,6 +118,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			}
 		}
 
+		// Configで設定されているインタプリンタが存在しない場合
 		if (interpreterPath.empty()) {
 			LOG(WARNING) << "No CGI interpreter found for the request path: "
 						 << scriptPath;
@@ -114,6 +126,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			return;
 		}
 
+		// interpreterPathをファイルまでの部分に切り出す
 		std::string resolvedInterpreterPath = interpreterPath;
 		if (!interpreterPath.empty() && interpreterPath[0] != '/') {
 			const size_t lastSlashPos = scriptPath.find_last_of('/');
@@ -123,12 +136,14 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				resolvedInterpreterPath = scriptDir + "/" + interpreterPath;
 			}
 		}
+		// 読み込み権限を確認
 		if (access(resolvedInterpreterPath.c_str(), F_OK) != 0) {
 			LOG(WARNING) << "CGI interpreter not found"
 						 << attr("interpreter", resolvedInterpreterPath);
 			ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
 			return;
 		}
+		// 実装権限を確認
 		if (access(resolvedInterpreterPath.c_str(), X_OK) != 0) {
 			LOG(WARNING) << "CGI interpreter not executable"
 						 << attr("interpreter", resolvedInterpreterPath);
@@ -141,45 +156,70 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				   << attr("resolvedInterpreterPath", resolvedInterpreterPath)
 				   << attr("script", scriptPath);
 
+		// workerの作成・実行
 		worker = new CgiWorker(ctx, scriptPath, interpreterPath, this);
-		worker->execute(); // pipe, fork, execveの実行
 
 		_workers.push_back(worker);
-		if (worker->getReadFd() >= 0) {
-			_pipeFdToWorker[worker->getReadFd()] = worker;
+
+		// workerの作成の成否を確認
+		if (worker->getState() == CgiWorker::CGI_ERROR) {
+			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			return;
 		}
-		if (worker->getWriteFd() >= 0) {
-			_pipeFdToWorker[worker->getWriteFd()] = worker;
-		}
-		if (worker->getErrFd() >= 0) {
-			_pipeFdToWorker[worker->getErrFd()] = worker;
-		}
-		_clientFdToWorker[worker->getClientFd()] = worker;
-		if (worker->getPid() > 0) {
+
+		// workerとFDを紐付けする
+		{
+			int fds[3];
+			fds[0] = worker->getReadFd();
+			fds[1] = worker->getWriteFd();
+			fds[2] = worker->getErrFd();
+
+			const int count = sizeof(fds) / sizeof(fds[0]);
+			for (int i = 0; i < count; ++i) {
+				int fd = fds[i];
+				_pipeFdToWorker[fd] = worker;
+			}
+
+			_clientFdToWorker[worker->getClientFd()] = worker;
 			_pidToWorker[worker->getPid()] = worker;
 		}
 
-		// サーバーに監視対象のFDを追加
-		// CGIスクリプトからの出力を監視
-		if (worker->getReadFd() >= 0) {
-			FdEventChange ev;
-			ev.fd = worker->getReadFd();
-			ev.eventType = EPOLLIN;
-			_add.push(ev);
+		// EventManagerに監視対象のFDを追加
+		EventManager &eventManager = ctx.ownerClient.getEventManager();
+		const SocketsManager &socketsManager =
+			ctx.ownerClient.getServer().getSocketsManager();
+		{
+			LOG(DEBUG) << "set cgi read fd" << attr("fd", worker->getReadFd());
+			const int fd = worker->getReadFd();
+			socketsManager.registerSocket(fd, EPOLLIN);
+			eventManager.initFd(fd);
+			eventManager.addEvent(fd,
+								  new CgiReadEvent(&ctx.ownerClient, *worker));
 		}
-		// CGIスクリプトへのリクエストボディの書き込みを監視（fdが有効な場合）
-		if (worker->getWriteFd() >= 0) {
-			FdEventChange ev;
-			ev.fd = worker->getWriteFd();
-			ev.eventType = EPOLLOUT;
-			_add.push(ev);
+		{
+			const int fd = worker->getWriteFd();
+			if (fd != -1 && (ctx.req.getMethod() == "POST" ||
+							 ctx.req.getMethod() == "PUT")) {
+				socketsManager.registerSocket(fd, EPOLLOUT);
+				socketsManager.modifySocket(fd, EPOLLOUT);
+				eventManager.initFd(fd);
+				eventManager.addEvent(
+					fd, new CgiWriteEvent(&ctx.ownerClient, *worker));
+			}
 		}
-		// CGIスクリプトからの標準エラー出力を監視
-		if (worker->getErrFd() >= 0) {
-			FdEventChange ev;
-			ev.fd = worker->getErrFd();
-			ev.eventType = EPOLLIN;
-			_add.push(ev);
+		{
+			const int fd = worker->getErrFd();
+			socketsManager.registerSocket(fd, EPOLLIN);
+			eventManager.initFd(fd);
+			eventManager.addEvent(fd,
+								  new CgiErrorEvent(&ctx.ownerClient, *worker));
+		}
+		{
+			const int fd = worker->getCompletionFdOut();
+			socketsManager.registerSocket(fd, EPOLLIN);
+			eventManager.initFd(fd);
+			eventManager.addEvent(fd,
+								  new CgiEndEvent(&ctx.ownerClient, *worker));
 		}
 
 		LOG(INFO) << "CGI worker created"
@@ -197,81 +237,6 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		delete worker;
 		LOG(ERROR) << "Failed to create CGI worker: " << e.what();
 		ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
-	}
-}
-
-void CgiManager::handleEvent(const int fd, const uint32_t event_type) {
-	std::map< int, CgiWorker * >::iterator it = _pipeFdToWorker.find(fd);
-	if (it == _pipeFdToWorker.end()) {
-		return;
-	}
-
-	CgiWorker *worker = it->second;
-	worker->updateLastActivityTime();
-	const int readFd = worker->getReadFd();
-	const int writeFd = worker->getWriteFd();
-	const int errFd = worker->getErrFd();
-
-	if (event_type & EPOLLIN) { // CGIからの読み込み可能
-		// 標準エラー出力用のFDか標準出力用のFDかを判定
-		if (fd == errFd) {
-			worker->handleReadErr();
-		} else {
-			worker->handleRead();
-		}
-	}
-	if (event_type & EPOLLOUT) { // CGIへの書き込み可能
-		worker->handleWrite();
-	}
-
-	if (readFd >= 0 && worker->getReadFd() < 0 &&
-		_pipeFdToWorker.count(readFd)) {
-		FdEventChange ev;
-		ev.fd = readFd;
-		ev.eventType = EPOLLIN;
-		_remove.push(ev);
-		_pipeFdToWorker.erase(readFd);
-	}
-	if (writeFd >= 0 && worker->getWriteFd() < 0 &&
-		_pipeFdToWorker.count(writeFd)) {
-		FdEventChange ev;
-		ev.fd = writeFd;
-		ev.eventType = EPOLLOUT;
-		_remove.push(ev);
-		_pipeFdToWorker.erase(writeFd);
-	}
-	if (errFd >= 0 && worker->getErrFd() < 0 && _pipeFdToWorker.count(errFd)) {
-		FdEventChange ev;
-		ev.fd = errFd;
-		ev.eventType = EPOLLIN;
-		_remove.push(ev);
-		_pipeFdToWorker.erase(errFd);
-	}
-
-	// CGIプロセスが完了またはエラーになったかチェック
-	if (worker->isFinished()) {
-		LOG(INFO) << "CGI worker finished"
-				  << attr("clientFd", worker->getClientFd())
-				  << attr("pid", worker->getPid())
-				  << attr("state", worker->getState());
-		{
-			std::vector< int > keys;
-			for (std::map< int, CgiWorker * >::iterator it2 =
-					 _pipeFdToWorker.begin();
-				 it2 != _pipeFdToWorker.end(); ++it2) {
-				if (it2->second == worker) {
-					keys.push_back(it2->first);
-				}
-			}
-			for (size_t i = 0; i < keys.size(); ++i) {
-				FdEventChange ev;
-				ev.fd = keys[i];
-				_remove.push(ev);
-				_pipeFdToWorker.erase(keys[i]);
-			}
-		}
-		// 完了したクライアントFDを通知キューに積む
-		_completedClients.push(worker->getClientFd());
 	}
 }
 
@@ -340,7 +305,6 @@ void CgiManager::cleanupFinishedWorkers() {
 		}
 
 		if (worker) {
-			// 管理下のワーカーが終了した
 			LOG(DEBUG) << "CGI process reaped by cleanupFinishedWorkers"
 					   << attr("pid", pid) << attr("status", status);
 
@@ -356,20 +320,18 @@ void CgiManager::cleanupFinishedWorkers() {
 					LOG(WARNING) << "CGI process exited with non-zero status"
 								 << attr("pid", pid)
 								 << attr("status", WEXITSTATUS(status));
-					// Statusヘッダーが設定されている場合は、そのステータスコードを優先するため
-					// エラー状態にしない
 					if (!worker->hasStatusHeader()) {
 						worker->setError();
 					}
 				}
 			}
 			if (worker->isFinished()) {
-				_completedClients.push(worker->getClientFd());
+				const char tmpC = 'c';
+				const int tmp =
+					write(worker->getCompletionFdIn(), &tmpC, sizeof(tmpC));
+				(void)tmp;
 			}
 		} else {
-			// _pidToWorker リストにないPID = おそらく handleRead の
-			// EOF処理などで既に isCgiComplete() -> _removeWorker()
-			// が完了したプロセス。
 			LOG(DEBUG) << "Reaped zombie process (PID not in active workers "
 					   << "list, likely already handled): " << pid;
 		}
@@ -382,8 +344,8 @@ void CgiManager::cleanupFinishedWorkers() {
 	}
 }
 
-bool CgiManager::isCgiComplete(int clientFd, HttpResponse &res) {
-	std::map< int, CgiWorker * >::iterator it =
+bool CgiManager::isCgiComplete(const int clientFd, HttpResponse &res) {
+	const std::map< int, CgiWorker * >::iterator it =
 		_clientFdToWorker.find(clientFd);
 	if (it == _clientFdToWorker.end()) {
 		return false; // CGIリクエストではない

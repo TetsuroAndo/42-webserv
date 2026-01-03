@@ -12,8 +12,10 @@ public:
 	~EventManager();
 
 	void initFd(Client &client);
+	void initFd(int fd);
 	void handle(int fd, unsigned int events);
 	void addEvent(int fd, AEvent *event);
+	bool checkCanRemoveFd(int fd, unsigned int events);
 	void removeFd(int fd);
 	void clearEvents(int fd);
 

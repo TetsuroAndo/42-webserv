@@ -55,6 +55,8 @@ const HttpConnection &Client::getHttpConnection() const {
 	return _httpConnection;
 }
 
+EventManager &Client::getEventManager() const { return _eventManager; }
+
 void Client::onTimeout() {
 	LOG(INFO) << "Client timed out for fd: " << _fd;
 	_context.res.setStatusCode(HttpStatus::REQUEST_TIMEOUT);

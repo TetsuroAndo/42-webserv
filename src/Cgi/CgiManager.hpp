@@ -13,6 +13,10 @@ struct PipelineContext;
 class HttpResponse;
 class CgiWorker;
 
+class CgiWriteEvent;
+class CgiReadEvent;
+class CgiErrorEvent;
+
 class CgiManager {
 public:
 	CgiManager(const Config &config);
@@ -23,13 +27,6 @@ public:
 	 * @param ctx リクエストのコンテキスト
 	 */
 	void createWorker(PipelineContext &ctx);
-
-	/**
-	 * @brief CGIのパイプFDでイベントが発生した際にServerから呼ばれる
-	 * @param fd イベントが発生したファイルディスクリプタ
-	 * @param event_type イベントのタイプ (EPOLLIN or EPOLLOUT)
-	 */
-	void handleEvent(int fd, uint32_t event_type); // TODO: AEventにする
 
 	/**
 	 * @brief タイムアウトしたWorkerをクリーンアップする

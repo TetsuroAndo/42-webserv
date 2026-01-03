@@ -1,12 +1,14 @@
 #pragma once
+#include "ACgiEvent.hpp"
 #include "AEvent.hpp"
 
-class CgiErrorEvent : public AEvent {
+class CgiErrorEvent : public AEvent, public ACgiEvent {
 public:
-	CgiErrorEvent(Client *client);
+	CgiErrorEvent(Client *client, CgiWorker &worker);
 	~CgiErrorEvent();
 
 	void handle();
+	void process();
 	void close();
 
 private:

@@ -1,11 +1,23 @@
 #include "CgiErrorEvent.hpp"
 
-CgiErrorEvent::CgiErrorEvent(Client *client)
+#include "../../../Lib/Logger/ErrorLog/LogBuilder.hpp"
+#include "../../Server.hpp"
+
+CgiErrorEvent::CgiErrorEvent(Client *client, CgiWorker &worker)
 	: AEvent(client, client->getContext(), client->getHttpConnection(),
-			 EPOLLIN) {}
+			 EPOLLIN),
+	  ACgiEvent(worker) {}
 
 CgiErrorEvent::~CgiErrorEvent() {}
 
-void CgiErrorEvent::handle() {}
+void CgiErrorEvent::handle() { CgiHandle(); }
 
-void CgiErrorEvent::close() {}
+void CgiErrorEvent::process() {
+	LOG(DEBUG) << "handle error" << attr("client fd", _client.getFd());
+	_worker.handleReadErr();
+}
+
+void CgiErrorEvent::close() {
+	_client.getServer().getSocketsManager().unregisterSocket(_fd);
+	::close(_fd);
+}

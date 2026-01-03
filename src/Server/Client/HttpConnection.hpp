@@ -23,8 +23,8 @@ public:
 
 	// HTTP接続の処理
 	void processRequest();
-	void handleReadEvent();	 // TODO: AEventを継承した新クラスと統合する
-	void handleWriteEvent(); // TODO: AEventを継承した新クラスと統合する
+	void handleReadEvent();
+	void handleWriteEvent();
 
 	// パーサー状態に基づくタイムアウト計算
 	time_t calculateTimeout() const;
