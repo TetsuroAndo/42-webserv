@@ -56,6 +56,7 @@ CgiWorker::~CgiWorker() {
 	_closePipe(_pipeIn[1]);
 	_closePipe(_pipeOut[0]);
 	_closePipe(_pipeErr[0]);
+	_closePipe(_pipeComplete[1]);
 
 	if (0 < _pid) {
 		// プロセスがまだ終了していないか確認（非ブロッキング）
