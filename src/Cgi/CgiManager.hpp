@@ -59,41 +59,6 @@ public:
 	 */
 	void abortClient(int clientFd);
 
-	/**
-	 * @brief _addから情報を一個取り出す
-	 * @return _addの一番先頭の要素
-	 */
-	FdEventChange popAddChange();
-
-	/**
-	 * @brief _deleteから情報を一個取り出す
-	 * @return _deleteの一番先頭の要素
-	 */
-	FdEventChange popRemoveChange();
-
-	/**
-	 * @brief 残っているaddのFdEventChangesの数を返す
-	 * @return 残っているaddのFdEventChangesの数
-	 */
-	size_t sizeAddEvent() const;
-	/**
-	 * @brief 残っているdeleteのFdEventChangesの数を返す
-	 * @return 残っているdeleteのFdEventChangesの数
-	 */
-	size_t sizeRemoveEvent() const;
-
-	/**
-	 * @brief 完了通知（クライアントFD）を一件取り出す
-	 * @return 完了したクライアントFD
-	 */
-	int popCompletedClientFd();
-
-	/**
-	 * @brief 残っている完了通知の数を返す
-	 * @return 残っている完了通知の数
-	 */
-	size_t sizeCompletedClientFd() const;
-
 private:
 	const time_t _timeoutSeconds;
 	size_t _maxWorkers;
@@ -104,10 +69,6 @@ private:
 	std::map< int, CgiWorker * > _clientFdToWorker;
 	// PIDからWorkerを引くためのマップ
 	std::map< pid_t, CgiWorker * > _pidToWorker;
-
-	// FdEventChangesを貯めるキュー
-	std::queue< FdEventChange > _add;
-	std::queue< FdEventChange > _remove;
 
 	// 完了・エラー・タイムアウトしたCGIに紐づくクライアントFD通知キュー
 	std::queue< int > _completedClients;

@@ -279,9 +279,6 @@ void CgiManager::cleanupTimedOutWorkers() {
 					keys.push_back(it2->first);
 			}
 			for (size_t i = 0; i < keys.size(); ++i) {
-				FdEventChange ev;
-				ev.fd = keys[i];
-				_remove.push(ev);
 				_pipeFdToWorker.erase(keys[i]);
 			}
 		}
@@ -395,9 +392,6 @@ void CgiManager::abortClient(const int clientFd) {
 				keys.push_back(it2->first);
 		}
 		for (size_t i = 0; i < keys.size(); ++i) {
-			FdEventChange ev;
-			ev.fd = keys[i];
-			_remove.push(ev);
 			_pipeFdToWorker.erase(keys[i]);
 		}
 	}
@@ -409,30 +403,4 @@ void CgiManager::abortClient(const int clientFd) {
 		_pidToWorker.erase(pid);
 	}
 	_removeWorker(worker);
-}
-
-FdEventChange CgiManager::popAddChange() {
-	const FdEventChange change = _add.front();
-	_add.pop();
-	return change;
-}
-
-FdEventChange CgiManager::popRemoveChange() {
-	const FdEventChange change = _remove.front();
-	_remove.pop();
-	return change;
-}
-
-size_t CgiManager::sizeAddEvent() const { return _add.size(); }
-
-size_t CgiManager::sizeRemoveEvent() const { return _remove.size(); }
-
-int CgiManager::popCompletedClientFd() {
-	const int cfd = _completedClients.front();
-	_completedClients.pop();
-	return cfd;
-}
-
-size_t CgiManager::sizeCompletedClientFd() const {
-	return _completedClients.size();
 }
