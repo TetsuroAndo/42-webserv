@@ -57,5 +57,3 @@ void CgiEndEvent::process() {
 	EventManager &eventManager = _client.getEventManager();
 	eventManager.forgetFd(_fd);
 }
-
-void CgiEndEvent::close() {}

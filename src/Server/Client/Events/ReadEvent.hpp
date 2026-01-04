@@ -7,7 +7,6 @@ public:
 	~ReadEvent();
 
 	void handle();
-	void close();
 
 private:
 };

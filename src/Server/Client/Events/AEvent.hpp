@@ -19,7 +19,6 @@ public:
 	virtual ~AEvent() {}
 
 	virtual void handle() = 0;
-	virtual void close() = 0;
 
 	bool isExpectedEventType(const uint32_t event) const {
 		return (event & _expectedEventType) != 0;

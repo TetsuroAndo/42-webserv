@@ -16,8 +16,3 @@ void CgiReadEvent::process() {
 	LOG(DEBUG) << "handle read" << attr("client fd", _client.getFd());
 	_worker.handleRead();
 }
-
-void CgiReadEvent::close() {
-	_client.getServer().getSocketsManager().unregisterSocket(_fd);
-	::close(_fd);
-}

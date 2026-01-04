@@ -9,7 +9,6 @@ public:
 
 	void handle();
 	void process();
-	void close();
 
 private:
 };

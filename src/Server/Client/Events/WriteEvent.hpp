@@ -7,7 +7,6 @@ public:
 	~WriteEvent();
 
 	void handle();
-	void close();
 
 private:
 };

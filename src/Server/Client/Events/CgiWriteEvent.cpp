@@ -15,8 +15,3 @@ void CgiWriteEvent::process() {
 	LOG(DEBUG) << "handle write" << attr("client fd", _client.getFd());
 	_worker.handleWrite();
 }
-
-void CgiWriteEvent::close() {
-	_client.getServer().getSocketsManager().unregisterSocket(_fd);
-	::close(_fd);
-}

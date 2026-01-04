@@ -88,7 +88,6 @@ void EventManager::clearEvents(const int fd) {
 	}
 	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
 		 it != _eventsTable[fd].end(); ++it) {
-		(*it)->close();
 		delete (*it);
 	}
 	_eventsTable.erase(fd);

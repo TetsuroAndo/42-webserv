@@ -9,5 +9,3 @@ WriteEvent::WriteEvent(Client *client)
 WriteEvent::~WriteEvent() {}
 
 void WriteEvent::handle() { _httpConnection.handleWriteEvent(); }
-
-void WriteEvent::close() {}

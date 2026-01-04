@@ -9,5 +9,3 @@ ReadEvent::ReadEvent(Client *client)
 ReadEvent::~ReadEvent() {}
 
 void ReadEvent::handle() { _httpConnection.handleReadEvent(); }
-
-void ReadEvent::close() {}

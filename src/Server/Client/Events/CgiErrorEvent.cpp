@@ -16,8 +16,3 @@ void CgiErrorEvent::process() {
 	LOG(DEBUG) << "handle error" << attr("client fd", _client.getFd());
 	_worker.handleReadErr();
 }
-
-void CgiErrorEvent::close() {
-	_client.getServer().getSocketsManager().unregisterSocket(_fd);
-	::close(_fd);
-}
