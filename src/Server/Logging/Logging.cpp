@@ -40,11 +40,16 @@ bool isErrorLoggingDisabled(const std::vector< ErrorLog > &logs) {
  * @return コンソール出力が有効化されている場合はtrue、そうでなければfalse
  */
 bool isConsoleDebugActive(const Config &config) {
-	const std::vector< ErrorLog > &errorLogs = config.getErrorLogs();
-	for (std::vector< ErrorLog >::const_iterator it = errorLogs.begin();
-		 it != errorLogs.end(); ++it) {
-		if (it->sink == Console && it->level == DEBUG) {
-			return true;
+	// すべてのserverのエラーログをチェック
+	const std::vector< ServerConfig > &servers = config.getServers();
+	for (std::vector< ServerConfig >::const_iterator sIt = servers.begin();
+		 sIt != servers.end(); ++sIt) {
+		for (std::vector< ErrorLog >::const_iterator it =
+				 sIt->errorLogs.begin();
+			 it != sIt->errorLogs.end(); ++it) {
+			if (it->sink == Console && it->level == DEBUG) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -58,41 +63,48 @@ namespace Logging {
  * @param config 設定情報
  */
 void setupLoggers(const Config &config) {
-	const std::vector< AccessLog > &accessLogs = config.getAccessLogs();
-	if (!isAccessLoggingDisabled(accessLogs)) {
+	// すべてのserverのログ設定を処理
+	const std::vector< ServerConfig > &servers = config.getServers();
 
-		AccessLogger &accessLogger = AccessLogger::getInstance();
+	AccessLogger &accessLogger = AccessLogger::getInstance();
+	Logger &errorLogger = Logger::getInstance();
 
-		std::vector< AccessLog >::const_iterator it;
-		for (it = accessLogs.begin(); it != accessLogs.end(); ++it) {
-			if (it->sink == File) {
-				accessLogger.setSinkFile(it->logDir, it->filename, it->format,
-										 it->maxFileSize, it->maxBackupFiles);
-			} else if (it->sink == Console) {
-				accessLogger.setSinkConsole(it->format);
+	for (std::vector< ServerConfig >::const_iterator sIt = servers.begin();
+		 sIt != servers.end(); ++sIt) {
+		// AccessLogの設定
+		if (!isAccessLoggingDisabled(sIt->accessLogs)) {
+			for (std::vector< AccessLog >::const_iterator it =
+					 sIt->accessLogs.begin();
+				 it != sIt->accessLogs.end(); ++it) {
+				if (it->sink == File) {
+					accessLogger.setSinkFile(it->logDir, it->filename,
+											 it->format, it->maxFileSize,
+											 it->maxBackupFiles);
+				} else if (it->sink == Console) {
+					accessLogger.setSinkConsole(it->format);
+				}
+			}
+		}
+
+		// ErrorLogの設定
+		if (!isErrorLoggingDisabled(sIt->errorLogs)) {
+			for (std::vector< ErrorLog >::const_iterator it =
+					 sIt->errorLogs.begin();
+				 it != sIt->errorLogs.end(); ++it) {
+				if (it->sink == File) {
+					errorLogger.setSinkFile(it->logDir, it->filename, it->format,
+											it->level, it->filterMode,
+											it->maxFileSize, it->maxBackupFiles);
+				} else if (it->sink == Console) {
+					errorLogger.setSinkConsole(it->format, it->level,
+											   it->filterMode);
+				}
 			}
 		}
 	}
 
-	const std::vector< ErrorLog > &errorLogs = config.getErrorLogs();
-	if (!isErrorLoggingDisabled(errorLogs)) {
-
-		Logger &errorLogger = Logger::getInstance();
-
-		std::vector< ErrorLog >::const_iterator it;
-		for (it = errorLogs.begin(); it != errorLogs.end(); ++it) {
-			if (it->sink == File) {
-				errorLogger.setSinkFile(it->logDir, it->filename, it->format,
-										it->level, it->filterMode,
-										it->maxFileSize, it->maxBackupFiles);
-			} else if (it->sink == Console) {
-				errorLogger.setSinkConsole(it->format, it->level,
-										   it->filterMode);
-			}
-		}
-		if (isConsoleDebugActive(config)) {
-			Art::art();
-		}
+	if (isConsoleDebugActive(config)) {
+		Art::art();
 	}
 }
 } // namespace Logging

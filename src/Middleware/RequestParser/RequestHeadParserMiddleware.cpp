@@ -21,8 +21,11 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 			   << attr("path", requestPath)
 			   << attr("method", ctx.req.getMethod())
 			   << attr("path_empty", requestPath.empty());
-	const Location loc = ctx.conf.getLocation(requestPath);
-	size_t maxBodySize = ctx.conf.getMaxRequestBodySize();
+	// Hostヘッダーがまだ解析されていない場合は空文字列を使用
+	std::string hostName = ctx.req.hasHeader("Host") ? ctx.req.getHeader("Host") : "";
+	int port = ctx.ownerClient.getListenPort();
+	const Location loc = ctx.conf.getLocation(hostName, port, requestPath);
+	size_t maxBodySize = ctx.conf.getMaxRequestBodySize(hostName, port);
 	if (loc.hasMaxRequestBodySize) {
 		maxBodySize = loc.maxRequestBodySize;
 	}

@@ -27,7 +27,13 @@ PipelineRouteBuilder::~PipelineRouteBuilder() {
 void PipelineRouteBuilder::buildRoute(const Config &conf,
 									  MiddlewareProcessor *mainProc) {
 	RouteMap routes;
-	const std::map< std::string, Location > &locations = conf.getLocations();
+	// すべてのserverのlocationをマージ（最初のserverのlocationを使用）
+	// TODO: 将来的には、各serverごとにルーティングを構築する必要がある
+	const std::vector< ServerConfig > &servers = conf.getServers();
+	if (servers.empty()) {
+		throw std::runtime_error("No servers configured");
+	}
+	const std::map< std::string, Location > &locations = servers[0].locations;
 
 	for (std::map< std::string, Location >::const_iterator it =
 			 locations.begin();

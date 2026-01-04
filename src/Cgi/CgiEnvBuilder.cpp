@@ -111,14 +111,24 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 		remoteUser = Base64::decode(Authorization[1]);
 	}
 
-	const Location loc = c.getLocation(req.getPath());
+	std::string hostName = req.hasHeader("Host") ? req.getHeader("Host") : "";
+	int port = ctx.ownerClient.getListenPort();
+	const Location loc = c.getLocation(hostName, port, req.getPath());
 
-	if (c.getListens().empty()) {
+	const std::vector< ServerConfig > &servers = c.getServers();
+	if (servers.empty()) {
+		LOG(ERROR) << "CgiEnvBuilder: No server configuration found";
+		return std::vector< std::string >();
+	}
+
+	// 適切なserverを選択
+	const ServerConfig &server = c.getServerConfig(hostName, port);
+	if (server.listens.empty()) {
 		LOG(ERROR) << "CgiEnvBuilder: No listen configuration found";
 		return std::vector< std::string >();
 	}
 
-	const Listen &listen = c.getListens()[0];
+	const Listen &listen = server.listens[0];
 
 	std::map< std::string, std::string > env;
 	env["AUTH_TYPE"] = authType;

@@ -47,6 +47,9 @@ void ConfigParser::validateKeys(const Node *node,
 static std::set< std::string > createValidServerKeys() {
 	std::set< std::string > keys;
 	keys.insert("listens");
+	keys.insert("serverName");
+	keys.insert("serverNames");
+	keys.insert("root");
 	keys.insert("locations");
 	keys.insert("access_logs");
 	keys.insert("error_logs");
@@ -56,7 +59,6 @@ static std::set< std::string > createValidServerKeys() {
 	keys.insert("requestHeaderTimeoutSec");
 	keys.insert("requestBodyTimeoutSec");
 	keys.insert("maxEvents");
-	keys.insert("root");
 	keys.insert("allowedMethods");
 	keys.insert("autoindex");
 	keys.insert("index");
@@ -227,6 +229,19 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 
 	parseListens(serverNode->getMapNode("listens"));
 
+	// serverNames（配列形式）を処理
+	if (const Node *serverNamesNode = serverNode->getMapNode("serverNames")) {
+		const std::vector< Node * > &serverNameList = serverNamesNode->getSeq();
+		for (std::vector< Node * >::const_iterator it = serverNameList.begin();
+			 it != serverNameList.end(); ++it) {
+			_builder->setServerName((*it)->getValue());
+		}
+	}
+	// serverName（単一値、後方互換性のため）を処理
+	if (const Node *serverNameNode = serverNode->getMapNode("serverName")) {
+		_builder->setServerName(serverNameNode->getValue());
+	}
+
 	if (const Node *errorPagesNode = serverNode->getMapNode("error_pages")) {
 		parseErrorPages(errorPagesNode);
 	}
@@ -239,8 +254,10 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 		logParser.parseErrorLogs(errorLogsNode);
 	}
 
-	if (const Node *n = serverNode->getMapNode("root"))
+	// root（サーバーレベルのルート）を処理
+	if (const Node *n = serverNode->getMapNode("root")) {
 		_builder->setServerDefaultRoot(n->getValue());
+	}
 	if (const Node *n = serverNode->getMapNode("allowedMethods")) {
 		const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
 		std::set< std::string > validMethods(validMethodsArr,

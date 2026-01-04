@@ -52,7 +52,9 @@ HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
 
 	std::string tmp;
 	if (res.isDirectoryResponse()) {
-		const Location location = config.getLocation(ctx.req.getPath());
+		std::string hostName = ctx.req.hasHeader("Host") ? ctx.req.getHeader("Host") : "";
+		int port = ctx.ownerClient.getListenPort();
+		const Location location = config.getLocation(hostName, port, ctx.req.getPath());
 		if (location.directoryError.empty() == false) {
 			tmp = location.path + "/" + location.directoryError;
 			std::string tmpOut;

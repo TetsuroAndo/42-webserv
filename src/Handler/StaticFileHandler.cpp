@@ -144,7 +144,9 @@ HttpResponse StaticFileHandler::handle(PipelineContext &ctx) {
 	if (S_ISDIR(pathStat.st_mode)) {
 		res.setIsDirectoryResponse(true);
 		std::string requestPath = req.getPath();
-		const Location &loc = config.getLocation(req.getPath());
+		std::string hostName = req.hasHeader("Host") ? req.getHeader("Host") : "";
+		int port = ctx.ownerClient.getListenPort();
+		const Location &loc = config.getLocation(hostName, port, req.getPath());
 		std::string indexPath = filePath + "/" + loc.index;
 		struct stat indexStat;
 		bool flag = true;

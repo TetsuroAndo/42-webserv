@@ -6,6 +6,7 @@
 
 SocketsManager::SocketsManager(const Config &conf)
 	: _events(conf.getMaxEvents()) {
+	// getMaxEvents()は既に実装されている
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd < 0) {
 		throw std::runtime_error("epoll_create1() failed");

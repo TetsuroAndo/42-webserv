@@ -15,7 +15,13 @@ std::string resolvePath(const std::string &requestPath, const Config &config,
 	std::string bestMatchPath;
 	std::string root;
 
-	const std::map< std::string, Location > &locations = config.getLocations();
+	// Host名とポートがないため、最初のserverのlocationを使用
+	// TODO: 呼び出し側でHost名とポートを渡すように変更する必要がある
+	const std::vector< ServerConfig > &servers = config.getServers();
+	if (servers.empty()) {
+		return "";
+	}
+	const std::map< std::string, Location > &locations = servers[0].locations;
 	for (std::map< std::string, Location >::const_iterator it =
 			 locations.begin();
 		 it != locations.end(); ++it) {

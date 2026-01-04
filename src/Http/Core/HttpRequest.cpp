@@ -2,8 +2,15 @@
 
 #include "../../Lib/StringOps/StringOps.hpp"
 
-HttpRequest::HttpRequest(const Config &config)
-	: _maxBodySize(config.getMaxRequestBodySize()) {}
+HttpRequest::HttpRequest(const Config &config) {
+	// 初期化時はHostヘッダーがないため、デフォルトのserverから取得
+	const std::vector< ServerConfig > &servers = config.getServers();
+	if (!servers.empty()) {
+		_maxBodySize = servers[0].maxRequestBodySize;
+	} else {
+		_maxBodySize = 1024 * 1024; // デフォルト値
+	}
+}
 
 HttpRequest::~HttpRequest() {}
 
@@ -123,7 +130,13 @@ void HttpRequest::appendBody(const char *data, const size_t len) {
 }
 
 void HttpRequest::clear(const Config &c) {
-	_maxBodySize = c.getMaxRequestBodySize();
+	// 初期化時はHostヘッダーがないため、デフォルトのserverから取得
+	const std::vector< ServerConfig > &servers = c.getServers();
+	if (!servers.empty()) {
+		_maxBodySize = servers[0].maxRequestBodySize;
+	} else {
+		_maxBodySize = 1024 * 1024; // デフォルト値
+	}
 	_method.clear();
 	_path.clear();
 	_version.clear();

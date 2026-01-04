@@ -112,7 +112,10 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 	try {
 		// getLocationが例外吐くことがあるけど、
 		// ここでそのハンドルをするのはパーサーの責務じゃ無いから握り潰す
-		const Location loc = _config.getLocation(request.getPath());
+		// パーサー時点ではポート情報がないため、Hostヘッダーのみで選択
+		std::string hostName = request.hasHeader("Host") ? request.getHeader("Host") : "";
+		// ポート情報がないため、デフォルトとして0を渡す（最初のserverが選択される）
+		const Location loc = _config.getLocation(hostName, 0, request.getPath());
 		timeoutSeconds = loc.chunkedTimeoutSec;
 	} catch (...) {
 		timeoutSeconds = 10;

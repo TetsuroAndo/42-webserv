@@ -9,7 +9,9 @@ RedirectMiddleware::~RedirectMiddleware() {}
 void RedirectMiddleware::handle(PipelineContext &ctx,
 								MiddlewareProcessor *proc) {
 	const HttpRequest &req = ctx.req;
-	const Location &loc = _config.getLocation(req.getPath());
+	std::string hostName = req.hasHeader("Host") ? req.getHeader("Host") : "";
+	int port = ctx.ownerClient.getListenPort();
+	const Location &loc = _config.getLocation(hostName, port, req.getPath());
 
 	if (loc.hasRedirect) {
 		ctx.res.setStatusCode(loc.redirectCode);

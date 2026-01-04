@@ -28,7 +28,9 @@ HttpResponse PutHandler::handle(PipelineContext &ctx) {
 
 	const std::string filePath =
 		RequestResolver::resolvePath(req.getPath(), config);
-	const Location &loc = config.getLocation(req.getPath());
+	std::string hostName = req.hasHeader("Host") ? req.getHeader("Host") : "";
+	int port = ctx.ownerClient.getListenPort();
+	const Location &loc = config.getLocation(hostName, port, req.getPath());
 
 	std::string pathWithoutBase = req.getPath().substr(loc.path.length());
 

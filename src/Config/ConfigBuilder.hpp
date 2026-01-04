@@ -8,7 +8,9 @@ class Node;
 
 class ConfigBuilder {
 private:
+	std::vector< ServerConfig > _servers;
 	std::vector< Listen > _listens;
+	std::vector< std::string > _serverNames;
 	std::map< std::string, Location > _locations;
 	std::vector< AccessLog > _accessLogs;
 	std::vector< ErrorLog > _errorLogs;
@@ -26,6 +28,8 @@ private:
 
 	void initDefaults();
 	void setup(const std::string &configFile);
+	void pushCurrentServer();
+	void resetCurrentServer();
 
 public:
 	ConfigBuilder();
@@ -48,6 +52,7 @@ public:
 	void setSessionTimeoutSec(size_t sec);
 
 	// サーバーブロック直下の設定（デフォルトロケーション）
+	void setServerName(const std::string &serverName);
 	void setServerDefaultRoot(const std::string &root);
 	void setServerDefaultAutoindex(bool autoindex);
 	void setServerDefaultIndex(const std::string &index);

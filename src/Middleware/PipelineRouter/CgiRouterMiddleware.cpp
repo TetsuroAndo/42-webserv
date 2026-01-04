@@ -34,7 +34,9 @@ bool CgiRouterMiddleware::isCgiRequest(const PipelineContext &ctx,
 
 void CgiRouterMiddleware::handle(PipelineContext &ctx,
 								 MiddlewareProcessor *proc) {
-	const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
+	std::string hostName = ctx.req.hasHeader("Host") ? ctx.req.getHeader("Host") : "";
+	int port = ctx.ownerClient.getListenPort();
+	const Location &loc = ctx.conf.getLocation(hostName, port, ctx.req.getPath());
 
 	if (isCgiRequest(ctx, loc)) {
 		LOG(DEBUG) << "CgiRouterMiddleware: Detected CGI request."

@@ -9,7 +9,13 @@
 #include <sstream>
 
 void ConfigBuilder::initDefaults() {
+	_servers.clear();
+	resetCurrentServer();
+}
+
+void ConfigBuilder::resetCurrentServer() {
 	_listens.clear();
+	_serverNames.clear();
 	_locations.clear();
 	_accessLogs.clear();
 	_errorLogs.clear();
@@ -51,6 +57,26 @@ void ConfigBuilder::initDefaults() {
 	_errorLogs.push_back(ErrorLog());
 }
 
+void ConfigBuilder::pushCurrentServer() {
+	ServerConfig server;
+	server.listens = _listens;
+	server.serverNames = _serverNames;
+	server.locations = _locations;
+	server.accessLogs = _accessLogs;
+	server.errorLogs = _errorLogs;
+	server.errorPages = _errorPages;
+	server.maxRequestBodySize = _maxRequestBodySize;
+	server.hasBiggestMaxRequestBodySize = _hasBiggestRequestBodySize;
+	server.biggestMaxRequestBodySize = _biggestRequestBodySize;
+	server.timeoutSec = _timeoutSec;
+	server.maxEvents = _maxEvents;
+	server.requestHeaderTimeoutSec = _requestHeaderTimeoutSec;
+	server.requestBodyTimeoutSec = _requestBodyTimeoutSec;
+	server.sessionTimeoutSec = _sessionTimeoutSec;
+	server.maxRequestHeaderSize = _maxRequestHeaderSize;
+	_servers.push_back(server);
+}
+
 void ConfigBuilder::setup(const std::string &configFile) {
 	LOG(INFO) << "Loading configuration from: " << configFile;
 	const MyYAML yaml(configFile);
@@ -65,14 +91,21 @@ void ConfigBuilder::setup(const std::string &configFile) {
 		throw std::runtime_error("ConfigBuilder error: no servers configured");
 	}
 
-	Node *serverNode = serverList[0];
-	if (serverNode->getKey() != "server") {
-		throw std::runtime_error(
-			"ConfigBuilder error: missing 'server' key in server list");
-	}
-
 	ConfigParser parser(this);
-	parser.parseServer(serverNode);
+	for (std::vector< Node * >::const_iterator it = serverList.begin();
+		 it != serverList.end(); ++it) {
+		Node *serverNode = *it;
+		if (serverNode->getKey() != "server") {
+			throw std::runtime_error(
+				"ConfigBuilder error: missing 'server' key in server list");
+		}
+
+		// 各serverを処理する前に現在のserver状態をリセット
+		resetCurrentServer();
+		parser.parseServer(serverNode);
+		// server処理完了後、現在のserverを_serversに追加
+		pushCurrentServer();
+	}
 }
 
 ConfigBuilder::ConfigBuilder() {
@@ -88,11 +121,7 @@ ConfigBuilder::ConfigBuilder(const std::string &configFile) {
 ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
-	return Config(_listens, _locations, _accessLogs, _errorLogs,
-				  _maxRequestBodySize, _hasBiggestRequestBodySize,
-				  _biggestRequestBodySize, _timeoutSec, _maxEvents,
-				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
-				  _sessionTimeoutSec, _maxRequestHeaderSize, _errorPages);
+	return Config(_servers);
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const size_t size) {
@@ -175,6 +204,10 @@ void ConfigBuilder::setLocation(const Location &location) {
 
 void ConfigBuilder::setSessionTimeoutSec(const size_t sec) {
 	_sessionTimeoutSec = sec;
+}
+
+void ConfigBuilder::setServerName(const std::string &serverName) {
+	_serverNames.push_back(serverName);
 }
 
 void ConfigBuilder::setServerDefaultRoot(const std::string &root) {

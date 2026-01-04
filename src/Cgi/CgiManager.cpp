@@ -73,7 +73,9 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			ctx.res.setStatusCode(HttpStatus::SERVICE_UNAVAILABLE);
 			return;
 		}
-		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
+		std::string hostName = ctx.req.hasHeader("Host") ? ctx.req.getHeader("Host") : "";
+		int port = ctx.ownerClient.getListenPort();
+		const Location &loc = ctx.conf.getLocation(hostName, port, ctx.req.getPath());
 
 		// リクエストからスクリプト仮想パスとPATH_INFOを切り出す
 		std::string scriptVirtual;

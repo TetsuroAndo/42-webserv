@@ -48,8 +48,11 @@ Server::Server(const Config &config)
 	std::ostringstream oss;
 	oss << _config;
 	LOG(DEBUG) << oss.str();
-	SessionManager::getInstance().setTimeoutSec(
-		static_cast< time_t >(_config.getSessionTimeoutSec()));
+	// 初期化時は最初のserverの設定を使用
+	if (!_config.getServers().empty()) {
+		SessionManager::getInstance().setTimeoutSec(static_cast< time_t >(
+			_config.getServers()[0].sessionTimeoutSec));
+	}
 	setupListenSockets();
 	_builder.buildRoute(_config, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";
@@ -111,7 +114,7 @@ void Server::applyCgiChanges() {
 }
 
 void Server::setupListenSockets() {
-	const std::vector< Listen > &listens = _config.getListens();
+	const std::vector< Listen > listens = _config.getAllListens();
 	for (std::vector< Listen >::const_iterator it = listens.begin();
 		 it != listens.end(); ++it) {
 		const int port = it->port;
