@@ -33,9 +33,9 @@ class TestCGIExec:
 
     @pytest.mark.config("valid/cgi.yaml")
     def test_echo_cgi_with_large_post_data(self, managed_server):
-        """10KB程度の大きなデータを送信してCGIが正しく受け取れることを確認"""
+        """50KB程度の大きなデータを送信してCGIが正しく受け取れることを確認"""
         url = f"{managed_server['base_url']}/cgi-bin/echo.py"
-        large_data = "x" * (10 * 1024)
+        large_data = "x" * (50 * 1024)
         response = requests.post(url, data={"large_field": large_data})
         assert response.status_code == 200
         # 送信したデータがレスポンスに含まれているか確認
