@@ -8,6 +8,7 @@
 #include "../Server/Client/Client.hpp"
 #include "../Server/Client/Events/CgiEndEvent.hpp"
 #include "../Server/Client/Events/CgiErrorEvent.hpp"
+#include "../Server/Client/Events/CgiErrorExitEvent.hpp"
 #include "../Server/Client/Events/CgiReadEvent.hpp"
 #include "../Server/Client/Events/CgiWriteEvent.hpp"
 #include "../Server/Server.hpp"
@@ -195,6 +196,13 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			eventManager.initFd(fd);
 			eventManager.addEvent(fd,
 								  new CgiEndEvent(&ctx.ownerClient, *worker));
+		}
+		{
+			const int fd = worker->getStatusFd();
+			socketsManager.registerSocket(fd, EPOLLIN);
+			eventManager.initFd(fd);
+			eventManager.addEvent(
+				fd, new CgiErrorExitEvent(&ctx.ownerClient, *worker));
 		}
 
 		LOG(INFO) << "CGI worker created"

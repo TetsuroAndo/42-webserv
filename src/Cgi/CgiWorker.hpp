@@ -35,6 +35,9 @@ public:
 	/// @brief CGIプロセスの標準エラー出力からエラーメッセージを読み込む
 	void handleReadErr();
 
+	/// @brief CGIプロセスが失敗した際の処理
+	void handleErrorExit();
+
 	/// @brief クライアントFDを取得する
 	int getClientFd() const;
 

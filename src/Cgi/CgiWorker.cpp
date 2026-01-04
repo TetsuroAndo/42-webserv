@@ -76,6 +76,30 @@ CgiWorker::~CgiWorker() {
 	}
 }
 
+void CgiWorker::handleErrorExit() {
+	int childErr = 0;
+	const ssize_t n = read(_pipeStatus[0], &childErr, sizeof(childErr));
+
+	if (n > 0) {
+		LOG(ERROR) << "CGI child failed" << attr("pid", _pid)
+				   << attr("errno", childErr)
+				   << attr("msg", strerror(childErr));
+
+		_state = CGI_ERROR;
+		kill(_pid, SIGKILL);
+		setExitStatus(childErr);
+	}
+	_closePipe(_pipeStatus[0]);
+	_outputComplete = true;
+	_exitStatusSet = true;
+
+	if (isFinished()) {
+		const char tmpC = 'x';
+		const int tmp = write(_pipeComplete[1], &tmpC, sizeof(tmpC));
+		(void)tmp;
+	}
+}
+
 void CgiWorker::execute() {
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeIn) < 0 ||
 		socketpair(AF_UNIX, SOCK_STREAM, 0, _pipeOut) < 0 ||
@@ -144,21 +168,6 @@ void CgiWorker::execute() {
 	_closePipe(_pipeStatus[1]);
 
 	fcntl(_pipeStatus[0], F_SETFL, O_NONBLOCK);
-	int childErr = 0;
-	const ssize_t n = read(_pipeStatus[0], &childErr, sizeof(childErr));
-
-	if (n > 0) {
-		LOG(ERROR) << "CGI child failed" << attr("pid", _pid)
-				   << attr("errno", childErr)
-				   << attr("msg", strerror(childErr));
-
-		_state = CGI_ERROR;
-		kill(_pid, SIGKILL);
-		_outputComplete = true;
-		_exitStatusSet = true;
-		return;
-	}
-	_closePipe(_pipeStatus[0]);
 
 	if (fcntl(_pipeIn[1], F_SETFL, O_NONBLOCK) < 0 ||
 		fcntl(_pipeOut[0], F_SETFL, O_NONBLOCK) < 0 ||
@@ -223,7 +232,6 @@ void CgiWorker::handleWrite() {
 		_closePipe(_pipeIn[1]);
 		return;
 	}
-
 	_bytesSent += bytes;
 	if (_bytesSent >= _requestBody.size()) {
 		_closePipe(_pipeIn[1]);
