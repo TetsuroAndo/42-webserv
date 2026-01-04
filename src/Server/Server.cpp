@@ -3,6 +3,8 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
+#include "Client/Events/ReadEvent.hpp"
+#include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
 #include <cerrno>
 #include <cstring>
@@ -26,16 +28,17 @@ void sigchldHandler(int) {
 	(void)res;
 }
 
-void makeClientIp(char *clientIp, size_t size, const unsigned char bytes[4]) {
-    std::ostringstream oss;
-    oss << static_cast<unsigned int>(bytes[0]) << "."
-        << static_cast<unsigned int>(bytes[1]) << "."
-        << static_cast<unsigned int>(bytes[2]) << "."
-        << static_cast<unsigned int>(bytes[3]);
+void makeClientIp(char *clientIp, const size_t size,
+				  const unsigned char bytes[4]) {
+	std::ostringstream oss;
+	oss << static_cast< unsigned int >(bytes[0]) << "."
+		<< static_cast< unsigned int >(bytes[1]) << "."
+		<< static_cast< unsigned int >(bytes[2]) << "."
+		<< static_cast< unsigned int >(bytes[3]);
 
-    std::string tmp = oss.str();
-    std::strncpy(clientIp, tmp.c_str(), size);
-    clientIp[size - 1] = '\0';
+	std::string tmp = oss.str();
+	std::strncpy(clientIp, tmp.c_str(), size);
+	clientIp[size - 1] = '\0';
 }
 } // namespace
 
@@ -80,35 +83,6 @@ SocketsManager &Server::getSocketsManager() { return _socketsManager; }
 MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
 CgiManager &Server::getCgiManager() { return _cgiManager; }
 const Config &Server::getConfig() const { return _config; }
-
-void Server::applyCgiChanges() {
-	FdEventChange event;
-	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent() ||
-		   _cgiManager.sizeNotifyEvent()) {
-		try {
-			while (_cgiManager.sizeAddEvent()) {
-				event = _cgiManager.popAddChange();
-				_socketsManager.registerSocket(
-					event.fd, static_cast< uint32_t >(event.eventType));
-			}
-			while (_cgiManager.sizeRemoveEvent()) {
-				event = _cgiManager.popRemoveChange();
-				_socketsManager.unregisterSocket(event.fd);
-			}
-			while (_cgiManager.sizeNotifyEvent()) {
-				event = _cgiManager.popNotifyChange();
-				_socketsManager.modifySocket(
-					event.fd, static_cast< uint32_t >(event.eventType));
-			}
-		} catch (const std::runtime_error &e) {
-			LOG(ERROR) << "applyCgiChanges: socket operation failed"
-					   << attr("fd", event.fd) << attr("what", e.what());
-		} catch (const std::exception &e) {
-			LOG(ERROR) << "applyCgiChanges: unexpected exception"
-					   << attr("fd", event.fd) << attr("what", e.what());
-		}
-	}
-}
 
 void Server::setupListenSockets() {
 	const std::vector< Listen > &listens = _config.getListens();
@@ -193,9 +167,9 @@ void Server::run() {
 			throw std::runtime_error("epoll_wait() failed");
 		}
 
-		// wait()から戻ったら、まず終了したCGIプロセスを回収する
+		// 終了したpidを拾う
 		_cgiManager.cleanupFinishedWorkers();
-		// タイムアウトのチェックも行う（イベント駆動で完了通知を積む）
+		// タイムアウトのチェック
 		_cgiManager.cleanupTimedOutWorkers();
 
 		const epoll_event *events = _socketsManager.getEvents();
@@ -204,87 +178,18 @@ void Server::run() {
 			int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			applyCgiChanges();
-
 			if (fd == _sigchldPipe[0]) {
 				handleSigchldEvent();
 				continue;
 			}
 
-			// CGIのFDを優先的に処理する
-			if (_cgiManager.isCgiFd(fd)) {
-				uint32_t ev = eventTypes;
-				if (eventTypes & EPOLLHUP) {
-					ev |= EPOLLIN; // EOF処理のため
-				}
-				_cgiManager.handleEvent(fd, ev);
-				continue;
-			}
-
 			if (_listenSockets.count(fd)) {
 				handleNewConnection(fd);
-			} else if (_clients.count(fd)) {
-				if (eventTypes & EPOLLERR || eventTypes & EPOLLHUP) {
-					LOG(WARNING)
-						<< "EPOLLERR or EPOLLHUP for client fd: " << fd;
-					closeConnection(fd);
-					continue;
-				}
-				HttpResponse cgiRes(_config);
-				if (_cgiManager.isCgiComplete(fd, cgiRes)) {
-					AccessLogger::getInstance().log(
-						&_clients[fd]->getContext().req, &cgiRes,
-						_clients[fd]->getIp(), _clients[fd]->getPort(),
-						getSessionId(&_clients[fd]->getContext()));
-					const std::string responseStr =
-						ResponseBuilder::build(cgiRes);
-					if (!responseStr.empty()) {
-						_clients[fd]->getSocket().setSendBuffer(
-							_clients[fd]->getSocket().getSendBuffer() +
-							responseStr);
-					}
-					if (!_clients[fd]->getSocket().getSendBuffer().empty()) {
-						_socketsManager.modifySocket(fd, EPOLLIN | EPOLLOUT);
-					}
-				} else {
-					if (eventTypes & EPOLLIN) {
-						_clients[fd]->handleReadEvent();
-					}
-					// タイムアウトでクライアントが削除された可能性があるため再度チェック
-					if (_clients.count(fd) && (eventTypes & EPOLLOUT)) {
-						_clients[fd]->handleWriteEvent();
-					}
-				}
+			} else {
+				_eventManager.handle(fd, eventTypes);
 			}
 		}
-
-		// このラウンドでCgiManagerから出た変更・通知を反映
-		applyCgiChanges();
-
-		// 完了通知が来たクライアントのみレスポンス組立て・送信準備
-		while (_cgiManager.sizeCompletedClientFd()) {
-			const int cfd = _cgiManager.popCompletedClientFd();
-			if (_clients.count(cfd) == 0)
-				continue;
-			HttpResponse cgiRes(_config);
-			if (_cgiManager.isCgiComplete(cfd, cgiRes)) {
-				AccessLogger::getInstance().log(
-					&_clients[cfd]->getContext().req, &cgiRes,
-					_clients[cfd]->getIp(), _clients[cfd]->getPort(),
-					getSessionId(&_clients[cfd]->getContext()));
-				const std::string responseStr = ResponseBuilder::build(cgiRes);
-				if (!responseStr.empty()) {
-					_clients[cfd]->getSocket().setSendBuffer(
-						_clients[cfd]->getSocket().getSendBuffer() +
-						responseStr);
-				}
-				if (!_clients[cfd]->getSocket().getSendBuffer().empty()) {
-					_socketsManager.modifySocket(cfd, EPOLLIN | EPOLLOUT);
-				}
-			}
-		}
-
-		SessionManager::getInstance().cleanupIfNeeded();
+		SessionManager::getInstance().cleanup();
 	}
 }
 
@@ -395,9 +300,13 @@ void Server::handleNewConnection(const int listenFd) {
 			return;
 		}
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
-		Client *client = new Client(clientFd, clientAddr, listenPort, *this);
+		Client *client =
+			new Client(clientFd, clientAddr, listenPort, *this, _eventManager);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
+		_eventManager.initFd(*client);
+		_eventManager.addEvent(clientFd, new ReadEvent(client));
+		_eventManager.addEvent(clientFd, new WriteEvent(client));
 		// 最初はヘッダ受信待ちのタイムアウトを設定
 		client->updateTimeout();
 	} catch (const std::bad_alloc &e) {
@@ -415,6 +324,9 @@ void Server::closeConnection(const int clientFd) {
 	// 閉じる前に、CGIに紐づく処理があれば中断・後始末する
 	_cgiManager.abortClient(clientFd);
 	_socketsManager.unregisterSocket(clientFd);
+
+	// unregisterSocketをしたことで、終了通知が行かなくなるので、ここでクリアしておく
+	_eventManager.forgetFd(clientFd);
 
 	const std::map< int, Client * >::iterator it = _clients.find(clientFd);
 	if (it != _clients.end()) {

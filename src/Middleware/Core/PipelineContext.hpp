@@ -6,7 +6,6 @@
 #include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Parser/RequestParser.hpp"
 #include "../../Session/Session.hpp"
-#include "../../Socket/FdEventChanges.hpp"
 
 class CgiManager;
 class Client;

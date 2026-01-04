@@ -41,9 +41,8 @@ void SocketsManager::unregisterSocket(const int fd) const {
 }
 
 int SocketsManager::wait(const int timeout) {
-	int eventSize;
 	while (true) {
-		eventSize =
+		const int eventSize =
 			epoll_wait(_epoll_fd, _events.data(), _events.size(), timeout);
 		if (eventSize < 0 && errno == EINTR) {
 			continue;

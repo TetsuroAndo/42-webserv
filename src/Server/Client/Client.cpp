@@ -1,14 +1,16 @@
 #include "Client.hpp"
-#include "../Handler/ErrorHandler.hpp"
-#include "../Http/Builder/ResponseBuilder.hpp"
-#include "../Http/Core/HttpRequest.hpp"
-#include "../Http/Core/HttpResponse.hpp"
-#include "../Http/Core/HttpStatus.hpp"
-#include "../Lib/Logger/Log.hpp"
-#include "../Lib/StringOps/StringOps.hpp"
-#include "../Middleware/Core/PipelineContext.hpp"
+#include "../../Handler/ErrorHandler.hpp"
+#include "../../Http/Builder/ResponseBuilder.hpp"
+#include "../../Http/Core/HttpRequest.hpp"
+#include "../../Http/Core/HttpResponse.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
+#include "../../Lib/Logger/Log.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
+#include "../../Middleware/Core/PipelineContext.hpp"
+#include "../Server.hpp"
+#include "Events/ReadEvent.hpp"
+#include "Events/WriteEvent.hpp"
 #include "HttpConnection.hpp"
-#include "Server.hpp"
 
 #include <arpa/inet.h>
 #include <cerrno>
@@ -19,15 +21,16 @@
 
 // clang-format off
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
-			Server &server)
+			Server &server, EventManager &eventManager)
 	: _server(server),
 	  _fd(fd),
 	  _listenPort(listenPort),
 	  _socket(server.getConfig(), fd, addr),
 	  _context(server.getConfig(), *this, server.getCgiManager()),
-	  _httpConnection(this, _context, *this)
+	  _httpConnection(this, _context, *this),
+	  _eventManager(eventManager)
 {
-	const uint32_t ip_addr = ntohl(addr.sin_addr.s_addr);
+	const unsigned int ip_addr = ntohl(addr.sin_addr.s_addr);
 	_ip = StringOps::ipToString(ip_addr);
 	_port = ntohs(addr.sin_port);
 }
@@ -52,6 +55,8 @@ const HttpConnection &Client::getHttpConnection() const {
 	return _httpConnection;
 }
 
+EventManager &Client::getEventManager() const { return _eventManager; }
+
 void Client::onTimeout() {
 	LOG(INFO) << "Client timed out for fd: " << _fd;
 	_context.res.setStatusCode(HttpStatus::REQUEST_TIMEOUT);
@@ -60,7 +65,7 @@ void Client::onTimeout() {
 	const std::string response = ResponseBuilder::build(_context.res);
 	getSocket().setSendBuffer(response);
 	getHttpConnection().handleWriteEvent();
-	_server.closeConnection(this->getFd());
+	_eventManager.removeFd(this->getFd());
 }
 
 void Client::handleReadEvent() { _httpConnection.handleReadEvent(); }
@@ -77,7 +82,7 @@ void Client::onSocketModify(int fd, uint32_t events) {
 	_server.getSocketsManager().modifySocket(fd, events);
 }
 
-void Client::onCgiChanges() { _server.applyCgiChanges(); }
+void Client::onCgiChanges() {}
 
 void Client::onRequestProcessed() {
 	// リクエスト処理完了時のタイムアウト更新

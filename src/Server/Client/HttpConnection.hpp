@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Config/Config.hpp"
-#include "../Http/Parser/RequestParser.hpp"
-#include "../Middleware/Core/PipelineContext.hpp" // &で持つため完全な定義が必要
-#include "../Socket/Socket.hpp"
+#include "../../Config/Config.hpp"
+#include "../../Http/Parser/RequestParser.hpp"
+#include "../../Middleware/Core/PipelineContext.hpp"
+#include "../../Socket/Socket.hpp"
 #include "HttpConnectionEventHandler.hpp"
 #include <string>
 
