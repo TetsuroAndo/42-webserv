@@ -82,7 +82,7 @@ void Client::onSocketModify(int fd, uint32_t events) {
 	_server.getSocketsManager().modifySocket(fd, events);
 }
 
-void Client::onCgiChanges() { _server.applyCgiChanges(); }
+void Client::onCgiChanges() {}
 
 void Client::onRequestProcessed() {
 	// リクエスト処理完了時のタイムアウト更新

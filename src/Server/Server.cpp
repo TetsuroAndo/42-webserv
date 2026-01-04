@@ -28,7 +28,8 @@ void sigchldHandler(int) {
 	(void)res;
 }
 
-void makeClientIp(char *clientIp, size_t size, const unsigned char bytes[4]) {
+void makeClientIp(char *clientIp, const size_t size,
+				  const unsigned char bytes[4]) {
 	std::ostringstream oss;
 	oss << static_cast< unsigned int >(bytes[0]) << "."
 		<< static_cast< unsigned int >(bytes[1]) << "."
@@ -82,29 +83,6 @@ SocketsManager &Server::getSocketsManager() { return _socketsManager; }
 MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
 CgiManager &Server::getCgiManager() { return _cgiManager; }
 const Config &Server::getConfig() const { return _config; }
-
-void Server::applyCgiChanges() {
-	FdEventChange event;
-	while (_cgiManager.sizeAddEvent() || _cgiManager.sizeRemoveEvent()) {
-		try {
-			while (_cgiManager.sizeAddEvent()) {
-				event = _cgiManager.popAddChange();
-				_socketsManager.registerSocket(
-					event.fd, static_cast< uint32_t >(event.eventType));
-			}
-			while (_cgiManager.sizeRemoveEvent()) {
-				event = _cgiManager.popRemoveChange();
-				_socketsManager.unregisterSocket(event.fd);
-			}
-		} catch (const std::runtime_error &e) {
-			LOG(ERROR) << "applyCgiChanges: socket operation failed"
-					   << attr("fd", event.fd) << attr("what", e.what());
-		} catch (const std::exception &e) {
-			LOG(ERROR) << "applyCgiChanges: unexpected exception"
-					   << attr("fd", event.fd) << attr("what", e.what());
-		}
-	}
-}
 
 void Server::setupListenSockets() {
 	const std::vector< Listen > &listens = _config.getListens();

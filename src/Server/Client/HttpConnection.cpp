@@ -103,7 +103,6 @@ void HttpConnection::handleRequest() {
 
 	// CGI開始チェック
 	if (_context.isCgi) {
-		_eventHandler.onCgiChanges();
 		_context.isCgi = false;
 		return;
 	}

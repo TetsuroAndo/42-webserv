@@ -20,7 +20,6 @@ public:
 
 	void run();
 	void closeConnection(int clientFd);
-	void applyCgiChanges();
 
 	TimeoutManager &getTimeoutManager();
 	SocketsManager &getSocketsManager();
