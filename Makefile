@@ -59,7 +59,7 @@ r: f all
 debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
-	$(MAKE) $(NAME) -j $(shell nproc)
+	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" -j $(shell nproc)
 
 $(LOG_DIR):
 	@mkdir -p $(LOG_DIR)
@@ -143,7 +143,7 @@ $(NAME):
 	fi
 	@echo "Building $(NAME) in Docker container..."
 	@docker run --rm -v $(ROOT_DIR):/workspace -w /workspace $(DOCKER_IMAGE):$(DOCKER_TAG) \
-		make $(NAME) -j $$(nproc)
+		make $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" -j $$(nproc)
 endif
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
