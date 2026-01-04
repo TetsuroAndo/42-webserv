@@ -56,8 +56,6 @@ private:
 	const time_t _timeoutSeconds;
 	size_t _maxWorkers;
 	std::vector< CgiWorker * > _workers;
-	// pipeFDからWorkerを引くためのマップ
-	std::map< int, CgiWorker * > _pipeFdToWorker;
 	// ClientFDからWorkerを引くためのマップ
 	std::map< int, CgiWorker * > _clientFdToWorker;
 	// PIDからWorkerを引くためのマップ

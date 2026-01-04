@@ -32,19 +32,7 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 
 	_workers.erase(std::remove(_workers.begin(), _workers.end(), worker),
 				   _workers.end());
-	// 値がworkerのエントリをすべて削除する（fdが-1に変更された後でも安全）
-	{
-		std::vector< int > keys;
-		for (std::map< int, CgiWorker * >::iterator it2 =
-				 _pipeFdToWorker.begin();
-			 it2 != _pipeFdToWorker.end(); ++it2) {
-			if (it2->second == worker)
-				keys.push_back(it2->first);
-		}
-		for (size_t i = 0; i < keys.size(); ++i) {
-			_pipeFdToWorker.erase(keys[i]);
-		}
-	}
+
 	_clientFdToWorker.erase(worker->getClientFd());
 	if (worker->getPid() > 0) {
 		_pidToWorker.erase(worker->getPid());
@@ -168,21 +156,8 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		}
 
 		// workerとFDを紐付けする
-		{
-			int fds[3];
-			fds[0] = worker->getReadFd();
-			fds[1] = worker->getWriteFd();
-			fds[2] = worker->getErrFd();
-
-			const int count = sizeof(fds) / sizeof(fds[0]);
-			for (int i = 0; i < count; ++i) {
-				int fd = fds[i];
-				_pipeFdToWorker[fd] = worker;
-			}
-
-			_clientFdToWorker[worker->getClientFd()] = worker;
-			_pidToWorker[worker->getPid()] = worker;
-		}
+		_clientFdToWorker[worker->getClientFd()] = worker;
+		_pidToWorker[worker->getPid()] = worker;
 
 		// EventManagerに監視対象のFDを追加
 		EventManager &eventManager = ctx.ownerClient.getEventManager();
@@ -268,20 +243,6 @@ void CgiManager::cleanupTimedOutWorkers() {
 
 		// 完了通知を積む（タイムアウト）
 		_completedClients.push(worker->getClientFd());
-
-		// 関連FDを監視対象から削除（現在のマッピングに基づいて安全に）
-		{
-			std::vector< int > keys;
-			for (std::map< int, CgiWorker * >::iterator it2 =
-					 _pipeFdToWorker.begin();
-				 it2 != _pipeFdToWorker.end(); ++it2) {
-				if (it2->second == worker)
-					keys.push_back(it2->first);
-			}
-			for (size_t i = 0; i < keys.size(); ++i) {
-				_pipeFdToWorker.erase(keys[i]);
-			}
-		}
 	}
 }
 
@@ -378,19 +339,7 @@ void CgiManager::abortClient(const int clientFd) {
 		return;
 
 	CgiWorker *worker = it->second;
-	// epoll監視から外す（現在のマッピングに基づく）
-	{
-		std::vector< int > keys;
-		for (std::map< int, CgiWorker * >::iterator it2 =
-				 _pipeFdToWorker.begin();
-			 it2 != _pipeFdToWorker.end(); ++it2) {
-			if (it2->second == worker)
-				keys.push_back(it2->first);
-		}
-		for (size_t i = 0; i < keys.size(); ++i) {
-			_pipeFdToWorker.erase(keys[i]);
-		}
-	}
+
 	// プロセスを確実に終了
 	pid_t pid = worker->getPid();
 	if (pid > 0) {
