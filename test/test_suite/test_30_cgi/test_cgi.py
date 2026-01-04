@@ -27,6 +27,20 @@ class TestCGIExec:
         data = {"test_data": "hello", "name": "world"}
         response = requests.post(url, data=data)
         assert response.status_code == 200
+        # 送信した値がレスポンスに含まれているか確認
+        assert "hello" in response.text
+        assert "world" in response.text
+
+    @pytest.mark.config("valid/cgi.yaml")
+    def test_echo_cgi_with_large_post_data(self, managed_server):
+        """10KB程度の大きなデータを送信してCGIが正しく受け取れることを確認"""
+        url = f"{managed_server['base_url']}/cgi-bin/echo.py"
+        large_data = "x" * (10 * 1024)
+        response = requests.post(url, data={"large_field": large_data})
+        assert response.status_code == 200
+        # 送信したデータがレスポンスに含まれているか確認
+        assert large_data in response.text
+
 
     @pytest.mark.config("valid/cgi.yaml")
     def test_nonexistent_cgi(self, managed_server):
