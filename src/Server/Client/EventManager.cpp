@@ -37,8 +37,8 @@ void EventManager::handle(const int fd, const unsigned int events) {
 		const ssize_t recv_res = recv(fd, buf, 1, MSG_PEEK);
 		if (0 < recv_res)
 			effective |= EPOLLIN;
-	} else if (events & EPOLLERR || events & EPOLLHUP) {
-		LOG(WARNING) << "EPOLLERR or EPOLLHUP for client fd: " << fd;
+	} else if (events & EPOLLERR) {
+		LOG(WARNING) << "EPOLLERR for client fd: " << fd;
 		removeFd(fd);
 	}
 	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
