@@ -80,7 +80,7 @@ void CgiWorker::handleErrorExit() {
 	int childErr = 0;
 	const ssize_t n = read(_pipeStatus[0], &childErr, sizeof(childErr));
 
-	if (n > 0) {
+	if (0 < n) {
 		LOG(ERROR) << "CGI child failed" << attr("pid", _pid)
 				   << attr("errno", childErr)
 				   << attr("msg", strerror(childErr));
@@ -88,15 +88,15 @@ void CgiWorker::handleErrorExit() {
 		_state = CGI_ERROR;
 		kill(_pid, SIGKILL);
 		setExitStatus(childErr);
-	}
-	_closePipe(_pipeStatus[0]);
-	_outputComplete = true;
-	_exitStatusSet = true;
+		_closePipe(_pipeStatus[0]);
+		_outputComplete = true;
+		_exitStatusSet = true;
 
-	if (isFinished()) {
-		const char tmpC = 'x';
-		const int tmp = write(_pipeComplete[1], &tmpC, sizeof(tmpC));
-		(void)tmp;
+		if (isFinished()) {
+			const char tmpC = 'x';
+			const int tmp = write(_pipeComplete[1], &tmpC, sizeof(tmpC));
+			(void)tmp;
+		}
 	}
 }
 
