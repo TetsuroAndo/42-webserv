@@ -128,9 +128,7 @@ def test_post_content_length_mismatch_too_small(managed_server):
         )
 
         output = result.stderr + result.stdout
+
         assert "408" in output, f"Expected 408 but got {output}."
     except subprocess.TimeoutExpired:
-        # タイムアウトで接続を閉じることは許容される動作
-        # サーバーがContent-Lengthで指定されたバイト数を待ち続けてタイムアウトし、
-        # 接続を閉じた場合は正常な動作として扱う
-        pass
+        assert False, f"Expected timeout, but got {status_code}. Output:\n{output}"
