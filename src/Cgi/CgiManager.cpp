@@ -371,10 +371,6 @@ bool CgiManager::isCgiComplete(const int clientFd, HttpResponse &res) {
 	return true;
 }
 
-bool CgiManager::isCgiFd(const int fd) const {
-	return _pipeFdToWorker.count(fd) > 0;
-}
-
 void CgiManager::abortClient(const int clientFd) {
 	std::map< int, CgiWorker * >::iterator it =
 		_clientFdToWorker.find(clientFd);

@@ -48,13 +48,6 @@ public:
 	bool isCgiComplete(int clientFd, HttpResponse &res);
 
 	/**
-	 * @brief 指定されたFDがCgiManagerの管理下にあるか判定する
-	 * @param fd 判定対象のファイルディスクリプタ
-	 * @return 管理下にあればtrue
-	 */
-	bool isCgiFd(int fd) const;
-
-	/**
 	 * @brief 指定クライアントFDに紐づくCGIを中断・後始末する
 	 */
 	void abortClient(int clientFd);
