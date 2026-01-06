@@ -1,0 +1,6 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            interface: 999.1.1.1
+            port: 8080
