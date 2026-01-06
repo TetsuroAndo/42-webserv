@@ -52,6 +52,11 @@ void ConfigBuilder::initDefaults() {
 }
 
 void ConfigBuilder::setup(const std::string &configFile) {
+	setup(configFile, 0);
+}
+
+void ConfigBuilder::setup(const std::string &configFile,
+						  const size_t serverIndex) {
 	LOG(INFO) << "Loading configuration from: " << configFile;
 	const MyYAML yaml(configFile);
 	const Node *serversNode = yaml.getData().getMapNode("servers");
@@ -64,8 +69,12 @@ void ConfigBuilder::setup(const std::string &configFile) {
 	if (serverList.empty()) {
 		throw std::runtime_error("ConfigBuilder error: no servers configured");
 	}
+	if (serverIndex >= serverList.size()) {
+		throw std::runtime_error(
+			"ConfigBuilder error: server index out of range");
+	}
 
-	Node *serverNode = serverList[0];
+	Node *serverNode = serverList[serverIndex];
 	if (serverNode->getKey() != "server") {
 		throw std::runtime_error(
 			"ConfigBuilder error: missing 'server' key in server list");
@@ -85,6 +94,12 @@ ConfigBuilder::ConfigBuilder(const std::string &configFile) {
 	setup(configFile);
 }
 
+ConfigBuilder::ConfigBuilder(const std::string &configFile,
+							 const size_t serverIndex) {
+	initDefaults();
+	setup(configFile, serverIndex);
+}
+
 ConfigBuilder::~ConfigBuilder() {}
 
 Config ConfigBuilder::build() const {
@@ -93,6 +108,26 @@ Config ConfigBuilder::build() const {
 				  _biggestRequestBodySize, _timeoutSec, _maxEvents,
 				  _requestHeaderTimeoutSec, _requestBodyTimeoutSec,
 				  _sessionTimeoutSec, _maxRequestHeaderSize, _errorPages);
+}
+
+std::vector< Config > ConfigBuilder::import(const std::string &configFile) {
+	const MyYAML yaml(configFile);
+	const Node *serversNode = yaml.getData().getMapNode("servers");
+	if (!serversNode) {
+		throw std::runtime_error(
+			"ConfigBuilder error: missing 'servers' root node");
+	}
+	const std::vector< Node * > &serverList = serversNode->getSeq();
+	if (serverList.empty()) {
+		throw std::runtime_error("ConfigBuilder error: no servers configured");
+	}
+
+	std::vector< Config > configs;
+	configs.reserve(serverList.size());
+	for (size_t i = 0; i < serverList.size(); ++i) {
+		configs.push_back(ConfigBuilder(configFile, i).build());
+	}
+	return configs;
 }
 
 void ConfigBuilder::setMaxRequestBodySize(const size_t size) {

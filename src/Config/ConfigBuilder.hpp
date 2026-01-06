@@ -26,13 +26,16 @@ private:
 
 	void initDefaults();
 	void setup(const std::string &configFile);
+	void setup(const std::string &configFile, size_t serverIndex);
+	Config build() const;
 
 public:
 	ConfigBuilder();
 	ConfigBuilder(const std::string &configFile);
+	ConfigBuilder(const std::string &configFile, size_t serverIndex);
 	~ConfigBuilder();
 
-	Config build() const;
+	static std::vector< Config > import(const std::string &configFile);
 
 	// グローバル設定
 	void setMaxRequestBodySize(size_t size);
