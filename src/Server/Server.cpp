@@ -6,12 +6,15 @@
 #include "Client/Events/ReadEvent.hpp"
 #include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <signal.h>
+#include <set>
+#include <sstream>
 #include <stdexcept>
 #include <unistd.h>
 #include <vector>
@@ -40,21 +43,120 @@ void makeClientIp(char *clientIp, const size_t size,
 	std::strncpy(clientIp, tmp.c_str(), size);
 	clientIp[size - 1] = '\0';
 }
+
+std::string listenToString(const Listen &listen) {
+	std::ostringstream oss;
+	oss << listen.interface << ":" << listen.port;
+	return oss.str();
+}
+
+const Config &selectCgiConfig(const std::vector< Config > &configs) {
+	if (configs.empty()) {
+		throw std::runtime_error("Server error: no servers configured");
+	}
+	const Config *selected = &configs[0];
+	for (size_t i = 1; i < configs.size(); ++i) {
+		if (configs[i].getTimeoutSec() > selected->getTimeoutSec()) {
+			selected = &configs[i];
+		}
+	}
+	return *selected;
+}
+
+size_t resolveMaxEvents(const std::vector< Config > &configs) {
+	if (configs.empty()) {
+		throw std::runtime_error("Server error: no servers configured");
+	}
+	size_t maxEvents = configs[0].getMaxEvents();
+	for (size_t i = 1; i < configs.size(); ++i) {
+		maxEvents = std::max(maxEvents, configs[i].getMaxEvents());
+	}
+	return maxEvents;
+}
+
+size_t resolveMaxSessionTimeout(const std::vector< Config > &configs) {
+	if (configs.empty()) {
+		throw std::runtime_error("Server error: no servers configured");
+	}
+	size_t maxTimeout = configs[0].getSessionTimeoutSec();
+	for (size_t i = 1; i < configs.size(); ++i) {
+		maxTimeout = std::max(maxTimeout, configs[i].getSessionTimeoutSec());
+	}
+	return maxTimeout;
+}
+
+void validateListenUniqueness(const std::vector< Config > &configs) {
+	std::set< std::pair< std::string, int > > seen;
+	std::set< int > wildcardPorts;
+	std::set< int > anyPorts;
+
+	for (size_t i = 0; i < configs.size(); ++i) {
+		const std::vector< Listen > &listens = configs[i].getListens();
+		if (listens.empty()) {
+			throw std::runtime_error(
+				"Config error: at least one listen is required per server");
+		}
+		for (size_t j = 0; j < listens.size(); ++j) {
+			const Listen &listen = listens[j];
+			const std::pair< std::string, int > key(listen.interface,
+													listen.port);
+			if (seen.count(key)) {
+				throw std::runtime_error("Config error: duplicate listen " +
+										 listenToString(listen));
+			}
+			const bool isWildcard = (listen.interface == "0.0.0.0");
+			if (isWildcard) {
+				if (anyPorts.count(listen.port)) {
+					std::ostringstream oss;
+					oss << listen.port;
+					throw std::runtime_error(
+						"Config error: wildcard listen conflicts with "
+						"existing listen on port " +
+						oss.str());
+				}
+				wildcardPorts.insert(listen.port);
+				anyPorts.insert(listen.port);
+			} else {
+				if (wildcardPorts.count(listen.port)) {
+					std::ostringstream oss;
+					oss << listen.port;
+					throw std::runtime_error(
+						"Config error: listen " + listenToString(listen) +
+						" conflicts with wildcard listen on port " +
+						oss.str());
+				}
+				anyPorts.insert(listen.port);
+			}
+			seen.insert(key);
+		}
+	}
+}
 } // namespace
 
-Server::Server(const Config &config)
-	: _config(config), _cgiManager(config), _socketsManager(config) {
+Server::Server(const std::vector< Config > &configs)
+	: _cgiManager(selectCgiConfig(configs)),
+	  _socketsManager(resolveMaxEvents(configs)) {
 	_sigchldPipe[0] = -1;
 	_sigchldPipe[1] = -1;
 	LOG(INFO) << "Initializing server with provided configuration...";
-	Logging::setupLoggers(_config);
-	std::ostringstream oss;
-	oss << _config;
-	LOG(DEBUG) << oss.str();
+	Logging::setupLoggers(configs[0]);
+	validateListenUniqueness(configs);
+
+	_vhosts.reserve(configs.size());
+	for (size_t i = 0; i < configs.size(); ++i) {
+		VirtualHost vhost(configs[i]);
+		_vhosts.push_back(vhost);
+		_builder.buildRoute(_vhosts.back().config,
+							&_vhosts.back().mainProcessor);
+
+		std::ostringstream oss;
+		oss << _vhosts.back().config;
+		LOG(DEBUG) << "Config[" << i << "]\n" << oss.str();
+	}
+
 	SessionManager::getInstance().setTimeoutSec(
-		static_cast< time_t >(_config.getSessionTimeoutSec()));
+		static_cast< time_t >(resolveMaxSessionTimeout(configs)));
 	setupListenSockets();
-	_builder.buildRoute(_config, &_mainProcessor);
 	LOG(INFO) << "Server initialized successfully.";
 }
 
@@ -80,16 +182,16 @@ Server::~Server() {
 
 TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
 SocketsManager &Server::getSocketsManager() { return _socketsManager; }
-MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
 CgiManager &Server::getCgiManager() { return _cgiManager; }
-const Config &Server::getConfig() const { return _config; }
 
 void Server::setupListenSockets() {
-	const std::vector< Listen > &listens = _config.getListens();
-	for (std::vector< Listen >::const_iterator it = listens.begin();
-		 it != listens.end(); ++it) {
-		const int port = it->port;
-		std::string interfaceAddr = it->interface;
+	for (size_t i = 0; i < _vhosts.size(); ++i) {
+		const Config &config = _vhosts[i].config;
+		const std::vector< Listen > &listens = config.getListens();
+		for (size_t j = 0; j < listens.size(); ++j) {
+			const Listen &listenConf = listens[j];
+			const int port = listenConf.port;
+			std::string interfaceAddr = listenConf.interface;
 
 		int listenFd = socket(AF_INET, SOCK_STREAM, 0);
 		if (listenFd < 0) {
@@ -139,18 +241,20 @@ void Server::setupListenSockets() {
 			throw std::runtime_error("listen() failed");
 		}
 
-		Socket *sock = NULL;
-		try {
-			sock = new Socket(_config, listenFd, addr);
-			_listenSockets[listenFd] = sock;
-			_socketsManager.registerSocket(listenFd, EPOLLIN);
-			LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
-					  << attr("fd", listenFd);
-		} catch (const std::exception &e) {
-			close(listenFd);
-			delete sock;
-			LOG(FATAL) << "Failed to create listen socket: " << e.what();
-			throw;
+			Socket *sock = NULL;
+			try {
+				sock = new Socket(config, listenFd, addr);
+				_listenSockets[listenFd] = sock;
+				_vhostByListenFd[listenFd] = &_vhosts[i];
+				_socketsManager.registerSocket(listenFd, EPOLLIN);
+				LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
+						  << attr("fd", listenFd);
+			} catch (const std::exception &e) {
+				close(listenFd);
+				delete sock;
+				LOG(FATAL) << "Failed to create listen socket: " << e.what();
+				throw;
+			}
 		}
 	}
 }
@@ -291,6 +395,13 @@ void Server::handleNewConnection(const int listenFd) {
 		close(clientFd);
 		return;
 	}
+	std::map< int, VirtualHost * >::const_iterator vhostIt =
+		_vhostByListenFd.find(listenFd);
+	if (vhostIt == _vhostByListenFd.end()) {
+		LOG(ERROR) << "Virtual host not found" << attr("fd", listenFd);
+		close(clientFd);
+		return;
+	}
 
 	try {
 		const Socket *listenSocket = it->second;
@@ -299,9 +410,16 @@ void Server::handleNewConnection(const int listenFd) {
 			close(clientFd);
 			return;
 		}
+		VirtualHost *vhost = vhostIt->second;
+		if (vhost == NULL) {
+			LOG(ERROR) << "Virtual host is NULL" << attr("fd", listenFd);
+			close(clientFd);
+			return;
+		}
 		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
 		Client *client =
-			new Client(clientFd, clientAddr, listenPort, *this, _eventManager);
+			new Client(clientFd, clientAddr, listenPort, vhost->config,
+					   vhost->mainProcessor, *this, _eventManager);
 		_clients[clientFd] = client;
 		_socketsManager.registerSocket(clientFd, EPOLLIN);
 		_eventManager.initFd(*client);

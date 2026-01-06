@@ -11,10 +11,11 @@
 #include "Client/EventManager.hpp"
 
 #include <map>
+#include <vector>
 
 class Server {
 public:
-	Server(const Config &config);
+	Server(const std::vector< Config > &configs);
 	~Server();
 
 	void run();
@@ -22,16 +23,21 @@ public:
 
 	TimeoutManager &getTimeoutManager();
 	SocketsManager &getSocketsManager();
-	MiddlewareProcessor &getMainProcessor();
 	CgiManager &getCgiManager();
-	const Config &getConfig() const;
 
 private:
+	struct VirtualHost {
+		Config config;
+		MiddlewareProcessor mainProcessor;
+		VirtualHost(const Config &conf) : config(conf), mainProcessor() {}
+	};
+
 	Server();
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
-	Config _config;
+	std::vector< VirtualHost > _vhosts;
+	std::map< int, VirtualHost * > _vhostByListenFd;
 	CgiManager _cgiManager;
 	TimeoutManager _timeoutManager;
 	SocketsManager _socketsManager;
@@ -39,7 +45,6 @@ private:
 	std::map< int, Socket * > _listenSockets;
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
-	MiddlewareProcessor _mainProcessor;
 	EventManager _eventManager;
 
 	void setupListenSockets();

@@ -1,11 +1,9 @@
 #include "SocketsManager.hpp"
-#include "../Config/Config.hpp"
 #include <cerrno>
 #include <stdexcept>
 #include <unistd.h>
 
-SocketsManager::SocketsManager(const Config &conf)
-	: _events(conf.getMaxEvents()) {
+SocketsManager::SocketsManager(const size_t maxEvents) : _events(maxEvents) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd < 0) {
 		throw std::runtime_error("epoll_create1() failed");
