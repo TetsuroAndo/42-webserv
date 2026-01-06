@@ -2,6 +2,7 @@
 
 #include "../../Config/Config.hpp"
 #include "../../Lib/Timeout/ITimeoutable.hpp"
+#include "../../Middleware/Core/MiddlewareProcessor.hpp"
 #include "../../Middleware/Core/PipelineContext.hpp"
 #include "../../Socket/Socket.hpp"
 #include "EventManager.hpp"
@@ -15,12 +16,15 @@ class EventManager;
 
 class Client : public ITimeoutable, public HttpConnectionEventHandler {
 public:
-	Client(int fd, const sockaddr_in &addr, int listenPort, Server &server,
-		   EventManager &eventManager);
+	Client(int fd, const sockaddr_in &addr, int listenPort,
+		   const Config &config, MiddlewareProcessor &mainProcessor,
+		   Server &server, EventManager &eventManager);
 	~Client();
 
 	/// @brief Serverへのアクセス（HttpConnectionから使用を想定）
 	Server &getServer() const;
+	const Config &getConfig() const;
+	MiddlewareProcessor &getMainProcessor();
 
 	int getFd() const;
 	int getPort() const;
@@ -52,6 +56,8 @@ public:
 
 private:
 	Server &_server;
+	const Config &_config;
+	MiddlewareProcessor &_mainProcessor;
 	int _fd;
 	int _port;
 	int _listenPort;
