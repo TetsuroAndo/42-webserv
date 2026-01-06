@@ -1,6 +1,7 @@
 """
 IP/Port-based VirtualHost routing test.
 """
+from operator import index
 import os
 import socket
 import subprocess
@@ -49,16 +50,29 @@ def test_ip_port_virtualhost_routing(webserv_bin):
     while port_b == port_a:
         port_b = find_free_port()
 
+    host_a_contents = f"""
+    Host A is running on IP: {DEFAULT_HOST} PORT: {port_a}
+    """
+    host_b_contents = f"""
+    Host B is running on IP: {DEFAULT_HOST} PORT: {port_b}
+    """
+
     with tempfile.TemporaryDirectory(prefix="vhost_test_") as temp_dir:
         root_a = os.path.join(temp_dir, "root_a")
         root_b = os.path.join(temp_dir, "root_b")
         os.makedirs(root_a)
         os.makedirs(root_b)
 
-        with open(os.path.join(root_a, "index.html"), "w") as f:
-            f.write("VHOST_A")
-        with open(os.path.join(root_b, "index.html"), "w") as f:
-            f.write("VHOST_B")
+        index_a = os.path.join(root_a, "index.html")
+        index_b = os.path.join(root_b, "index.html")
+        with open(index_a, "w") as f:
+            f.write(host_a_contents)
+        with open(index_b, "w") as f:
+            f.write(host_b_contents)
+        print(f"index_a: {index_a}")
+        print(f"index_b: {index_b}")
+        print(f"index_a contents: {open(index_a, 'r').read()}")
+        print(f"index_b contents: {open(index_b, 'r').read()}")
 
         config_path = os.path.join(temp_dir, "vhost.yaml")
         config_text = f"""servers:
@@ -92,6 +106,10 @@ def test_ip_port_virtualhost_routing(webserv_bin):
         with open(config_path, "w") as f:
             f.write(config_text)
 
+        print(f"config: \n\n{open(config_path, 'r').read()}")
+        print(f"config_path: {config_path}")
+        print(f"port_a: {port_a}, port_b: {port_b}")
+
         proc = subprocess.Popen(
             [webserv_bin, config_path],
             stdout=subprocess.PIPE,
@@ -101,6 +119,7 @@ def test_ip_port_virtualhost_routing(webserv_bin):
         )
 
         try:
+            # 空いているポートを取得
             ready_a = wait_for_port(DEFAULT_HOST, port_a)
             ready_b = wait_for_port(DEFAULT_HOST, port_b)
             if not (ready_a and ready_b):
@@ -111,13 +130,17 @@ def test_ip_port_virtualhost_routing(webserv_bin):
                     f"stderr:\n{stderr}\n"
                 )
 
+            # ポートにアクセスして内容を取得
             resp_a = requests.get(f"http://{DEFAULT_HOST}:{port_a}/", timeout=2)
             resp_b = requests.get(f"http://{DEFAULT_HOST}:{port_b}/", timeout=2)
 
+            # ステータスコードが200であることを確認
             assert resp_a.status_code == 200
             assert resp_b.status_code == 200
-            assert "VHOST_A" in resp_a.text
-            assert "VHOST_B" in resp_b.text
+            assert host_a_contents in resp_a.text
+            print(f"resp_a contents: {resp_a.text}")
+            assert host_b_contents in resp_b.text
+            print(f"resp_b contents: {resp_b.text}")
             assert resp_a.text != resp_b.text
         finally:
             if proc.poll() is None:

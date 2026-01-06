@@ -7,7 +7,6 @@ import tempfile
 import time
 from contextlib import closing
 from pathlib import Path
-
 import pytest
 import requests
 import yaml
@@ -16,14 +15,14 @@ import yaml
 DEFAULT_HOST = "127.0.0.1"
 
 
-def find_free_port():
+def _find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.bind((DEFAULT_HOST, 0))
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return sock.getsockname()[1]
 
 
-def wait_for_port(host, port, timeout=5.0):
+def _wait_for_port(host, port, timeout=5.0):
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
@@ -35,49 +34,55 @@ def wait_for_port(host, port, timeout=5.0):
 
 
 def write_multi_listen_config(src_path, temp_dir):
+    class _IndentedSafeDumper(yaml.SafeDumper):
+        def increase_indent(self, flow=False, indentless=False):
+            return super().increase_indent(flow, False)
+
     with open(src_path, "r") as f:
         config = yaml.safe_load(f)
 
     servers = config.get("servers", [])
-    if len(servers) < 2:
-        pytest.skip("multi_listen.yaml に server が2つ未満のためスキップ")
-
     listen_count = 0
     for entry in servers:
         server = entry.get("server", {})
         listen_count += len(server.get("listens", []))
-    if listen_count == 0:
-        pytest.skip("multi_listen.yaml に listen が無いためスキップ")
+    if listen_count < 2:
+        pytest.skip("multi_listen.yaml に listen が2つ未満のためスキップ")
 
     ports = []
     while len(ports) < listen_count:
-        port = find_free_port()
+        port = _find_free_port()
         if port not in ports:
             ports.append(port)
 
     port_index = 0
-    server_ports = []
+    listen_ports = []
     for entry in servers:
         server = entry.get("server", {})
         listens = server.get("listens", [])
-        if not listens:
-            server_ports.append(None)
-            continue
-        first_port = None
         for listen_entry in listens:
             listen = listen_entry.get("listen", {})
             listen["interface"] = DEFAULT_HOST
             listen["port"] = ports[port_index]
-            if first_port is None:
-                first_port = ports[port_index]
+            listen_ports.append(ports[port_index])
             port_index += 1
-        server_ports.append(first_port)
 
     out_path = Path(temp_dir) / "multi_listen_tmp.yaml"
     with open(out_path, "w") as f:
-        yaml.safe_dump(config, f, default_flow_style=False, sort_keys=False)
+        # MyYAML does not support indentless sequences.
+        yaml.dump(
+            config,
+            f,
+            default_flow_style=False,
+            sort_keys=False,
+            indent=2,
+            Dumper=_IndentedSafeDumper,
+        )
 
-    return out_path, server_ports
+    print(f"config: \n\n{open(out_path, 'r').read()}")
+    print(f"out_path: {out_path}")
+    print(f"listen_ports: {listen_ports}")
+    return out_path, listen_ports
 
 
 class TestValidStartup:
@@ -137,12 +142,11 @@ class TestValidStartup:
             pytest.skip("multi_listen.yaml が見つかりません")
 
         with tempfile.TemporaryDirectory(prefix="multi_listen_test_") as temp_dir:
-            temp_config, server_ports = write_multi_listen_config(
+            temp_config, listen_ports = write_multi_listen_config(
                 config_src, temp_dir
             )
-
-            if len(server_ports) < 2 or server_ports[0] is None or server_ports[1] is None:
-                pytest.skip("multi_listen.yaml から有効なポートが取得できません")
+            if len(listen_ports) < 2:
+                pytest.skip("multi_listen.yaml から2つ以上の listen が取得できません")
 
             proc = subprocess.Popen(
                 [webserv_bin, str(temp_config)],
@@ -152,8 +156,8 @@ class TestValidStartup:
             )
 
             try:
-                ready_a = wait_for_port(DEFAULT_HOST, server_ports[0])
-                ready_b = wait_for_port(DEFAULT_HOST, server_ports[1])
+                ready_a = _wait_for_port(DEFAULT_HOST, listen_ports[0])
+                ready_b = _wait_for_port(DEFAULT_HOST, listen_ports[1])
                 if not (ready_a and ready_b):
                     stdout, stderr = proc.communicate(timeout=1)
                     pytest.fail(
@@ -162,11 +166,11 @@ class TestValidStartup:
                         f"stderr:\n{stderr}\n"
                     )
 
-                url = f"http://{DEFAULT_HOST}:{server_ports[0]}/"
+                url = f"http://{DEFAULT_HOST}:{listen_ports[0]}/"
                 response = requests.get(url, timeout=2)
                 assert response.status_code == 200
 
-                url = f"http://{DEFAULT_HOST}:{server_ports[1]}/"
+                url = f"http://{DEFAULT_HOST}:{listen_ports[1]}/"
                 response = requests.get(url, timeout=2)
                 assert response.status_code == 200
             finally:
