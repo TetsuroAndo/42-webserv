@@ -9,6 +9,7 @@
 
 #include <ctime>
 #include <limits>
+#include <netdb.h>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -163,6 +164,10 @@ void ConfigParser::parseListens(const Node *node) const {
 	if (!node)
 		throw std::runtime_error("Config error: missing 'listens' node");
 	const std::vector< Node * > &listensNodes = node->getSeq();
+	if (listensNodes.empty()) {
+		throw std::runtime_error(
+			"Config error: at least one listen is required per server");
+	}
 	std::vector< Listen > listens;
 	for (std::vector< Node * >::const_iterator it = listensNodes.begin();
 		 it != listensNodes.end(); ++it) {
@@ -178,23 +183,37 @@ void ConfigParser::parseListens(const Node *node) const {
 
 		Listen l;
 		const Node *interfaceNode = l_node->getMapNode("interface");
-		if (!interfaceNode)
-			throw std::runtime_error(
-				"Config error: missing 'interface' in listen item");
-		l.interface = interfaceNode->getValue();
+		if (!interfaceNode) {
+			l.interface = "0.0.0.0";
+		} else {
+			l.interface = interfaceNode->getValue();
+		}
 
 		const Node *portNode = l_node->getMapNode("port");
 		if (!portNode)
 			throw std::runtime_error(
 				"Config error: missing 'port' in listen item");
 		const int port = StringOps::stringToInt(portNode->getValue());
-		if (port < 1024 || port > 65535) {
+		if (port < 1 || port > 65535) {
 			std::stringstream ss;
 			ss << "Config error: invalid port number " << port
-			   << ". Port must be between 1024 and 65535.";
+			   << ". Port must be between 1 and 65535.";
 			throw std::runtime_error(ss.str());
 		}
 		l.port = port;
+
+		addrinfo hints = {};
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_NUMERICHOST;
+		addrinfo *res = NULL;
+		const int ret =
+			getaddrinfo(l.interface.c_str(), NULL, &hints, &res);
+		if (ret != 0) {
+			throw std::runtime_error(
+				"Config error: invalid listen interface '" + l.interface + "'");
+		}
+		freeaddrinfo(res);
 
 		listens.push_back(l);
 	}
