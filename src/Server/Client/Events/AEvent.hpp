@@ -14,7 +14,7 @@ class AEvent {
 public:
 	AEvent(Client *client, PipelineContext &context,
 		   HttpConnection &httpConnection, const unsigned int expectedEventType)
-		: _client(*client), _context(context), _httpConnection(httpConnection),
+		: _client(client), _context(context), _httpConnection(httpConnection),
 		  _expectedEventType(expectedEventType), _fd(-1) {}
 	virtual ~AEvent() {}
 
@@ -27,7 +27,7 @@ public:
 	int getFd() const { return _fd; }
 
 protected:
-	Client &_client;
+	Client *_client;
 	PipelineContext &_context;
 	HttpConnection &_httpConnection;
 	const unsigned int _expectedEventType;
