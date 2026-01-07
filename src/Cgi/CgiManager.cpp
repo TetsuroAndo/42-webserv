@@ -169,8 +169,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			const int fd = worker->getReadFd();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
-			eventManager.addEvent(fd,
-								  new CgiReadEvent(&ctx.ownerClient, *worker));
+			eventManager.addEvent(fd, new CgiReadEvent(*worker));
 		}
 		{
 			const int fd = worker->getWriteFd();
@@ -179,16 +178,14 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				socketsManager.registerSocket(fd, EPOLLOUT);
 				socketsManager.modifySocket(fd, EPOLLOUT);
 				eventManager.initFd(fd);
-				eventManager.addEvent(
-					fd, new CgiWriteEvent(&ctx.ownerClient, *worker));
+				eventManager.addEvent(fd, new CgiWriteEvent(*worker));
 			}
 		}
 		{
 			const int fd = worker->getErrFd();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
-			eventManager.addEvent(fd,
-								  new CgiErrorEvent(&ctx.ownerClient, *worker));
+			eventManager.addEvent(fd, new CgiErrorEvent(*worker));
 		}
 		{
 			const int fd = worker->getCompletionFdOut();
@@ -201,8 +198,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			const int fd = worker->getStatusFd();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
-			eventManager.addEvent(
-				fd, new CgiErrorExitEvent(&ctx.ownerClient, *worker));
+			eventManager.addEvent(fd, new CgiErrorExitEvent(*worker));
 		}
 
 		LOG(INFO) << "CGI worker created"
