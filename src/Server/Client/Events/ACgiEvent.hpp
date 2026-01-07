@@ -13,8 +13,6 @@ public:
 	virtual ~ACgiEvent() {}
 
 	void CgiHandle() {
-		if (_worker == NULL)
-			return;
 		_worker->updateLastActivityTime();
 		process();
 	}
