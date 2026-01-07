@@ -35,7 +35,6 @@ private:
 	CgiManager _cgiManager;
 	TimeoutManager _timeoutManager;
 	SocketsManager _socketsManager;
-	int _sigchldPipe[2];
 	std::map< int, Socket * > _listenSockets;
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
@@ -43,9 +42,7 @@ private:
 	EventManager _eventManager;
 
 	void setupListenSockets();
-	void setupSignalPipe();
 	void handleNewConnection(int listenFd);
-	void handleSigchldEvent();
 
 	std::string getSessionId(const PipelineContext *ctx) const;
 };
