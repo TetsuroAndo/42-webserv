@@ -108,12 +108,13 @@ void CgiWorker::detachEvents(const bool keepCompletionEvent) const {
 	}
 }
 
-void CgiWorker::setKeepCompletionEventOnDetach(bool keepCompletionEvent) {
+void CgiWorker::setKeepCompletionEventOnDetach(const bool keepCompletionEvent) {
 	_keepCompletionEventOnDetach = keepCompletionEvent;
 }
 
-void CgiWorker::setEventFds(int readFd, int writeFd, int errFd, int statusFd,
-							int completionFd) {
+void CgiWorker::setEventFds(const int readFd, const int writeFd,
+							const int errFd, const int statusFd,
+							const int completionFd) {
 	_eventReadFd = readFd;
 	_eventWriteFd = writeFd;
 	_eventErrFd = errFd;
@@ -417,7 +418,7 @@ void CgiWorker::createHttpResponse(HttpResponse &res) {
 	_responseParser.setResponse(res);
 }
 
-void CgiWorker::setExitStatus(int status) {
+void CgiWorker::setExitStatus(const int status) {
 	_exitStatus = status;
 	_exitStatusSet = true;
 }
