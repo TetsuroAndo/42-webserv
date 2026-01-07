@@ -26,6 +26,8 @@ public:
 	CgiManager &getCgiManager();
 	const Config &getConfig() const;
 
+	void handleNewConnection(int listenFd);
+
 private:
 	Server();
 	Server(const Server &other);
@@ -42,7 +44,6 @@ private:
 	EventManager _eventManager;
 
 	void setupListenSockets();
-	void handleNewConnection(int listenFd);
 
 	std::string getSessionId(const PipelineContext *ctx) const;
 };

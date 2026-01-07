@@ -3,6 +3,7 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
+#include "Client/Events/NewConnectionEvent.hpp"
 #include "Client/Events/ReadEvent.hpp"
 #include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
@@ -53,6 +54,7 @@ Server::~Server() {
 	}
 	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
+		_eventManager.forgetFd(it->first);
 		delete it->second;
 	}
 }
@@ -123,6 +125,9 @@ void Server::setupListenSockets() {
 			sock = new Socket(_config, listenFd, addr);
 			_listenSockets[listenFd] = sock;
 			_socketsManager.registerSocket(listenFd, EPOLLIN);
+			_eventManager.initFd(listenFd);
+			_eventManager.addEvent(listenFd,
+								   new NewConnectionEvent(NULL, *this));
 			LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
 					  << attr("fd", listenFd);
 		} catch (const std::exception &e) {
@@ -153,14 +158,10 @@ void Server::run() {
 		const epoll_event *events = _socketsManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
-			int fd = events[i].data.fd;
+			const int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			if (_listenSockets.count(fd)) {
-				handleNewConnection(fd);
-			} else {
-				_eventManager.handle(fd, eventTypes);
-			}
+			_eventManager.handle(fd, eventTypes);
 		}
 		SessionManager::getInstance().cleanup();
 	}
