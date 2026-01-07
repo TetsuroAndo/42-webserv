@@ -3,11 +3,11 @@
 #include "../../../Lib/Logger/ErrorLog/LogBuilder.hpp"
 #include "../../Server.hpp"
 
-CgiErrorEvent::CgiErrorEvent(CgiWorker &worker)
+CgiErrorEvent::CgiErrorEvent(CgiWorker *worker)
 	: AEvent(EPOLLIN), ACgiEvent(worker) {}
 
 CgiErrorEvent::~CgiErrorEvent() {}
 
 void CgiErrorEvent::handle() { CgiHandle(); }
 
-void CgiErrorEvent::process() { _worker.handleReadErr(); }
+void CgiErrorEvent::process() { _worker->handleReadErr(); }

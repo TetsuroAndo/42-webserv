@@ -4,7 +4,7 @@
 
 class CgiEndEvent : public AEvent, public ACgiEvent {
 public:
-	CgiEndEvent(Client *client, CgiWorker &worker);
+	CgiEndEvent(Client *client, CgiWorker *worker);
 	~CgiEndEvent();
 
 	void handle();

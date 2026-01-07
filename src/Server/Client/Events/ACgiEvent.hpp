@@ -5,11 +5,17 @@
 
 class ACgiEvent {
 public:
-	ACgiEvent(CgiWorker &worker) : _worker(worker) {};
+	ACgiEvent(CgiWorker *worker) : _worker(worker) {
+		if (worker == NULL) {
+			throw std::runtime_error("ACgiEvent: NULL worker");
+		}
+	};
 	virtual ~ACgiEvent() {}
 
 	void CgiHandle() {
-		_worker.updateLastActivityTime();
+		if (_worker == NULL)
+			return;
+		_worker->updateLastActivityTime();
 		process();
 	}
 
@@ -17,5 +23,5 @@ public:
 	virtual void process() = 0;
 
 protected:
-	CgiWorker &_worker;
+	CgiWorker *_worker;
 };

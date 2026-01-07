@@ -24,7 +24,7 @@ def build_server():
     # プロジェクトルートでmakeを実行
     try:
         subprocess.run(
-            ["make"],
+            ["make", "debug"],
             cwd=WEBSERV_BIN.parent,
             check=True,
             capture_output=True,
