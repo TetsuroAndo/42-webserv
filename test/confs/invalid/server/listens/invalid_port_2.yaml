@@ -1,0 +1,5 @@
+servers:
+  - server:
+      listens:
+        - listen:
+            port: 1234567890
