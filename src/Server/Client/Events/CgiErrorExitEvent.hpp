@@ -4,7 +4,7 @@
 
 class CgiErrorExitEvent : public AEvent, public ACgiEvent {
 public:
-	CgiErrorExitEvent(Client *client, CgiWorker &worker);
+	CgiErrorExitEvent(CgiWorker *worker);
 	~CgiErrorExitEvent();
 
 	void handle();

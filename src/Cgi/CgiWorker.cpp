@@ -1,6 +1,7 @@
 #include "CgiWorker.hpp"
 #include "../Lib/Logger/Log.hpp"
 #include "../Server/Client/Client.hpp"
+#include "../Server/Server.hpp"
 #include "CgiEnvBuilder.hpp"
 #include "CgiManager.hpp"
 #include <algorithm>
@@ -38,6 +39,12 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	  _interpreterPath(interpreterPath), _lastActivityTime(std::time(NULL)),
 	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize),
 	  _errBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
+	_eventReadFd = -1;
+	_eventWriteFd = -1;
+	_eventErrFd = -1;
+	_eventStatusFd = -1;
+	_eventCompletionFd = -1;
+	_keepCompletionEventOnDetach = false;
 	_pipeIn[0] = -1;
 	_pipeIn[1] = -1;
 	_pipeOut[0] = -1;
@@ -53,10 +60,15 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 }
 
 CgiWorker::~CgiWorker() {
+	detachEvents(_keepCompletionEventOnDetach);
 	_closePipe(_pipeIn[1]);
 	_closePipe(_pipeOut[0]);
 	_closePipe(_pipeErr[0]);
+	if (!_keepCompletionEventOnDetach) {
+		_closePipe(_pipeComplete[0]);
+	}
 	_closePipe(_pipeComplete[1]);
+	_closePipe(_pipeStatus[0]);
 
 	if (0 < _pid) {
 		// プロセスがまだ終了していないか確認（非ブロッキング）
@@ -74,6 +86,40 @@ CgiWorker::~CgiWorker() {
 		// result > 0 (既に終了) または result == -1 (ECHILD)
 		// の場合は何もしなくて良い
 	}
+}
+
+void CgiWorker::detachEvents(const bool keepCompletionEvent) const {
+	EventManager &eventManager = _ctx.ownerClient.getEventManager();
+	SocketsManager &socketsManager =
+		_ctx.ownerClient.getServer().getSocketsManager();
+	int fds[5] = {_eventReadFd, _eventWriteFd, _eventErrFd, _eventStatusFd,
+				  _eventCompletionFd};
+	const size_t fdsCount = sizeof(fds) / sizeof(fds[0]);
+	for (size_t i = 0; i < fdsCount; ++i) {
+		const int fd = fds[i];
+		if (fd < 0) {
+			continue;
+		}
+		if (keepCompletionEvent && fd == _eventCompletionFd) {
+			continue;
+		}
+		socketsManager.unregisterSocket(fd);
+		eventManager.forgetFd(fd);
+	}
+}
+
+void CgiWorker::setKeepCompletionEventOnDetach(const bool keepCompletionEvent) {
+	_keepCompletionEventOnDetach = keepCompletionEvent;
+}
+
+void CgiWorker::setEventFds(const int readFd, const int writeFd,
+							const int errFd, const int statusFd,
+							const int completionFd) {
+	_eventReadFd = readFd;
+	_eventWriteFd = writeFd;
+	_eventErrFd = errFd;
+	_eventStatusFd = statusFd;
+	_eventCompletionFd = completionFd;
 }
 
 void CgiWorker::handleErrorExit() {
@@ -372,7 +418,7 @@ void CgiWorker::createHttpResponse(HttpResponse &res) {
 	_responseParser.setResponse(res);
 }
 
-void CgiWorker::setExitStatus(int status) {
+void CgiWorker::setExitStatus(const int status) {
 	_exitStatus = status;
 	_exitStatusSet = true;
 }

@@ -3,6 +3,7 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
+#include "Client/Events/NewConnectionEvent.hpp"
 #include "Client/Events/ReadEvent.hpp"
 #include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
@@ -20,16 +21,6 @@
 #include <vector>
 
 namespace {
-int g_sigchldWriteFd = -1;
-
-void sigchldHandler(int) {
-	if (g_sigchldWriteFd < 0) {
-		return;
-	}
-	const char byte = 1;
-	ssize_t res = write(g_sigchldWriteFd, &byte, 1);
-	(void)res;
-}
 
 void makeClientIp(char *clientIp, const size_t size,
 				  const unsigned char bytes[4]) {
@@ -136,8 +127,6 @@ void validateListenUniqueness(const std::vector< Config > &configs) {
 Server::Server(const std::vector< Config > &configs)
 	: _cgiManager(selectCgiConfig(configs)),
 	  _socketsManager(resolveMaxEvents(configs)) {
-	_sigchldPipe[0] = -1;
-	_sigchldPipe[1] = -1;
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(configs[0]);
 	validateListenUniqueness(configs);
@@ -167,16 +156,8 @@ Server::~Server() {
 	}
 	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
 		 it != _listenSockets.end(); ++it) {
+		_eventManager.forgetFd(it->first);
 		delete it->second;
-	}
-	if (_sigchldPipe[0] >= 0) {
-		close(_sigchldPipe[0]);
-	}
-	if (_sigchldPipe[1] >= 0) {
-		close(_sigchldPipe[1]);
-	}
-	if (g_sigchldWriteFd == _sigchldPipe[1]) {
-		g_sigchldWriteFd = -1;
 	}
 }
 
@@ -247,6 +228,8 @@ void Server::setupListenSockets() {
 				_listenSockets[listenFd] = sock;
 				_vhostByListenFd[listenFd] = &_vhosts[i];
 				_socketsManager.registerSocket(listenFd, EPOLLIN);
+				_eventManager.initFd(listenFd);
+				_eventManager.addEvent(listenFd, new NewConnectionEvent(*this));
 				LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
 						  << attr("fd", listenFd);
 			} catch (const std::exception &e) {
@@ -260,7 +243,6 @@ void Server::setupListenSockets() {
 }
 
 void Server::run() {
-	setupSignalPipe();
 	LOG(INFO) << "Server is running and waiting for events.";
 	while (true) {
 		const int timeoutMs = _timeoutManager.getNextTimeoutInterval();
@@ -279,89 +261,13 @@ void Server::run() {
 		const epoll_event *events = _socketsManager.getEvents();
 
 		for (int i = 0; i < nEvents; ++i) {
-			int fd = events[i].data.fd;
+			const int fd = events[i].data.fd;
 			const uint32_t eventTypes = events[i].events;
 
-			if (fd == _sigchldPipe[0]) {
-				handleSigchldEvent();
-				continue;
-			}
-
-			if (_listenSockets.count(fd)) {
-				handleNewConnection(fd);
-			} else {
-				_eventManager.handle(fd, eventTypes);
-			}
+			_eventManager.handle(fd, eventTypes);
 		}
 		SessionManager::getInstance().cleanup();
 	}
-}
-
-void Server::setupSignalPipe() {
-	if (_sigchldPipe[0] >= 0 || _sigchldPipe[1] >= 0) {
-		return;
-	}
-
-	if (pipe(_sigchldPipe) < 0) {
-		throw std::runtime_error("pipe(SIGCHLD) failed");
-	}
-
-	int flags = fcntl(_sigchldPipe[0], F_GETFL, 0);
-	if (flags < 0 || fcntl(_sigchldPipe[0], F_SETFL, flags | O_NONBLOCK) < 0) {
-		close(_sigchldPipe[0]);
-		close(_sigchldPipe[1]);
-		_sigchldPipe[0] = -1;
-		_sigchldPipe[1] = -1;
-		throw std::runtime_error("fcntl(SIGCHLD pipe read) failed");
-	}
-	flags = fcntl(_sigchldPipe[1], F_GETFL, 0);
-	if (flags < 0 || fcntl(_sigchldPipe[1], F_SETFL, flags | O_NONBLOCK) < 0) {
-		close(_sigchldPipe[0]);
-		close(_sigchldPipe[1]);
-		_sigchldPipe[0] = -1;
-		_sigchldPipe[1] = -1;
-		throw std::runtime_error("fcntl(SIGCHLD pipe write) failed");
-	}
-
-	g_sigchldWriteFd = _sigchldPipe[1];
-	if (signal(SIGCHLD, sigchldHandler) == SIG_ERR) {
-		close(_sigchldPipe[0]);
-		close(_sigchldPipe[1]);
-		_sigchldPipe[0] = -1;
-		_sigchldPipe[1] = -1;
-		g_sigchldWriteFd = -1;
-		throw std::runtime_error("signal(SIGCHLD) failed");
-	}
-
-	try {
-		_socketsManager.registerSocket(_sigchldPipe[0], EPOLLIN);
-	} catch (...) {
-		close(_sigchldPipe[0]);
-		close(_sigchldPipe[1]);
-		_sigchldPipe[0] = -1;
-		_sigchldPipe[1] = -1;
-		g_sigchldWriteFd = -1;
-		throw;
-	}
-}
-
-void Server::handleSigchldEvent() {
-	char buffer[64];
-	while (true) {
-		const ssize_t bytes = read(_sigchldPipe[0], buffer, sizeof(buffer));
-		if (bytes > 0) {
-			continue;
-		}
-		if (bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-			break;
-		}
-		if (bytes < 0) {
-			LOG(ERROR) << "read(SIGCHLD pipe) failed"
-					   << attr("error", strerror(errno));
-		}
-		break;
-	}
-	_cgiManager.cleanupFinishedWorkers();
 }
 
 void Server::handleNewConnection(const int listenFd) {

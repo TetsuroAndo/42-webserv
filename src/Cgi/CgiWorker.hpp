@@ -107,6 +107,16 @@ public:
 	/// @brief 通知済みにする
 	void setCompletionNotified();
 
+	/// @brief EventManager/epollから関連FDを外す
+	void detachEvents(bool keepCompletionEvent) const;
+
+	/// @brief completion fdのdetachをスキップするか設定する
+	void setKeepCompletionEventOnDetach(bool keepCompletionEvent);
+
+	/// @brief EventManagerに登録したFDを記録する
+	void setEventFds(int readFd, int writeFd, int errFd, int statusFd,
+					 int completionFd);
+
 private:
 	PipelineContext &_ctx;
 	CgiManager *_manager;
@@ -132,6 +142,12 @@ private:
 	std::vector< char > _errBuffer;
 
 	CgiResponseParser _responseParser;
+	int _eventReadFd;
+	int _eventWriteFd;
+	int _eventErrFd;
+	int _eventStatusFd;
+	int _eventCompletionFd;
+	bool _keepCompletionEventOnDetach;
 
 	void _childProcess(const std::string &scriptPath,
 					   const std::string &interpreterPath,

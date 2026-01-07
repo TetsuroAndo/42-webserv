@@ -164,13 +164,13 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 		EventManager &eventManager = ctx.ownerClient.getEventManager();
 		const SocketsManager &socketsManager =
 			ctx.ownerClient.getServer().getSocketsManager();
+		int writeEventFd = -1;
 		{
 			LOG(DEBUG) << "set cgi read fd" << attr("fd", worker->getReadFd());
 			const int fd = worker->getReadFd();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
-			eventManager.addEvent(fd,
-								  new CgiReadEvent(&ctx.ownerClient, *worker));
+			eventManager.addEvent(fd, new CgiReadEvent(worker));
 		}
 		{
 			const int fd = worker->getWriteFd();
@@ -179,31 +179,33 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 				socketsManager.registerSocket(fd, EPOLLOUT);
 				socketsManager.modifySocket(fd, EPOLLOUT);
 				eventManager.initFd(fd);
-				eventManager.addEvent(
-					fd, new CgiWriteEvent(&ctx.ownerClient, *worker));
+				eventManager.addEvent(fd, new CgiWriteEvent(worker));
+				writeEventFd = fd;
 			}
 		}
 		{
 			const int fd = worker->getErrFd();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
-			eventManager.addEvent(fd,
-								  new CgiErrorEvent(&ctx.ownerClient, *worker));
+			eventManager.addEvent(fd, new CgiErrorEvent(worker));
 		}
 		{
 			const int fd = worker->getCompletionFdOut();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
 			eventManager.addEvent(fd,
-								  new CgiEndEvent(&ctx.ownerClient, *worker));
+								  new CgiEndEvent(&ctx.ownerClient, worker));
 		}
 		{
 			const int fd = worker->getStatusFd();
 			socketsManager.registerSocket(fd, EPOLLIN);
 			eventManager.initFd(fd);
-			eventManager.addEvent(
-				fd, new CgiErrorExitEvent(&ctx.ownerClient, *worker));
+			eventManager.addEvent(fd, new CgiErrorExitEvent(worker));
 		}
+
+		worker->setEventFds(worker->getReadFd(), writeEventFd,
+							worker->getErrFd(), worker->getStatusFd(),
+							worker->getCompletionFdOut());
 
 		LOG(INFO) << "CGI worker created"
 				  << attr("clientFd", worker->getClientFd())
@@ -336,6 +338,7 @@ bool CgiManager::isCgiComplete(const int clientFd, HttpResponse &res) {
 		}
 	}
 
+	worker->setKeepCompletionEventOnDetach(true);
 	_removeWorker(worker);
 	return true;
 }
