@@ -4,7 +4,7 @@
 
 class CgiWriteEvent : public AEvent, public ACgiEvent {
 public:
-	CgiWriteEvent(CgiWorker &worker);
+	CgiWriteEvent(CgiWorker *worker);
 	~CgiWriteEvent();
 
 	void handle();
