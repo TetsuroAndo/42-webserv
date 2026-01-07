@@ -13,6 +13,6 @@ CgiReadEvent::~CgiReadEvent() {}
 void CgiReadEvent::handle() { CgiHandle(); }
 
 void CgiReadEvent::process() {
-	LOG(DEBUG) << "handle read" << attr("client fd", _client->getFd());
+	LOG(DEBUG) << "handle read" << attr("client fd", _client.getFd());
 	_worker.handleRead();
 }

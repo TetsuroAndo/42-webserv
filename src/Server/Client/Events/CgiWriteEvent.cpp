@@ -12,6 +12,6 @@ CgiWriteEvent::~CgiWriteEvent() {}
 void CgiWriteEvent::handle() { CgiHandle(); }
 
 void CgiWriteEvent::process() {
-	LOG(DEBUG) << "handle write" << attr("client fd", _client->getFd());
+	LOG(DEBUG) << "handle write" << attr("client fd", _client.getFd());
 	_worker.handleWrite();
 }

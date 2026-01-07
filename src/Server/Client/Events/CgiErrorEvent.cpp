@@ -13,6 +13,6 @@ CgiErrorEvent::~CgiErrorEvent() {}
 void CgiErrorEvent::handle() { CgiHandle(); }
 
 void CgiErrorEvent::process() {
-	LOG(DEBUG) << "handle error" << attr("client fd", _client->getFd());
+	LOG(DEBUG) << "handle error" << attr("client fd", _client.getFd());
 	_worker.handleReadErr();
 }
