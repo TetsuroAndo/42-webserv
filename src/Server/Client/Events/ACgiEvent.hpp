@@ -9,7 +9,7 @@ public:
 		if (worker == NULL) {
 			throw std::runtime_error("ACgiEvent: NULL worker");
 		}
-	};
+	}
 	virtual ~ACgiEvent() {}
 
 	void CgiHandle() {

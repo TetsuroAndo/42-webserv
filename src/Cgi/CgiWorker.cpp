@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>
-#include <functional>
 #include <signal.h>
 #include <stdio.h>
 #include <sys/wait.h>

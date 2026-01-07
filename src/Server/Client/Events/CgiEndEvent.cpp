@@ -19,8 +19,8 @@ void CgiEndEvent::process() {
 	// CGIの出力を読み切る
 	char buffer[16];
 	ssize_t bytesRead;
-	while ((bytesRead = ::read(_worker->getCompletionFdOut(), buffer,
-							   sizeof(buffer))) > 0) {
+	while ((bytesRead = read(_worker->getCompletionFdOut(), buffer,
+							 sizeof(buffer))) > 0) {
 	}
 	if (bytesRead == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 		LOG(ERROR) << "Failed to read from CGI completion fd: "
@@ -48,10 +48,10 @@ void CgiEndEvent::process() {
 		_client->getServer().getSocketsManager().modifySocket(clientFd,
 															  EPOLLOUT);
 	}
-	_client->getServer().getSocketsManager().unregisterSocket(_fd);
 
-	// handleで終了処理みたいなことをやっている都合、ここで閉じる
-	::close(_fd);
+	// CgiEndEventだけはここで後処理
+	_client->getServer().getSocketsManager().unregisterSocket(_fd);
+	close(_fd);
 	EventManager &eventManager = _client->getEventManager();
 	eventManager.forgetFd(_fd);
 }
