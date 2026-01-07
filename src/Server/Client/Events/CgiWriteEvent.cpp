@@ -1,5 +1,4 @@
 #include "CgiWriteEvent.hpp"
-#include "../../../Lib/Logger/Log.hpp"
 #include "../../Server.hpp"
 
 CgiWriteEvent::CgiWriteEvent(CgiWorker *worker)

@@ -1,6 +1,5 @@
 #include "CgiReadEvent.hpp"
 
-#include "../../../Lib/Logger/Log.hpp"
 #include "../../Server.hpp"
 
 CgiReadEvent::CgiReadEvent(CgiWorker *worker)
