@@ -2,10 +2,8 @@
 
 #include "../../Server.hpp"
 
-NewConnectionEvent::NewConnectionEvent(Client *client, Server &server)
-	: AEvent(client, client->getContext(), client->getHttpConnection(),
-			 EPOLLIN),
-	  _server(server) {}
+NewConnectionEvent::NewConnectionEvent(Server &server)
+	: AEvent(EPOLLIN), _server(server) {}
 
 NewConnectionEvent::~NewConnectionEvent() {}
 

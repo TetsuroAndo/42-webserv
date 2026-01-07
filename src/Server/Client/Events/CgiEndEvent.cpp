@@ -8,9 +8,7 @@
 #include <signal.h>
 
 CgiEndEvent::CgiEndEvent(Client *client, CgiWorker &worker)
-	: AEvent(client, client->getContext(), client->getHttpConnection(),
-			 EPOLLIN),
-	  ACgiEvent(worker) {}
+	: AEvent(client, EPOLLIN), ACgiEvent(worker) {}
 
 CgiEndEvent::~CgiEndEvent() {}
 
@@ -34,26 +32,26 @@ void CgiEndEvent::process() {
 	}
 	_worker.setCompletionNotified();
 
-	const int clientFd = _client.getFd();
+	const int clientFd = _client->getFd();
 	LOG(DEBUG) << "" << attr("clientFd", clientFd) << attr("_fd", _fd);
 
 	// レスポンスを送信する
-	HttpResponse cgiRes(_context.conf);
+	HttpResponse cgiRes(_client->getContext().conf);
 	// レスポンスを作成
 	_worker.getManager()->isCgiComplete(clientFd, cgiRes);
 	const std::string responseStr = ResponseBuilder::build(cgiRes);
 	if (!responseStr.empty()) {
-		_client.getSocket().setSendBuffer(_client.getSocket().getSendBuffer() +
-										  responseStr);
+		_client->getSocket().setSendBuffer(
+			_client->getSocket().getSendBuffer() + responseStr);
 	}
-	if (_client.getSocket().getSendBuffer().empty() == false) {
-		_client.getServer().getSocketsManager().modifySocket(clientFd,
-															 EPOLLOUT);
+	if (_client->getSocket().getSendBuffer().empty() == false) {
+		_client->getServer().getSocketsManager().modifySocket(clientFd,
+															  EPOLLOUT);
 	}
-	_client.getServer().getSocketsManager().unregisterSocket(_fd);
+	_client->getServer().getSocketsManager().unregisterSocket(_fd);
 
 	// handleで終了処理みたいなことをやっている都合、ここで閉じる
 	::close(_fd);
-	EventManager &eventManager = _client.getEventManager();
+	EventManager &eventManager = _client->getEventManager();
 	eventManager.forgetFd(_fd);
 }

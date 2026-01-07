@@ -1,9 +1,7 @@
 #include "CgiErrorExitEvent.hpp"
 
-CgiErrorExitEvent::CgiErrorExitEvent(Client *client, CgiWorker &worker)
-	: AEvent(client, client->getContext(), client->getHttpConnection(),
-			 EPOLLIN),
-	  ACgiEvent(worker) {}
+CgiErrorExitEvent::CgiErrorExitEvent(CgiWorker &worker)
+	: AEvent(EPOLLIN), ACgiEvent(worker) {}
 
 CgiErrorExitEvent::~CgiErrorExitEvent() {}
 

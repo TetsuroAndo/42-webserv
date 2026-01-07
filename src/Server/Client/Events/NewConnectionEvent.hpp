@@ -4,7 +4,7 @@
 
 class NewConnectionEvent : public AEvent {
 public:
-	NewConnectionEvent(Client *client, Server &server);
+	NewConnectionEvent(Server &server);
 	~NewConnectionEvent();
 
 	void handle();

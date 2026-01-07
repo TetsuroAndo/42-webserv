@@ -126,8 +126,7 @@ void Server::setupListenSockets() {
 			_listenSockets[listenFd] = sock;
 			_socketsManager.registerSocket(listenFd, EPOLLIN);
 			_eventManager.initFd(listenFd);
-			_eventManager.addEvent(listenFd,
-								   new NewConnectionEvent(NULL, *this));
+			_eventManager.addEvent(listenFd, new NewConnectionEvent(*this));
 			LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
 					  << attr("fd", listenFd);
 		} catch (const std::exception &e) {

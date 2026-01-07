@@ -12,10 +12,14 @@ class HttpConnection;
  */
 class AEvent {
 public:
-	AEvent(Client *client, PipelineContext &context,
-		   HttpConnection &httpConnection, const unsigned int expectedEventType)
-		: _client(*client), _context(context), _httpConnection(httpConnection),
-		  _expectedEventType(expectedEventType), _fd(-1) {}
+	AEvent(const unsigned int expectedEventType)
+		: _client(NULL), _expectedEventType(expectedEventType), _fd(-1) {}
+	AEvent(Client *client, const unsigned int expectedEventType)
+		: _client(client), _expectedEventType(expectedEventType), _fd(-1) {
+		if (client == NULL) {
+			throw std::runtime_error("AEvent::AEvent(): client is NULL");
+		}
+	}
 	virtual ~AEvent() {}
 
 	virtual void handle() = 0;
@@ -27,9 +31,7 @@ public:
 	int getFd() const { return _fd; }
 
 protected:
-	Client &_client;
-	PipelineContext &_context;
-	HttpConnection &_httpConnection;
+	Client *_client;
 	const unsigned int _expectedEventType;
 	int _fd;
 };

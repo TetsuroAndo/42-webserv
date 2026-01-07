@@ -4,7 +4,7 @@
 
 class CgiReadEvent : public AEvent, public ACgiEvent {
 public:
-	CgiReadEvent(Client *client, CgiWorker &worker);
+	CgiReadEvent(CgiWorker &worker);
 	~CgiReadEvent();
 
 	void handle();

@@ -2,10 +2,8 @@
 
 #include "../../Server.hpp"
 
-WriteEvent::WriteEvent(Client *client)
-	: AEvent(client, client->getContext(), client->getHttpConnection(),
-			 EPOLLOUT) {}
+WriteEvent::WriteEvent(Client *client) : AEvent(client, EPOLLOUT) {}
 
 WriteEvent::~WriteEvent() {}
 
-void WriteEvent::handle() { _httpConnection.handleWriteEvent(); }
+void WriteEvent::handle() { _client->getHttpConnection().handleWriteEvent(); }
