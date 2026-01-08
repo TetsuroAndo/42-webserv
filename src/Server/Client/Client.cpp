@@ -21,15 +21,14 @@
 
 // clang-format off
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
-			   const Config &config, MiddlewareProcessor &mainProcessor,
-			   Server &server, EventManager &eventManager)
+			   VirtualHost &activeVhost, Server &server,
+			   EventManager &eventManager)
 	: _server(server),
-	  _config(config),
-	  _mainProcessor(mainProcessor),
+	  _activeVhost(&activeVhost),
 	  _fd(fd),
 	  _listenPort(listenPort),
-	  _socket(config, fd, addr),
-	  _context(config, *this, server.getCgiManager()),
+	  _socket(activeVhost.config, fd, addr),
+	  _context(activeVhost.config, *this, server.getCgiManager()),
 	  _httpConnection(this, _context, *this),
 	  _eventManager(eventManager)
 {
@@ -42,8 +41,11 @@ Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
 Client::~Client() {}
 
 Server &Client::getServer() const { return _server; }
-const Config &Client::getConfig() const { return _config; }
-MiddlewareProcessor &Client::getMainProcessor() { return _mainProcessor; }
+const Config &Client::getConfig() const { return _activeVhost->config; }
+MiddlewareProcessor &Client::getMainProcessor() {
+	return _activeVhost->mainProcessor;
+}
+void Client::setActiveVhost(VirtualHost &vhost) { _activeVhost = &vhost; }
 
 int Client::getFd() const { return _fd; }
 int Client::getPort() const { return _port; }

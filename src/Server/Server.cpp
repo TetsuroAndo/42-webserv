@@ -129,8 +129,8 @@ void Server::handleNewConnection(const int listenFd) {
 		VirtualHost *vhost = &_vhosts[accepted.defaultVhostIndex];
 		const int listenPort = accepted.key.port;
 		Client *client =
-			new Client(accepted.fd, accepted.addr, listenPort, vhost->config,
-					   vhost->mainProcessor, *this, _eventManager);
+			new Client(accepted.fd, accepted.addr, listenPort, *vhost, *this,
+					   _eventManager);
 		_clients[accepted.fd] = client;
 		_socketsManager.registerSocket(accepted.fd, EPOLLIN);
 		_eventManager.initFd(*client);
