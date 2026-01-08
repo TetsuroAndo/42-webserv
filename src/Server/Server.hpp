@@ -4,16 +4,17 @@
 #include "../Config/Config.hpp"
 #include "../Lib/Timeout/TimeoutManager.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
-#include "../Middleware/Core/MiddlewareProcessor.hpp"
-#include "../Socket/Socket.hpp"
 #include "../Socket/SocketsManager.hpp"
 #include "Client/Client.hpp"
 #include "Client/EventManager.hpp"
+#include "Listen/INewConnectionHandler.hpp"
+#include "Listen/ListenerSet.hpp"
+#include "VHost/VirtualHost.hpp"
 
 #include <map>
 #include <vector>
 
-class Server {
+class Server : public INewConnectionHandler {
 public:
 	Server(const std::vector< Config > &configs);
 	~Server();
@@ -28,27 +29,18 @@ public:
 	void handleNewConnection(int listenFd);
 
 private:
-	struct VirtualHost {
-		Config config;
-		MiddlewareProcessor mainProcessor;
-		VirtualHost(const Config &conf) : config(conf), mainProcessor() {}
-	};
-
 	Server();
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
 	std::vector< VirtualHost > _vhosts;
-	std::map< int, VirtualHost * > _vhostByListenFd;
 	CgiManager _cgiManager;
 	TimeoutManager _timeoutManager;
 	SocketsManager _socketsManager;
-	std::map< int, Socket * > _listenSockets;
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
+	ListenerSet _listeners;
 	EventManager _eventManager;
-
-	void setupListenSockets();
 
 	std::string getSessionId(const PipelineContext *ctx) const;
 };

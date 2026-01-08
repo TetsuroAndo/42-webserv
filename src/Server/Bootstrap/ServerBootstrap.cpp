@@ -1,4 +1,5 @@
 #include "ServerBootstrap.hpp"
+#include <set>
 #include <sstream>
 
 namespace ServerBootstrap {
@@ -44,10 +45,9 @@ size_t resolveMaxSessionTimeout(const std::vector< Config > &configs) {
 	return maxTimeout;
 }
 
-void validateListenUniqueness(const std::vector< Config > &configs) {
-	std::set< std::pair< std::string, int > > seen;
+void validateListenCompatibility(const std::vector< Config > &configs) {
 	std::set< int > wildcardPorts;
-	std::set< int > anyPorts;
+	std::set< int > specificPorts;
 
 	for (size_t i = 0; i < configs.size(); ++i) {
 		const std::vector< Listen > &listens = configs[i].getListens();
@@ -57,15 +57,9 @@ void validateListenUniqueness(const std::vector< Config > &configs) {
 		}
 		for (size_t j = 0; j < listens.size(); ++j) {
 			const Listen &listen = listens[j];
-			const std::pair< std::string, int > key(listen.interface,
-													listen.port);
-			if (seen.count(key)) {
-				throw std::runtime_error("Config error: duplicate listen " +
-										 listenToString(listen));
-			}
 			const bool isWildcard = (listen.interface == "0.0.0.0");
 			if (isWildcard) {
-				if (anyPorts.count(listen.port)) {
+				if (specificPorts.count(listen.port)) {
 					std::ostringstream oss;
 					oss << listen.port;
 					throw std::runtime_error(
@@ -74,7 +68,6 @@ void validateListenUniqueness(const std::vector< Config > &configs) {
 						oss.str());
 				}
 				wildcardPorts.insert(listen.port);
-				anyPorts.insert(listen.port);
 			} else {
 				if (wildcardPorts.count(listen.port)) {
 					std::ostringstream oss;
@@ -83,9 +76,8 @@ void validateListenUniqueness(const std::vector< Config > &configs) {
 						"Config error: listen " + listenToString(listen) +
 						" conflicts with wildcard listen on port " + oss.str());
 				}
-				anyPorts.insert(listen.port);
+				specificPorts.insert(listen.port);
 			}
-			seen.insert(key);
 		}
 	}
 }

@@ -1,10 +1,8 @@
 #include "NewConnectionEvent.hpp"
 
-#include "../../Server.hpp"
-
-NewConnectionEvent::NewConnectionEvent(Server &server)
-	: AEvent(EPOLLIN), _server(server) {}
+NewConnectionEvent::NewConnectionEvent(INewConnectionHandler &handler)
+	: AEvent(EPOLLIN), _handler(handler) {}
 
 NewConnectionEvent::~NewConnectionEvent() {}
 
-void NewConnectionEvent::handle() { _server.handleNewConnection(_fd); }
+void NewConnectionEvent::handle() { _handler.handleNewConnection(_fd); }

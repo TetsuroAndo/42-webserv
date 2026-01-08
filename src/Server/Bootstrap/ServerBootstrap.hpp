@@ -13,6 +13,6 @@ size_t resolveMaxEvents(const std::vector< Config > &configs);
 /// @brief
 size_t resolveMaxSessionTimeout(const std::vector< Config > &configs);
 /// @brief
-void validateListenUniqueness(const std::vector< Config > &configs);
+void validateListenCompatibility(const std::vector< Config > &configs);
 
 } // namespace ServerBootstrap
