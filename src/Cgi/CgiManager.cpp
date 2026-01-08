@@ -42,11 +42,7 @@ void CgiManager::_removeWorker(CgiWorker *worker) {
 	delete worker;
 }
 
-CgiManager::CgiManager(const Config &c)
-	: _timeoutSeconds(static_cast< time_t >(c.getTimeoutSec())),
-	  _maxWorkers(std::max(
-		  c.getPerformance().cgiMinWorkers,
-		  std::min(c.getMaxEvents(), c.getPerformance().cgiMaxWorkers))) {}
+CgiManager::CgiManager(const size_t maxWorkers) : _maxWorkers(maxWorkers) {}
 
 CgiManager::~CgiManager() {
 	std::vector< CgiWorker * >::iterator it = _workers.begin();
@@ -231,7 +227,8 @@ void CgiManager::cleanupTimedOutWorkers() {
 
 	for (std::vector< CgiWorker * >::iterator it = _workers.begin();
 		 it != _workers.end(); ++it) {
-		if (now - (*it)->getLastActivityTime() > _timeoutSeconds) {
+		if (now - (*it)->getLastActivityTime() >
+			(*it)->getTimeoutSeconds()) {
 			workersToCleanup.push_back(*it);
 		}
 	}

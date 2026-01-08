@@ -35,7 +35,7 @@ void makeClientIp(char *clientIp, const size_t size,
 } // namespace
 
 Server::Server(const std::vector< Config > &configs)
-	: _cgiManager(ServerBootstrap::selectCgiConfig(configs)),
+	: _cgiManager(ServerBootstrap::resolveCgiMaxWorkers(configs)),
 	  _socketsManager(ServerBootstrap::resolveMaxEvents(configs)),
 	  _listenHeaderMax(ServerBootstrap::resolveListenHeaderMax(configs)),
 	  _eventManager(*this) {

@@ -1,4 +1,5 @@
 #include "ServerBootstrap.hpp"
+#include <algorithm>
 #include <map>
 #include <set>
 #include <sstream>
@@ -11,17 +12,20 @@ std::string listenToString(const Listen &listen) {
 	return oss.str();
 }
 
-const Config &selectCgiConfig(const std::vector< Config > &configs) {
+size_t resolveCgiMaxWorkers(const std::vector< Config > &configs) {
 	if (configs.empty()) {
 		throw std::runtime_error("Server error: no servers configured");
 	}
-	const Config *selected = &configs[0];
-	for (size_t i = 1; i < configs.size(); ++i) {
-		if (configs[i].getTimeoutSec() > selected->getTimeoutSec()) {
-			selected = &configs[i];
-		}
+	size_t maxWorkers = 0;
+	for (size_t i = 0; i < configs.size(); ++i) {
+		const Config &config = configs[i];
+		const size_t resolved = std::max(
+			config.getPerformance().cgiMinWorkers,
+			std::min(config.getMaxEvents(),
+					 config.getPerformance().cgiMaxWorkers));
+		maxWorkers = std::max(maxWorkers, resolved);
 	}
-	return *selected;
+	return maxWorkers;
 }
 
 size_t resolveMaxEvents(const std::vector< Config > &configs) {

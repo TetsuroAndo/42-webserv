@@ -8,9 +8,9 @@ namespace ServerBootstrap {
 /// @brief Listen 構造体を人間が読みやすい文字列に変換
 std::string listenToString(const Listen &listen);
 
-/// @brief CGI 処理に使用する Config を選択して返します
-/// @return CGI を処理するのに最も適した Config への参照
-const Config &selectCgiConfig(const std::vector< Config > &configs);
+/// @brief 複数の Config からCGIワーカー上限を決定します
+/// @return 設定に基づいて算出されたCGIワーカー上限
+size_t resolveCgiMaxWorkers(const std::vector< Config > &configs);
 
 /// @brief 複数の Config から同時に処理可能な最大イベント数を決定します
 /// @return 設定に基づいて算出された最大イベント数（size_t）

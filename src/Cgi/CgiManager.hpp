@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <ctime>
+#include <sys/types.h>
 #include <map>
 #include <queue>
 #include <vector>
@@ -17,7 +17,7 @@ class CgiErrorEvent;
 
 class CgiManager {
 public:
-	CgiManager(const Config &config);
+	CgiManager(size_t maxWorkers);
 	~CgiManager();
 
 	/**
@@ -51,7 +51,6 @@ public:
 	void abortClient(int clientFd);
 
 private:
-	const time_t _timeoutSeconds;
 	size_t _maxWorkers;
 	std::vector< CgiWorker * > _workers;
 	// ClientFDからWorkerを引くためのマップ
