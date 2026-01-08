@@ -28,8 +28,7 @@ void RequestLimitsMiddleware::handle(PipelineContext &ctx,
 		size_t contentLength = 0;
 		if (!StringOps::decStrToSize(ctx.req.getHeader("Content-Length"),
 									 contentLength)) {
-			ctx.res.setStatusCode(HttpStatus::BAD_REQUEST);
-			ctx.parser.setErrorCode(HttpStatus::BAD_REQUEST);
+			ctx.setError(HttpStatus::BAD_REQUEST);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler;
 				errorHandler.handle(ctx, proc);
@@ -37,8 +36,7 @@ void RequestLimitsMiddleware::handle(PipelineContext &ctx,
 			return;
 		}
 		if (maxBodySize < contentLength) {
-			ctx.res.setStatusCode(HttpStatus::PAYLOAD_TOO_LARGE);
-			ctx.parser.setErrorCode(HttpStatus::PAYLOAD_TOO_LARGE);
+			ctx.setError(HttpStatus::PAYLOAD_TOO_LARGE);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler;
 				errorHandler.handle(ctx, proc);

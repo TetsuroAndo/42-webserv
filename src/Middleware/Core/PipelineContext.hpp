@@ -30,5 +30,6 @@ struct PipelineContext {
 					CgiManager &serverCgiManager);
 	~PipelineContext();
 	void setConfig(const Config &c);
+	void setError(int code);
 	void reset(const Config &c);
 };

@@ -5,6 +5,10 @@ ErrorHandlerMiddleware::ErrorHandlerMiddleware() {}
 
 ErrorHandlerMiddleware::~ErrorHandlerMiddleware() {}
 
+/**
+ * @brief ErrorHandlerは、error_pagesが設定されている場合はカスタムページを返し、
+		  設定されていない場合はデフォルトのエラーページを返す
+ */
 void ErrorHandlerMiddleware::handle(PipelineContext &ctx,
 									MiddlewareProcessor *proc) {
 	(void)proc;
@@ -13,9 +17,6 @@ void ErrorHandlerMiddleware::handle(PipelineContext &ctx,
 
 	// 4xx/5xxエラーの場合、error_pagesをチェック
 	if (statusCode >= 400 && statusCode <= 599) {
-		// ErrorHandlerを使用してカスタムエラーページを適用
-		// ErrorHandlerは、error_pagesが設定されている場合はカスタムページを返し、
-		// 設定されていない場合はデフォルトのエラーページを返す
 		ErrorHandler errorHandler;
 		ctx.res = errorHandler.handle(ctx);
 		// Set "Connection: close" only for protocol violation or

@@ -21,7 +21,7 @@ void RequestLineParserMiddleware::handle(PipelineContext &ctx,
 	case PARSE_INCOMPLETE:
 		return;
 	case PARSE_ERROR:
-		ctx.res.setStatusCode(parser.getErrorCode());
+		ctx.setError(parser.getErrorCode());
 		if (proc) {
 			ErrorHandlerMiddleware errorHandler;
 			errorHandler.handle(ctx, proc);

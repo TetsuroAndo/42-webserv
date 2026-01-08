@@ -57,7 +57,7 @@ void PipelineRouterMiddleware::handle(PipelineContext &ctx,
 		LOG(WARNING) << "PipelineRouterMiddleware: No route matched"
 					 << attr("path", requestPath)
 					 << attr("available_routes", _routes.size());
-		ctx.res.setStatusCode(HttpStatus::NOT_FOUND);
+		ctx.setError(HttpStatus::NOT_FOUND);
 		proc->next(ctx);
 	}
 }

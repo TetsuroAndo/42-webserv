@@ -22,8 +22,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 	case PARSE_INCOMPLETE:
 		return;
 	case PARSE_ERROR:
-		ctx.res.setStatusCode(parser.getErrorCode());
-		ctx.parser.setErrorCode(parser.getErrorCode());
+		ctx.setError(parser.getErrorCode());
 		if (proc) {
 			ErrorHandlerMiddleware errorHandler;
 			errorHandler.handle(ctx, proc);
@@ -31,8 +30,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 		return;
 	case PARSE_COMPLETE:
 		if (ctx.req.getBody().size() > ctx.req.getMaxBodySize()) {
-			ctx.res.setStatusCode(HttpStatus::PAYLOAD_TOO_LARGE);
-			ctx.parser.setErrorCode(HttpStatus::PAYLOAD_TOO_LARGE);
+			ctx.setError(HttpStatus::PAYLOAD_TOO_LARGE);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler;
 				errorHandler.handle(ctx, proc);
@@ -41,8 +39,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 		}
 		if (ctx.req.hasHeader("Content-Length") == false &&
 			ctx.recvBuffer.size() != 0) {
-			ctx.res.setStatusCode(HttpStatus::BAD_REQUEST);
-			ctx.parser.setErrorCode(HttpStatus::BAD_REQUEST);
+			ctx.setError(HttpStatus::BAD_REQUEST);
 			if (proc) {
 				ErrorHandlerMiddleware errorHandler;
 				errorHandler.handle(ctx, proc);
@@ -52,8 +49,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 		if (ctx.req.hasHeader("Content-Length") == true) {
 			if (!ctx.req.hasHeader("Transfer-Encoding") &&
 				!ctx.recvBuffer.empty()) {
-				ctx.res.setStatusCode(HttpStatus::BAD_REQUEST);
-				ctx.parser.setErrorCode(HttpStatus::BAD_REQUEST);
+				ctx.setError(HttpStatus::BAD_REQUEST);
 				if (proc) {
 					ErrorHandlerMiddleware errorHandler;
 					errorHandler.handle(ctx, proc);
@@ -63,8 +59,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 			size_t contentLength = 0;
 			if (!StringOps::decStrToSize(ctx.req.getHeader("Content-Length"),
 										 contentLength)) {
-				ctx.res.setStatusCode(HttpStatus::BAD_REQUEST);
-				ctx.parser.setErrorCode(HttpStatus::BAD_REQUEST);
+				ctx.setError(HttpStatus::BAD_REQUEST);
 				if (proc) {
 					ErrorHandlerMiddleware errorHandler;
 					errorHandler.handle(ctx, proc);
@@ -72,8 +67,7 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 				return;
 			}
 			if (ctx.req.getBody().size() != contentLength) {
-				ctx.res.setStatusCode(HttpStatus::BAD_REQUEST);
-				ctx.parser.setErrorCode(HttpStatus::BAD_REQUEST);
+				ctx.setError(HttpStatus::BAD_REQUEST);
 				if (proc) {
 					ErrorHandlerMiddleware errorHandler;
 					errorHandler.handle(ctx, proc);

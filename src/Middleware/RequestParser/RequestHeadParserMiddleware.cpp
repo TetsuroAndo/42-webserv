@@ -26,7 +26,7 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 	case PARSE_INCOMPLETE:
 		return; // データが足りない（\r\n\r\nがまだない）
 	case PARSE_ERROR:
-		ctx.res.setStatusCode(parser.getErrorCode());
+		ctx.setError(parser.getErrorCode());
 		if (proc) {
 			ErrorHandlerMiddleware errorHandler;
 			errorHandler.handle(ctx, proc);

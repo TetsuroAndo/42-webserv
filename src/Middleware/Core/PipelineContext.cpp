@@ -25,6 +25,11 @@ void PipelineContext::setConfig(const Config &c) {
 	res.setVersion(c.getAppInfo().httpProtocolVersion);
 }
 
+void PipelineContext::setError(int code) {
+	res.setStatusCode(code);
+	parser.setErrorCode(code);
+}
+
 void PipelineContext::reset(const Config &c) {
 	conf = &c;
 	req.clear(c);

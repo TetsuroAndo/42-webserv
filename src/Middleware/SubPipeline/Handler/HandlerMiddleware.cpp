@@ -49,18 +49,18 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 	if (it != _handlers.end()) {
 		ISubHandler *handler = it->second;
 		if (handler == NULL) {
-			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.setError(HttpStatus::INTERNAL_SERVER_ERROR);
 			return;
 		}
 		try {
 			ctx.res = handler->handle(ctx);
 		} catch (const std::exception &e) {
 			LOG(ERROR) << "Handler exception: " << e.what();
-			ctx.res.setStatusCode(HttpStatus::INTERNAL_SERVER_ERROR);
+			ctx.setError(HttpStatus::INTERNAL_SERVER_ERROR);
 		}
 	} else {
 		// 対応するハンドラがない場合
-		ctx.res.setStatusCode(HttpStatus::METHOD_NOT_ALLOWED);
+		ctx.setError(HttpStatus::METHOD_NOT_ALLOWED);
 		ctx.res.setHeader("Allow", getAllowedMethods());
 	}
 }
