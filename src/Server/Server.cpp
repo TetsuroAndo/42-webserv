@@ -7,6 +7,7 @@
 #include "Client/Events/ReadEvent.hpp"
 #include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
+#include "Listen/ListenKey.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
@@ -35,7 +36,8 @@ void makeClientIp(char *clientIp, const size_t size,
 
 Server::Server(const std::vector< Config > &configs)
 	: _cgiManager(ServerBootstrap::selectCgiConfig(configs)),
-	  _socketsManager(ServerBootstrap::resolveMaxEvents(configs)) {
+	  _socketsManager(ServerBootstrap::resolveMaxEvents(configs)),
+	  _listenHeaderMax(ServerBootstrap::resolveListenHeaderMax(configs)) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(configs[0]); // TODO: 複数vhost対応
 	ServerBootstrap::validateListenCompatibility(configs);
@@ -127,10 +129,21 @@ void Server::handleNewConnection(const int listenFd) {
 
 	try {
 		VirtualHost *vhost = &_vhosts[accepted.defaultVhostIndex];
-		const int listenPort = accepted.key.port;
+
+		// Host name に基づく仮想ホストの切り替えは Middleware 側で行うため、多重listen対応のため
+		size_t maxHeaderBytes = vhost->config.getMaxRequestHeaderSize();
+		// 接続 listen の デフォルト key
+		const std::string listenKey = ListenKey::listenKeyToString(accepted.key);
+		// 同 listen 単位の max があれば上書きする
+		std::map< std::string, size_t >::const_iterator maxIt =
+			_listenHeaderMax.find(listenKey);
+		if (maxIt != _listenHeaderMax.end()) {
+			maxHeaderBytes = maxIt->second;
+		}
+
 		Client *client =
-			new Client(accepted.fd, accepted.addr, listenPort, *vhost, *this,
-					   _eventManager);
+			new Client(accepted.fd, accepted.addr, accepted.key.port, *vhost,
+					   maxHeaderBytes, *this, _eventManager);
 		_clients[accepted.fd] = client;
 		_socketsManager.registerSocket(accepted.fd, EPOLLIN);
 		_eventManager.initFd(*client);

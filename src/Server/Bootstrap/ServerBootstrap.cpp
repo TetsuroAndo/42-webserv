@@ -1,4 +1,5 @@
 #include "ServerBootstrap.hpp"
+#include <map>
 #include <set>
 #include <sstream>
 
@@ -43,6 +44,29 @@ size_t resolveMaxSessionTimeout(const std::vector< Config > &configs) {
 		maxTimeout = std::max(maxTimeout, configs[i].getSessionTimeoutSec());
 	}
 	return maxTimeout;
+}
+
+std::map< std::string, size_t >
+resolveListenHeaderMax(const std::vector< Config > &configs) {
+	if (configs.empty()) {
+		throw std::runtime_error("Server error: no servers configured");
+	}
+	std::map< std::string, size_t > headerMaxByListen;
+	for (size_t i = 0; i < configs.size(); ++i) {
+		const Config &config = configs[i];
+		const std::vector< Listen > &listens = config.getListens();
+		for (size_t j = 0; j < listens.size(); ++j) {
+			const Listen &listen = listens[j];
+			const std::string key = listenToString(listen);
+			const size_t maxHeader = config.getMaxRequestHeaderSize();
+			std::map< std::string, size_t >::iterator it =
+				headerMaxByListen.find(key);
+			if (it == headerMaxByListen.end() || it->second < maxHeader) {
+				headerMaxByListen[key] = maxHeader;
+			}
+		}
+	}
+	return headerMaxByListen;
 }
 
 void validateListenCompatibility(const std::vector< Config > &configs) {

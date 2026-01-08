@@ -7,6 +7,7 @@
 #include "EventManager.hpp"
 #include "HttpConnection.hpp"
 #include "HttpConnectionEventHandler.hpp"
+#include <cstddef>
 #include <netinet/in.h>
 #include <string>
 
@@ -16,7 +17,7 @@ class EventManager;
 class Client : public ITimeoutable, public HttpConnectionEventHandler {
 public:
 	Client(int fd, const sockaddr_in &addr, int listenPort,
-		   VirtualHost &activeVhost, Server &server,
+		   VirtualHost &activeVhost, size_t maxHeaderBytes, Server &server,
 		   EventManager &eventManager);
 	~Client();
 

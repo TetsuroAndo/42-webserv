@@ -2,8 +2,8 @@
 #include "../../Server/Client/Client.hpp"
 
 // clang-format off
-PipelineContext::PipelineContext(const Config &c, Client &client,
-								 CgiManager &serverCgiManager)
+PipelineContext::PipelineContext(const Config &c, const size_t maxHeaderBytes,
+								 Client &client, CgiManager &serverCgiManager)
 	: conf(&c),
 	  req(c),
 	  res(c),
@@ -13,7 +13,7 @@ PipelineContext::PipelineContext(const Config &c, Client &client,
 	  ownerClient(client),
 	  cgiManager(serverCgiManager),
 	  isCgi(false),
-	  parser(c.getMaxRequestHeaderSize()) {}
+	  parser(maxHeaderBytes) {}
 // clang-format on
 
 PipelineContext::~PipelineContext() {}

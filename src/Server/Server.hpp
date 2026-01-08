@@ -12,6 +12,7 @@
 #include "VHost/VirtualHost.hpp"
 
 #include <map>
+#include <string>
 #include <vector>
 
 class Server : public INewConnectionHandler {
@@ -40,6 +41,7 @@ private:
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
 	ListenerSet _listeners;
+	std::map< std::string, size_t > _listenHeaderMax;
 	EventManager _eventManager;
 
 	std::string getSessionId(const PipelineContext *ctx) const;

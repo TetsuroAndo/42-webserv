@@ -1,5 +1,7 @@
 #include "VHostSelectMiddleware.hpp"
+#include "../../Http/Core/HttpStatus.hpp"
 #include "../../Server/Client/Client.hpp"
+#include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 
 VHostSelectMiddleware::VHostSelectMiddleware() {}
 
@@ -18,7 +20,21 @@ void VHostSelectMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 
+	// ここで host ヘッダーを解析して適切な vhost を選択するロジックを実装する
+
 	ctx.setConfig(ctx.ownerClient.getConfig());
+
+	/// @brief vhost指定のリクエストヘッダサイズの検証 （ホスト確定後のため）
+	const size_t headerBytes = ctx.parser.getLastHeaderBytes();
+	if (ctx.conf != NULL &&
+		ctx.conf->getMaxRequestHeaderSize() < headerBytes) {
+		ctx.setError(HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE);
+		if (proc) {
+			ErrorHandlerMiddleware errorHandler;
+			errorHandler.handle(ctx, proc);
+		}
+		return;
+	}
 
 	if (proc) {
 		proc->next(ctx);

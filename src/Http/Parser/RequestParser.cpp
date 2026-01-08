@@ -7,6 +7,7 @@ RequestParser::RequestParser(const size_t maxHeaderBytes)
 	: _errorCode(0),
 	  _state(STATE_REQUEST_LINE),
 	  _maxHeaderBytes(maxHeaderBytes),
+	  _lastHeaderBytes(0),
 	  _bodyParser() {}
 
 RequestParser::~RequestParser() {}
@@ -17,6 +18,7 @@ RequestParser::~RequestParser() {}
 void RequestParser::reset() {
 	_state = STATE_REQUEST_LINE;
 	_errorCode = 0;
+	_lastHeaderBytes = 0;
 	_bodyParser.reset();
 }
 
@@ -86,6 +88,7 @@ ParseResult RequestParser::parseHeaders(HttpRequest &req, std::string &buffer) {
 		return PARSE_ERROR;
 	}
 
+	_lastHeaderBytes = headerEndPos + 4;
 	buffer.erase(0, headerEndPos + 4); // パースした分をバッファから削除
 
 	const bool hasTransferEncoding = req.hasHeader("Transfer-Encoding");
@@ -126,3 +129,4 @@ ParseResult RequestParser::parseBody(HttpRequest &req, std::string &buffer) {
 RequestLineParser &RequestParser::getLineParser() { return _lineParser; }
 RequestHeadParser &RequestParser::getHeadParser() { return _headParser; }
 RequestBodyParser &RequestParser::getBodyParser() { return _bodyParser; }
+size_t RequestParser::getLastHeaderBytes() const { return _lastHeaderBytes; }

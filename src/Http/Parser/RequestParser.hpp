@@ -72,11 +72,14 @@ public:
 	RequestHeadParser &getHeadParser();
 	/// @brief ボディパーサーへの参照を取得する
 	RequestBodyParser &getBodyParser();
+	/// @brief 最後に解析したヘッダーの総バイト数を取得する
+	size_t getLastHeaderBytes() const;
 
 private:
 	int _errorCode;
 	ParseState _state;
 	size_t _maxHeaderBytes;
+	size_t _lastHeaderBytes;
 
 	RequestLineParser _lineParser;
 	RequestHeadParser _headParser;

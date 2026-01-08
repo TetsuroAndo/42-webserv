@@ -6,6 +6,7 @@
 #include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Parser/RequestParser.hpp"
 #include "../../Session/Session.hpp"
+#include <cstddef>
 
 class CgiManager;
 class Client;
@@ -26,7 +27,7 @@ struct PipelineContext {
 	bool isCgi;
 	RequestParser parser;
 
-	PipelineContext(const Config &c, Client &client,
+	PipelineContext(const Config &c, size_t maxHeaderBytes, Client &client,
 					CgiManager &serverCgiManager);
 	~PipelineContext();
 	void setConfig(const Config &c);

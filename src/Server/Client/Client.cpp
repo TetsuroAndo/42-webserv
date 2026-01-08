@@ -21,14 +21,15 @@
 
 // clang-format off
 Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
-			   VirtualHost &activeVhost, Server &server,
-			   EventManager &eventManager)
+			   VirtualHost &activeVhost, const size_t maxHeaderBytes,
+			   Server &server, EventManager &eventManager)
 	: _server(server),
 	  _activeVhost(&activeVhost),
 	  _fd(fd),
 	  _listenPort(listenPort),
 	  _socket(activeVhost.config, fd, addr),
-	  _context(activeVhost.config, *this, server.getCgiManager()),
+	  _context(activeVhost.config, maxHeaderBytes, *this,
+			   server.getCgiManager()),
 	  _httpConnection(this, _context, *this),
 	  _eventManager(eventManager)
 {
