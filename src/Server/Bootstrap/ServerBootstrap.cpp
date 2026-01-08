@@ -39,17 +39,6 @@ size_t resolveMaxEvents(const std::vector< Config > &configs) {
 	return maxEvents;
 }
 
-size_t resolveMaxSessionTimeout(const std::vector< Config > &configs) {
-	if (configs.empty()) {
-		throw std::runtime_error("Server error: no servers configured");
-	}
-	size_t maxTimeout = configs[0].getSessionTimeoutSec();
-	for (size_t i = 1; i < configs.size(); ++i) {
-		maxTimeout = std::max(maxTimeout, configs[i].getSessionTimeoutSec());
-	}
-	return maxTimeout;
-}
-
 std::map< std::string, size_t >
 resolveListenHeaderMax(const std::vector< Config > &configs) {
 	if (configs.empty()) {

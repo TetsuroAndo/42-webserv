@@ -55,8 +55,6 @@ Server::Server(const std::vector< Config > &configs)
 		LOG(DEBUG) << "Config[" << i << "]\n" << oss.str();
 	}
 
-	SessionManager::getInstance().setTimeoutSec(static_cast< time_t >(
-		ServerBootstrap::resolveMaxSessionTimeout(configs)));
 	_listeners.build(_vhosts, _socketsManager, _eventManager, *this);
 	LOG(INFO) << "Server initialized successfully.";
 }

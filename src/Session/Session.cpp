@@ -4,8 +4,9 @@
 #include <stdexcept>
 #include <string>
 
-Session::Session(const std::string &id)
-	: _sessionId(id), _lastAccessTime(std::time(NULL)) {}
+Session::Session(const std::string &id, const time_t timeoutSec)
+	: _sessionId(id), _lastAccessTime(std::time(NULL)),
+	  _timeoutSec(timeoutSec) {}
 
 Session::~Session() {}
 
@@ -31,6 +32,7 @@ std::string Session::getOptionalData(const std::string &key,
 }
 
 time_t Session::getLastAccess() const { return _lastAccessTime; }
+time_t Session::getTimeoutSec() const { return _timeoutSec; }
 
 bool Session::hasData(const std::string &key) const {
 	return _data.find(key) != _data.end();

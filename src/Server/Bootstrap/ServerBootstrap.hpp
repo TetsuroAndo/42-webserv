@@ -16,10 +16,6 @@ size_t resolveCgiMaxWorkers(const std::vector< Config > &configs);
 /// @return 設定に基づいて算出された最大イベント数（size_t）
 size_t resolveMaxEvents(const std::vector< Config > &configs);
 
-/// @brief  複数の Config を考慮してセッションの最大タイムアウトを決定します（秒）
-/// @return セッションタイムアウトの最大値（秒）
-size_t resolveMaxSessionTimeout(const std::vector< Config > &configs);
-
 /// @brief 各 Listen に対して許容するリクエストヘッダの最大サイズを決定し、マップで返します
 /// @return listen（文字列）をキー、ヘッダ最大サイズ（バイト）を値とするマップ
 std::map< std::string, size_t >
