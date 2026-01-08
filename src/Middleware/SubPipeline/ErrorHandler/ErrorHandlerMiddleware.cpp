@@ -1,8 +1,7 @@
 #include "ErrorHandlerMiddleware.hpp"
 #include "../../../Handler/ErrorHandler.hpp"
 
-ErrorHandlerMiddleware::ErrorHandlerMiddleware(const Config &config)
-	: _config(config) {}
+ErrorHandlerMiddleware::ErrorHandlerMiddleware() {}
 
 ErrorHandlerMiddleware::~ErrorHandlerMiddleware() {}
 

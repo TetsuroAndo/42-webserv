@@ -6,9 +6,7 @@
 #include <cstring>
 #include <ctime>
 
-RequestBodyParser::RequestBodyParser(const Config &config) : _config(config) {
-	reset();
-}
+RequestBodyParser::RequestBodyParser() : _chunkedTimeoutSec(10) { reset(); }
 
 RequestBodyParser::~RequestBodyParser() {}
 
@@ -17,6 +15,11 @@ void RequestBodyParser::reset() {
 	_contentLengthRemaining = 0;
 	_chunkSize = 0;
 	_lastReceiveTime = std::time(NULL);
+	_chunkedTimeoutSec = 10;
+}
+
+void RequestBodyParser::setChunkedTimeoutSec(const size_t timeoutSec) {
+	_chunkedTimeoutSec = timeoutSec;
 }
 
 void RequestBodyParser::init(const HttpRequest &request, int &errorCode) {
@@ -108,18 +111,11 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 	size_t offset = 0;
 	result = PARSE_INCOMPLETE;
 
-	size_t timeoutSeconds;
-	try {
-		// getLocationが例外吐くことがあるけど、
-		// ここでそのハンドルをするのはパーサーの責務じゃ無いから握り潰す
-		const Location loc = _config.getLocation(request.getPath());
-		timeoutSeconds = loc.chunkedTimeoutSec;
-	} catch (...) {
-		timeoutSeconds = 10;
-	}
+	const size_t timeoutSeconds = _chunkedTimeoutSec;
 	while (offset < buffer.length()) {
 		const time_t now = std::time(NULL);
-		if (static_cast< time_t >(timeoutSeconds) < now - _lastReceiveTime) {
+		if (timeoutSeconds > 0 &&
+			static_cast< time_t >(timeoutSeconds) < now - _lastReceiveTime) {
 			errorCode = HttpStatus::REQUEST_TIMEOUT;
 			result = PARSE_ERROR;
 			return offset;
@@ -157,13 +153,6 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 		if (_state == CHUNKED_DATA) {
 			if (buffer.length() - offset < _chunkSize + 2)
 				return offset;
-			// ボディサイズ制限をチェック
-			if (request.getBody().length() + _chunkSize >
-				request.getMaxBodySize()) {
-				errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
-				result = PARSE_ERROR;
-				return offset;
-			}
 			request.appendBody(buffer.c_str() + offset, _chunkSize);
 			if (!(buffer[offset + _chunkSize] == '\r' &&
 				  buffer[offset + _chunkSize + 1] == '\n')) {

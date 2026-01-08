@@ -97,7 +97,7 @@ std::string formatHeaderKeyForCgi(std::string key) {
 std::vector< std::string >
 CgiEnvBuilder::build(const PipelineContext &ctx,
 					 const std::string &requestedPath) {
-	const Config &c = ctx.conf;
+	const Config &c = *ctx.conf;
 	const HttpRequest &req = ctx.req;
 
 	const std::vector< std::string > Authorization =
@@ -124,7 +124,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["AUTH_TYPE"] = authType;
 	env["CONTENT_LENGTH"] = StringOps::toString(req.getBody().size());
 	env["CONTENT_TYPE"] = req.getHeader("Content-Type");
-	env["GATEWAY_INTERFACE"] = ctx.conf.getAppInfo().cgiVersion;
+	env["GATEWAY_INTERFACE"] = ctx.conf->getAppInfo().cgiVersion;
 	// PATH_INFO を取得
 	const std::string pathInfo = extractPathInfo(req.getPath());
 	env["PATH_INFO"] = pathInfo;
@@ -141,7 +141,7 @@ CgiEnvBuilder::build(const PipelineContext &ctx,
 	env["SERVER_NAME"] = listen.interface;
 	env["SERVER_PORT"] = StringOps::toString(listen.port);
 	env["SERVER_PROTOCOL"] = c.getAppInfo().httpProtocolVersion;
-	env["SERVER_SOFTWARE"] = ctx.conf.getAppInfo().softwareName;
+	env["SERVER_SOFTWARE"] = ctx.conf->getAppInfo().softwareName;
 	env["REMOTE_PORT"] = StringOps::toString(ctx.ownerClient.getPort());
 
 	// HTTPヘッダーを環境変数に変換

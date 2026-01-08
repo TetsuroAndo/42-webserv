@@ -1,18 +1,19 @@
 #pragma once
 
+#include <cstddef>
 #include <ctime>
 #include <string>
 
-#include "../../Config/Config.hpp"
 #include "../Core/HttpRequest.hpp"
 #include "ParseResult.hpp"
 
 class RequestBodyParser {
 public:
-	RequestBodyParser(const Config &config);
+	RequestBodyParser();
 	~RequestBodyParser();
 
 	void reset();
+	void setChunkedTimeoutSec(size_t timeoutSec);
 
 	/**
 	 * @brief HttpRequest
@@ -48,7 +49,7 @@ private:
 	size_t _contentLengthRemaining;
 	size_t _chunkSize;
 	time_t _lastReceiveTime;
-	const Config &_config;
+	size_t _chunkedTimeoutSec;
 
 	size_t parseIdentity(HttpRequest &request, const std::string &buffer,
 						 ParseResult &result);

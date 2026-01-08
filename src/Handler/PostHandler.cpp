@@ -37,7 +37,7 @@ std::string removeSpaceColonCommaHyphen(const std::string &str) {
 HttpResponse PostHandler::handle(PipelineContext &ctx) {
 	const HttpRequest &req = ctx.req;
 	HttpResponse &res = ctx.res;
-	const Config &config = ctx.conf;
+	const Config &config = *ctx.conf;
 
 	LOG(INFO) << "PostHandler processing request"
 			  << attr("method", req.getMethod()) << attr("uri", req.getPath());

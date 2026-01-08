@@ -37,8 +37,8 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	  _exitStatusSet(false), _outputComplete(false), _completionNotified(false),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
 	  _interpreterPath(interpreterPath), _lastActivityTime(std::time(NULL)),
-	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize),
-	  _errBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
+	  _readBuffer(ctx.conf->getPerformance().cgiIoBufferSize),
+	  _errBuffer(ctx.conf->getPerformance().cgiIoBufferSize) {
 	_eventReadFd = -1;
 	_eventWriteFd = -1;
 	_eventErrFd = -1;

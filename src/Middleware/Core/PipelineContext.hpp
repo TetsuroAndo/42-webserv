@@ -15,7 +15,7 @@ class Client;
  * @note HttpRequest, HttpResponse, Config, Session への参照を保持する
  */
 struct PipelineContext {
-	const Config &conf;
+	const Config *conf;
 	HttpRequest req;
 	HttpResponse res;
 	Session *session;
@@ -29,5 +29,6 @@ struct PipelineContext {
 	PipelineContext(const Config &c, Client &client,
 					CgiManager &serverCgiManager);
 	~PipelineContext();
+	void setConfig(const Config &c);
 	void reset(const Config &c);
 };

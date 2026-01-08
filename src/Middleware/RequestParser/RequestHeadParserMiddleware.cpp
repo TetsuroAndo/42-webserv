@@ -3,8 +3,6 @@
 #include "../../Http/Parser/ParseResult.hpp"
 #include "../../Lib/Logger/Log.hpp"
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
-#include <algorithm>
-
 void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 										 MiddlewareProcessor *proc) {
 	RequestParser &parser = ctx.parser;
@@ -21,12 +19,6 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 			   << attr("path", requestPath)
 			   << attr("method", ctx.req.getMethod())
 			   << attr("path_empty", requestPath.empty());
-	const Location loc = ctx.conf.getLocation(requestPath);
-	size_t maxBodySize = ctx.conf.getMaxRequestBodySize();
-	if (loc.hasMaxRequestBodySize) {
-		maxBodySize = loc.maxRequestBodySize;
-	}
-	ctx.req.setMaxBodySize(maxBodySize);
 
 	ParseResult result = parser.parseHeaders(ctx.req, ctx.recvBuffer);
 
@@ -36,7 +28,7 @@ void RequestHeadParserMiddleware::handle(PipelineContext &ctx,
 	case PARSE_ERROR:
 		ctx.res.setStatusCode(parser.getErrorCode());
 		if (proc) {
-			ErrorHandlerMiddleware errorHandler(ctx.conf);
+			ErrorHandlerMiddleware errorHandler;
 			errorHandler.handle(ctx, proc);
 		}
 		return;

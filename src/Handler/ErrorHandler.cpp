@@ -46,7 +46,7 @@ bool readErrorFile(const std::string &filePath, std::string &outContent) {
 } // namespace
 
 HttpResponse ErrorHandler::handle(PipelineContext &ctx) {
-	const Config &config = ctx.conf;
+	const Config &config = *ctx.conf;
 	HttpResponse &res = ctx.res;
 	const int statusCode = res.getStatusCode();
 

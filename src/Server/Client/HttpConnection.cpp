@@ -10,7 +10,7 @@
 HttpConnection::HttpConnection(Client *client, PipelineContext &context,
 							   HttpConnectionEventHandler &eventHandler)
 	: _client(client), _context(context), _eventHandler(eventHandler),
-	  _readBuffer(context.conf.getPerformance().ioBuffersSize) {}
+	  _readBuffer(context.conf->getPerformance().ioBuffersSize) {}
 
 HttpConnection::~HttpConnection() {}
 
@@ -77,7 +77,7 @@ void HttpConnection::handleWriteEvent() {
 
 time_t HttpConnection::calculateTimeout() const {
 	RequestParser::ParseState state = getParserState();
-	const Config &conf = _context.conf;
+	const Config &conf = *_context.conf;
 
 	switch (state) {
 	case RequestParser::STATE_REQUEST_LINE:

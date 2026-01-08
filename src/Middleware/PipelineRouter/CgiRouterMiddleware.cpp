@@ -34,7 +34,7 @@ bool CgiRouterMiddleware::isCgiRequest(const PipelineContext &ctx,
 
 void CgiRouterMiddleware::handle(PipelineContext &ctx,
 								 MiddlewareProcessor *proc) {
-	const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
+	const Location &loc = ctx.conf->getLocation(ctx.req.getPath());
 
 	if (isCgiRequest(ctx, loc)) {
 		LOG(DEBUG) << "CgiRouterMiddleware: Detected CGI request."

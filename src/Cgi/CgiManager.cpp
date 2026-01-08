@@ -70,7 +70,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 			ctx.res.setStatusCode(HttpStatus::SERVICE_UNAVAILABLE);
 			return;
 		}
-		const Location &loc = ctx.conf.getLocation(ctx.req.getPath());
+		const Location &loc = ctx.conf->getLocation(ctx.req.getPath());
 
 		// リクエストからスクリプト仮想パスとPATH_INFOを切り出す
 		std::string scriptVirtual;
@@ -87,7 +87,7 @@ void CgiManager::createWorker(PipelineContext &ctx) {
 
 		// スクリプトの実ファイル（絶対パス）を解決
 		const std::string scriptPath =
-			RequestResolver::resolvePath(scriptVirtual, ctx.conf);
+			RequestResolver::resolvePath(scriptVirtual, *ctx.conf);
 
 		// ファイルが存在しなかった場合
 		if (scriptPath.empty()) {

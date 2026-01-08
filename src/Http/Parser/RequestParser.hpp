@@ -1,9 +1,8 @@
 #ifndef REQUEST_PARSER_HPP
 #define REQUEST_PARSER_HPP
 
+#include <cstddef>
 #include <string>
-
-#include "../../Config/Config.hpp"
 #include "ParseResult.hpp"
 #include "RequestBodyParser.hpp"
 #include "RequestHeadParser.hpp"
@@ -24,7 +23,7 @@ public:
 		STATE_COMPLETE
 	};
 
-	RequestParser(const Config &config);
+	RequestParser(size_t maxHeaderBytes);
 	~RequestParser();
 
 	/// @brief パーサーと状態をリセットする
@@ -53,17 +52,17 @@ public:
 	 * @param req パース結果を格納するHttpRequestオブジェクト
 	 * @param buffer 受信バッファ（パース済み部分は削除される）
 	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
-	 * @note Content-LengthとLocationの上限サイズチェックもこの時点で行う
+	 * @note ヘッダーの構文解析のみを行う
 	 */
 	ParseResult parseHeaders(HttpRequest &req, std::string &buffer);
 
 	/**
 	 * @brief リクエストボディをパースする
 	 * @param req
-	 * パース結果を格納するHttpRequestオブジェクト（ボディサイズ制限も含む）
+	 * パース結果を格納するHttpRequestオブジェクト
 	 * @param buffer 受信バッファ（パース済み部分は削除される）
 	 * @return パース結果（PARSE_INCOMPLETE, PARSE_COMPLETE, PARSE_ERROR）
-	 * @note このメソッドは内部でボディサイズチェックも行う
+	 * @note ボディサイズなどの制約はミドルウェア側で行う
 	 */
 	ParseResult parseBody(HttpRequest &req, std::string &buffer);
 
@@ -77,12 +76,11 @@ public:
 private:
 	int _errorCode;
 	ParseState _state;
+	size_t _maxHeaderBytes;
 
 	RequestLineParser _lineParser;
 	RequestHeadParser _headParser;
 	RequestBodyParser _bodyParser;
-
-	const Config &_config;
 
 	RequestParser(const RequestParser &);
 	RequestParser &operator=(const RequestParser &);
