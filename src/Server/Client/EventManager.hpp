@@ -1,5 +1,6 @@
 #pragma once
 #include "Events/AEvent.hpp"
+#include "IFdCloser.hpp"
 #include <map>
 #include <vector>
 
@@ -8,7 +9,7 @@ class AEvent;
 
 class EventManager {
 public:
-	EventManager();
+	EventManager(IFdCloser &fdCloser);
 	~EventManager();
 
 	void initFd(Client &client);
@@ -21,5 +22,6 @@ public:
 
 private:
 	std::map< int, std::vector< AEvent * > > _eventsTable;
-	std::map< int, Client * > _clientTable;
+	std::map< int, bool > _clientTable;
+	IFdCloser &_fdCloser;
 };

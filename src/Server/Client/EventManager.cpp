@@ -1,9 +1,7 @@
 #include "EventManager.hpp"
-
 #include "../../Lib/Logger/Log.hpp"
-#include "../Server.hpp"
 
-EventManager::EventManager() {}
+EventManager::EventManager(IFdCloser &fdCloser) : _fdCloser(fdCloser) {}
 
 EventManager::~EventManager() {
 	for (std::map< int, std::vector< AEvent * > >::const_iterator it =
@@ -20,10 +18,10 @@ void EventManager::initFd(Client &client) {
 	if (0 < _clientTable.count(client.getFd())) {
 		LOG(WARNING) << "client fd " << client.getFd() << " already exists";
 	}
-	_clientTable[client.getFd()] = &client;
+	_clientTable[client.getFd()] = true;
 }
 
-void EventManager::initFd(const int fd) { _clientTable[fd] = NULL; }
+void EventManager::initFd(const int fd) { _clientTable[fd] = false; }
 
 void EventManager::handle(const int fd, const unsigned int events) {
 	if (_eventsTable.count(fd) <= 0) {
@@ -76,8 +74,9 @@ void EventManager::removeFd(const int fd) {
 		LOG(WARNING) << "called on non-existing fd " << fd;
 		return;
 	}
-	if (_clientTable[fd] != NULL)
-		_clientTable[fd]->getServer().closeConnection(fd);
+	if (_clientTable[fd]) {
+		_fdCloser.closeFd(fd);
+	}
 	_clientTable.erase(fd);
 }
 

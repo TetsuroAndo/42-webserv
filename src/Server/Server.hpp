@@ -7,6 +7,7 @@
 #include "../Socket/SocketsManager.hpp"
 #include "Client/Client.hpp"
 #include "Client/EventManager.hpp"
+#include "Client/IFdCloser.hpp"
 #include "Listen/INewConnectionHandler.hpp"
 #include "Listen/ListenerSet.hpp"
 #include "VHost/VirtualHost.hpp"
@@ -15,13 +16,14 @@
 #include <string>
 #include <vector>
 
-class Server : public INewConnectionHandler {
+class Server : public INewConnectionHandler, public IFdCloser {
 public:
 	Server(const std::vector< Config > &configs);
 	~Server();
 
 	void run();
 	void closeConnection(int clientFd);
+	virtual void closeFd(int clientFd);
 
 	TimeoutManager &getTimeoutManager();
 	SocketsManager &getSocketsManager();

@@ -37,7 +37,8 @@ void makeClientIp(char *clientIp, const size_t size,
 Server::Server(const std::vector< Config > &configs)
 	: _cgiManager(ServerBootstrap::selectCgiConfig(configs)),
 	  _socketsManager(ServerBootstrap::resolveMaxEvents(configs)),
-	  _listenHeaderMax(ServerBootstrap::resolveListenHeaderMax(configs)) {
+	  _listenHeaderMax(ServerBootstrap::resolveListenHeaderMax(configs)),
+	  _eventManager(*this) {
 	LOG(INFO) << "Initializing server with provided configuration...";
 	Logging::setupLoggers(configs[0]); // TODO: 複数vhost対応
 	ServerBootstrap::validateListenCompatibility(configs);
@@ -187,6 +188,8 @@ void Server::closeConnection(const int clientFd) {
 		close(clientFd);
 	}
 }
+
+void Server::closeFd(const int clientFd) { closeConnection(clientFd); }
 
 std::string Server::getSessionId(const PipelineContext *ctx) const {
 	if (ctx == NULL || ctx->session == NULL) {
