@@ -62,9 +62,8 @@ Server::Server(const std::vector< Config > &configs)
 }
 
 Server::~Server() {
-	for (std::map< int, Client * >::iterator it = _clients.begin();
-		 it != _clients.end(); ++it) {
-		delete it->second;
+	while (!_clients.empty()) {
+		closeConnection(_clients.begin()->first);
 	}
 	_listeners.forgetAll(_eventManager, _socketsManager);
 }

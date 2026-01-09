@@ -24,30 +24,49 @@ void EventManager::initFd(Client &client) {
 void EventManager::initFd(const int fd) { _clientTable[fd] = false; }
 
 void EventManager::handle(const int fd, const unsigned int events) {
-	if (_eventsTable.count(fd) <= 0) {
+	std::map< int, std::vector< AEvent * > >::iterator itTable =
+		_eventsTable.find(fd);
+	if (itTable == _eventsTable.end()) {
 		LOG(WARNING) << "called on non-existing fd " << fd;
 		return;
 	}
 	unsigned int effective = events;
+	if (events & EPOLLERR) {
+		LOG(WARNING) << "EPOLLERR for client fd: " << fd;
+		removeFd(fd);
+		return;
+	}
 	if (events & EPOLLHUP) {
 		char buf[8];
 		// MSG_PEEKを利用して、データがソケットに届いているかを確認
 		const ssize_t recv_res = recv(fd, buf, 1, MSG_PEEK);
-		if (0 < recv_res)
+		if (0 < recv_res) {
 			effective |= EPOLLIN;
-	} else if (events & EPOLLERR) {
-		LOG(WARNING) << "EPOLLERR for client fd: " << fd;
-		removeFd(fd);
+		} else {
+			removeFd(fd);
+			return;
+		}
 	}
-	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
-		 it != _eventsTable[fd].end(); ++it) {
+	std::vector< AEvent * > &eventsList = itTable->second;
+	for (std::vector< AEvent * >::iterator it = eventsList.begin();
+		 it != eventsList.end(); ++it) {
 		if ((*it) == NULL) {
 			continue;
 		}
 		if ((*it)->isExpectedEventType(effective) == false) {
 			continue;
 		}
-		(*it)->handle();
+		try {
+			(*it)->handle();
+		} catch (const std::exception &e) {
+			LOG(ERROR) << "Exception in event handler: " << e.what()
+					   << attr("fd", fd);
+			removeFd(fd);
+		} catch (...) {
+			LOG(ERROR) << "Unknown exception in event handler"
+					   << attr("fd", fd);
+			removeFd(fd);
+		}
 		return;
 	}
 }
@@ -81,12 +100,15 @@ void EventManager::removeFd(const int fd) {
 }
 
 void EventManager::clearEvents(const int fd) {
-	if (_eventsTable.count(fd) <= 0) {
+	std::map< int, std::vector< AEvent * > >::iterator itTable =
+		_eventsTable.find(fd);
+	if (itTable == _eventsTable.end()) {
 		LOG(WARNING) << "called on non-existing fd " << fd;
 		return;
 	}
-	for (std::vector< AEvent * >::const_iterator it = _eventsTable[fd].begin();
-		 it != _eventsTable[fd].end(); ++it) {
+	for (std::vector< AEvent * >::const_iterator it =
+			 itTable->second.begin();
+		 it != itTable->second.end(); ++it) {
 		delete (*it);
 	}
 	_eventsTable.erase(fd);
