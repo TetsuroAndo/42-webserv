@@ -1,7 +1,6 @@
 """
 設定ファイルのバリデーション（異常系）
 """
-import time
 import pytest
 import subprocess
 from pathlib import Path
@@ -24,15 +23,12 @@ class TestInvalidConfig:
             stderr=subprocess.PIPE,
             text=True,
         )
-
-        time.sleep(0.5)
-
-        if proc.poll() is None:
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
             proc.terminate()
             proc.wait()
             assert False, "起動に成功"
-        else:
-            assert True, "起動に失敗"
 
     def test_invalid_config(self, webserv_bin):
         """無効な設定ファイルは絶対に起動できない"""
@@ -48,10 +44,9 @@ class TestInvalidConfig:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            time.sleep(0.5)
-            if proc.poll() is None:
+            try:
+                proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
                 proc.terminate()
                 proc.wait()
                 pytest.fail(f"無効な設定ファイル {yaml_file.name} が起動に成功")
-
-
