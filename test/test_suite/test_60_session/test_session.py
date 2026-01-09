@@ -153,7 +153,7 @@ class TestGETCookieSession:
         sid1c = extract_session_id(r1c.headers.get("Set-Cookie"))
         print(f"sid1c: {sid1c}")
         assert sid1c is not None
-        assert sid1c != sid1b
+        assert sid1c != sid1
 
         r2b = session_2.get(f"{base_url_2}/")
         assert r2b.status_code == 200
