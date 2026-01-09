@@ -3,6 +3,7 @@
 #include "../VHost/VirtualHost.hpp"
 #include "INewConnectionHandler.hpp"
 #include "Listener.hpp"
+#include <cstring>
 #include <map>
 #include <vector>
 
@@ -21,10 +22,11 @@ public:
 
 		AcceptedConn()
 			: fd(-1),
-			  addr(),
 			  key(),
 			  defaultVhostIndex(0),
-			  found(false) {}
+			  found(false) {
+			std::memset(&addr, 0, sizeof(addr));
+		}
 	};
 	// clang-format on
 
@@ -36,7 +38,7 @@ public:
 			   INewConnectionHandler &handler);
 
 	AcceptedConn acceptOnce(int listenFd) const;
-	void forgetAll(EventManager &eventManager);
+	void forgetAll(EventManager &eventManager, SocketsManager &socketsManager);
 
 private:
 	std::map< ListenKey, Listener > _listeners;

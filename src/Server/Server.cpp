@@ -8,9 +8,11 @@
 #include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
 #include "Listen/ListenKey.hpp"
+
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <memory>
 #include <netinet/in.h>
 #include <sstream>
 #include <stdexcept>
@@ -64,7 +66,7 @@ Server::~Server() {
 		 it != _clients.end(); ++it) {
 		delete it->second;
 	}
-	_listeners.forgetAll(_eventManager);
+	_listeners.forgetAll(_eventManager, _socketsManager);
 }
 
 TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
@@ -107,7 +109,13 @@ void Server::handleNewConnection(const int listenFd) {
 		return;
 	}
 	if (accepted.fd < 0) {
-		LOG(ERROR) << "accept() failed: " << strerror(errno);
+        // EAGAINやEWOULDBLOCKはノンブロッキングソケットで一時的な正常状態。
+        // それ以外のerrnoは異常なのでログ出力する。
+		if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			LOG(ERROR)
+				<< "accept() failed or client socket setup failed: "
+				<< strerror(errno);
+		}
 		return;
 	}
 
@@ -126,6 +134,7 @@ void Server::handleNewConnection(const int listenFd) {
 		return;
 	}
 
+	Client *client = NULL;
 	try {
 		VirtualHost *vhost = &_vhosts[accepted.defaultVhostIndex];
 
@@ -140,24 +149,45 @@ void Server::handleNewConnection(const int listenFd) {
 			maxHeaderBytes = maxIt->second;
 		}
 
-		Client *client =
-			new Client(accepted.fd, accepted.addr, accepted.key.port, *vhost,
-					   maxHeaderBytes, *this, _eventManager);
-		_clients[accepted.fd] = client;
+		client = new Client(accepted.fd, accepted.addr, accepted.key.port,
+							*vhost, maxHeaderBytes, *this, _eventManager);
+
 		_socketsManager.registerSocket(accepted.fd, EPOLLIN);
 		_eventManager.initFd(*client);
-		_eventManager.addEvent(accepted.fd, new ReadEvent(client));
-		_eventManager.addEvent(accepted.fd, new WriteEvent(client));
+
+		std::auto_ptr< ReadEvent > readEvent(new ReadEvent(client));
+		_eventManager.addEvent(accepted.fd, readEvent.get());
+		readEvent.release();
+
+		std::auto_ptr< WriteEvent > writeEvent(new WriteEvent(client));
+		_eventManager.addEvent(accepted.fd, writeEvent.get());
+		writeEvent.release();
+
 		// 最初はヘッダ受信待ちのタイムアウトを設定
 		client->updateTimeout();
-	} catch (const std::bad_alloc &e) {
-		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
-				   << attr("fd", accepted.fd);
-		close(accepted.fd);
+		_clients[accepted.fd] = client;
 	} catch (const std::exception &e) {
 		LOG(ERROR) << "Unexpected error during client creation: " << e.what()
 				   << attr("fd", accepted.fd);
+		if (client) {
+			try {
+				_timeoutManager.remove(client);
+			} catch (...) {
+				// Avoid suppressing the original exception during cleanup.
+			}
+		}
+		try {
+			_eventManager.forgetFd(accepted.fd);
+		} catch (...) {
+			// 避例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
+		}
+		try {
+			_socketsManager.unregisterSocket(accepted.fd);
+		} catch (...) {
+			// best-effort cleanup: ignore failures during shutdown/rollback
+		}
 		close(accepted.fd);
+		delete client;
 	}
 }
 
