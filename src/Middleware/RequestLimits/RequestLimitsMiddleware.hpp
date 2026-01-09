@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Core/IMiddleware.hpp"
+#include "../Core/IMiddleware.hpp"
 
 class RequestLimitsMiddleware : public IMiddleware {
 public:

@@ -25,16 +25,6 @@ void VHostSelectMiddleware::handle(PipelineContext &ctx,
 
 	ctx.setConfig(ctx.ownerClient.getConfig());
 
-	// エラーチェック: Configが正しくセットされているか
-	if (ctx.conf == NULL) {
-		ctx.setError(HttpStatus::INTERNAL_SERVER_ERROR);
-		if (proc) {
-			ErrorHandlerMiddleware errorHandler;
-			errorHandler.handle(ctx, proc);
-		}
-		return;
-	}
-
 	/// vhost指定のリクエストヘッダサイズの検証とエラーハンドリング （ホスト確定後のため）
 	const size_t headerBytes = ctx.parser.getLastHeaderBytes();
 	if (ctx.conf != NULL && ctx.conf->getMaxRequestHeaderSize() < headerBytes) {
