@@ -13,7 +13,6 @@ class Client;
 
 /**
  * @brief ミドルウェア間で引き回す情報をまとめた構造体
- * @note HttpRequest, HttpResponse, Config, Session への参照を保持する
  */
 struct PipelineContext {
 	const Config *conf;
