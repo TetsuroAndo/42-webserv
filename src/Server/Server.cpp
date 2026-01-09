@@ -172,14 +172,15 @@ void Server::handleNewConnection(const int listenFd) {
 		if (client) {
 			_timeoutManager.remove(client);
 		}
-		// 避例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
 		try {
 			_eventManager.forgetFd(accepted.fd);
 		} catch (...) {
+			// 避例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
 		}
 		try {
 			_socketsManager.unregisterSocket(accepted.fd);
 		} catch (...) {
+			// best-effort cleanup: ignore failures during shutdown/rollback
 		}
 		close(accepted.fd);
 		delete client;
