@@ -15,14 +15,6 @@ void RequestLimitsMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 
-	if (!ctx.conf) {
-		ctx.setError(HttpStatus::INTERNAL_SERVER_ERROR);
-		if (proc) {
-			ErrorHandlerMiddleware errorHandler;
-			errorHandler.handle(ctx, proc);
-		}
-		return;
-	}
 	const Config &config = *ctx.conf;
 	const Location &loc = config.getLocation(ctx.req.getPath());
 	size_t maxBodySize = config.getMaxRequestBodySize();
