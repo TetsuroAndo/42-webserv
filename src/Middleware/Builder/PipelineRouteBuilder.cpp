@@ -5,7 +5,6 @@
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
-#include "../RequestLimits/RequestLimitsMiddleware.hpp"
 #include "../RequestParser/RequestBodyParserMiddleware.hpp"
 #include "../RequestParser/RequestHeadParserMiddleware.hpp"
 #include "../RequestParser/RequestLineParserMiddleware.hpp"
@@ -13,6 +12,7 @@
 #include "../SubPipeline/ErrorHandler/ErrorHandlerMiddleware.hpp"
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
 #include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
+#include "../SubPipeline/RequestLimits/RequestLimitsMiddleware.hpp"
 #include "../SubPipeline/Session/SessionMiddleware.hpp"
 #include "../VHost/VHostSelectMiddleware.hpp"
 
