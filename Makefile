@@ -56,10 +56,11 @@ f: c
 r: f all
 
 # Debug build
-debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address
+debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=addressm,leak
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
 	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" -j $(shell nproc)
+	ASAN_OPTIONS=detect_leaks=1:leak_check_at_exit=1 ./$(NAME) $(CONF)
 
 $(LOG_DIR):
 	@mkdir -p $(LOG_DIR)
@@ -69,7 +70,7 @@ setuphooks:
 	@chmod -R 744 .githooks/
 
 play-netpractice: $(NAME) submodule
-	./$(NAME) $(CONF_DIR)/netpractice.yaml
+	./$(NAME) $(CONF)
 
 # =========== PYTEST ENVIRONMENT ============
 
