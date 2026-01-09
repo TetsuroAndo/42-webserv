@@ -1,9 +1,9 @@
 #include "ListenerSet.hpp"
 
 #include "../../Lib/Logger/Log.hpp"
+#include "../../Socket/SocketsManager.hpp"
 #include "../Client/EventManager.hpp"
 #include "../Client/Events/NewConnectionEvent.hpp"
-#include "../../Socket/SocketsManager.hpp"
 
 #include <cerrno>
 #include <cstring>
@@ -12,8 +12,8 @@
 #include <netdb.h>
 #include <stdexcept>
 #include <sys/socket.h>
-#include <utility>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 ListenerSet::ListenerSet() : _listeners(), _listenersByFd() {}
@@ -38,7 +38,8 @@ void ListenerSet::build(const std::vector< VirtualHost > &vhosts,
 			std::map< ListenKey, Listener >::iterator it = _listeners.find(key);
 
 			if (it == _listeners.end()) {
-				it = _listeners.insert(std::make_pair(key, Listener(key))).first;
+				it =
+					_listeners.insert(std::make_pair(key, Listener(key))).first;
 			}
 			it->second.addVhostIndex(i);
 		}
@@ -71,8 +72,7 @@ ListenerSet::AcceptedConn ListenerSet::acceptOnce(const int listenFd) const {
 	}
 
 	const int flags = fcntl(clientFd, F_GETFL, 0);
-	if (flags < 0 ||
-		fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (flags < 0 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0) {
 		close(clientFd);
 		return result;
 	}
@@ -87,8 +87,15 @@ void ListenerSet::forgetAll(EventManager &eventManager,
 	for (std::map< int, Listener * >::iterator it = _listenersByFd.begin();
 		 it != _listenersByFd.end(); ++it) {
 		const int fd = it->first;
-		eventManager.forgetFd(fd);
-		socketsManager.unregisterSocket(fd);
+		// デストラクタ経路のため、ここは例外を投げない（terminate回避）。
+		try {
+			eventManager.forgetFd(fd);
+		} catch (...) {
+		}
+		try {
+			socketsManager.unregisterSocket(fd);
+		} catch (...) {
+		}
 		if (fd >= 0) {
 			close(fd);
 		}
@@ -103,8 +110,8 @@ void ListenerSet::forgetAll(EventManager &eventManager,
 }
 
 void ListenerSet::openAndRegisterListeners(SocketsManager &socketsManager,
-										  EventManager &eventManager,
-										  INewConnectionHandler &handler) {
+										   EventManager &eventManager,
+										   INewConnectionHandler &handler) {
 	std::vector< int > openedFds;
 	int currentFd = -1;
 
@@ -134,8 +141,7 @@ void ListenerSet::openAndRegisterListeners(SocketsManager &socketsManager,
 			currentFd = listenFd;
 
 			const int flags = fcntl(listenFd, F_GETFL, 0);
-			if (flags < 0 ||
-				fcntl(listenFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+			if (flags < 0 || fcntl(listenFd, F_SETFL, flags | O_NONBLOCK) < 0) {
 				LOG(FATAL) << "fcntl() failed for listen socket: "
 						   << strerror(errno);
 				throw std::runtime_error("fcntl() failed");
@@ -162,9 +168,8 @@ void ListenerSet::openAndRegisterListeners(SocketsManager &socketsManager,
 
 			int ret = getaddrinfo(key.interface.c_str(), NULL, &hints, &res);
 			if (ret != 0) {
-				LOG(FATAL)
-					<< "getaddrinfo() failed for " << key.interface << ": "
-					<< gai_strerror(ret);
+				LOG(FATAL) << "getaddrinfo() failed for "
+						   << key.interface << ": " << gai_strerror(ret);
 				throw std::runtime_error("getaddrinfo() failed");
 			}
 
@@ -198,20 +203,35 @@ void ListenerSet::openAndRegisterListeners(SocketsManager &socketsManager,
 			event.release();
 			openedFds.push_back(listenFd);
 			listenGuard.release();
+			currentFd = -1;
 
 			LOG(INFO) << "Listening on " << key.interface << ":" << key.port
 					  << attr("fd", listenFd);
 		}
 	} catch (...) {
 		if (currentFd >= 0) {
-			eventManager.forgetFd(currentFd);
-			socketsManager.unregisterSocket(currentFd);
+			// ロールバック中の二次例外で元の例外を潰さないよう、ここも例外を投げない。
+			try {
+				eventManager.forgetFd(currentFd);
+			} catch (...) {
+			}
+			try {
+				socketsManager.unregisterSocket(currentFd);
+			} catch (...) {
+			}
 		}
 
 		for (size_t i = 0; i < openedFds.size(); ++i) {
 			const int fd = openedFds[i];
-			eventManager.forgetFd(fd);
-			socketsManager.unregisterSocket(fd);
+			// ロールバック中の二次例外で元の例外を潰さないよう、ここも例外を投げない。
+			try {
+				eventManager.forgetFd(fd);
+			} catch (...) {
+			}
+			try {
+				socketsManager.unregisterSocket(fd);
+			} catch (...) {
+			}
 			close(fd);
 		}
 
