@@ -8,6 +8,7 @@
 #include "ConfigLogParser.hpp"
 
 #include <ctime>
+#include <cstring>
 #include <limits>
 #include <netdb.h>
 #include <set>
@@ -202,7 +203,8 @@ void ConfigParser::parseListens(const Node *node) const {
 		}
 		l.port = port;
 
-		addrinfo hints = {};
+		addrinfo hints;
+		std::memset(&hints, 0, sizeof(hints));
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_NUMERICHOST;

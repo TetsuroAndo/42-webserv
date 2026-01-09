@@ -1,18 +1,20 @@
 #include "ListenerRegistry.hpp"
 
 #include "../../Lib/Logger/Log.hpp"
+#include "../../Socket/SocketsManager.hpp"
 #include "../Client/EventManager.hpp"
 #include "../Client/Events/NewConnectionEvent.hpp"
-#include "../../Socket/SocketsManager.hpp"
 
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
+#include <memory>
 #include <netdb.h>
 #include <stdexcept>
 #include <sys/socket.h>
-#include <utility>
 #include <unistd.h>
+#include <utility>
+#include <vector>
 
 ListenerRegistry::ListenerRegistry() : _listeners(), _listenersByFd() {}
 
@@ -36,12 +38,12 @@ void ListenerRegistry::build(const std::vector< VirtualHost > &vhosts,
 			std::map< ListenKey, Listener >::iterator it = _listeners.find(key);
 
 			if (it == _listeners.end()) {
-				it = _listeners.insert(std::make_pair(key, Listener(key))).first;
+				it =
+					_listeners.insert(std::make_pair(key, Listener(key))).first;
 			}
 			it->second.addVhostIndex(i);
 		}
 	}
-
 	openAndRegisterListeners(socketsManager, eventManager, handler);
 }
 
@@ -69,82 +71,178 @@ ListenerRegistry::AcceptedConn ListenerRegistry::acceptOnce(const int listenFd) 
 	}
 
 	const int flags = fcntl(clientFd, F_GETFL, 0);
-	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
+	if (flags < 0 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+		const int savedErrno = errno;
+		close(clientFd);
+		errno = savedErrno;
+		return result;
+	}
 
 	result.fd = clientFd;
 	result.addr = clientAddr;
 	return result;
 }
 
-void ListenerRegistry::forgetAll(EventManager &eventManager) {
+void ListenerRegistry::forgetAll(EventManager &eventManager,
+								 SocketsManager &socketsManager) {
 	for (std::map< int, Listener * >::iterator it = _listenersByFd.begin();
 		 it != _listenersByFd.end(); ++it) {
-		eventManager.forgetFd(it->first);
+		const int fd = it->first;
+		// デストラクタ経路のため、ここは例外を投げない（terminate回避）。
+		try {
+			eventManager.forgetFd(fd);
+		} catch (...) {
+		}
+		try {
+			socketsManager.unregisterSocket(fd);
+		} catch (...) {
+		}
+		if (fd >= 0) {
+			close(fd);
+		}
+		if (it->second) {
+			sockaddr_in empty;
+			std::memset(&empty, 0, sizeof(empty));
+			it->second->setSocket(-1, empty);
+		}
 	}
 	_listenersByFd.clear();
 	_listeners.clear();
 }
 
 void ListenerRegistry::openAndRegisterListeners(SocketsManager &socketsManager,
-										  EventManager &eventManager,
-										  INewConnectionHandler &handler) {
-	for (std::map< ListenKey, Listener >::iterator it = _listeners.begin();
-		 it != _listeners.end(); ++it) {
-		const ListenKey &key = it->first;
-		int listenFd = socket(AF_INET, SOCK_STREAM, 0);
-		if (listenFd < 0) {
-			LOG(FATAL) << "socket() failed: " << strerror(errno);
-			throw std::runtime_error("socket() failed");
+												EventManager &eventManager,
+												INewConnectionHandler &handler) {
+	std::vector< int > openedFds;
+	int currentFd = -1;
+
+	struct ScopedFd {
+		int fd;
+		explicit ScopedFd(int fdIn) : fd(fdIn) {}
+		~ScopedFd() {
+			if (fd >= 0) {
+				close(fd);
+			}
+		}
+		void release() { fd = -1; }
+	};
+
+	try {
+		for (std::map< ListenKey, Listener >::iterator it = _listeners.begin();
+			 it != _listeners.end(); ++it) {
+			currentFd = -1;
+
+			const ListenKey &key = it->first;
+			const int listenFd = socket(AF_INET, SOCK_STREAM, 0);
+			if (listenFd < 0) {
+				LOG(FATAL) << "socket() failed: " << strerror(errno);
+				throw std::runtime_error("socket() failed");
+			}
+			ScopedFd listenGuard(listenFd);
+			currentFd = listenFd;
+
+			const int flags = fcntl(listenFd, F_GETFL, 0);
+			if (flags < 0 || fcntl(listenFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+				LOG(FATAL) << "fcntl() failed for listen socket: "
+						   << strerror(errno);
+				throw std::runtime_error("fcntl() failed");
+			}
+
+			int opt = 1;
+			if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt,
+						   sizeof(opt)) < 0) {
+				LOG(FATAL) << "setsockopt() failed: " << strerror(errno);
+				throw std::runtime_error("setsockopt() failed");
+			}
+
+			sockaddr_in addr;
+			std::memset(&addr, 0, sizeof(addr));
+			addr.sin_family = AF_INET;
+			addr.sin_port = htons(key.port);
+
+			addrinfo hints;
+			std::memset(&hints, 0, sizeof(hints));
+			addrinfo *res = NULL;
+			hints.ai_family = AF_INET;
+			hints.ai_socktype = SOCK_STREAM;
+			hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
+
+			int ret = getaddrinfo(key.interface.c_str(), NULL, &hints, &res);
+			if (ret != 0) {
+				LOG(FATAL) << "getaddrinfo() failed for "
+						   << key.interface << ": " << gai_strerror(ret);
+				throw std::runtime_error("getaddrinfo() failed");
+			}
+
+			std::memcpy(
+				&addr.sin_addr,
+				&reinterpret_cast< sockaddr_in * >(res->ai_addr)->sin_addr,
+				sizeof(addr.sin_addr));
+			freeaddrinfo(res);
+
+			if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
+					 sizeof(addr)) < 0) {
+				LOG(FATAL) << "bind() failed for " << key.interface << ":"
+						   << key.port << ": " << strerror(errno);
+				throw std::runtime_error("bind() failed");
+			}
+			if (listen(listenFd, SOMAXCONN) < 0) {
+				LOG(FATAL) << "listen() failed for " << key.interface << ":"
+						   << key.port << ": " << strerror(errno);
+				throw std::runtime_error("listen() failed");
+			}
+
+			it->second.setSocket(listenFd, addr);
+
+			socketsManager.registerSocket(listenFd, EPOLLIN);
+			eventManager.initFd(listenFd);
+
+			std::auto_ptr< NewConnectionEvent > event(
+				new NewConnectionEvent(handler));
+			_listenersByFd[listenFd] = &it->second;
+			eventManager.addEvent(listenFd, event.get());
+			event.release();
+			openedFds.push_back(listenFd);
+			listenGuard.release();
+			currentFd = -1;
+
+			LOG(INFO) << "Listening on " << key.interface << ":" << key.port
+					  << attr("fd", listenFd);
+		}
+	} catch (...) {
+		if (currentFd >= 0) {
+			// ロールバック中の二次例外で元の例外を潰さないよう、ここも例外を投げない。
+			try {
+				eventManager.forgetFd(currentFd);
+			} catch (...) {
+			}
+			try {
+				socketsManager.unregisterSocket(currentFd);
+			} catch (...) {
+			}
 		}
 
-		const int flags = fcntl(listenFd, F_GETFL, 0);
-		fcntl(listenFd, F_SETFL, flags | O_NONBLOCK);
-
-		int opt = 1;
-		setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-		sockaddr_in addr = {};
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(key.port);
-
-		addrinfo hints = {}, *res;
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
-
-		int ret = getaddrinfo(key.interface.c_str(), NULL, &hints, &res);
-		if (ret != 0) {
-			close(listenFd);
-			LOG(FATAL) << "getaddrinfo() failed for " << key.interface << ": "
-					   << gai_strerror(ret);
-			throw std::runtime_error("getaddrinfo() failed");
+		for (size_t i = 0; i < openedFds.size(); ++i) {
+			const int fd = openedFds[i];
+			// ロールバック中の二次例外で元の例外を潰さないよう、ここも例外を投げない。
+			try {
+				eventManager.forgetFd(fd);
+			} catch (...) {
+			}
+			try {
+				socketsManager.unregisterSocket(fd);
+			} catch (...) {
+			}
+			close(fd);
 		}
 
-		std::memcpy(&addr.sin_addr,
-					&reinterpret_cast< sockaddr_in * >(res->ai_addr)->sin_addr,
-					sizeof(addr.sin_addr));
-		freeaddrinfo(res);
-
-		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
-				 sizeof(addr)) < 0) {
-			close(listenFd);
-			LOG(FATAL) << "bind() failed for " << key.interface << ":"
-					   << key.port << ": " << strerror(errno);
-			throw std::runtime_error("bind() failed");
+		_listenersByFd.clear();
+		for (std::map< ListenKey, Listener >::iterator it = _listeners.begin();
+			 it != _listeners.end(); ++it) {
+			sockaddr_in empty;
+			std::memset(&empty, 0, sizeof(empty));
+			it->second.setSocket(-1, empty);
 		}
-		if (listen(listenFd, SOMAXCONN) < 0) {
-			close(listenFd);
-			LOG(FATAL) << "listen() failed for " << key.interface << ":"
-					   << key.port << ": " << strerror(errno);
-			throw std::runtime_error("listen() failed");
-		}
-
-		it->second.setSocket(listenFd, addr);
-		_listenersByFd[listenFd] = &it->second;
-		socketsManager.registerSocket(listenFd, EPOLLIN);
-		eventManager.initFd(listenFd);
-		eventManager.addEvent(listenFd, new NewConnectionEvent(handler));
-		LOG(INFO) << "Listening on " << key.interface << ":" << key.port
-				  << attr("fd", listenFd);
+		throw;
 	}
 }
