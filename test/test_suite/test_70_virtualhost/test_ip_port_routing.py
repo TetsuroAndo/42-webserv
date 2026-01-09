@@ -71,8 +71,10 @@ def test_ip_port_virtualhost_routing(webserv_bin):
             f.write(host_b_contents)
         print(f"index_a: {index_a}")
         print(f"index_b: {index_b}")
-        print(f"index_a contents: {open(index_a, 'r').read()}")
-        print(f"index_b contents: {open(index_b, 'r').read()}")
+        with open(index_a, "r") as f:
+            print(f"index_a contents: {f.read()}")
+        with open(index_b, "r") as f:
+            print(f"index_b contents: {f.read()}")
 
         config_path = os.path.join(temp_dir, "vhost.yaml")
         config_text = f"""servers:
@@ -106,7 +108,8 @@ def test_ip_port_virtualhost_routing(webserv_bin):
         with open(config_path, "w") as f:
             f.write(config_text)
 
-        print(f"config: \n\n{open(config_path, 'r').read()}")
+        with open(config_path, "r") as f:
+            print(f"config: \n\n{f.read()}")
         print(f"config_path: {config_path}")
         print(f"port_a: {port_a}, port_b: {port_b}")
 

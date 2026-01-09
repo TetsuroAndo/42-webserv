@@ -79,7 +79,8 @@ def write_multi_listen_config(src_path, temp_dir):
             Dumper=_IndentedSafeDumper,
         )
 
-    print(f"config: \n\n{open(out_path, 'r').read()}")
+    with open(out_path, "r") as f:
+        print(f"config: \n\n{f.read()}")
     print(f"out_path: {out_path}")
     print(f"listen_ports: {listen_ports}")
     return out_path, listen_ports
