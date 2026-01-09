@@ -44,7 +44,6 @@ void ListenerSet::build(const std::vector< VirtualHost > &vhosts,
 			it->second.addVhostIndex(i);
 		}
 	}
-
 	openAndRegisterListeners(socketsManager, eventManager, handler);
 }
 
