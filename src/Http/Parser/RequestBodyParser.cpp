@@ -142,14 +142,6 @@ size_t RequestBodyParser::parseChunked(HttpRequest &request,
 				return offset;
 			}
 
-			const size_t currentSize = request.getBody().size();
-			const size_t maxSize = request.getMaxBodySize();
-			if (currentSize > maxSize || _chunkSize > maxSize - currentSize) {
-				errorCode = HttpStatus::PAYLOAD_TOO_LARGE;
-				result = PARSE_ERROR;
-				return offset;
-			}
-
 			offset = crlfPos + 2;
 			if (_chunkSize == 0) {
 				_state = CHUNKED_CRLF;

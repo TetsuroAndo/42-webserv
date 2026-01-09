@@ -1,4 +1,4 @@
-#include "ListenerRegistry.hpp"
+#include "ListenerSet.hpp"
 
 #include "../../Lib/Logger/Log.hpp"
 #include "../../Socket/SocketsManager.hpp"
@@ -16,11 +16,11 @@
 #include <utility>
 #include <vector>
 
-ListenerRegistry::ListenerRegistry() : _listeners(), _listenersByFd() {}
+ListenerSet::ListenerSet() : _listeners(), _listenersByFd() {}
 
-ListenerRegistry::~ListenerRegistry() {}
+ListenerSet::~ListenerSet() {}
 
-void ListenerRegistry::build(const std::vector< VirtualHost > &vhosts,
+void ListenerSet::build(const std::vector< VirtualHost > &vhosts,
 						SocketsManager &socketsManager,
 						EventManager &eventManager,
 						INewConnectionHandler &handler) {
@@ -47,7 +47,7 @@ void ListenerRegistry::build(const std::vector< VirtualHost > &vhosts,
 	openAndRegisterListeners(socketsManager, eventManager, handler);
 }
 
-ListenerRegistry::AcceptedConn ListenerRegistry::acceptOnce(const int listenFd) const {
+ListenerSet::AcceptedConn ListenerSet::acceptOnce(const int listenFd) const {
 	AcceptedConn result;
 	std::map< int, Listener * >::const_iterator it =
 		_listenersByFd.find(listenFd);
@@ -83,8 +83,8 @@ ListenerRegistry::AcceptedConn ListenerRegistry::acceptOnce(const int listenFd) 
 	return result;
 }
 
-void ListenerRegistry::forgetAll(EventManager &eventManager,
-								 SocketsManager &socketsManager) {
+void ListenerSet::forgetAll(EventManager &eventManager,
+							SocketsManager &socketsManager) {
 	for (std::map< int, Listener * >::iterator it = _listenersByFd.begin();
 		 it != _listenersByFd.end(); ++it) {
 		const int fd = it->first;
@@ -110,9 +110,9 @@ void ListenerRegistry::forgetAll(EventManager &eventManager,
 	_listeners.clear();
 }
 
-void ListenerRegistry::openAndRegisterListeners(SocketsManager &socketsManager,
-												EventManager &eventManager,
-												INewConnectionHandler &handler) {
+void ListenerSet::openAndRegisterListeners(SocketsManager &socketsManager,
+										   EventManager &eventManager,
+										   INewConnectionHandler &handler) {
 	std::vector< int > openedFds;
 	int currentFd = -1;
 

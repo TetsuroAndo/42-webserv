@@ -10,7 +10,7 @@
 class EventManager;
 class SocketsManager;
 
-class ListenerRegistry {
+class ListenerSet {
 public:
 	// clang-format off
 	struct AcceptedConn {
@@ -30,8 +30,8 @@ public:
 	};
 	// clang-format on
 
-	ListenerRegistry();
-	~ListenerRegistry();
+	ListenerSet();
+	~ListenerSet();
 
 	void build(const std::vector< VirtualHost > &vhosts,
 			   SocketsManager &socketsManager, EventManager &eventManager,

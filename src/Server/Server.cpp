@@ -103,7 +103,7 @@ void Server::run() {
 }
 
 void Server::handleNewConnection(const int listenFd) {
-	ListenerRegistry::AcceptedConn accepted = _listeners.acceptOnce(listenFd);
+	ListenerSet::AcceptedConn accepted = _listeners.acceptOnce(listenFd);
 	if (!accepted.found) {
 		LOG(ERROR) << "Listen socket not found" << attr("fd", listenFd);
 		return;
