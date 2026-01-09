@@ -9,7 +9,7 @@
 #include "Client/EventManager.hpp"
 #include "Client/IFdCloser.hpp"
 #include "Listen/INewConnectionHandler.hpp"
-#include "Listen/ListenerRegistry.hpp"
+#include "Listen/ListenerSet.hpp"
 #include "VHost/VirtualHost.hpp"
 
 #include <map>
@@ -42,7 +42,7 @@ private:
 	SocketsManager _socketsManager;
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
-	ListenerRegistry _listeners;
+	ListenerSet _listeners;
 	std::map< std::string, size_t > _listenHeaderMax;
 	EventManager _eventManager;
 

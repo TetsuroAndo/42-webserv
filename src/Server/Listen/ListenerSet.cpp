@@ -1,4 +1,4 @@
-#include "ListenerRegistry.hpp"
+#include "ListenerSet.hpp"
 
 #include "../../Lib/Logger/Log.hpp"
 #include "../Client/EventManager.hpp"
@@ -14,11 +14,11 @@
 #include <utility>
 #include <unistd.h>
 
-ListenerRegistry::ListenerRegistry() : _listeners(), _listenersByFd() {}
+ListenerSet::ListenerSet() : _listeners(), _listenersByFd() {}
 
-ListenerRegistry::~ListenerRegistry() {}
+ListenerSet::~ListenerSet() {}
 
-void ListenerRegistry::build(const std::vector< VirtualHost > &vhosts,
+void ListenerSet::build(const std::vector< VirtualHost > &vhosts,
 						SocketsManager &socketsManager,
 						EventManager &eventManager,
 						INewConnectionHandler &handler) {
@@ -45,7 +45,7 @@ void ListenerRegistry::build(const std::vector< VirtualHost > &vhosts,
 	openAndRegisterListeners(socketsManager, eventManager, handler);
 }
 
-ListenerRegistry::AcceptedConn ListenerRegistry::acceptOnce(const int listenFd) const {
+ListenerSet::AcceptedConn ListenerSet::acceptOnce(const int listenFd) const {
 	AcceptedConn result;
 	std::map< int, Listener * >::const_iterator it =
 		_listenersByFd.find(listenFd);
@@ -76,7 +76,7 @@ ListenerRegistry::AcceptedConn ListenerRegistry::acceptOnce(const int listenFd) 
 	return result;
 }
 
-void ListenerRegistry::forgetAll(EventManager &eventManager) {
+void ListenerSet::forgetAll(EventManager &eventManager) {
 	for (std::map< int, Listener * >::iterator it = _listenersByFd.begin();
 		 it != _listenersByFd.end(); ++it) {
 		eventManager.forgetFd(it->first);
@@ -85,7 +85,7 @@ void ListenerRegistry::forgetAll(EventManager &eventManager) {
 	_listeners.clear();
 }
 
-void ListenerRegistry::openAndRegisterListeners(SocketsManager &socketsManager,
+void ListenerSet::openAndRegisterListeners(SocketsManager &socketsManager,
 										  EventManager &eventManager,
 										  INewConnectionHandler &handler) {
 	for (std::map< ListenKey, Listener >::iterator it = _listeners.begin();
