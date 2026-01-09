@@ -62,10 +62,12 @@ void EventManager::handle(const int fd, const unsigned int events) {
 			LOG(ERROR) << "Exception in event handler: " << e.what()
 					   << attr("fd", fd);
 			removeFd(fd);
+			return;
 		} catch (...) {
 			LOG(ERROR) << "Unknown exception in event handler"
 					   << attr("fd", fd);
 			removeFd(fd);
+			return;
 		}
 		return;
 	}
