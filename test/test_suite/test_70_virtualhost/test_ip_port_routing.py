@@ -1,7 +1,7 @@
 """
 IP/Port-based VirtualHost routing test.
 """
-from operator import index
+
 import os
 import socket
 import subprocess
@@ -9,7 +9,6 @@ import tempfile
 import time
 from contextlib import closing
 from pathlib import Path
-
 import psutil
 import pytest
 import requests
