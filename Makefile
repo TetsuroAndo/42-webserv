@@ -56,7 +56,7 @@ f: c
 r: f all
 
 # Debug build
-debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=addressm,leak
+debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address,leak
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
 	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" -j $(shell nproc)
