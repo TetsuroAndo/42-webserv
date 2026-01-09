@@ -103,7 +103,7 @@ void Server::run() {
 }
 
 void Server::handleNewConnection(const int listenFd) {
-	ListenerSet::AcceptedConn accepted = _listeners.acceptOnce(listenFd);
+	ListenerRegistry::AcceptedConn accepted = _listeners.acceptOnce(listenFd);
 	if (!accepted.found) {
 		LOG(ERROR) << "Listen socket not found" << attr("fd", listenFd);
 		return;
@@ -179,7 +179,7 @@ void Server::handleNewConnection(const int listenFd) {
 		try {
 			_eventManager.forgetFd(accepted.fd);
 		} catch (...) {
-			// 避例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
+			// 例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
 		}
 		try {
 			_socketsManager.unregisterSocket(accepted.fd);
