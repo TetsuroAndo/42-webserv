@@ -72,7 +72,9 @@ ListenerSet::AcceptedConn ListenerSet::acceptOnce(const int listenFd) const {
 
 	const int flags = fcntl(clientFd, F_GETFL, 0);
 	if (flags < 0 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+		const int savedErrno = errno;
 		close(clientFd);
+		errno = savedErrno;
 		return result;
 	}
 
