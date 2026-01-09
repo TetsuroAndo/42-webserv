@@ -15,6 +15,8 @@ public:
 	struct epoll_event *getEvents();
 
 private:
+	bool epollCtlWithRetry(int op, int fd, struct epoll_event *event) const;
+
 	int _epoll_fd;
 	std::vector< struct epoll_event > _events;
 
