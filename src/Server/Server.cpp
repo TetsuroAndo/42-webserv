@@ -170,7 +170,11 @@ void Server::handleNewConnection(const int listenFd) {
 		LOG(ERROR) << "Unexpected error during client creation: " << e.what()
 				   << attr("fd", accepted.fd);
 		if (client) {
-			_timeoutManager.remove(client);
+			try {
+				_timeoutManager.remove(client);
+			} catch (...) {
+				// Avoid suppressing the original exception during cleanup.
+			}
 		}
 		try {
 			_eventManager.forgetFd(accepted.fd);
