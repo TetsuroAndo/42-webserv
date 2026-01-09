@@ -9,11 +9,10 @@ class SessionManager {
 public:
 	static SessionManager &getInstance();
 
-	Session *createSession();
+	Session *createSession(time_t timeoutSec);
 	Session *getSession(const std::string &sessionId);
 	bool destroySession(const std::string &sessionId);
 	void cleanup();
-	void setTimeoutSec(time_t timeoutSec);
 
 private:
 	SessionManager();
@@ -27,6 +26,5 @@ private:
 
 	Token &_hasher;
 	std::map< std::string, Session * > _sessions;
-	time_t _timeoutSec;
-	time_t _lastCleanupTime;
+	time_t _nextCleanupTime;
 };

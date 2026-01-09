@@ -8,7 +8,6 @@
 #include <string>
 
 class Client;
-class Server;
 
 /**
  * @class HttpConnection

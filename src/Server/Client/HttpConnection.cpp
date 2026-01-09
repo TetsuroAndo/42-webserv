@@ -1,7 +1,6 @@
 #include "HttpConnection.hpp"
 #include "../../Http/Builder/ResponseBuilder.hpp"
 #include "../../Lib/Logger/Log.hpp"
-#include "../Server.hpp"
 #include "Client.hpp"
 #include <cerrno>
 #include <cstring>
@@ -11,7 +10,7 @@
 HttpConnection::HttpConnection(Client *client, PipelineContext &context,
 							   HttpConnectionEventHandler &eventHandler)
 	: _client(client), _context(context), _eventHandler(eventHandler),
-	  _readBuffer(context.conf.getPerformance().ioBuffersSize) {}
+	  _readBuffer(context.conf->getPerformance().ioBuffersSize) {}
 
 HttpConnection::~HttpConnection() {}
 
@@ -64,7 +63,7 @@ void HttpConnection::handleWriteEvent() {
 			} else {
 				_eventHandler.onSocketModify(_client->getFd(), EPOLLIN);
 				_eventHandler.onRequestProcessed(); // reset()の前に呼ぶ
-				ctx.reset(_client->getServer().getConfig());
+				ctx.reset(_client->getConfig());
 			}
 		}
 	} else {
@@ -78,7 +77,7 @@ void HttpConnection::handleWriteEvent() {
 
 time_t HttpConnection::calculateTimeout() const {
 	RequestParser::ParseState state = getParserState();
-	const Config &conf = _context.conf;
+	const Config &conf = *_context.conf;
 
 	switch (state) {
 	case RequestParser::STATE_REQUEST_LINE:
@@ -99,7 +98,7 @@ RequestParser::ParseState HttpConnection::getParserState() const {
 
 void HttpConnection::handleRequest() {
 	// ミドルウェア処理
-	_client->getServer().getMainProcessor().handle(_context);
+	_client->getMainProcessor().handle(_context);
 
 	// CGI開始チェック
 	if (_context.isCgi) {
@@ -134,5 +133,5 @@ void HttpConnection::generateResponse() {
 
 void HttpConnection::resetForNextRequest() {
 	// 次のリクエストのためにコンテキストをリセット
-	_context.reset(_client->getServer().getConfig());
+	_context.reset(_client->getConfig());
 }

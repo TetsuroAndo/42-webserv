@@ -1,12 +1,11 @@
 #pragma once
 
-#include "../Config/Config.hpp"
 #include <sys/epoll.h>
 #include <vector>
 
 class SocketsManager {
 public:
-	SocketsManager(const Config &conf);
+	SocketsManager(size_t maxEvents);
 	~SocketsManager();
 
 	void registerSocket(int fd, uint32_t events) const;

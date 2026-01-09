@@ -5,6 +5,7 @@
 #include "../../Handler/StaticFileHandler.hpp"
 #include "../PipelineRouter/CgiRouterMiddleware.hpp"
 #include "../PipelineRouter/PipelineRouterMiddleware.hpp"
+#include "../RequestLimits/RequestLimitsMiddleware.hpp"
 #include "../RequestParser/RequestBodyParserMiddleware.hpp"
 #include "../RequestParser/RequestHeadParserMiddleware.hpp"
 #include "../RequestParser/RequestLineParserMiddleware.hpp"
@@ -13,6 +14,7 @@
 #include "../SubPipeline/Handler/HandlerMiddleware.hpp"
 #include "../SubPipeline/Redirect/RedirectMiddleware.hpp"
 #include "../SubPipeline/Session/SessionMiddleware.hpp"
+#include "../VHost/VHostSelectMiddleware.hpp"
 
 #include <iostream>
 
@@ -75,9 +77,11 @@ void PipelineRouteBuilder::buildRoute(const Config &conf,
 
 	mainProc->addMiddleware(new RequestLineParserMiddleware());
 	mainProc->addMiddleware(new RequestHeadParserMiddleware());
+	mainProc->addMiddleware(new VHostSelectMiddleware());
+	mainProc->addMiddleware(new RequestLimitsMiddleware());
 	mainProc->addMiddleware(new RequestBodyParserMiddleware());
-	mainProc->addMiddleware(new RedirectMiddleware(conf));
+	mainProc->addMiddleware(new RedirectMiddleware());
 	mainProc->addMiddleware(new ConnectionHeaderMiddleware());
 	mainProc->addMiddleware(new PipelineRouterMiddleware(routes));
-	mainProc->addMiddleware(new ErrorHandlerMiddleware(conf));
+	mainProc->addMiddleware(new ErrorHandlerMiddleware());
 }

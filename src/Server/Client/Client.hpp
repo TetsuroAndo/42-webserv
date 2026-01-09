@@ -1,12 +1,13 @@
 #pragma once
 
-#include "../../Config/Config.hpp"
 #include "../../Lib/Timeout/ITimeoutable.hpp"
 #include "../../Middleware/Core/PipelineContext.hpp"
 #include "../../Socket/Socket.hpp"
+#include "../VHost/VirtualHost.hpp"
 #include "EventManager.hpp"
 #include "HttpConnection.hpp"
 #include "HttpConnectionEventHandler.hpp"
+#include <cstddef>
 #include <netinet/in.h>
 #include <string>
 
@@ -15,12 +16,16 @@ class EventManager;
 
 class Client : public ITimeoutable, public HttpConnectionEventHandler {
 public:
-	Client(int fd, const sockaddr_in &addr, int listenPort, Server &server,
+	Client(int fd, const sockaddr_in &addr, int listenPort,
+		   VirtualHost &activeVhost, size_t maxHeaderBytes, Server &server,
 		   EventManager &eventManager);
 	~Client();
 
 	/// @brief Serverへのアクセス（HttpConnectionから使用を想定）
 	Server &getServer() const;
+	const Config &getConfig() const;
+	MiddlewareProcessor &getMainProcessor();
+	void setActiveVhost(VirtualHost &vhost);
 
 	int getFd() const;
 	int getPort() const;
@@ -52,6 +57,7 @@ public:
 
 private:
 	Server &_server;
+	VirtualHost *_activeVhost;
 	int _fd;
 	int _port;
 	int _listenPort;

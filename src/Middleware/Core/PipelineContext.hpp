@@ -6,16 +6,16 @@
 #include "../../Http/Core/HttpResponse.hpp"
 #include "../../Http/Parser/RequestParser.hpp"
 #include "../../Session/Session.hpp"
+#include <cstddef>
 
 class CgiManager;
 class Client;
 
 /**
  * @brief ミドルウェア間で引き回す情報をまとめた構造体
- * @note HttpRequest, HttpResponse, Config, Session への参照を保持する
  */
 struct PipelineContext {
-	const Config &conf;
+	const Config *conf;
 	HttpRequest req;
 	HttpResponse res;
 	Session *session;
@@ -26,8 +26,10 @@ struct PipelineContext {
 	bool isCgi;
 	RequestParser parser;
 
-	PipelineContext(const Config &c, Client &client,
+	PipelineContext(const Config &c, size_t maxHeaderBytes, Client &client,
 					CgiManager &serverCgiManager);
 	~PipelineContext();
+	void setConfig(const Config &c);
+	void setError(int code);
 	void reset(const Config &c);
 };

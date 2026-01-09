@@ -4,27 +4,30 @@
 #include "../Config/Config.hpp"
 #include "../Lib/Timeout/TimeoutManager.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
-#include "../Middleware/Core/MiddlewareProcessor.hpp"
-#include "../Socket/Socket.hpp"
 #include "../Socket/SocketsManager.hpp"
 #include "Client/Client.hpp"
 #include "Client/EventManager.hpp"
+#include "Client/IFdCloser.hpp"
+#include "Listen/INewConnectionHandler.hpp"
+#include "Listen/ListenerSet.hpp"
+#include "VHost/VirtualHost.hpp"
 
 #include <map>
+#include <string>
+#include <vector>
 
-class Server {
+class Server : public INewConnectionHandler, public IFdCloser {
 public:
-	Server(const Config &config);
+	Server(const std::vector< Config > &configs);
 	~Server();
 
 	void run();
 	void closeConnection(int clientFd);
+	virtual void closeFd(int clientFd);
 
 	TimeoutManager &getTimeoutManager();
 	SocketsManager &getSocketsManager();
-	MiddlewareProcessor &getMainProcessor();
 	CgiManager &getCgiManager();
-	const Config &getConfig() const;
 
 	void handleNewConnection(int listenFd);
 
@@ -33,17 +36,15 @@ private:
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
-	Config _config;
+	std::vector< VirtualHost > _vhosts;
 	CgiManager _cgiManager;
 	TimeoutManager _timeoutManager;
 	SocketsManager _socketsManager;
-	std::map< int, Socket * > _listenSockets;
 	std::map< int, Client * > _clients;
 	PipelineRouteBuilder _builder;
-	MiddlewareProcessor _mainProcessor;
+	ListenerSet _listeners;
+	std::map< std::string, size_t > _listenHeaderMax;
 	EventManager _eventManager;
-
-	void setupListenSockets();
 
 	std::string getSessionId(const PipelineContext *ctx) const;
 };

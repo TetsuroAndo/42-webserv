@@ -36,9 +36,11 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	  _clientFd(ctx.ownerClient.getFd()), _pid(-1), _exitStatus(-1),
 	  _exitStatusSet(false), _outputComplete(false), _completionNotified(false),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
-	  _interpreterPath(interpreterPath), _lastActivityTime(std::time(NULL)),
-	  _readBuffer(ctx.conf.getPerformance().cgiIoBufferSize),
-	  _errBuffer(ctx.conf.getPerformance().cgiIoBufferSize) {
+	  _interpreterPath(interpreterPath),
+	  _lastActivityTime(std::time(NULL)),
+	  _timeoutSeconds(static_cast< time_t >(ctx.conf->getTimeoutSec())),
+	  _readBuffer(ctx.conf->getPerformance().cgiIoBufferSize),
+	  _errBuffer(ctx.conf->getPerformance().cgiIoBufferSize) {
 	_eventReadFd = -1;
 	_eventWriteFd = -1;
 	_eventErrFd = -1;
@@ -402,6 +404,8 @@ void CgiWorker::setTimeout() { _state = CGI_TIMEOUT; }
 void CgiWorker::setError() { _state = CGI_ERROR; }
 
 time_t CgiWorker::getLastActivityTime() const { return _lastActivityTime; }
+
+time_t CgiWorker::getTimeoutSeconds() const { return _timeoutSeconds; }
 
 void CgiWorker::updateLastActivityTime() { _lastActivityTime = time(NULL); }
 

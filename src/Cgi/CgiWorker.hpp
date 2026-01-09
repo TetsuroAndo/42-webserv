@@ -74,6 +74,9 @@ public:
 	/// @brief 最終活動時刻を取得する
 	time_t getLastActivityTime() const;
 
+	/// @brief CGIタイムアウト秒数を取得する
+	time_t getTimeoutSeconds() const;
+
 	/// @brief 最終活動時刻を更新する
 	void updateLastActivityTime();
 
@@ -137,6 +140,7 @@ private:
 	std::string _scriptPath;
 	std::string _interpreterPath;
 	time_t _lastActivityTime;
+	time_t _timeoutSeconds;
 	std::string _responseBuffer;
 	std::vector< char > _readBuffer;
 	std::vector< char > _errBuffer;

@@ -36,7 +36,7 @@ void CgiEndEvent::process() {
 	LOG(DEBUG) << "" << attr("clientFd", clientFd) << attr("_fd", _fd);
 
 	// レスポンスを送信する
-	HttpResponse cgiRes(_client->getContext().conf);
+	HttpResponse cgiRes(*_client->getContext().conf);
 	// レスポンスを作成
 	_worker->getManager()->isCgiComplete(clientFd, cgiRes);
 	const std::string responseStr = ResponseBuilder::build(cgiRes);

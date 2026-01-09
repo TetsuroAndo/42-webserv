@@ -15,3 +15,17 @@ servers:
             allowedMethods:
               - HEAD
               - GET
+
+  - server:
+      listens:
+        - listen:
+            interface: 127.0.0.1
+            port: 8082
+
+      locations:
+        - location:
+            path: /
+            root: ./test/test_www/static
+            allowedMethods:
+              - HEAD
+              - GET

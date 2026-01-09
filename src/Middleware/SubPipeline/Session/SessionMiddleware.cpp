@@ -121,7 +121,12 @@ void SessionMiddleware::handle(PipelineContext &ctx,
 		}
 	}
 	if (NULL == currentSession) {
-		currentSession = manager.createSession();
+		time_t timeoutSec = 0;
+		if (ctx.conf != NULL) {
+			timeoutSec =
+				static_cast< time_t >(ctx.conf->getSessionTimeoutSec());
+		}
+		currentSession = manager.createSession(timeoutSec);
 		LOG(INFO) << "Created session: " << currentSession->getId();
 		isNewSession = true;
 	}

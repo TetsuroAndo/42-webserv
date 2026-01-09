@@ -9,7 +9,7 @@ int main(const int argc, char **argv) {
 	try {
 		switch (argc) {
 		case 1: {
-			Server server(ConfigBuilder().build());
+			Server server(ConfigBuilder::import("config/default.yaml"));
 			server.run();
 			break;
 		}
@@ -20,7 +20,7 @@ int main(const int argc, char **argv) {
 			} else if (arg == "-v" || arg == "--version") {
 				printVersion(VERSION);
 			} else {
-				Server server(ConfigBuilder(argv[1]).build());
+				Server server(ConfigBuilder::import(argv[1]));
 				server.run();
 			}
 			break;

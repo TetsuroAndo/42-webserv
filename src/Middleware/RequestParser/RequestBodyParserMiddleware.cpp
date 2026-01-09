@@ -22,32 +22,58 @@ void RequestBodyParserMiddleware::handle(PipelineContext &ctx,
 	case PARSE_INCOMPLETE:
 		return;
 	case PARSE_ERROR:
-		ctx.res.setStatusCode(parser.getErrorCode());
+		ctx.setError(parser.getErrorCode());
 		if (proc) {
-			ErrorHandlerMiddleware errorHandler(ctx.conf);
+			ErrorHandlerMiddleware errorHandler;
 			errorHandler.handle(ctx, proc);
 		}
 		return;
 	case PARSE_COMPLETE:
-		if (ctx.req.hasHeader("Content-Length") == false &&
-			ctx.recvBuffer.size() != 0) {
-			ctx.res.setStatusCode(400);
+		if (ctx.req.getBody().size() > ctx.req.getMaxBodySize()) {
+			ctx.setError(HttpStatus::PAYLOAD_TOO_LARGE);
 			if (proc) {
-				ErrorHandlerMiddleware errorHandler(ctx.conf);
+				ErrorHandlerMiddleware errorHandler;
 				errorHandler.handle(ctx, proc);
 			}
 			return;
 		}
-		if (ctx.req.hasHeader("Content-Length") == true &&
-			ctx.req.getBody().size() !=
-				static_cast< size_t >(StringOps::stringToInt(
-					ctx.req.getHeader("Content-Length")))) {
-			ctx.res.setStatusCode(400);
+		if (ctx.req.hasHeader("Content-Length") == false &&
+			ctx.recvBuffer.size() != 0) {
+			ctx.setError(HttpStatus::BAD_REQUEST);
 			if (proc) {
-				ErrorHandlerMiddleware errorHandler(ctx.conf);
+				ErrorHandlerMiddleware errorHandler;
 				errorHandler.handle(ctx, proc);
 			}
 			return;
+		}
+		if (ctx.req.hasHeader("Content-Length") == true) {
+			if (!ctx.req.hasHeader("Transfer-Encoding") &&
+				!ctx.recvBuffer.empty()) {
+				ctx.setError(HttpStatus::BAD_REQUEST);
+				if (proc) {
+					ErrorHandlerMiddleware errorHandler;
+					errorHandler.handle(ctx, proc);
+				}
+				return;
+			}
+			size_t contentLength = 0;
+			if (!StringOps::decStrToSize(ctx.req.getHeader("Content-Length"),
+										 contentLength)) {
+				ctx.setError(HttpStatus::BAD_REQUEST);
+				if (proc) {
+					ErrorHandlerMiddleware errorHandler;
+					errorHandler.handle(ctx, proc);
+				}
+				return;
+			}
+			if (ctx.req.getBody().size() != contentLength) {
+				ctx.setError(HttpStatus::BAD_REQUEST);
+				if (proc) {
+					ErrorHandlerMiddleware errorHandler;
+					errorHandler.handle(ctx, proc);
+				}
+				return;
+			}
 		}
 		if (proc) {
 			proc->next(ctx);

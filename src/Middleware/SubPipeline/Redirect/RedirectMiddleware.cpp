@@ -1,15 +1,15 @@
 #include "RedirectMiddleware.hpp"
 #include <iostream>
 
-RedirectMiddleware::RedirectMiddleware(const Config &config)
-	: _config(config) {}
+RedirectMiddleware::RedirectMiddleware() {}
 
 RedirectMiddleware::~RedirectMiddleware() {}
 
 void RedirectMiddleware::handle(PipelineContext &ctx,
 								MiddlewareProcessor *proc) {
 	const HttpRequest &req = ctx.req;
-	const Location &loc = _config.getLocation(req.getPath());
+	const Config &config = *ctx.conf;
+	const Location &loc = config.getLocation(req.getPath());
 
 	if (loc.hasRedirect) {
 		ctx.res.setStatusCode(loc.redirectCode);

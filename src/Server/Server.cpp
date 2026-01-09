@@ -3,16 +3,18 @@
 #include "../Lib/Logger/Log.hpp"
 #include "../Middleware/Builder/PipelineRouteBuilder.hpp"
 #include "../Session/SessionManager.hpp"
-#include "Client/Events/NewConnectionEvent.hpp"
+#include "Bootstrap/ServerBootstrap.hpp"
 #include "Client/Events/ReadEvent.hpp"
 #include "Client/Events/WriteEvent.hpp"
 #include "Logging/Logging.hpp"
+#include "Listen/ListenKey.hpp"
+
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
-#include <fcntl.h>
-#include <netdb.h>
+#include <memory>
 #include <netinet/in.h>
-#include <signal.h>
+#include <sstream>
 #include <stdexcept>
 #include <unistd.h>
 #include <vector>
@@ -31,19 +33,31 @@ void makeClientIp(char *clientIp, const size_t size,
 	std::strncpy(clientIp, tmp.c_str(), size);
 	clientIp[size - 1] = '\0';
 }
+
 } // namespace
 
-Server::Server(const Config &config)
-	: _config(config), _cgiManager(config), _socketsManager(config) {
+Server::Server(const std::vector< Config > &configs)
+	: _cgiManager(ServerBootstrap::resolveCgiMaxWorkers(configs)),
+	  _socketsManager(ServerBootstrap::resolveMaxEvents(configs)),
+	  _listenHeaderMax(ServerBootstrap::resolveListenHeaderMax(configs)),
+	  _eventManager(*this) {
 	LOG(INFO) << "Initializing server with provided configuration...";
-	Logging::setupLoggers(_config);
-	std::ostringstream oss;
-	oss << _config;
-	LOG(DEBUG) << oss.str();
-	SessionManager::getInstance().setTimeoutSec(
-		static_cast< time_t >(_config.getSessionTimeoutSec()));
-	setupListenSockets();
-	_builder.buildRoute(_config, &_mainProcessor);
+	Logging::setupLoggers(configs[0]); // TODO: 複数vhost対応
+	ServerBootstrap::validateListenCompatibility(configs);
+
+	_vhosts.reserve(configs.size());
+	for (size_t i = 0; i < configs.size(); ++i) {
+		VirtualHost vhost(configs[i]);
+		_vhosts.push_back(vhost);
+		_builder.buildRoute(_vhosts.back().config,
+							&_vhosts.back().mainProcessor);
+
+		std::ostringstream oss;
+		oss << _vhosts.back().config;
+		LOG(DEBUG) << "Config[" << i << "]\n" << oss.str();
+	}
+
+	_listeners.build(_vhosts, _socketsManager, _eventManager, *this);
 	LOG(INFO) << "Server initialized successfully.";
 }
 
@@ -52,91 +66,13 @@ Server::~Server() {
 		 it != _clients.end(); ++it) {
 		delete it->second;
 	}
-	for (std::map< int, Socket * >::iterator it = _listenSockets.begin();
-		 it != _listenSockets.end(); ++it) {
-		_eventManager.forgetFd(it->first);
-		delete it->second;
-	}
+	_listeners.forgetAll(_eventManager, _socketsManager);
 }
 
 TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
 SocketsManager &Server::getSocketsManager() { return _socketsManager; }
-MiddlewareProcessor &Server::getMainProcessor() { return _mainProcessor; }
 CgiManager &Server::getCgiManager() { return _cgiManager; }
-const Config &Server::getConfig() const { return _config; }
 
-void Server::setupListenSockets() {
-	const std::vector< Listen > &listens = _config.getListens();
-	for (std::vector< Listen >::const_iterator it = listens.begin();
-		 it != listens.end(); ++it) {
-		const int port = it->port;
-		std::string interfaceAddr = it->interface;
-
-		int listenFd = socket(AF_INET, SOCK_STREAM, 0);
-		if (listenFd < 0) {
-			LOG(FATAL) << "socket() failed: " << strerror(errno);
-			throw std::runtime_error("socket() failed");
-		}
-
-		const int flags = fcntl(listenFd, F_GETFL, 0);
-		fcntl(listenFd, F_SETFL, flags | O_NONBLOCK);
-
-		int opt = 1;
-		setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-		sockaddr_in addr = {};
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(port);
-
-		addrinfo hints = {}, *res;
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_NUMERICHOST | AI_PASSIVE;
-
-		int ret = getaddrinfo(interfaceAddr.c_str(), NULL, &hints, &res);
-		if (ret != 0) {
-			close(listenFd);
-			LOG(FATAL) << "getaddrinfo() failed for " << interfaceAddr << ": "
-					   << gai_strerror(ret);
-			throw std::runtime_error("getaddrinfo() failed");
-		}
-
-		std::memcpy(&addr.sin_addr,
-					&reinterpret_cast< sockaddr_in * >(res->ai_addr)->sin_addr,
-					sizeof(addr.sin_addr));
-		freeaddrinfo(res);
-
-		if (bind(listenFd, reinterpret_cast< sockaddr * >(&addr),
-				 sizeof(addr)) < 0) {
-			close(listenFd);
-			LOG(FATAL) << "bind() failed for " << interfaceAddr << ":" << port
-					   << ": " << strerror(errno);
-			throw std::runtime_error("bind() failed");
-		}
-		if (listen(listenFd, SOMAXCONN) < 0) {
-			close(listenFd);
-			LOG(FATAL) << "listen() failed for " << interfaceAddr << ":" << port
-					   << ": " << strerror(errno);
-			throw std::runtime_error("listen() failed");
-		}
-
-		Socket *sock = NULL;
-		try {
-			sock = new Socket(_config, listenFd, addr);
-			_listenSockets[listenFd] = sock;
-			_socketsManager.registerSocket(listenFd, EPOLLIN);
-			_eventManager.initFd(listenFd);
-			_eventManager.addEvent(listenFd, new NewConnectionEvent(*this));
-			LOG(INFO) << "Listening on " << interfaceAddr << ":" << port
-					  << attr("fd", listenFd);
-		} catch (const std::exception &e) {
-			close(listenFd);
-			delete sock;
-			LOG(FATAL) << "Failed to create listen socket: " << e.what();
-			throw;
-		}
-	}
-}
 
 void Server::run() {
 	LOG(INFO) << "Server is running and waiting for events.";
@@ -167,62 +103,91 @@ void Server::run() {
 }
 
 void Server::handleNewConnection(const int listenFd) {
-	sockaddr_in clientAddr;
-	socklen_t clientLen = sizeof(clientAddr);
-	const int clientFd =
-		accept(listenFd, reinterpret_cast< struct sockaddr * >(&clientAddr),
-			   &clientLen);
-
-	if (clientFd < 0) {
-		LOG(ERROR) << "accept() failed: " << strerror(errno);
+	ListenerSet::AcceptedConn accepted = _listeners.acceptOnce(listenFd);
+	if (!accepted.found) {
+		LOG(ERROR) << "Listen socket not found" << attr("fd", listenFd);
 		return;
 	}
-
-	const int flags = fcntl(clientFd, F_GETFL, 0);
-	fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
+	if (accepted.fd < 0) {
+        // EAGAINやEWOULDBLOCKはノンブロッキングソケットで一時的な正常状態。
+        // それ以外のerrnoは異常なのでログ出力する。
+		if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			LOG(ERROR)
+				<< "accept() failed or client socket setup failed: "
+				<< strerror(errno);
+		}
+		return;
+	}
 
 	char clientIp[INET_ADDRSTRLEN];
 	const unsigned char *bytes =
-		reinterpret_cast< unsigned char * >(&clientAddr.sin_addr.s_addr);
+		reinterpret_cast< unsigned char * >(&accepted.addr.sin_addr.s_addr);
+	const int clientPort = ntohs(accepted.addr.sin_port);
+
 	makeClientIp(clientIp, sizeof(clientIp), bytes);
-	const int clientPort = ntohs(clientAddr.sin_port);
-
 	LOG(INFO) << "Accepted new connection" << attr("client_ip", clientIp)
-			  << attr("client_port", clientPort) << attr("fd", clientFd);
+			  << attr("client_port", clientPort) << attr("fd", accepted.fd);
 
-	std::map< int, Socket * >::const_iterator it =
-		_listenSockets.find(listenFd);
-	if (it == _listenSockets.end()) {
-		LOG(ERROR) << "Listen socket not found" << attr("fd", listenFd);
-		close(clientFd);
+	if (accepted.defaultVhostIndex >= _vhosts.size()) {
+		LOG(ERROR) << "Virtual host not found" << attr("fd", listenFd);
+		close(accepted.fd);
 		return;
 	}
 
+	Client *client = NULL;
 	try {
-		const Socket *listenSocket = it->second;
-		if (listenSocket == NULL) {
-			LOG(ERROR) << "Listen socket is NULL" << attr("fd", listenFd);
-			close(clientFd);
-			return;
+		VirtualHost *vhost = &_vhosts[accepted.defaultVhostIndex];
+
+		// Host name に基づく仮想ホストの切り替えは Middleware 側で行うため、多重listen対応のため
+		size_t maxHeaderBytes = vhost->config.getMaxRequestHeaderSize();
+		// 接続 listen の デフォルト key
+		const std::string listenKey = ListenKey::listenKeyToString(accepted.key);
+		// 同 listen 単位の max があれば上書きする
+		std::map< std::string, size_t >::const_iterator maxIt =
+			_listenHeaderMax.find(listenKey);
+		if (maxIt != _listenHeaderMax.end()) {
+			maxHeaderBytes = maxIt->second;
 		}
-		const int listenPort = ntohs(listenSocket->getAddr().sin_port);
-		Client *client =
-			new Client(clientFd, clientAddr, listenPort, *this, _eventManager);
-		_clients[clientFd] = client;
-		_socketsManager.registerSocket(clientFd, EPOLLIN);
+
+		client = new Client(accepted.fd, accepted.addr, accepted.key.port,
+							*vhost, maxHeaderBytes, *this, _eventManager);
+
+		_socketsManager.registerSocket(accepted.fd, EPOLLIN);
 		_eventManager.initFd(*client);
-		_eventManager.addEvent(clientFd, new ReadEvent(client));
-		_eventManager.addEvent(clientFd, new WriteEvent(client));
+
+		std::auto_ptr< ReadEvent > readEvent(new ReadEvent(client));
+		_eventManager.addEvent(accepted.fd, readEvent.get());
+		readEvent.release();
+
+		std::auto_ptr< WriteEvent > writeEvent(new WriteEvent(client));
+		_eventManager.addEvent(accepted.fd, writeEvent.get());
+		writeEvent.release();
+
 		// 最初はヘッダ受信待ちのタイムアウトを設定
 		client->updateTimeout();
-	} catch (const std::bad_alloc &e) {
-		LOG(ERROR) << "Failed to allocate Client object: " << e.what()
-				   << attr("fd", clientFd);
-		close(clientFd);
+		_clients[accepted.fd] = client;
 	} catch (const std::exception &e) {
 		LOG(ERROR) << "Unexpected error during client creation: " << e.what()
-				   << attr("fd", clientFd);
-		close(clientFd);
+				   << attr("fd", accepted.fd);
+		if (client) {
+			try {
+				_timeoutManager.remove(client);
+			} catch (...) {
+				// Avoid suppressing the original exception during cleanup.
+			}
+		}
+		try {
+			_eventManager.forgetFd(accepted.fd);
+		} catch (...) {
+			// 避例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
+		}
+		try {
+			_socketsManager.unregisterSocket(accepted.fd);
+		} catch (...) {
+			// best-effort cleanup: ignore failures during shutdown/rollback
+		}
+		close(accepted.fd);
+		delete client;
 	}
 }
 
@@ -251,6 +216,8 @@ void Server::closeConnection(const int clientFd) {
 		close(clientFd);
 	}
 }
+
+void Server::closeFd(const int clientFd) { closeConnection(clientFd); }
 
 std::string Server::getSessionId(const PipelineContext *ctx) const {
 	if (ctx == NULL || ctx->session == NULL) {

@@ -1,14 +1,15 @@
 #pragma once
-#include "../../Server.hpp"
+
+#include "../../Listen/INewConnectionHandler.hpp"
 #include "AEvent.hpp"
 
 class NewConnectionEvent : public AEvent {
 public:
-	NewConnectionEvent(Server &server);
+	NewConnectionEvent(INewConnectionHandler &handler);
 	~NewConnectionEvent();
 
 	void handle();
 
 private:
-	Server &_server;
+	INewConnectionHandler &_handler;
 };
