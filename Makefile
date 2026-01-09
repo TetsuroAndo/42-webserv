@@ -74,16 +74,16 @@ debug: fclean
 	ASAN_OPTIONS=detect_leaks=1:leak_check_at_exit=1 ./$(NAME) $(CONF)
 
 valgrind: $(NAME)
-valgrind \
-  --tool=memcheck \
-  --leak-check=full \
-  --show-leak-kinds=all \
-  --track-fds=yes \
-  --trace-children=yes \
-  --num-callers=50 \
-  --error-exitcode=42 \
-  --log-file=valgrind.%p.log \
-  ./webserv $(CONF)
+	valgrind \
+	--tool=memcheck \
+	--leak-check=full \
+	--show-leak-kinds=all \
+	--track-fds=yes \
+	--trace-children=yes \
+	--num-callers=50 \
+	--error-exitcode=42 \
+	--log-file=valgrind.%p.log \
+	./webserv $(CONF)
 
 # =========== PYTEST ENVIRONMENT ============
 
