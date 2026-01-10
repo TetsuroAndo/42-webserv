@@ -99,8 +99,10 @@ debug-clash: LFLAG	+= -Wl,--wrap=accept -Wl,--wrap=epoll_ctl
 debug-clash: OPT	:= -g -O0 -fno-omit-frame-pointer
 debug-clash: fclean
 	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" SRC="$(SRC)" LFLAG="$(LFLAG)" -j $(shell nproc)
+	echo "export this one" \
+	--- \
 	export WRAP_ACCEPT_CRASH_AT=300; \
-	WRAP_EPOLL_CTL_FAIL_AT=200;
+	export WRAP_EPOLL_CTL_FAIL_AT=400;
 
 # =========== PYTEST ENVIRONMENT ============
 
