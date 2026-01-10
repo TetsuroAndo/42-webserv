@@ -227,8 +227,7 @@ void CgiManager::cleanupTimedOutWorkers() {
 
 	for (std::vector< CgiWorker * >::iterator it = _workers.begin();
 		 it != _workers.end(); ++it) {
-		if (now - (*it)->getLastActivityTime() >
-			(*it)->getTimeoutSeconds()) {
+		if (now - (*it)->getLastActivityTime() > (*it)->getTimeoutSeconds()) {
 			workersToCleanup.push_back(*it);
 		}
 	}
@@ -294,7 +293,10 @@ void CgiManager::cleanupFinishedWorkers() {
 				const char tmpC = 'c';
 				const int tmp =
 					write(worker->getCompletionFdIn(), &tmpC, sizeof(tmpC));
-				(void)tmp;
+				if (tmp <= 0) {
+					LOG(ERROR)
+						<< "Failed to write to CGI worker: " << strerror(errno);
+				}
 			}
 		} else {
 			LOG(DEBUG) << "Reaped zombie process (PID not in active workers "
