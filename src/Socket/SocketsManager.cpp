@@ -1,6 +1,7 @@
 #include "SocketsManager.hpp"
 #include <cerrno>
 #include <stdexcept>
+#include <cstring>
 #include <unistd.h>
 
 SocketsManager::SocketsManager(const size_t maxEvents) : _events(maxEvents) {
@@ -21,7 +22,9 @@ void SocketsManager::registerSocket(const int fd, const uint32_t events) const {
 	event.data.fd = fd;
 	event.events = events;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) < 0) {
-		throw std::runtime_error("epoll_ctl(ADD) failed");
+		const int savedErrno = errno;
+		throw std::runtime_error(std::string("epoll_ctl(ADD) failed: ") +
+								 strerror(savedErrno));
 	}
 }
 
@@ -30,7 +33,9 @@ void SocketsManager::modifySocket(const int fd, const uint32_t events) const {
 	event.data.fd = fd;
 	event.events = events;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &event) < 0) {
-		throw std::runtime_error("epoll_ctl(MOD) failed");
+		const int savedErrno = errno;
+		throw std::runtime_error(std::string("epoll_ctl(MOD) failed: ") +
+								 strerror(savedErrno));
 	}
 }
 
