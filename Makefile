@@ -85,7 +85,17 @@ valgrind: $(NAME)
 	--num-callers=50 \
 	--error-exitcode=42 \
 	--log-file=valgrind.%p.log \
-	./webserv $(CONF)
+	./$(NAME) $(CONF) \
+	2>&1 | tee valgrind_run.log
+
+sysdebug: SRC	+= $(ROOT_DIR)/test/debug/wrap_syscalls.cpp
+sysdebug: LFLAG	+= -Wl,--wrap=accept -Wl,--wrap=epoll_ctl
+sysdebug: OPT	:= -g -O0 -fno-omit-frame-pointer
+sysdebug: fclean
+	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" SRC="$(SRC)" LFLAG="$(LFLAG)" -j $(shell nproc)
+	export WRAP_ACCEPT_CRASH_AT=300; \
+	WRAP_EPOLL_CTL_FAIL_AT=200; \
+	ASAN_OPTIONS=detect_leaks=1:leak_check_at_exit=1 ./$(NAME) $(CONF)
 
 # =========== PYTEST ENVIRONMENT ============
 
