@@ -36,7 +36,8 @@ void EventManager::handle(const int fd, const unsigned int events) {
 		if (0 < recv_res)
 			effective |= EPOLLIN;
 		else if (recv_res == 0) {
-			// 何もしない
+			// MSG_PEEKでrecv()が0を返す場合は、相手側が正常にshutdown/closeしたことを示す。
+			// この状態はすでにEPOLLHUPで検知されており、ここでは追加の処理は行わない。
 		} else {
 			LOG(WARNING) << "recv() returned error code " << recv_res;
 		}
