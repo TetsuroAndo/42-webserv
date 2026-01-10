@@ -27,6 +27,8 @@ OBJ		:= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
 # =============== 42 RULES ==============
 
+.PHONY: all clean fclean re
+
 all:
 	$(MAKE) $(NAME) -j $(shell nproc)
 
@@ -39,6 +41,8 @@ fclean: clean
 re: fclean all
 
 # =========== ORIGINAL RULES ============
+
+.PHONY: run
 
 # Build and run
 run: $(NAME)
@@ -67,6 +71,8 @@ play-netpractice: $(NAME) submodule
 
 # ============ DEBUG RULE ============
 
+.PHONY: debug debug-run valgrind debug-clash
+
 debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address,leak
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
@@ -88,16 +94,17 @@ valgrind: $(NAME)
 	./$(NAME) $(CONF) \
 	2>&1 | tee valgrind_run.log
 
-sysdebug: SRC	+= $(ROOT_DIR)/test/debug/wrap_syscalls.cpp
-sysdebug: LFLAG	+= -Wl,--wrap=accept -Wl,--wrap=epoll_ctl
-sysdebug: OPT	:= -g -O0 -fno-omit-frame-pointer
-sysdebug: fclean
+debug-clash: SRC	+= $(ROOT_DIR)/test/debug/wrap_syscalls.cpp
+debug-clash: LFLAG	+= -Wl,--wrap=accept -Wl,--wrap=epoll_ctl
+debug-clash: OPT	:= -g -O0 -fno-omit-frame-pointer
+debug-clash: fclean
 	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" SRC="$(SRC)" LFLAG="$(LFLAG)" -j $(shell nproc)
 	export WRAP_ACCEPT_CRASH_AT=300; \
-	WRAP_EPOLL_CTL_FAIL_AT=200; \
-	ASAN_OPTIONS=detect_leaks=1:leak_check_at_exit=1 ./$(NAME) $(CONF)
+	WRAP_EPOLL_CTL_FAIL_AT=200;
 
 # =========== PYTEST ENVIRONMENT ============
+
+.PHONY: pyinit test
 
 # Create a virtual environment and install dependencies
 pyinit:
@@ -117,6 +124,8 @@ test:
 	. $(VENV_DIR)/bin/activate && pytest $(TEST_DIR)/test_suite
 
 # ============= STATIC ANALYSIS =============
+
+.PHONY: tidy check
 
 # clang-tidy rule
 TIDY := clang-tidy
@@ -178,6 +187,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 # ============= DOCKER RULES =============
 
+.PHONY: docker-build docker-clean
+
 docker-build:
 	@echo "Building Docker image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
 	@docker buildx build --load -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(ROOT_DIR)/Dockerfile $(ROOT_DIR)
@@ -187,6 +198,8 @@ docker-clean:
 	@docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) 2>/dev/null || echo "Image not found or already removed"
 
 # ================ MISC =================
+
+.PHONY: nm nmbin printsrc printobj fill view submodule help
 
 nm:
 	@nm $(OBJ) | grep ' U ' | awk '{print $$2}' | sort | uniq
@@ -239,5 +252,3 @@ help:
 	@echo "  view             View source code"
 	@echo "  submodule        Update and initialize git submodules"
 	@echo "  help             Print this help message"
-
-.PHONY: all clean fclean re run clog c f r debug setuphooks play-netpractice pyinit test tidy check docker-build docker-clean nm nmbin printsrc printobj fill view submodule help
