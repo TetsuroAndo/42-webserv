@@ -17,7 +17,7 @@ namespace {
 void blockForeverNoCpu() {
 	// ReSharper disable once CppDFAEndlessLoop
 	while (true) {
-		select(0, NULL, NULL, NULL, NULL);
+		;
 	}
 }
 
