@@ -71,6 +71,8 @@ debug: OPT		:= -g -O1 -fno-omit-frame-pointer -fsanitize=address,leak
 debug: DEFINE	:= -DDEBUG_MODE=DEBUG_ALL
 debug: fclean
 	$(MAKE) $(NAME) OPT="$(OPT)" DEFINE="$(DEFINE)" -j $(shell nproc)
+
+debug-run: debug
 	ASAN_OPTIONS=detect_leaks=1:leak_check_at_exit=1 ./$(NAME) $(CONF)
 
 valgrind: $(NAME)
