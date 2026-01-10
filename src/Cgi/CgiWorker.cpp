@@ -36,8 +36,7 @@ CgiWorker::CgiWorker(PipelineContext &ctx, const std::string &scriptPath,
 	  _clientFd(ctx.ownerClient.getFd()), _pid(-1), _exitStatus(-1),
 	  _exitStatusSet(false), _outputComplete(false), _completionNotified(false),
 	  _requestBody(ctx.req.getBody()), _bytesSent(0), _scriptPath(scriptPath),
-	  _interpreterPath(interpreterPath),
-	  _lastActivityTime(std::time(NULL)),
+	  _interpreterPath(interpreterPath), _lastActivityTime(std::time(NULL)),
 	  _timeoutSeconds(static_cast< time_t >(ctx.conf->getTimeoutSec())),
 	  _readBuffer(ctx.conf->getPerformance().cgiIoBufferSize),
 	  _errBuffer(ctx.conf->getPerformance().cgiIoBufferSize) {
@@ -143,7 +142,10 @@ void CgiWorker::handleErrorExit() {
 		if (isFinished()) {
 			const char tmpC = 'x';
 			const int tmp = write(_pipeComplete[1], &tmpC, sizeof(tmpC));
-			(void)tmp;
+			if (tmp <= 0) {
+				LOG(ERROR) << "Failed to write to CGI worker: "
+						   << strerror(errno);
+			}
 		}
 	}
 }
@@ -334,7 +336,10 @@ void CgiWorker::handleRead() {
 		if (isFinished()) {
 			const char tmpC = 'x';
 			const int tmp = write(_pipeComplete[1], &tmpC, sizeof(tmpC));
-			(void)tmp;
+			if (tmp <= 0) {
+				LOG(ERROR) << "Failed to write to CGI worker: "
+						   << strerror(errno);
+			}
 		}
 	} else {
 		const size_t MAX_CGI_RESPONSE_SIZE = 10 * 1024 * 1024;
