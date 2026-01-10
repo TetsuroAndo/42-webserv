@@ -456,7 +456,7 @@ void CgiWorker::_childProcess(
 	if (dup2(_pipeIn[0], STDIN_FILENO) < 0 ||
 		dup2(_pipeOut[1], STDOUT_FILENO) < 0 ||
 		dup2(_pipeErr[1], STDERR_FILENO) < 0) {
-		perror("dup2 failed");
+		std::perror("dup2 failed");
 		notifyErrorToParentAndStop(_pipeStatus[1], errno);
 	}
 
@@ -468,7 +468,7 @@ void CgiWorker::_childProcess(
 	if (lastSlashPos != std::string::npos) {
 		const std::string scriptDir = scriptPath.substr(0, lastSlashPos);
 		if (!scriptDir.empty() && chdir(scriptDir.c_str()) < 0) {
-			perror("chdir failed");
+			std::perror("chdir failed");
 			notifyErrorToParentAndStop(_pipeStatus[1], errno);
 		}
 	}
@@ -483,7 +483,7 @@ void CgiWorker::_childProcess(
 						  const_cast< char * >(scriptPath.c_str()), NULL};
 
 	execve(interpreterPath.c_str(), argv, envp.data());
-	perror("execve failed");
+	std::perror("execve failed");
 	notifyErrorToParentAndStop(_pipeStatus[1], errno);
 }
 
