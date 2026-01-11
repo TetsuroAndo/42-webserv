@@ -157,3 +157,106 @@ def test_ip_port_virtualhost_routing(webserv_bin):
                         proc.wait(timeout=3)
                     except subprocess.TimeoutExpired:
                         proc.kill()
+
+
+@pytest.mark.integration
+def test_host_virtualhost_routing_same_ip_port(webserv_bin):
+    port = find_free_port()
+
+    host_a_contents = "Host A response"
+    host_b_contents = "Host B response"
+
+    with tempfile.TemporaryDirectory(prefix="vhost_host_test_") as temp_dir:
+        root_a = os.path.join(temp_dir, "root_a")
+        root_b = os.path.join(temp_dir, "root_b")
+        os.makedirs(root_a)
+        os.makedirs(root_b)
+
+        index_a = os.path.join(root_a, "index.html")
+        index_b = os.path.join(root_b, "index.html")
+        with open(index_a, "w") as f:
+            f.write(host_a_contents)
+        with open(index_b, "w") as f:
+            f.write(host_b_contents)
+
+        config_path = os.path.join(temp_dir, "vhost_host.yaml")
+        config_text = f"""servers:
+  - server:
+      listens:
+        - listen:
+            interface: {DEFAULT_HOST}
+            port: {port}
+            host: alpha.example
+      locations:
+        - location:
+            path: /
+            root: {root_a}
+            index: index.html
+            autoindex: false
+            allowedMethods:
+              - GET
+  - server:
+      listens:
+        - listen:
+            interface: {DEFAULT_HOST}
+            port: {port}
+            host: beta.example
+      locations:
+        - location:
+            path: /
+            root: {root_b}
+            index: index.html
+            autoindex: false
+            allowedMethods:
+              - GET
+"""
+        with open(config_path, "w") as f:
+            f.write(config_text)
+
+        proc = subprocess.Popen(
+            [webserv_bin, config_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            preexec_fn=os.setsid,
+        )
+
+        try:
+            ready = wait_for_port(DEFAULT_HOST, port)
+            if not ready:
+                stdout, stderr = proc.communicate(timeout=1)
+                pytest.fail(
+                    "Server did not listen on the port.\n"
+                    f"stdout:\n{stdout}\n"
+                    f"stderr:\n{stderr}\n"
+                )
+
+            resp_a = requests.get(
+                f"http://{DEFAULT_HOST}:{port}/",
+                headers={"Host": "alpha.example"},
+                timeout=2,
+            )
+            resp_b = requests.get(
+                f"http://{DEFAULT_HOST}:{port}/",
+                headers={"Host": "beta.example"},
+                timeout=2,
+            )
+
+            assert resp_a.status_code == 200
+            assert resp_b.status_code == 200
+            assert host_a_contents in resp_a.text
+            assert host_b_contents in resp_b.text
+            assert resp_a.text != resp_b.text
+        finally:
+            if proc.poll() is None:
+                try:
+                    parent = psutil.Process(proc.pid)
+                    for child in parent.children(recursive=True):
+                        child.kill()
+                    parent.kill()
+                except Exception:
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()

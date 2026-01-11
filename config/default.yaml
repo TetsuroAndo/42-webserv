@@ -3,7 +3,7 @@ servers:
     listens:
       - listen:
           interface: 127.0.0.1
-          port: 8081
+          port: 8080
 
     access_logs:
       - access_log:
@@ -26,7 +26,8 @@ servers:
   - server:
       listens:
         - listen:
-            interface: 0.0.0.0
+            host: localhost
+            interface: 127.0.0.1
             port: 8080
 
       maxRequestBodySize: 6291456
