@@ -40,12 +40,12 @@ VirtualHost *VHostResolver::find(std::vector< VirtualHost > &vhosts,
 				listen.port != listenKey.port) {
 				continue;
 			}
-			if (defaultVhost == NULL) {
+			const std::string listenHost =
+				extractHostForMatch(listen.host);
+			if (defaultVhost == NULL || listenHost.empty()) {
 				defaultVhost = &vhost;
 			}
 			if (!headerHost.empty()) {
-				const std::string listenHost =
-					extractHostForMatch(listen.host);
 				if (!listenHost.empty() && listenHost == headerHost) {
 					return &vhost;
 				}
