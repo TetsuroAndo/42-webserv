@@ -22,6 +22,7 @@ void VHostSelectMiddleware::handle(PipelineContext &ctx,
 
 	// TODO: ホストヘッダーに基づく選択はまだ実装されていない
 	// ここに Host ヘッダーを解析して適切な vhost を選択するロジックを実装する
+	std::string vHostDomain = ctx.req.getHeader("Host");
 
 	ctx.setConfig(ctx.ownerClient.getConfig());
 
