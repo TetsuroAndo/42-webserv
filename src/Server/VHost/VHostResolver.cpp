@@ -9,21 +9,11 @@ std::string extractHostForMatch(const std::string &value) {
 		return std::string();
 	}
 	std::string host;
-	if (trimmed[0] == '[') {
-		size_t end = trimmed.find(']');
-		if (end != std::string::npos && end > 1) {
-			host = trimmed.substr(1, end - 1);
-		} else {
-			host = trimmed;
-		}
+	size_t colon = trimmed.find(':');
+	if (colon != std::string::npos) {
+		host = trimmed.substr(0, colon);
 	} else {
-		size_t colon = trimmed.find(':');
-		if (colon != std::string::npos &&
-			trimmed.find(':', colon + 1) == std::string::npos) {
-			host = trimmed.substr(0, colon);
-		} else {
-			host = trimmed;
-		}
+		host = trimmed;
 	}
 	StringOps::trim(host);
 	StringOps::toLower(host);
