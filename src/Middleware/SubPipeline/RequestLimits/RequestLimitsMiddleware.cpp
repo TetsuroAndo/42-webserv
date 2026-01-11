@@ -20,7 +20,7 @@ void RequestLimitsMiddleware::handle(PipelineContext &ctx,
 
 	// Check: Request Header Size
 	const size_t headerBytes = ctx.parser.getLastHeaderBytes();
-	if (&c != NULL && c.getMaxRequestHeaderSize() < headerBytes) {
+	if (c.getMaxRequestHeaderSize() < headerBytes) {
 		ctx.setError(HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE);
 		if (proc) {
 			ErrorHandlerMiddleware errorHandler;
