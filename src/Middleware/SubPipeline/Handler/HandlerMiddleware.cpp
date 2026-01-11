@@ -7,8 +7,6 @@
 #include <map>
 #include <sstream>
 
-class ConfigParser;
-
 std::string HandlerMiddleware::getAllowedMethods() {
 	const char *order[] = {"GET", "HEAD", "POST", "PUT", "DELETE"};
 	const size_t orderSize = sizeof(order) / sizeof(order[0]);
