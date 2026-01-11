@@ -26,6 +26,9 @@ VirtualHost *VHostResolver::find(std::vector< VirtualHost > &vhosts,
 								 const ListenKey &listenKey,
 								 const std::string &hostHeader) {
 	VirtualHost *defaultVhost = NULL;
+	if (vhosts.empty()) {
+		return NULL;
+	}
 	const std::string headerHost = extractHostForMatch(hostHeader);
 
 	for (size_t i = 0; i < vhosts.size(); ++i) {
