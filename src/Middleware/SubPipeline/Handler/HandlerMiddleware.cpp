@@ -1,4 +1,5 @@
 #include "HandlerMiddleware.hpp"
+#include "../../../Config/ConfigParser.hpp"
 #include "../../../Handler/ISubHandler.hpp"
 #include "../../../Http/Core/HttpStatus.hpp"
 #include "../../../Lib/Logger/Log.hpp"
@@ -58,9 +59,12 @@ void HandlerMiddleware::handle(PipelineContext &ctx,
 			LOG(ERROR) << "Handler exception: " << e.what();
 			ctx.setError(HttpStatus::INTERNAL_SERVER_ERROR);
 		}
-	} else {
-		// 対応するハンドラがない場合
+	} else if (ConfigParser::VALID_ALLOWED_METHODS.find(method) !=
+			   ConfigParser::VALID_ALLOWED_METHODS.end()) {
+		// 対応するハンドラがなく、サーバーが対応しているメソッドの場合
 		ctx.setError(HttpStatus::METHOD_NOT_ALLOWED);
 		ctx.res.setHeader("Allow", getAllowedMethods());
+	} else {
+		ctx.setError(HttpStatus::NOT_IMPLEMENTED);
 	}
 }
