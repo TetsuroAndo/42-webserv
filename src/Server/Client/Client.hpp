@@ -3,6 +3,7 @@
 #include "../../Lib/Timeout/ITimeoutable.hpp"
 #include "../../Middleware/Core/PipelineContext.hpp"
 #include "../../Socket/Socket.hpp"
+#include "../Listen/ListenKey.hpp"
 #include "../VHost/VirtualHost.hpp"
 #include "EventManager.hpp"
 #include "HttpConnection.hpp"
@@ -16,7 +17,7 @@ class EventManager;
 
 class Client : public ITimeoutable, public HttpConnectionEventHandler {
 public:
-	Client(int fd, const sockaddr_in &addr, int listenPort,
+	Client(int fd, const sockaddr_in &addr, const ListenKey &listenKey,
 		   VirtualHost &activeVhost, size_t maxHeaderBytes, Server &server,
 		   EventManager &eventManager);
 	~Client();
@@ -29,7 +30,7 @@ public:
 
 	int getFd() const;
 	int getPort() const;
-	int getListenPort() const;
+	const ListenKey &getListenKey() const;
 	const std::string &getIp() const;
 
 	Socket &getSocket();
@@ -60,7 +61,7 @@ private:
 	VirtualHost *_activeVhost;
 	int _fd;
 	int _port;
-	int _listenPort;
+	ListenKey _listenKey;
 	std::string _ip;
 	Socket _socket;
 	PipelineContext _context;

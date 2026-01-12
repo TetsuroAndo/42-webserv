@@ -35,6 +35,7 @@ struct Performance {
 };
 
 struct Listen {
+	std::string host;
 	std::string interface;
 	int port;
 };

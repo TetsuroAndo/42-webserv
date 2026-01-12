@@ -7,8 +7,8 @@
 #include "ConfigLocationParser.hpp"
 #include "ConfigLogParser.hpp"
 
-#include <ctime>
 #include <cstring>
+#include <ctime>
 #include <limits>
 #include <netdb.h>
 #include <set>
@@ -73,6 +73,7 @@ static std::set< std::string > createValidServerKeys() {
 
 static std::set< std::string > createValidListenKeys() {
 	std::set< std::string > keys;
+	keys.insert("host");
 	keys.insert("interface");
 	keys.insert("port");
 	return keys;
@@ -177,12 +178,16 @@ void ConfigParser::parseListens(const Node *node) const {
 			throw std::runtime_error(
 				"Config error: missing 'listen' key in listen item");
 		}
-
-		const char *validKeysArr[] = {"interface", "port"};
-		std::set< std::string > validKeys(validKeysArr, validKeysArr + 2);
-		validateKeys(l_node, validKeys, "listen block");
+		validateKeys(l_node, VALID_LISTEN_KEYS, "listen block");
 
 		Listen l;
+		const Node *hostNode = l_node->getMapNode("host");
+		if (!hostNode) {
+			l.host = "";
+		} else {
+			l.host = hostNode->getValue();
+		}
+
 		const Node *interfaceNode = l_node->getMapNode("interface");
 		if (!interfaceNode) {
 			l.interface = "0.0.0.0";
@@ -209,8 +214,7 @@ void ConfigParser::parseListens(const Node *node) const {
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_NUMERICHOST;
 		addrinfo *res = NULL;
-		const int ret =
-			getaddrinfo(l.interface.c_str(), NULL, &hints, &res);
+		const int ret = getaddrinfo(l.interface.c_str(), NULL, &hints, &res);
 		if (ret != 0) {
 			throw std::runtime_error(
 				"Config error: invalid listen interface '" + l.interface + "'");
@@ -263,15 +267,12 @@ void ConfigParser::parseServer(const Node *serverNode) const {
 	if (const Node *n = serverNode->getMapNode("root"))
 		_builder->setServerDefaultRoot(n->getValue());
 	if (const Node *n = serverNode->getMapNode("allowedMethods")) {
-		const char *validMethodsArr[] = {"GET", "POST", "HEAD", "DELETE"};
-		std::set< std::string > validMethods(validMethodsArr,
-											 validMethodsArr + 4);
 		std::set< std::string > methodsSet;
 		const std::vector< Node * > &methods = n->getSeq();
 		for (std::vector< Node * >::const_iterator m_it = methods.begin();
 			 m_it != methods.end(); ++m_it) {
 			std::string method = (*m_it)->getValue();
-			if (validMethods.find(method) == validMethods.end()) {
+			if (VALID_ALLOWED_METHODS.find(method) == VALID_ALLOWED_METHODS.end()) {
 				throw std::runtime_error("Config error: invalid HTTP method '" +
 										 method + "' in server block");
 			}

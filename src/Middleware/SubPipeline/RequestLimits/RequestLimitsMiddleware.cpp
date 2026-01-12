@@ -15,11 +15,22 @@ void RequestLimitsMiddleware::handle(PipelineContext &ctx,
 		return;
 	}
 
-	const Config &config = *ctx.conf;
-	const Location &loc = config.getLocation(ctx.req.getPath());
+	const Config &c = *ctx.conf;
+	const Location &loc = c.getLocation(ctx.req.getPath());
+
+	// Check: Request Header Size
+	const size_t headerBytes = ctx.parser.getLastHeaderBytes();
+	if (c.getMaxRequestHeaderSize() < headerBytes) {
+		ctx.setError(HttpStatus::REQUEST_HEADER_FIELDS_TOO_LARGE);
+		if (proc) {
+			ErrorHandlerMiddleware errorHandler;
+			errorHandler.handle(ctx, proc);
+		}
+		return;
+	}
 
 	// Set: Request Body Size limit
-	size_t maxBodySize = config.getMaxRequestBodySize();
+	size_t maxBodySize = c.getMaxRequestBodySize();
 	if (loc.hasMaxRequestBodySize) {
 		maxBodySize = loc.maxRequestBodySize;
 	}

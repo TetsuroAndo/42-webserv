@@ -1,4 +1,5 @@
 #include "ServerBootstrap.hpp"
+#include "../../Lib/StringOps/StringOps.hpp"
 #include <algorithm>
 #include <map>
 #include <set>
@@ -10,6 +11,12 @@ std::string listenToString(const Listen &listen) {
 	std::ostringstream oss;
 	oss << listen.interface << ":" << listen.port;
 	return oss.str();
+}
+
+std::string normalizeListenHost(const std::string &host) {
+	std::string normalized = StringOps::trim(host);
+	StringOps::toLower(normalized);
+	return normalized;
 }
 
 size_t resolveCgiMaxWorkers(const std::vector< Config > &configs) {
@@ -63,7 +70,8 @@ resolveListenHeaderMax(const std::vector< Config > &configs) {
 }
 
 void validateListenCompatibility(const std::vector< Config > &configs) {
-	std::set< std::pair< std::string, int > > seen;
+	std::map< std::pair< std::string, int >, std::set< std::string > >
+		hostsByListen;
 	std::set< int > wildcardPorts;
 	std::set< int > specificPorts;
 
@@ -75,13 +83,16 @@ void validateListenCompatibility(const std::vector< Config > &configs) {
 		}
 		for (size_t j = 0; j < listens.size(); ++j) {
 			const Listen &listen = listens[j];
-			// Host name ロジックを追加する場合は、この処理を変更する
 			const std::pair< std::string, int > key(listen.interface,
 													listen.port);
-			if (seen.count(key)) {
-				throw std::runtime_error("Config error: duplicate listen " +
-										 listenToString(listen));
+			const std::string hostKey = normalizeListenHost(listen.host);
+			std::set< std::string > &seenHosts = hostsByListen[key];
+			if (seenHosts.count(hostKey)) {
+				throw std::runtime_error(
+					"Config error: duplicate listen host " +
+					listenToString(listen));
 			}
+			seenHosts.insert(hostKey);
 			const bool isWildcard = (listen.interface == "0.0.0.0");
 			if (isWildcard) {
 				if (specificPorts.count(listen.port)) {
@@ -103,7 +114,6 @@ void validateListenCompatibility(const std::vector< Config > &configs) {
 				}
 				specificPorts.insert(listen.port);
 			}
-			seen.insert(key);
 		}
 	}
 }

@@ -20,13 +20,15 @@
 #include <unistd.h>
 
 // clang-format off
-Client::Client(const int fd, const sockaddr_in &addr, const int listenPort,
-			   VirtualHost &activeVhost, const size_t maxHeaderBytes,
+Client::Client(const int fd, const sockaddr_in &addr,
+			   const ListenKey &listenKey,
+			   VirtualHost &activeVhost,
+			   const size_t maxHeaderBytes,
 			   Server &server, EventManager &eventManager)
 	: _server(server),
 	  _activeVhost(&activeVhost),
 	  _fd(fd),
-	  _listenPort(listenPort),
+	  _listenKey(listenKey),
 	  _socket(activeVhost.config, fd, addr),
 	  _context(activeVhost.config, maxHeaderBytes, *this,
 			   server.getCgiManager()),
@@ -50,7 +52,7 @@ void Client::setActiveVhost(VirtualHost &vhost) { _activeVhost = &vhost; }
 
 int Client::getFd() const { return _fd; }
 int Client::getPort() const { return _port; }
-int Client::getListenPort() const { return _listenPort; }
+const ListenKey &Client::getListenKey() const { return _listenKey; }
 const std::string &Client::getIp() const { return _ip; }
 
 Socket &Client::getSocket() { return _socket; }

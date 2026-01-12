@@ -6,8 +6,8 @@
 #include "Bootstrap/ServerBootstrap.hpp"
 #include "Client/Events/ReadEvent.hpp"
 #include "Client/Events/WriteEvent.hpp"
-#include "Logging/Logging.hpp"
 #include "Listen/ListenKey.hpp"
+#include "Logging/Logging.hpp"
 
 #include <algorithm>
 #include <cerrno>
@@ -72,6 +72,8 @@ Server::~Server() {
 TimeoutManager &Server::getTimeoutManager() { return _timeoutManager; }
 SocketsManager &Server::getSocketsManager() { return _socketsManager; }
 CgiManager &Server::getCgiManager() { return _cgiManager; }
+std::vector< VirtualHost > &Server::getVhosts() { return _vhosts; }
+const std::vector< VirtualHost > &Server::getVhosts() const { return _vhosts; }
 
 
 void Server::run() {
@@ -109,12 +111,11 @@ void Server::handleNewConnection(const int listenFd) {
 		return;
 	}
 	if (accepted.fd < 0) {
-        // EAGAINやEWOULDBLOCKはノンブロッキングソケットで一時的な正常状態。
-        // それ以外のerrnoは異常なのでログ出力する。
+		// EAGAINやEWOULDBLOCKはノンブロッキングソケットで一時的な正常状態。
+		// それ以外のerrnoは異常なのでログ出力する。
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
-			LOG(ERROR)
-				<< "accept() failed or client socket setup failed: "
-				<< strerror(errno);
+			LOG(ERROR) << "accept() failed or client socket setup failed: "
+					   << strerror(errno);
 		}
 		return;
 	}
@@ -138,10 +139,12 @@ void Server::handleNewConnection(const int listenFd) {
 	try {
 		VirtualHost *vhost = &_vhosts[accepted.defaultVhostIndex];
 
-		// Host name に基づく仮想ホストの切り替えは Middleware 側で行うため、多重listen対応のため
+		// Host name に基づく仮想ホストの切り替えは Middleware
+		// 側で行うため、多重listen対応のため
 		size_t maxHeaderBytes = vhost->config.getMaxRequestHeaderSize();
 		// 接続 listen の デフォルト key
-		const std::string listenKey = ListenKey::listenKeyToString(accepted.key);
+		const std::string listenKey =
+			ListenKey::listenKeyToString(accepted.key);
 		// 同 listen 単位の max があれば上書きする
 		std::map< std::string, size_t >::const_iterator maxIt =
 			_listenHeaderMax.find(listenKey);
@@ -149,8 +152,8 @@ void Server::handleNewConnection(const int listenFd) {
 			maxHeaderBytes = maxIt->second;
 		}
 
-		client = new Client(accepted.fd, accepted.addr, accepted.key.port,
-							*vhost, maxHeaderBytes, *this, _eventManager);
+		client = new Client(accepted.fd, accepted.addr, accepted.key, *vhost,
+							maxHeaderBytes, *this, _eventManager);
 
 		_socketsManager.registerSocket(accepted.fd, EPOLLIN);
 		_eventManager.initFd(*client);
@@ -179,7 +182,8 @@ void Server::handleNewConnection(const int listenFd) {
 		try {
 			_eventManager.forgetFd(accepted.fd);
 		} catch (...) {
-			// 例外処理中の二次例外で元の例外を潰さない。例外漏れによる terminate を回避
+			// 例外処理中の二次例外で元の例外を潰さない。例外漏れによる
+			// terminate を回避
 		}
 		try {
 			_socketsManager.unregisterSocket(accepted.fd);

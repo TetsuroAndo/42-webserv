@@ -28,6 +28,8 @@ public:
 	TimeoutManager &getTimeoutManager();
 	SocketsManager &getSocketsManager();
 	CgiManager &getCgiManager();
+	std::vector< VirtualHost > &getVhosts();
+	const std::vector< VirtualHost > &getVhosts() const;
 
 	void handleNewConnection(int listenFd);
 

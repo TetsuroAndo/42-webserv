@@ -1,6 +1,7 @@
 """
 サーバーの正常起動テスト
 """
+import os
 import socket
 import subprocess
 import tempfile
@@ -174,6 +175,85 @@ class TestValidStartup:
                 url = f"http://{DEFAULT_HOST}:{listen_ports[1]}/"
                 response = requests.get(url, timeout=2)
                 assert response.status_code == 200
+            finally:
+                if proc.poll() is None:
+                    proc.terminate()
+                    proc.wait()
+
+    def test_listen_host_allows_same_ip_port(self, webserv_bin):
+        port = _find_free_port()
+        with tempfile.TemporaryDirectory(prefix="vhost_host_listen_") as temp_dir:
+            root_a = os.path.join(temp_dir, "root_a")
+            root_b = os.path.join(temp_dir, "root_b")
+            os.makedirs(root_a)
+            os.makedirs(root_b)
+
+            index_a = os.path.join(root_a, "index.html")
+            index_b = os.path.join(root_b, "index.html")
+            with open(index_a, "w") as f:
+                f.write("host-a")
+            with open(index_b, "w") as f:
+                f.write("host-b")
+
+            config_path = Path(temp_dir) / "vhost_listen_host.yaml"
+            config_text = f"""servers:
+  - server:
+      listens:
+        - listen:
+            interface: {DEFAULT_HOST}
+            port: {port}
+            host: alpha.example
+      locations:
+        - location:
+            path: /
+            root: {root_a}
+            allowedMethods:
+              - GET
+  - server:
+      listens:
+        - listen:
+            interface: {DEFAULT_HOST}
+            port: {port}
+            host: beta.example
+      locations:
+        - location:
+            path: /
+            root: {root_b}
+            allowedMethods:
+              - GET
+"""
+            config_path.write_text(config_text)
+
+            proc = subprocess.Popen(
+                [webserv_bin, str(config_path)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            try:
+                if not _wait_for_port(DEFAULT_HOST, port):
+                    stdout, stderr = proc.communicate(timeout=1)
+                    pytest.fail(
+                        "Server did not listen on the port.\n"
+                        f"stdout:\n{stdout}\n"
+                        f"stderr:\n{stderr}\n"
+                    )
+
+                resp_a = requests.get(
+                    f"http://{DEFAULT_HOST}:{port}/",
+                    headers={"Host": "alpha.example"},
+                    timeout=2,
+                )
+                resp_b = requests.get(
+                    f"http://{DEFAULT_HOST}:{port}/",
+                    headers={"Host": "beta.example"},
+                    timeout=2,
+                )
+                assert resp_a.status_code == 200
+                assert resp_b.status_code == 200
+                assert "host-a" in resp_a.text
+                assert "host-b" in resp_b.text
+                assert resp_a.text != resp_b.text
             finally:
                 if proc.poll() is None:
                     proc.terminate()
